@@ -1,0 +1,274 @@
+﻿@model CwcExim.Areas.Import.Models.HdbIssueSlip
+
+<script>
+    var ArrayOfContainer = [];
+    var ArrayOfCargo = [];
+    var TimeInSeconds;
+    $(function () {
+        debugger;
+        TimeInSeconds = 5000;
+        ArrayOfContainer=@Html.Raw(Json.Encode(Model.LstContainer));
+        ArrayOfCargo=@Html.Raw(Json.Encode(Model.LstCargo));
+        GenerateConatinerTable();
+        GenerateCargoTable();
+    });
+
+
+    $('#IssueSlipDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage:"/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='IssueSlipDate']").html('');
+        }
+    });
+
+
+
+    function ReloadIssueSlipPage() {
+        $('#DivBody').load('/Import/Hdb_CWCImport/CreateIssueSlip');
+    }
+
+    //function ResetAllFields() {
+    //    $('#DivAddIssueSlip').find('input:hidden').val('');
+    //    $('#DivAddIssueSlip').find('input:text,textarea').val('');
+    //    $('#DivAddIssueSlip #DivIssueSlipMsg').html('');
+    //    $('#DivAddIssueSlip #DivIssueSlipErrMsg').html('');
+    //    $('[data-valmsg-for]').html('<span><span>');
+    //    $('#DivAddIssueSlip #TblContainer >tbody').html('');
+    //    $('#DivAddIssueSlip #TblContainer').hide();
+    //    $('#DivAddIssueSlip #TblCargo >tbody').html('');
+    //    $('#DivAddIssueSlip #TblCargo').hide();
+    //}
+
+    function IssueSlipOnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            $('#DivIssueSlipMsg').html(data.Message);
+            setTimeout(ReloadIssueSlipPage, TimeInSeconds);
+           // $('#InvoiceList #' + $('#InvoiceNo').val()).remove();
+           // GetIssueSlipList();
+        }
+        else {
+            $('#DivIssueSlipErrMsg').html(data.Message);
+        }
+    }
+
+    function IssueSlipOnFailure() { }
+
+
+    //$('#InvoiceBox').keyup(function () {
+    //    debugger;
+    //    var valThis = $(this).val().toLowerCase();
+    //    if (valThis == "") {
+    //        $('#InvoiceModal .navList > li').show();
+    //    } else {
+    //        $('#InvoiceModal .navList > li').each(function () {
+    //            var text = $(this).text().toLowerCase();
+    //            (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+    //        });
+    //    };
+    //});
+    //$('#InvoiceList li').on("click", function () {
+    //    debugger;
+    //    $('#InvoiceNo').val($(this).text());
+    //    $('#InvoiceId').val($(this).attr('id'));
+    //    var InvoiceId = $('#InvoiceId').val();
+    //    $("#InvoiceModal").modal("hide");
+    //    $('#TblContainer >tbody').html('');
+    //    $('#TblContainer').hide();
+    //    $('#TblCargo >tbody').html('');
+    //    $('#TblCargo').hide();
+    //    GetInvoiceDet(InvoiceId);
+    //});
+
+    //function GetInvoiceDet(InvoiceId) {
+    //    debugger;
+    //    $.ajax({
+    //        url: '/Import/CWCImport/GetInvcDetForIssueSlip',
+    //        type: 'GET',
+    //        dataType: 'JSON',
+    //        data: { InvoiceId: InvoiceId },
+    //        success: function (data) {
+    //            debugger;
+    //            if (data.Status == 1) {
+    //                $('#InvoiceDate').val(data.Data.InvoiceDate);
+    //                ArrayOfContainer = data.Data.LstContainer;
+    //                ArrayOfCargo = data.Data.LstCargo;
+    //                GenerateConatinerTable();
+    //                GenerateCargoTable();
+    //            }
+    //        }
+    //    });
+    //}
+
+    function GenerateConatinerTable() {
+        debugger;
+        $('#TblContainer').hide();
+        var Html = '';
+        if (ArrayOfContainer.length != 0) {
+            $.each(ArrayOfContainer, function (i, item) {
+                debugger;
+                Html += '<tr><td>' + item.CFSCode + '</td><td>' + item.ContainerNo + '</td><td>' + item.Size + '</td><td>' + item.GrossWeight + '</td><td>' + item.CIFValue + '</td></tr>';
+            });
+            $('#TblContainer>tbody').html(Html);
+            $('#TblContainer').show();
+        }
+    }
+
+    function GenerateCargoTable() {
+        debugger;
+        $('#TblCargo').hide();
+        var Html = '';
+        if (ArrayOfCargo.length != 0) {
+            $.each(ArrayOfCargo, function (i, item) {
+                debugger;
+                Html += '<tr><td>' + item.OBLNo + '</td><td>' + item.CargoDescription + '</td><td>' + item.GodownNo + '</td><td>' + item.Location + '</td><td>' + item.StackNo + '</td><td>' + item.Area + '</td><td>' + item.NetWeight + '</td></tr>';
+            });
+            $('#TblCargo>tbody').html(Html);
+            $('#TblCargo').show();
+        }
+    }
+
+</script>
+
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "IssueSlipOnSuccess";
+    options.OnFailure = "IssueSlipOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("AddEditIssueSlip", "Hdb_CWCImport", options))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.IssueSlipId)
+                    <div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Issue Slip</h4>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Issue Slip No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.IssueSlipNo, "", new { @class = "form-control input-sm", @readonly = true })
+
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                    <label>Issue Slip Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.IssueSlipDate, new { @class = "form-control input-sm", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.IssueSlipDate, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Invoice No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.HiddenFor(m => m.InvoiceId)
+                                    @Html.TextBoxFor(m => m.InvoiceNo, new { @class = "form-control input-sm", @readonly = true })
+                                    <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#InvoiceModal"></i></span>
+                                    @Html.ValidationMessageFor(m => m.InvoiceNo, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                    <label>Invoice Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    @Html.TextBoxFor(m => m.InvoiceDate, new { @class = "form-control input-sm", @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Cargo Description:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextAreaFor(m => m.CargoDescription, new { @style = "width:100%;height:100px" })
+                                    @Html.ValidationMessageFor(m => m.CargoDescription, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div id="DivTblContainer" class="col-md-12">
+                                <table class="table table-striped table-bordered dataTable" id="TblContainer" style="width:100%;">
+                                    <thead>
+                                        <tr>
+                                            <th colspan="5">Container Details</th>
+                                        </tr>
+                                        <tr>
+                                            <th>@Html.DisplayName("CFS No")</th>
+                                            <th>@Html.DisplayName("Container No")</th>
+                                            <th style="width:10%;">@Html.DisplayName("Size")</th>
+                                            <th style="width:15%;">@Html.DisplayName("Gross Wt")</th>
+                                            <th style="width:15%;">@Html.DisplayName("CIF Value")</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div id="DivTblCargo" class="col-md-12">
+                                <table class="table table-striped table-bordered dataTable" id="TblCargo" style="width:100%;">
+                                    <thead>
+                                        <tr>
+                                            <th colspan="7">Cargo Details</th>
+                                        </tr>
+                                        <tr>
+                                            <th style="width:15%;">@Html.DisplayName("OBL No")</th>
+                                            <th>@Html.DisplayName("Cargo Description")</th>
+                                            <th style="width:15%;">@Html.DisplayName("Godown No")</th>
+                                            <th>@Html.DisplayName("Location")</th>
+                                            <th>@Html.DisplayName("Stack No")</th>
+                                            <th>@Html.DisplayName("Area")</th>
+                                            <th style="width:10%;">@Html.DisplayName("Net Wt")</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+
+
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-offset-4 col-md-2 SignUp_space_bottom">
+                            <input type="submit" class="btn log_Btn_sm" value="Save" id="BtnSaveIssueSlip" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Cancel" onclick="ReloadIssueSlipPage()" />
+                        </div>
+                        @*<div class="col-md-2">
+                                <input type="button" class="btn log_Btn_sm" value="Preview"  />
+                            </div>*@
+                    </div>
+                    <div class="logSuccMsg" style="background-color:transparent" id="DivIssueSlipMsg"></div>
+                    <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivIssueSlipErrMsg"></div>
+                }
+                @Scripts.Render("~/bundles/jqueryval")
+            </div>
+        </div>
+    </div>
+</div>

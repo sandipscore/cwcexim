@@ -1,0 +1,800 @@
+﻿<script src="~/Areas/CashManagement/Scripts/App/Services/WFLDRentInvoiceService.js"></script>
+<script src="~/Areas/CashManagement/Scripts/App/Controllers/WFLDRentInvoiceCtrl.js"></script>
+
+<script>
+
+    angular.bootstrap(document.getElementById('RentAppDiv'), ['CWCApp']);
+
+    $('#InvoiceDate').datetimepicker({
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        dateFormat: "dd/mm/yy",
+        altField: "#slider_example_4andHalf_alt",
+        altFieldTimeOnly: false,
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+            //angular.element('#ctrldiv').scope().ContainerSelect();
+        }
+    });
+
+</script>
+@if (ViewBag.PaymentParty != null)
+{
+    <input type="hidden" id="hdnPartyPayee" value="@ViewBag.PaymentParty" />
+}
+else
+{
+    <input type="hidden" id="hdnPartyPayee" value="" />
+}
+
+@if (ViewBag.ChargeList != null)
+{ <input type="hidden" id="hdnlstCharge" value="@ViewBag.ChargeList" />
+
+}
+else
+{
+    <input type="hidden" id="hdnlstCharge" value="" />
+}
+
+
+
+
+@using (Ajax.BeginForm("AddEditRentInvoice", "VLDA_CashManagement", new AjaxOptions { HttpMethod = "POST", InsertionMode = InsertionMode.InsertAfter, OnSuccess = "PaymentOnSuccess", OnFailure = "PaymentOnFailure" }, new { @Id = "RentInvoice" }))
+{
+    @Html.AntiForgeryToken()
+    <input type="hidden" id="hdnAddress" ng-model="hdnAddress" />
+    <input type="hidden" id="hdnState" ng-model="hdnState" />
+    <input type="hidden" id="hdnStateCode" ng-model="hdnStateCode" />
+    @Html.Hidden("hdnModule")
+
+
+    @Html.Hidden("RentInvModelJson")
+    <div id="RentAppDiv">
+        <div ng-controller="RentInvoiceCtrl" id="ctrldiv">
+
+            <div id="DivCreateStuffingReq" class="container-fluid">
+                <div class="row">
+                    <div class="col-md-offset-0-5 col-md-11">
+                        <div class="Head_h4">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h4>Rent Invoice</h4>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label> Month:</label>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select id="monthvalue" ng-model="montharr" class="form-control">
+                                            <option ng-repeat="mo in month" value="{{mo}}">{{mo}}</option>
+                                           
+                                        </select>
+                                      </div>
+                                    <div class="col-md-1-5">
+                                        <label>Year:</label>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select id="yearvalue" ng-model="Yeararr" class="form-control">
+                                            <option ng-repeat="yo in Year" value="{{yo}}">{{yo}}</option>
+                                           
+                                        </select>
+                                            </div>
+
+                                    <div class="col-md-2">
+                                      
+                                       <input type="button" class="btn log_Btn_sm" value="Populate"  id="btnpopulate" ng-click="PopulateRent('1')" ng-disabled="montharr=='--Select--' || Yeararr=='--Select--'" />
+                                       
+                                    </div>
+                                    <div class="col-md-3">
+
+                                        <input type="button" class="btn log_Btn_sm" value="Copy Previous Data" id="btnPrevious" ng-click="PopulateRent('2')" ng-disabled="montharr=='--Select--' || Yeararr=='--Select--'" />
+
+                                    </div>
+                                </div>
+                            </div>
+                          
+                            <div id="addct" class="Head_h4" style="margin:5px -8px;">
+
+                                <div class="row Form_Space_top">
+                                 
+                                        <div class="form-group Form_Input">
+                                            <div class="col-md-1-5 col_cus_2">
+                                                <label>Party Name:</label>
+                                            </div>
+                                            <div class="col-md-4 col_cus_4">
+                                                <input type="text" id="PartyId" ng-model="PartyId" style="display:none" />
+                                                <input type="text" id="Invoice" ng-model="Invoice" style="display:none;" />
+                                              
+                                                <input type="text" id="PartyName" ng-model="PartyName" readonly="True" ng-required="true" />
+                                                <span class="search" id="PartySearch" ><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>
+                                                <span style="color:red" id="ErrParty"></span>
+                                                  @*@Html.ValidationMessageFor(m => m.PartyName)*@
+                                            </div>
+                                            <div class="col-md-1-5 col_cus_2">
+                                                <label> Date:</label>
+                                            </div>
+                                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                                @*@Html.TextBoxFor(m => m.InvoiceDate, new { @readonly = true, Value = DateTime.Today.ToString("dd/MM/yyyy") })*@
+                                                @Html.TextBox("InvoiceDate", "", new { @readonly = true, Value = DateTime.Now.ToString("dd/MM/yyyy") })
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                              
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label> GST No:</label>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="text" id="GSTNo" ng-model="GSTNo" readonly="true" />
+                                        </div>
+                                        <div class="col-md-1-5">
+                                         <label>SEZ</label>
+                                        </div>
+                                        <div class="col-md-2-5">
+                                            @Html.DropDownList("SEZ", new List<SelectListItem>
+                                        {
+                                        new SelectListItem { Text="SEZWP",Value="SEZWP"},
+                                        new SelectListItem {Text="SEZWOP",Value="SEZWOP" }
+
+                                        }, "---Select---", new { @class = "form-control input-sm dropdown" })
+                                            @Html.ValidationMessage("SEZ", new { @class = "Error_Msg" })
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label> Amount:</label>
+                                        </div>
+                                        <div class="col-md-4">
+                                            @*@Html.TextBoxFor(m => m.GSTNo, new { @readonly = true })*@
+                                            <input type="text" id="amount"  ng-model="Amount" onblur = "return caltotal();" onkeypress = "return AllowOnlyDecimal(event)" />
+
+
+                                            <span style="color:red" id="Erramount"></span>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label> CGST:</label>
+                                        </div>
+                                        <div class="col-md-2">
+                                           
+                                            <input type="text" id="cgst" ng-model="CGST" readonly ng-disabled="taxvalue=='0'"  onblur = "return caltax();" onkeypress = "return AllowOnlyDecimal(event)" />
+                                            </div>
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label> SGST:</label>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="text" id="sgst" ng-model="SGST" readonly ng-disabled="taxvalue=='0'" onblur = "return caltax();" onkeypress = "return AllowOnlyDecimal(event)" />
+                                                  </div>
+
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label> IGST:</label>
+                                        </div>
+                                        <div class="col-md-2">                                           
+                                            <input type="text" id="igst" value="0" ng-model="IGST" readonly ng-disabled="taxvalue=='0'" onblur = "return caltax();" onkeypress = "return AllowOnlyDecimal(event)" />
+                                          </div>
+                                    </div>
+                                </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label> Round Up:</label>
+                                        </div>
+                                        <div class="col-md-4">
+                                            @*@Html.TextBoxFor(m => m.GSTNo, new { @readonly = true })*@
+                                            <input type="text" id="round_up" readonly  ng-model="Round_Up" />
+                                               </div>
+
+                                    </div>
+                                </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label> Total:</label>
+                                        </div>
+                                        <div class="col-md-4">
+                                            @*@Html.TextBoxFor(m => m.GSTNo, new { @readonly = true })*@
+                                            <input type="text" id="total" readonly ng-model="TotalValue" />
+                                           </div>
+
+                                    </div>
+                                </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label> Remarks:</label>
+                                        </div>
+                                        <div class="col-md-10"> 
+                                            <textarea  name="message" id="Remarks" rows="3" cols="30" ng-model="Remarks" maxlength="500"></textarea>                                          
+                                            @*<input type="text" id="Remarks" ng-model="Remarks" ng-maxlength="500" ng-multiple="true"/>*@
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                @*<div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            </div>
+                                            <div class="col-md-2">
+                                                
+                                                <div class="boolean-container">
+                                                    @Html.CheckBox("SEZ", false, new { @class = "myCheckbox",@Id="SEZ" })
+                                                    <label for="SEZ"><i class="square"></i><span>SEZ</span></label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                </div>*@
+
+                                  <div class="row">
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-offset-4 col-md-2  SignUp_space_bottom">
+                                        <input type="button" id="btnAddFormOneDet" class="btn log_Btn_sm" value="Add" ng-click="AddRent($event)"/>
+                                        <span style="color:red" id="Errbtn"></span>
+
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="button" id="btnResetFormOneDet" class="btn log_Btn_sm" value="Reset" ng-click="ResetRent()" />
+                                    </div>
+                                </div>
+                                <div class="logErrMsg" id="DivTblStuffingErrMsg" style="background-color:transparent"></div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="col-md-12">
+                                        <table class="table table-striped table-bordered dataTable" id="tblCheDet" style="width:100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width:8%;" class="text-center">Sl No</th>
+                                                    <th>Date</th>
+                                                    <th>Party</th>
+                                                    <th>GST No.</th>
+                                                    <th>Amount</th>
+                                                    <th>CGST</th>
+                                                    <th>SGST</th>
+                                                    <th>IGST</th>
+                                                    
+                                                    <th>Round Up</th>
+                                                    <th>Total</th>
+                                                    <th>Invoice No.</th>                                                  
+                                                    <th style="width:10%;text-align:center;">Edit</th>
+                                                    <th style="width:10%;text-align:center;">Delete</th>
+                                                    <th style="width:10%;text-align:center;">View</th>
+                                                </tr>
+                                            </thead>
+                                            
+                                               <tbody>
+                                                <tr ng-repeat="c in AddRentDetails">
+                                                    <td style="text-align:center;">{{$index+1}}</td>
+                                                    <td>{{c.Date}}</td>
+                                                    <td>{{c.PartyName}}</td>
+                                                    <td>{{c.GSTNo}}</td>
+                                                    <td>{{c.amount}}</td>
+                                                    <td>{{c.cgst}}</td>
+                                                    <td>{{c.sgst}}</td>
+                                                    <td>{{c.igst}}</td>
+                                                    <td>{{c.round_up}}</td>
+                                                    <td>{{c.total}}</td>
+                                                    <td ng-if="c.InvoiceNo!=0">{{c.InvoiceNo}}</td>
+                                                    <td ng-if="c.InvoiceNo==0"></td>                                                  
+                                                    <td style="text-align:center;"><a href="#" ng-click="EditRentDet($index)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                                                    <td style="text-align:center;"><a href="#" ng-click="DeleteRentDet($index)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                                                    <td style="text-align:center;"><a href="#" ng-click="ViewRentDet($index)"><i class="fa fa-search-plus Edit"></i></a></td>
+                                                </tr>                                                  
+                                            </tbody>
+
+                                        </table>
+                                        <table class="table table-striped table-bordered dataTable"  style="width:100%;display:none;">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width:8%;" class="text-center">Sl No</th>
+                                                    <th>Date</th>
+                                                    <th>Charge</th>
+                                                    <th>GST No.</th>
+                                                    <th>Amount</th>
+                                                    <th>CGST</th>
+                                                    <th>SGST</th>
+                                                    <th>IGST</th>
+                                                    <th>Round Up</th>
+                                                    <th>Total</th>                                                   
+                                                    <th style="width:10%;text-align:center;">Delete</th>
+                                                    
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr ng-repeat="c in AllChargesLst">
+                                                    <td style="text-align:center;">{{$index+1}}</td>
+                                                    <td>{{c.Date}}</td>
+                                                    <td>{{c.ChargeName}}</td>
+                                                    <td>{{c.GSTNo}}</td>
+                                                    <td>{{c.amount}}</td>
+                                                    <td>{{c.cgst}}</td>
+                                                    <td>{{c.sgst}}</td>
+                                                    <td>{{c.igst}}</td>
+                                                    <td>{{c.round_up}}</td>
+                                                    <td>{{c.total}}</td>                                                   
+                                                    <td style="text-align:center;"><a href="#" ng-click="DeleteRentCharge($index)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                                                </tr>
+                                            </tbody>
+                                            </table>
+</div>
+                                </div>
+
+                                <div class="row Form_Space_top" style="display:none;">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-2 col_cus_2">
+                                            <label>New Charges</label>
+                                        </div>
+                                        <div class="col-md-4">
+                                            @*@Html.TextBoxFor(m => m.GSTNo, new { @readonly = true })*@
+                                            <select id="ddlAddCharge" ng-model="ddlAddCharge" ng-options="id.Text for id in hdnlstCharge"></select>
+                                            <span style="color:red" id="spanCharge"></span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            @*@Html.TextBoxFor(m => m.GSTNo, new { @readonly = true })*@
+                                            <input type="number" id="txtAddChargeAmount" ng-model="txtAddChargeAmount" />
+                                            <span style="color:red" id="spanAddChargeAmount"></span>
+                                        </div>
+                                        <div class="col-md-2 col_cus_2">
+                                            <button type="button" class="btn log_Btn_sm" ng-disabled="flagCharge" ng-click="AddChargeToRent()">ADD</button>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+
+
+                            </div>
+                            <div class="row SignUp_space_bottom SignUp_space_top">
+                                <div class="stoke"></div>
+                            </div>
+                            <div class="logSuccMsg Form_Space_bottom" id="DivMiscInvMsg" style="background-color:transparent">{{Message}}</div>
+                            <div class="row SignUp_space_bottom2">
+                                <div class="col-md-offset-1-5 col-md-2">
+                                    <input type="button" value="Save" class="btn log_Btn_sm" id="btnSave" ng-click="SubmitInvoice()" />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="button" value="Reset" class="btn log_Btn_sm" onclick="ResetField()" />
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="button" id="BtnGenerateIRN" class="btn log_Btn_sm" value="Generate IRN" ng-click="GenerateIRN()" disabled="disabled" />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="button" value="Print" class="btn log_Btn_sm" onclick="PrintInvoice(0)" id="btnPrint" disabled />
+                                </div>
+                            </div>
+
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-2">
+                                        <input type="button" value="Show List" onclick="ShowList()" class="btn log_Btn_sm" />
+                                    </div>
+                                    <div class="col-md-offset-4 col-md-2">
+                                        <input type="text" placeholder="Search by Invoice No" id="SearchInvoiceNo" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="text" placeholder="Date (dd/mm/yyyy)" id="SearchInvoiceDate" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="button" value="Search" onclick="SearchInvoice()" class="btn log_Btn_sm" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-12" id="DivRentInvoiceList">
+                                        <table class="table table-bordered table-striped dataTable">
+                                            <thead>
+                                                <tr>
+                                                    <td>Sl No</td>
+                                                    <td>Invoice No</td>
+                                                    <td>Invoice Date</td>
+                                                    <td>Party Name</td>
+                                                    <td>Print</td>
+                                                </tr>
+                                            </thead>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            @*<div class="row">
+                                <div class="col-md-12">
+                                    <div id="DivRentInvoiceList"></div>
+                                </div>
+                            </div>*@
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="PartyModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of Party</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <input placeholder="Search Me" id="Partybox" ng-model="searchParty" type="text" />
+                            <ul class="navList" id="lstParty">
+                                @*@{
+                            foreach (var item in Model.lstGodownList)
+                            {
+                            <li id="@item.GodownId">@item.GodownName</li>
+                            }
+                            }*@
+                                <li ng-repeat="p in PartyList  | filter: {PartyName : searchParty}" ng-click="SelectParty(p)">{{p.PartyName}}</li>
+
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="PayeeModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of Payer</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <input placeholder="Search Me" id="Payeebox" type="text" />
+                            <ul class="navList" id="lstPayee">
+                                @*@{
+                            foreach (var item in Model.lstGodownList)
+                            {
+                            <li id="@item.GodownId">@item.GodownName</li>
+                            }
+                            }*@
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div id="AddChargeModal" class="modal fade" role="dialog">
+                <div class="modal-dialog" style="width: 1189px">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">Add Charge</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <table class="table table-striped table-bordered dataTable"  style="width:100%;">
+                                        <thead>
+                                            <tr>
+                                                <th>Sl No</th>
+                                                <th>Charge Name</th>
+                                                <th>Amount</th>
+                                                <th>Delete</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="i in AllChargesLst">
+                                                <td>{{$index+1}}</td>
+                                                <td>{{i.}}</td>
+                                                <td>{{i.}}</td>
+                                                <td><a href="#" ng-click="DeleteCharge($index)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                          
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-2 col_cus_2">
+                                        <label>New Charges</label>
+                                    </div>
+                                    <div class="col-md-4">
+                                        @*@Html.TextBoxFor(m => m.GSTNo, new { @readonly = true })*@
+                                        <select id="ddlAddCharge" ng-model="ddlAddCharge"></select>
+                                        <span style="color:red" id="spanCharge"></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        @*@Html.TextBoxFor(m => m.GSTNo, new { @readonly = true })*@
+                                        <input type="number" id="txtAddChargeAmount" ng-model="txtAddChargeAmount" />
+                                        <span style="color:red" id="spanAddChargeAmount"></span>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2">
+                                        <button type="button" class="btn log_Btn_sm" ng-click="AddChargeToRent()">ADD</button>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+
+</div>
+        </div>
+
+            @Scripts.Render("~/bundles/jqueryval")
+            
+
+            }
+<script>
+    function ShowList() {
+        $('#hdnModule').val('RENT');
+        $('#SearchInvoiceNo').val("");
+        $('#SearchInvoiceDate').val("");
+        $('#DivRentInvoiceList').load('/Export/VLDA_CWCExport/ListOfExpInvoice?Module=RENT');
+    }
+
+    function SearchInvoice() {
+        $('#hdnModule').val('RENT');
+        var InvoiceNo = $('#SearchInvoiceNo').val().trim();
+        var InvoiceDate = $('#SearchInvoiceDate').val().trim();
+        if ($('#SearchInvoiceNo').val() == "" && $('#SearchInvoiceDate').val() == "")
+            alert("Enter Invoice No. or Invoice Date to Search");
+        else if ($('#SearchInvoiceNo').val() != "" && $('#SearchInvoiceDate').val() != "" && Validate() == true)
+            $('#DivRentInvoiceList').load('/Export/VLDA_CWCExport/ListOfExpInvoice?InvoiceNo=' + InvoiceNo + '&InvoiceDate=' + InvoiceDate + "&Module=RESINDIV");
+        else if ($('#SearchInvoiceNo').val() != "")
+            $('#DivRentInvoiceList').load('/Export/VLDA_CWCExport/ListOfExpInvoice?InvoiceNo=' + InvoiceNo + "&Module=RENT");
+        else if (Validate() == true)
+            $('#DivRentInvoiceList').load('/Export/VLDA_CWCExport/ListOfExpInvoice?InvoiceDate=' + InvoiceDate + "&Module=RENT");
+    }
+
+    function Validate() {
+        debugger;
+        var date = document.getElementById("SearchInvoiceDate").value.split("/");
+        var day = date[0];
+        var month = date[1];
+        var dateString = document.getElementById("SearchInvoiceDate").value;
+        var regex = /^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/;
+        //if (regex.test(dateString) || dateString.length == 0) {
+        //    alert("Please enter correct date");
+        //    return false;
+        //}
+        if (day > 31) {
+            alert("Please enter correct date");
+            return false;
+        }
+        else
+            if (month > 12) {
+                alert("Please enter correct Month");
+                return false;
+            }
+        return true;
+    }
+</script>
+            <script>
+
+                var TimeInSeconds;
+                $(document).ready(function () {
+                    TimeInSeconds = 5000;
+                    $('#InvoiceDate').datepicker({
+                        dateFormat: "dd/mm/yy",
+                        showOn: "button",
+                        buttonImage: "/Content/images/calendar.png",
+                        buttonImageOnly: true,
+                        buttonText: "Select date",
+                        changeMonth: true,
+                        changeYear: true,
+                        showAnima: "fadein",
+                        onClose: function () {
+                        }
+                    });
+                  
+                });
+              
+                function AllowOnlyDecimal(evt) {
+                    var CharCode;
+                    if (window.event) {
+                        CharCode = window.event.keyCode;
+                    }
+                    else {
+                        CharCode = evt.which;
+                    }
+                    if ((CharCode > 47 & CharCode < 58) || (CharCode == 46) || CharCode == 8) {
+                        return true;
+                    }
+                    else {
+                        evt.preventDefault;
+                        return false;
+                    }
+                }
+
+                
+
+                //calculate total amount
+                function caltotal() {
+                    debugger;                   
+                    var amt = $('#amount').val();
+                    //var taxvalue = Math.ceil((amt * 18) / 100);
+                    var taxvalue = ((amt * 18) / 100);
+                    var cgmt = (taxvalue / 2).toFixed(2);
+                    var sgst = (taxvalue / 2).toFixed(2);
+                    var igmt = taxvalue.toFixed(2);
+
+                    if ($('#SEZ').val()== '')
+                    {
+                        var totamt = parseFloat(amt) + parseFloat(cgmt) + parseFloat(sgst);
+                        $('#cgst').val(cgmt);
+                        $('#sgst').val(sgst);
+                        $('#igst').val('0.00');
+                    }
+                    else if ($('#SEZ').val() == 'SEZWP') {
+                        var totamt = parseFloat(amt) + parseFloat(igmt);
+                        $('#cgst').val('0.00');
+                        $('#sgst').val('0.00');
+                        $('#igst').val(igmt);
+                    }
+                    else
+                    {
+                        var totamt = parseFloat(amt);
+                        $('#cgst').val('0.00');
+                        $('#sgst').val('0.00');
+                        $('#igst').val('0.00');
+                    }
+
+                    
+                    var round = 0;//Math.ceil(totamt) - totamt;
+                    //var rounduptot = Math.ceil(totamt);
+                    if (Number(amt) > 0)
+                    {
+                        var rounduptot = totamt.toFixed(2);
+                    }
+                    else
+                    {
+                        var totamt = 0;
+                        var rounduptot = totamt.toFixed(2);
+                    }
+                    
+
+                    $('#round_up').val(round.toFixed(2));
+                    $('#total').val(rounduptot);
+                    $('#SEZ').prop("disabled", true);
+                    $("#cgst").attr("disabled", "disabled");
+                    $("#sgst").attr("disabled", "disabled");
+                    
+                }
+
+                //calculate tax
+
+                function caltax() {
+                    var cgst = $('#cgst').val();
+                    var sgst = $('#sgst').val();
+                    var igst = $('#igst').val();
+                    var amt = $('#amount').val();
+                    if (amt != '') {
+                        var totamt = 0;
+                        if (cgst == '')
+                            cgst = 0;
+
+
+                        if (sgst == '')
+                            sgst = 0;
+
+                        if (igst == '')
+                            igst = 0;
+
+
+                        totamt = parseFloat(amt) + parseFloat(cgst) + parseFloat(sgst) + parseFloat(igst);
+
+                        var round = 0;//Math.ceil(totamt) - totamt;
+                        //var rounduptot = Math.ceil(totamt);
+                        var rounduptot = totamt.toFixed(2);
+
+                        $('#round_up').val(round.toFixed(2));
+                        $('#total').val(rounduptot);
+
+                        if (cgst > 0 || sgst > 0) {
+                            $('#igst').prop('readonly', true);
+                        }
+
+                        if (igst > 0) {
+                            cgst = 0;
+                            sgst = 0;
+                            $('#cgst').prop('readonly', true);
+                            $('#sgst').prop('readonly', true);
+                        }
+
+                    }
+                }
+
+                function ResetField() {
+                    debugger;
+                    $('#DivBody').load('/CashManagement/VLDA_CashManagement/CreateRentInvoice');
+                }
+
+
+
+                function PrintInvoice(i) {
+                    debugger;
+                    var invoiceno = $('#Invoice').val();
+                    var inv = invoiceno.split(",");
+                    if (i < inv.length) {
+                        invv = inv[i];
+                        PrintInvoiceNext(invv,i);
+                    }
+                }
+                    //if (invoiceno == '')
+                    //{
+                    //    alert('No Invoice No');
+                    //    return;
+                    //}
+                function PrintInvoiceNext(invno,j)
+                {
+                    debugger;
+                    var k1 = j;
+                    var Token = $('input[name="__RequestVerificationToken"]').val();
+                    $.ajax({
+                        /*url: 'Url.Action("YardInvoicePrint", "WFLD_CWCImport", new { Area = "Import" }) ',*/
+                        url: '@Url.Action("GetBulkInvoiceReport", "VLDA_ReportCWC", new { Area = "Report" }) ',
+                        headers: { "__RequestVerificationToken": Token },
+                        dataType: 'JSON',
+                        type: 'POST',
+                        data: {
+                            InvoiceNumber: invno,
+                            InvoiceModule: 'Rent',
+                            PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                            PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                            InvoiceModuleName: 'Rent',
+                        },
+                        success: function (data) {
+                            if (data.Status == 1) {
+                                
+                                window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                                k1=k1+1;
+                                PrintInvoice(k1);
+                            }
+                            else
+                                alert(data.Data);
+                        }
+                    });
+                }
+
+
+            </script>
+

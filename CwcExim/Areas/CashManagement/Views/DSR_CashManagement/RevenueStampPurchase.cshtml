@@ -1,0 +1,270 @@
+﻿
+@model CwcExim.Areas.CashManagement.Models.DSRRevenueStamp
+<script>
+    var TimeInSeconds;
+    $(document).ready(function () {
+        debugger;
+        if($('#Operation').val()!=null)
+        {
+            var Operation = $('#Operation').val();
+            if (Operation == 'View') {
+                $('#PurchaseAmount').attr("disabled", "disabled");             
+                document.getElementById("divButton").style.display = 'none';
+                document.getElementById("divButtonBack").style.display = '';               
+                $('#PurchaseDate').datepicker({
+                    showOn: "",
+                    buttonImage: "",
+                    buttonImageOnly: false,
+                });
+            }
+            else {
+                $('#PurchaseAmount').removeAttr("disabled");
+                document.getElementById("divButton").style.display = '';
+                document.getElementById("divButtonBack").style.display = 'none';                
+                //GetRevenueStampList();
+            }
+        }
+        
+        TimeInSeconds = 2000;
+    });
+    
+    function ResetValidation() {
+        $('.field-validation-error').each(function () {
+            $(this).html("");
+        })
+    }
+    function RevenueStampBack() {
+        $('#DivBody').load('/CashManagement/DSR_CashManagement/RevenueStampPurchase');
+    }
+    function RevenueStampReset() {
+        debugger;
+        ResetValidation();
+        $('[data-valmsg-for="PurchaseDate"]').html('');
+        $('#PurchaseDate').val('');
+        $('#RSPurchaseId').val(0);
+        $('#PurchaseAmount').val('');
+        $('#Operation').val('');
+        $('#DivRevenueStampMsg').html("");
+        $('#PurchaseAmount').removeAttr("disabled");
+    }
+
+    function RevenueStampOnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            if ($('#DivRevenueStampMsg').hasClass('logErrMsg'))
+                $('#DivRevenueStampMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivRevenueStampMsg').html(data.Message);
+            setTimeout(RevenueStampReset, TimeInSeconds);
+            GetRevenueStampList();
+
+        }
+
+
+        else {
+            if ($('#DivRevenueStampMsg').hasClass('logSuccMsg'))
+                $('#DivRevenueStampMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivRevenueStampMsg').html(data.Message);
+        }
+    }
+    function RevenueStampOnFailure() { }
+
+
+</script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "RevenueStampOnSuccess";
+    options.OnFailure = "RevenueStampOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("AddEditRevenueStampPurchase", "DSR_CashManagement", options))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-12">
+                            <h4>Revenue Stamp Purchase</h4>
+                        </div>
+                    </div>
+                    @Html.HiddenFor(m=>m.RSPurchaseId)
+                    @Html.HiddenFor(m => m.Operation)
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Purchase Date:</label>
+                            </div>
+                            <div class="col-md-2-5 Date_Img">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.PurchaseDate, "", new { @class = "form-control input-sm", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.PurchaseDate, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-2 col-md-offset-3 col_cus_offset_3 col_cus_2">
+                                <label>Purchase Amount:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.PurchaseAmount, "", new { @class = "form-control input-sm" })
+                                @Html.ValidationMessageFor(m => m.PurchaseAmount, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                            
+                            
+                                <div class="row">
+                                    <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                                </div>
+                                <div class="row SignUp_space_bottom" id="divButton">
+                                    <div class="col-md-offset-4 col-md-2" style="text-align:center">
+                                        <input type="submit" id="btnRevenueStampSave" value="Save" class="btn log_Btn_sm" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="button" id="btnRevenueStampReset" value="Reset" class="btn log_Btn_sm" onclick="RevenueStampReset()" />
+
+                                    </div>
+                                </div>
+                                <div class="row SignUp_space_bottom" id="divButtonBack" style="display:none">
+                                    <div class="col-md-offset-4 col-md-2" style="text-align:center">
+                                        <input type="button" id="btnBack" value="Back" class="btn log_Btn_sm" onclick="RevenueStampBack()" />
+                                    </div>
+                                    
+                                </div>
+
+                                <div class="logSuccMsg SignUp_space_bottom2" style="background-color:transparent">
+                                    <div id="DivRevenueStampMsg"></div>
+                                </div>
+                }
+
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-2 SignUp_space_bottom">
+                            <input type="button" id="btnRevenueStampList" value="Show List" class="btn log_Btn_sm" onclick="GetRevenueStampList()" />
+                        </div>
+
+                        <div class="col-md-offset-4 col-md-2">
+                            <input type="text" placeholder="Date (dd/mm/yyyy)" id="SearchPurchaseDate" />
+                        </div>
+
+                        <div class="col-md-2">
+                            <input type="button" value="Search" onclick="SearchRevenueStampList()" class="btn log_Btn_sm" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 SignUp_space_bottom">
+                        <div id="DivRevenueStampList">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $('#PurchaseDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='PurchaseDate']").html('');
+        }
+    });
+
+    $('#SearchPurchaseDate').mask("99/99/9999");
+    function GetRevenueStampList() {
+        debugger;
+        $('#SearchPurchaseDate').val('');
+        $('#DivRevenueStampList').load('/CashManagement/DSR_CashManagement/GetRevenueStampPurchaseList');
+    }
+
+    function SearchRevenueStampList() {
+        debugger;
+        var PurchaseDate = $('#SearchPurchaseDate').val().trim();
+        if ($('#SearchPurchaseDate').val() != "" && Validate() == true)
+        {
+            $('#DivRevenueStampList').load('/CashManagement/DSR_CashManagement/GetRevenueStampPurchaseList/?PurchaseDate=' + PurchaseDate);
+        }               
+    }
+    function Validate() {
+        debugger;
+        var date = document.getElementById("SearchPurchaseDate").value.split("/");
+        var day = date[0];
+        var month = date[1];
+        var dateString = document.getElementById("SearchPurchaseDate").value;
+        var regex = /^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/;
+        
+        if (day > 31) {
+            alert("Please enter correct date");
+            $('#SearchPurchaseDate').val('');
+            return false;
+        }
+        else
+            if (month > 12) {
+                alert("Please enter correct Month");
+                $('#SearchPurchaseDate').val('');
+                return false;
+            }
+        return true;
+    }
+
+    //function Validate() {
+    //    debugger;
+
+    //    var dateString = document.getElementById("SearchPurchaseDate").value;
+    //    var regex = /^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/;
+
+    //    var opera1 = document.getElementById("SearchPurchaseDate").value.split("/");
+    //    lopera1 = opera1.length;
+
+    //    // Extract the string into month, date and year
+    //    if (lopera1 > 1) {
+    //        var pdate = document.getElementById("SearchPurchaseDate").value.split("/");
+    //    }
+    //    var dd = parseInt(pdate[0]);
+    //    var mm = parseInt(pdate[1]);
+    //    var yy = parseInt(pdate[2]);
+    //    // Create list of days of a month [assume there is no leap year by default]
+    //    var ListofDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    //    if (mm == 1 || mm > 2) {
+    //        if (dd > ListofDays[mm - 1]) {
+    //            alert('You have entered invalid date.');
+    //            $('#SearchPurchaseDate').val('');
+    //            return false;
+    //        }
+    //    }
+    //    if (mm == 2) {
+    //        var lyear = false;
+    //        if ((!(yy % 4) && yy % 100) || !(yy % 400)) {
+    //            lyear = true;
+    //        }
+    //        if ((lyear == false) && (dd >= 29)) {
+    //            alert('You have entered invalid date.');
+    //            $('#SearchPurchaseDate').val('');
+    //            return false;
+    //        }
+    //        if ((lyear == true) && (dd > 29)) {
+    //            alert('You have entered invalid date.');
+    //            $('#SearchPurchaseDate').val('');
+    //            return false;
+    //        }
+    //    }
+    //    return true;
+    //}
+   
+</script>

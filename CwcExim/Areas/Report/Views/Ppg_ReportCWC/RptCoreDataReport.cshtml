@@ -1,0 +1,340 @@
+﻿<script src="~/Areas/Report/Scripts/App/Services/PpgCoreDataReportSvc.js"></script>
+<script src="~/Areas/Report/Scripts/App/Controllers/PpgCoreDataReporCtrl.js"></script>
+<script>
+    angular.bootstrap(document.getElementById('CoreDataRptDiv'), ['CWCApp']);
+
+    function PrintReport() {
+
+
+
+        debugger;
+        $.ajax({
+            url: '@Url.Action("GetRptCoreDataReportPrint", "Ppg_ReportCWC", new { Area = "Report" }) ',
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                Month: $('#drpMonth').val().split(":")[1],
+                Year: $('#drpYear').val().split(":")[1]
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+    }
+
+
+    $(document).ajaxStart(function () {
+
+        $('.modalloader').show();
+    });
+
+    $(document).ajaxSuccess(function () {
+        $('.modalloader').hide();  // hide loading indicator
+    });
+    $(document).ajaxStop(function () {
+
+        $('.modalloader').hide();  // hide loading indicator
+    });
+    $(document).ajaxError(function () {
+        $('.modalloader').hide();  // hide loading indicator
+    });
+</script>
+<div id="CoreDataRptDiv">
+    <div ng-controller="PpgCoreDataReportCtrl" id="ctrldiv">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Core Data Report </h4>
+                        </div>
+                    </div>
+                    <div class="content_wrp">
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Month:</label>
+                                    <div class="position-relative Date_Img">
+                                        <select ng-model="Month" id="drpMonth" ng-options="g.Value as g.Text for g in months"></select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-md-offset-4">
+                                <label>Year:</label>
+                                <div class="position-relative Date_Img">
+                                    <select ng-model="Year" id="drpYear" ng-options="g.Value as g.Text for g in years"></select>
+                                </div>
+                            </div>
+                            <div class="col-md-2 UploadFileBtn">
+                                <input type="button" class="btn btn-primary" value="Populate" ng-disabled="Month==0 || Year==0" ng-click="GetCoreDataReport()" />
+                            </div>
+                        </div>
+                        @*<div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1">
+                                        <label>Month:</label>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select ng-model="Month" id="drpMonth" ng-options="g.Value as g.Text for g in months">
+                                        </select>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <label>Year:</label>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select ng-model="Year" id="drpYear" ng-options="g.Value as g.Text for g in years">
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button class="btn log_Btn_sm" ng-disabled="Month==0 || Year==0" ng-click="GetCoreDataReport()">Populate</button>
+                                    </div>
+                                </div>
+                            </div>*@
+
+
+
+                        <div class="row SignUp_space_bottom2 SignUp_space_top2">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-12">
+                                    <div class="logSuccMsg" style="background-color:transparent">{{Msg}}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div ng-hide="Msg==''" class="row SignUp_space_bottom2 SignUp_space_top2">
+                            <div class="stoke"></div>
+                        </div>
+
+                        <div class="row clearfix">
+                            <div class="panel with-nav-tabs panel-primary cwc_panel SignUp_space_bottom2" style="border:none;">
+                                @*<div class="panel-heading cwc_panel_heading">
+                                        <ul class="nav nav-tabs" id="DivTabs">
+                                            <li class="active"><a href="#IncomeTab" data-toggle="tab">Income</a></li>
+                                            <li><a href="#ExpensesTab" data-toggle="tab">Expense</a></li>
+                                        </ul>
+                                    </div>*@
+                                <div class="panel-body">
+                                    <div class="tab-content">
+                                        @*Income tab*@
+                                        <div class="tab-pane fade in active" id="IncomeTab">
+                                            <table class="table table-bordered table-responsive dataTable Income_exp">
+                                                <thead>
+                                                    <tr>
+                                                        <th rowspan="2" style="width:25%;" class="text-center">Description</th>
+                                                        <th colspan="4" style="width:50%;" class="text-center">Current Year</th>
+                                                        <th colspan="2" style="width:25%;" class="text-center">Previous Year</th>
+
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="text-center">Budget Estimates</th>
+                                                        <th class="text-center">Prorata of Budget Estimates</th>
+                                                        <th class="text-center">Actual for Month</th>
+                                                        <th class="text-center">Cumulative upto Month</th>
+                                                        <th class="text-center">For Month</th>
+                                                        <th class="text-center">Cumulative</th>
+
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tbody_Income">
+                                                    <tr>
+                                                        <th class="text-center">A.PHYSICAL PERFORMANCE DATA</th>
+                                                        <th class="text-center"></th>
+                                                        <th class="text-center"></th>
+                                                        <th class="text-center"></th>
+                                                        <th class="text-center"></th>
+                                                        <th class="text-center"></th>
+                                                        <th class="text-center"></th>
+
+
+                                                    </tr>
+
+                                                    <tr>
+                                                        <td class="text-center">1.Average Operated Capacity (Lakh MTs)</td>
+                                                        <td class="text-center"><input type="text" ng-model="BEAvgOpeCY" ng-blur="CalculateSum()" numbers-only ng-disabled="txtdis" /></td>
+                                                        <td class="text-center">{{ProrataAvgOpeCY}}</td>
+                                                        <td class="text-center"><input type="text" ng-model="BEAvgActMonCY" numbers-only ng-disabled="txtdis" /></td>
+                                                        <td class="text-center"><input type="text" ng-model="BEAvgActMonComuCY" numbers-only ng-disabled="txtdis" /></td>
+                                                        <td class="text-center"><input type="text" ng-model="BEAvgActMonPY" numbers-only ng-disabled="txtdis" /></td>
+                                                        <td class="text-center"><input type="text" ng-model="BEAvgActMonCommuPY" numbers-only ng-disabled="txtdis" /></td>
+
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-center">2.Average Utilised Capicity (Lakh MTs)</td>
+                                                        <td class="text-center"><input type="text" ng-model="BEAvgUtiCY" ng-blur="CalculateSumuti()" numbers-only ng-disabled="txtdis" /></td>
+                                                        <td class="text-center">{{ProrataAvgUtiCY}}</td>
+                                                        <td class="text-center"><input type="text" ng-model="BEAvgUtiActMonCY" ng-blur="CalculateSumact()" numbers-only ng-disabled="txtdis" /></td>
+                                                        <td class="text-center"><input type="text" ng-model="BEAvgUtiActMonComuCY" numbers-only ng-disabled="txtdis" /></td>
+                                                        <td class="text-center"><input type="text" ng-model="BEAvgUtiActMonPY" numbers-only ng-disabled="txtdis" /></td>
+                                                        <td class="text-center"><input type="text" ng-model="BEAvgUtiActMonCommuPY" numbers-only ng-disabled="txtdis" /></td>
+                                                    </tr>
+
+                                                    <tr>
+                                                        <td class="text-center">3.Average Utilisation (%)</td>
+                                                        <td class="text-center">{{BEAvgUtiCYPer}}</td>
+                                                        <td class="text-center">{{ProrataAvgUtiCYPer}}</td>
+                                                        <td class="text-center">{{BEAvgUtiActMonCYPer}}</td>
+                                                        <td class="text-center">{{BEAvgUtiActMonComuCYPer}}</td>
+                                                        <td class="text-center">{{BEAvgUtiActMonPYPer}}</td>
+                                                        <td class="text-center">{{BEAvgUtiActMonCommuPY}}</td>
+
+                                                    </tr>
+
+                                                    <tr>
+                                                        <th class="text-center">B. FINANCIAL PERFORMANCE DATA</th>
+                                                        <th class="text-center"></th>
+                                                        <th class="text-center"></th>
+                                                        <th class="text-center"></th>
+                                                        <th class="text-center"></th>
+                                                        <th class="text-center"></th>
+                                                        <th class="text-center"></th>
+
+
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-center">1.Warehousing Income (ICD)</td>
+                                                        <td class="text-center"></td>
+                                                        <td class="text-center"></td>
+                                                        <td class="text-center">{{ICDCurrMon}}</td>
+                                                        <td class="text-center">{{ICDCommuMon}}</td>
+                                                        <td class="text-center">{{ICDPreCurrMon}}</td>
+                                                        <td class="text-center">{{ICDPreCommuCurrMon}}</td>
+
+                                                    </tr>
+
+                                                    <tr>
+                                                        <td class="text-center">2.MF Charges - Receipts</td>
+                                                        <td class="text-center"></td>
+                                                        <td class="text-center"></td>
+                                                        <td class="text-center">{{MFCurrMon}}</td>
+                                                        <td class="text-center">{{MFCommuMon}}</td>
+                                                        <td class="text-center">{{MFPreCurrMon}}</td>
+                                                        <td class="text-center">{{MFPreCommuCurrMon}}</td>
+
+                                                    </tr>
+
+                                                    <tr>
+                                                        <td class="text-center">3.Income from CRT Operations</td>
+                                                        <td class="text-center"></td>
+                                                        <td class="text-center"></td>
+                                                        <td class="text-center">{{CRTCurrMon}}</td>
+                                                        <td class="text-center">{{CRTCommuMon}}</td>
+                                                        <td class="text-center">{{CRTPreCurrMon}}</td>
+                                                        <td class="text-center">{{CRTPreCommuMon}}</td>
+
+                                                    </tr>
+
+                                                    <tr>
+                                                        <td class="text-center">4. Income from Pest Control Services</td>
+                                                        <td class="text-center"></td>
+                                                        <td class="text-center"></td>
+                                                        <td class="text-center">{{PESTCurrMon}}</td>
+                                                        <td class="text-center">{{PESTCommuMon}}</td>
+                                                        <td class="text-center">{{PESTPreCurrMon}}</td>
+                                                        <td class="text-center">{{PESTPreCommuCurrMon}}</td>
+
+                                                    </tr>
+
+                                                    <tr>
+                                                        <td class="text-center">5. Other Operating Income</td>
+                                                        <td class="text-center"></td>
+                                                        <td class="text-center"></td>
+                                                        <td class="text-center">{{OtherCurrMon}}</td>
+                                                        <td class="text-center">{{OtherCommuMon}}</td>
+                                                        <td class="text-center">{{OtherPreCurrMon}}</td>
+                                                        <td class="text-center">{{OtherPreCommuMon}}</td>
+
+                                                    </tr>
+
+                                                    <tr>
+                                                        <th class="text-center">TOTAL INCOME</th>
+                                                        <th class="text-center"></th>
+                                                        <th class="text-center"></th>
+                                                        <th class="text-center">{{TotActMon}}</th>
+                                                        <th class="text-center">{{TotCommuMon}}</th>
+                                                        <th class="text-center">{{TotPreActMon}}</th>
+                                                        <th class="text-center">{{TotPreCommMon}}</th>
+
+
+                                                    </tr>
+                                                    @*<tr ng-repeat="x in EcoRptData | filter:{ItemType:'I'}">
+                                                            <td>{{x.ItemHead}}</td>
+                                                            <td>
+                                                                <div ng-if="x.IsTextBox==1">
+                                                                    <input type="text" ng-model="x.Amount" ng-blur="CalculateSum()" numbers-only />
+                                                                </div>
+                                                                <div ng-if="x.IsTextBox==0">
+                                                                    {{x.Amount}}
+                                                                </div>
+                                                            </td>
+                                                        </tr>*@
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        @*Expense tab*@
+                                        @*<div class="tab-pane fade" id="ExpensesTab">
+                                                <table class="table table-bordered table-responsive dataTable Income_exp">
+                                                    <thead>
+                                                        <tr>
+                                                            <th rowspan="2" style="width:85%;" class="text-center">Head of Income</th>
+                                                            <th class="text-center" style="width:15%;">Amount</th>
+
+                                                        </tr>
+                                                        <tr>
+                                                            <th class="text-center">Rs.</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="tbody_Income">
+                                                        <tr ng-repeat="x in EcoRptData | filter:{ItemType:'E'}">
+                                                            <td>{{x.ItemHead}}</td>
+                                                            <td>
+                                                                <div ng-if="x.IsTextBox==1">
+                                                                    <input type="text" ng-model="x.Amount" ng-blur="CalculateSum()" numbers-only />
+                                                                </div>
+                                                                <div ng-if="x.IsTextBox==0">
+                                                                    {{x.Amount}}
+                                                                </div>
+                                                            </td>
+
+
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>*@
+                                    </div>
+                                </div>
+                                <div class="row SignUp_space_bottom SignUp_space_top">
+                                    <div class="col-md-12">
+                                        <div class="stoke"></div>
+                                    </div>
+                                </div>
+                                <div class="logSuccMsg Form_Space_bottom" id="msgDiv" style="background-color:transparent"></div>
+                                <div class="d-flex justify-content-left">
+                                    <input type="button" class="btn btn-primary mr-1 btn-100px" ng-disabled="EcoRptData.length<=0" value="Print" ng-click="PrintReportData()" id="btnPrint">
+                                </div>
+                                @*<div class="row">
+                                    <div class="col-md-12">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input type="button" ng-disabled="EcoRptData.length<=0" value="Print" ng-click="PrintReportData()" class="btn log_Btn_sm" id="btnPrint" />
+                                            </div>
+                                            <div class="col-md-3">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>*@
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

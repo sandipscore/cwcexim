@@ -1,0 +1,197 @@
+﻿(function () {
+    angular.module('CWCApp').
+    controller('PpgRentInvoiceEditCtrl', function ($scope, PpgRentInvoiceEditService) {
+        $scope.InvoiceNo = "";
+        $scope.conatiners = [];
+        $scope.Message = '';
+        $scope.IsSubmitClicked = false;
+
+
+        if ($('#hdnInvoice').val() != null && $('#hdnInvoice').val() != '') {
+            $scope.InvoiceList = JSON.parse($('#hdnInvoice').val());
+        }
+        if ($('#hdnStuffingReq').val() != null && $('#hdnStuffingReq').val() != '') {
+            $scope.ReqNos = JSON.parse($('#hdnStuffingReq').val());
+        }
+
+        $scope.PartyList = JSON.parse($('#hdnPartyPayee').val());
+        $scope.PayeeList = JSON.parse($('#hdnPartyPayee').val());
+        $scope.Rights = JSON.parse($("#hdnRights").val());
+        $scope.LoadPartyList = function () {
+
+            $scope.searchPayee = "";
+            $scope.searchParty = "";
+        }
+
+        $scope.SelectParty = function (obj) {
+            $scope.PartyId = obj.PartyId;
+            $scope.PartyName = obj.PartyName;
+            $scope.hdnState = obj.State;
+            $scope.hdnStateCode = obj.StateCode;
+            $scope.hdnAddress = obj.Address;
+            $scope.GSTNo = obj.GSTNo;
+            $scope.PlaceOfSupply = obj.State;
+            //$scope.SelectedPartyIndex=i;
+            $('#PartyModal').modal('hide');
+        };
+        $scope.GetInvNo = function () {
+
+            debugger;
+            PpgRentInvoiceEditService.GetAppNoForYard("Rent").then(function (res) {
+                debugger;
+
+                $('#hdnInvoice').val(res.data);
+                $scope.InvoiceList = JSON.parse($('#hdnInvoice').val());
+
+
+            });
+
+        };
+        $scope.SelectPayee = function (obj) {
+            $scope.PayeeId = obj.PartyId;
+            $scope.PayeeName = obj.PartyName;
+            //$scope.SelectedPayeeIndex=i;
+            $('#PayeeModal').modal('hide');
+        };
+
+        $scope.InvoiceObj = {};
+        $scope.SelectInvoice = function (obj) {
+            var InvoiceNumber = obj.InvoiceNo.split('-');
+            $scope.InvoiceNo = InvoiceNumber[0];
+            $scope.InvoiceId = obj.InvoiceId;
+            $scope.InvoiceDate = obj.InvoiceDate;
+            $('#InvoiceDate').val(obj.InvoiceDate);
+
+            $('#InvoiceModal').modal('hide');
+            $('.modalloader').show();
+            PpgRentInvoiceEditService.GetYardInvoiceDetails($scope.InvoiceId).then(function (res) {
+                $('.modalloader').hide();
+
+
+
+                $scope.InvoiceObj = res.data.Data;
+                $scope.containers = res.data.Containers;
+                $scope.ChargeDtl = res.data.Data.lstCharge;
+                $scope.TaxType = $scope.InvoiceObj.InvoiceType;
+                $('#InvoiceDate').val($scope.InvoiceObj.DeliveryDate);
+
+                $scope.StuffingReqId = $scope.InvoiceObj.RequestId;
+                $scope.StuffingReqNo = $scope.InvoiceObj.RequestNo;
+                $scope.StuffingReqDate = $scope.InvoiceObj.RequestDate;
+                $scope.InvoiceType = $scope.InvoiceObj.InvoiceType;
+                $scope.PartyId = $scope.InvoiceObj.PartyId;
+                $scope.PartyName = $scope.InvoiceObj.PartyName;
+                $scope.PaymentMode = $scope.InvoiceObj.PaymentMode;
+                $scope.hdnState = $scope.InvoiceObj.PartyState;
+                $scope.hdnStateCode = $scope.InvoiceObj.PartyStateCode;
+                $scope.hdnAddress = $scope.InvoiceObj.PartyAddress;
+                $scope.GSTNo = $scope.InvoiceObj.PartyGST;
+                $scope.PlaceOfSupply = $scope.InvoiceObj.PartyState;
+                $scope.PayeeId = $scope.InvoiceObj.PayeeId;
+                $scope.PayeeName = $scope.InvoiceObj.PayeeName;
+                $scope.MonthValue = $scope.InvoiceObj.MonthValue;
+                $scope.YearValue = $scope.InvoiceObj.YearValue;
+                $scope.ContainerNo = $scope.InvoiceObj.ContainerNo;
+                $scope.Size = $scope.InvoiceObj.Size;
+                $scope.FumigationType = $scope.InvoiceObj.FumigationType;
+
+                $scope.CFSCode = $scope.InvoiceObj.CFSCode;
+                $scope.GateInDate = $scope.InvoiceObj.GateInDate;
+                $scope.Remarks = $scope.InvoiceObj.Remarks;
+
+
+                if ($scope.Rights.CanEdit == 1) {
+                    //  $('#btnSave').removeAttr("disabled");
+                }
+
+                console.log($scope.InvoiceObj);
+            })
+        }
+
+        $scope.ContainerSelect = function () {
+            var c = 0;
+
+
+
+            if ($('#InvoiceNo').val() == '') {
+                alert("Please select Invoice No.");
+                return false;
+            }
+
+            else {
+
+                $('.modalloader').show();
+
+
+
+
+                PpgRentInvoiceEditService.ContainerSelect($('#InvoiceDate').val(), $scope.InvoiceId, $scope.FumigationType, $scope.TaxType, $scope.PartyId, $scope.Size, $scope.ChargeDtl).then(function (res) {
+                    $('.modalloader').hide();
+                    $scope.InvoiceObj = res.data;
+                    $scope.IsContSelected = true;
+                    console.log($scope.InvoiceObj);
+                    if ($scope.Rights.CanEdit == 1) {
+                        $('#btnSave').removeAttr("disabled");
+                    }
+                    $('.search').css('display', 'none');
+                    $('#InvoiceDate').parent().find('img').css('display', 'none');
+
+
+                });
+            }
+            $('#stuffingModal').modal('hide');
+
+        }
+
+
+        $scope.SubmitInvoice = function () {
+
+
+            if ($scope.PartyId == 0 || $scope.PartyId == '' || $scope.PartyId == null) {
+                $scope.Message = "Select Party";
+                return false;
+            }
+
+
+            if ($scope.InvoiceObj.TotalAmt == 0) {
+                $scope.Message = "Can not be saved. Invoice Amount is Zero.";
+                return false;
+            }
+
+
+            if (confirm('Are you sure to Update this Invoice?')) {
+                $scope.InvoiceObj.InvoiceId = $scope.InvoiceId;
+                $scope.InvoiceObj.InvoiceType = $scope.TaxType;
+                $scope.InvoiceObj.InvoiceNo = $scope.InvoiceNo;
+                $scope.InvoiceObj.InvoiceDate = $('#InvoiceDate').val();
+                $scope.InvoiceObj.PartyId = $scope.PartyId;
+                $scope.InvoiceObj.PartyName = $scope.PartyName;
+                $scope.InvoiceObj.PartyAddress = $scope.hdnAddress;
+                $scope.InvoiceObj.PartyGST = $scope.GSTNo;
+                $scope.InvoiceObj.PartyState = $scope.hdnState;
+                $scope.InvoiceObj.PartyStateCode = $scope.hdnStateCode;
+
+                $scope.InvoiceObj.PayeeId = $scope.PayeeId;
+                $scope.InvoiceObj.PayeeName = $scope.PayeeName;
+                $scope.InvoiceObj.Remarks = $scope.Remarks;
+                //console.log($scope.InvoiceObj);
+
+                //var objfinal = $scope.InvoiceObj;
+                PpgRentInvoiceEditService.GenerateInvoice($scope.InvoiceObj).then(function (res) {
+                    //$scope.conatiners = JSON.parse(res.data);
+                    console.log(res.data);
+                    $scope.InvoiceNo = res.data.Data.InvoiceNo;
+                    $scope.Message = res.data.Message;
+
+                    $('#btnSave').attr("disabled", true);
+                    if (res.data.Status > 0) {
+                        $('#btnPrint').removeAttr("disabled");
+                    }
+                });
+            }
+        }
+
+
+
+    });
+})()

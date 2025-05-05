@@ -1,0 +1,525 @@
+﻿@model CwcExim.Areas.Master.Models.VRN_CWCStorageChargePtyWise
+
+<script>
+    var TimeInSeconds;
+    $(document).ready(function () {
+        TimeInSeconds = 5000;
+    });
+
+    $('#EffectiveDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select Date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $('[data-valmsg-for="EffectiveDate"]').html('<span></span>');
+        }
+    });
+    function LoadStorageChargePage() {
+        $('#DivStorageCharge').load('/Master/VRN_Master/CreateStorageChargePtyWise');
+    }
+    function StorageOnSuccess(data) {
+
+        if (data.Status == 1) {
+            debugger;
+            LoadStorageChargePage();
+        }
+        else {
+
+            if ($('#DivStorageChargeMsg').hasClass('logSuccMsg'))
+                $('#DivStorageChargeMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivStorageChargeMsg').html(data.Message);
+        }
+        setTimeout(function () { $('#DivStorageChargeMsg').html(''); }, 5000);
+    }
+    function StorageOnFailure() { }
+    $('#box').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('.navList > li').show();
+        } else {
+            $('.navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+    $('.navList li').on("click", function () {
+        $('#SacCode').val($(this).text());
+        $("#myModal").modal("hide");
+    });
+
+
+    function PartySearch() {
+        debugger;
+        //pPage += 1;
+
+        $.ajax({
+            url: '/Master/VRN_Master/GetPartyNameForCWCCharges',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { 'Page': 1, 'PartyCode': $('#txtPartyCode').val() },
+            success: function (data) {
+                debugger;
+                if (data.Data != '' && data.Data != null) {
+                    //$('#hdnPartyPayee').val(JSON.stringify(data.Data.LstPartyDetails));
+                    var EcJson = data.Data.LstPartyDetails;
+
+
+                    var html = '';
+                    $.each(EcJson, function (i, item) {
+
+                        html += ''
+                        html += '<tr onclick="selectParty(' + item.PartyId + ',&quot;' + item.PartyName + '&quot;);"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                    });
+                    $('#tbleParty').html(html);
+                    if (data.Data.StatePayer == true) {
+                        $('#txtLoadMoreParty').prop("disabled", false);
+                    }
+                    else {
+                        $('#txtLoadMoreParty').prop("disabled", true);
+                    }
+
+                }
+            }
+        });
+    }
+    function PartyBinding() {
+        debugger;
+        //pPage += 1;
+        $('#txtPartyCode').val('');
+        $.ajax({
+            url: '/Master/VRN_Master/GetPartyNameForCWCCharges',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { 'Page': 1, 'PartyCode': '' },
+            success: function (data) {
+                debugger;
+                if (data.Data != '' && data.Data != null) {
+
+                    var EcJson = data.Data.LstPartyDetails;
+
+
+                    var html = '';
+                    $.each(EcJson, function (i, item) {
+
+                        html += ''
+                        html += '<tr onclick="selectParty(' + item.PartyId + ',&quot;' + item.PartyName + '&quot;);"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                    });
+                    $('#tbleParty').html(html);
+                    if (data.Data.StatePayer == true) {
+                        $('#txtLoadMoreParty').prop("disabled", false);
+                    }
+                    else {
+                        $('#txtLoadMoreParty').prop("disabled", true);
+                    }
+
+                }
+            }
+        });
+
+    }
+
+    function selectParty(PartyId, PartyName) {
+        debugger;
+        $('#PartyID').val(PartyId);
+        $('#PartyName').val(PartyName);
+
+        $("#PartyModal").modal("hide");
+    }
+
+
+    var pPage = 0;
+    function LoadPartyList() {
+        debugger;
+        pPage += 1;
+        $.ajax({
+            url: '/Master/VRN_Master/GetPartyNameForCWCCharges',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { 'Page': pPage, 'PartyCode': '' },
+            success: function (data) {
+                debugger;
+                if (data.Data != '' && data.Data != null) {
+
+                    var EcJson = data.Data.LstPartyDetails;
+
+
+                    var html = '';
+                    $.each(EcJson, function (i, item) {
+
+                        html += ''
+                        html += '<tr onclick="selectParty(' + item.PartyId + ',&quot;' + item.PartyName + '&quot;);"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                    });
+                    $('#tbleParty').append(html);
+                    if (data.Data.StatePayer == true) {
+                        $('#txtLoadMoreParty').prop("disabled", false);
+                    }
+                    else {
+                        $('#txtLoadMoreParty').prop("disabled", true);
+                    }
+
+                }
+            }
+        });
+
+    }
+
+    function closePartyModel() {
+        partyPage = 1;
+        $("#PartyModal").modal("hide");
+    }
+
+    $('#txtPartyCode').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#tbleParty > tr > td').show();
+        else {
+            $('#tbleParty > tr >td').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+</script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "StorageOnSuccess";
+    options.OnFailure = "StorageOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+@using (Ajax.BeginForm("AddEditStorageChargePtyWise", "VRN_Master", options))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.StorageChargeId)
+    <div id="DivEditStorageCharge" class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row Con_Heading SignUp_space_bottom">
+                    <div class="col-md-12 cwc_body">
+                        <h5>Storage Charge (Godown)<span class="triangle"></span></h5>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5 padding_rt">
+                            <label>Effective Date:</label>
+                        </div>
+                        <div class="col-md-2 Date_Img">
+                            <span class="ReQSimbol">*</span>
+                            @Html.TextBoxFor(m => m.EffectiveDate, new { @class = "form-control input-sm", @readonly = "readonly" })
+                            @Html.ValidationMessageFor(m => m.EffectiveDate, "", new { @class = "Error_Msg" })
+                        </div>
+                        <div class="col-md-offset-3 col-md-1-5">
+                            @Html.LabelFor(m => m.SacCode, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                        </div>
+                        <div class="col-md-2">
+                            <span class="ReQSimbol">*</span>
+                            @Html.TextBoxFor(m => m.SacCode, new { @class = "form-control input-sm", @readonly = true })
+                            <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#myModal"></i></span>
+                            @Html.ValidationMessageFor(m => m.SacCode, "", new { @class = "Error_Msg" })
+                        </div>
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5 padding_rt">
+                            <label>Warehouse Type:</label>
+                        </div>
+                        <div class="col-md-2">
+                            <span class="ReQSimbol">*</span>
+                            @Html.DropDownListFor(m => m.WarehouseType, new List<SelectListItem> { new SelectListItem { Value = "1", Text = "Import" }, new SelectListItem { Value = "2", Text = "Export" }, new SelectListItem { Value = "3", Text = "Bonded" }, new SelectListItem { Value = "4", Text = "HAZ" }, new SelectListItem { Value = "5", Text = "OCY" }, new SelectListItem { Value = "6", Text = "BTT" } }, "---Select---", new { @class = "form-control input-sm dropdown" })
+                            @Html.ValidationMessageFor(m => m.WarehouseType, "", new { @class = "Error_Msg" })
+                        </div>
+                        <div class="col-md-offset-3 col-md-1-5">
+                            <label>Charge Type:</label>
+                        </div>
+                        <div class="col-md-2">
+                            @*<span class="ReQSimbol">*</span>*@
+                            @Html.DropDownListFor(m => m.ChargeType, new List<SelectListItem> { new SelectListItem { Value = "0", Text = "----Select----" }, new SelectListItem { Value = "1", Text = "SQM" }, new SelectListItem { Value = "2", Text = "GRID" }@*, new SelectListItem { Value = "3", Text = "MT" }*@ }, new { @class = "form-control input-sm dropdown" })
+                            @Html.ValidationMessageFor(m => m.ChargeType, "", new { @class = "Error_Msg" })
+                        </div>
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5">
+                            @Html.LabelFor(m => m.RateSqMPerWeek, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                        </div>
+                        <div class="col-md-2">
+                            <span class="ReQSimbol">*</span>
+                            @Html.TextBoxFor(m => m.RateSqMPerWeek, new { @class = "form-control input-sm" })
+                            @Html.ValidationMessageFor(m => m.RateSqMPerWeek, "", new { @class = "Error_Msg" })
+                        </div>
+                        <div class="col-md-2" style="padding:0px;">
+                            <label>/Sq Meter/Week</label>
+                        </div>
+                       
+                        <div class="col-md-offset-1 col-md-1-5 padding_rt">
+                            <label>Container Load Type:</label>
+                        </div>
+                        <div class="col-md-2">
+                            @Html.DropDownListFor(m => m.ContainerLoadType, new List<SelectListItem>
+                       {
+                           new SelectListItem { Text="FCL",Value="FCL"},
+                           new SelectListItem { Text="LCL",Value="LCL"},
+                       }, "----Select----")
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5">
+                            @Html.LabelFor(m => m.RateSqMPerDay, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                        </div>
+                        <div class="col-md-2">
+                            <span class="ReQSimbol">*</span>
+                            @Html.TextBoxFor(m => m.RateSqMPerDay, new { @class = "form-control input-sm" })
+                            @Html.ValidationMessageFor(m => m.RateSqMPerDay, "", new { @class = "Error_Msg" })
+                        </div>
+                        <div class="col-md-2" style="padding:0px;">
+                            <label>/Sq Meter/Day</label>
+                        </div>
+                        <div class="col-md-offset-1 col-md-1-5 padding_rt">
+                            <label>Storage Type:</label>
+                        </div>
+                        <div class="col-md-2">
+                            @*<span class="ReQSimbol">*</span>*@
+                            @Html.DropDownListFor(m => m.StorageType, new List<SelectListItem>
+                       {
+                           new SelectListItem { Text="Open",Value="O"},
+                           new SelectListItem { Text="Covered",Value="C"},
+                       }, "----Select----")
+                            @*@Html.ValidationMessageFor(m => m.StorageType, "", new { @class = "Error_Msg" })*@
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5">
+                            @Html.LabelFor(m => m.RateCubMeterPerWeek, new { @class = "InputLabel" })<span>:</span>
+                        </div>
+                        <div class="col-md-2">
+                            <span class="ReQSimbol">*</span>
+                            @Html.TextBoxFor(m => m.RateCubMeterPerWeek, new { @class = "form-control input-sm" })
+                            @Html.ValidationMessageFor(m => m.RateCubMeterPerWeek, "", new { @class = "Error_Msg" })
+                        </div>
+                        <div class="col-md-2" style="padding:0px;">
+                            <label>/Grid/Week</label>
+                        </div>
+
+                        <div class="col-md-offset-1 col-md-1-5 padding_rt">
+                            <label>Area Type:</label>
+                        </div>
+                        <div class="col-md-2">
+
+                            @Html.DropDownListFor(m => m.AreaType, new List<SelectListItem>
+                       {
+                           new SelectListItem { Text="Gross Area",Value="Gross"},
+                           new SelectListItem { Text="Net Area",Value="Net"},
+                       }, "----Select----")
+                            @Html.ValidationMessageFor(m => m.StorageType, "", new { @class = "Error_Msg" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5">
+                            <label>Size:</label>
+                        </div>
+                        <div class="col-md-2">
+                            @*<span class="ReQSimbol">*</span>*@
+                            @Html.DropDownListFor(m => m.Size, new List<SelectListItem>
+                       {
+                           new SelectListItem { Text="20",Value="20"},
+                           new SelectListItem { Text="40",Value="40"},
+                       }, "----Select----")
+                            @*@Html.ValidationMessageFor(m => m.StorageType, "", new { @class = "Error_Msg" })*@
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5">
+                            @Html.LabelFor(m => m.RateSqMeterPerWeek, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                        </div>
+                        <div class="col-md-2">
+                            @*<span class="ReQSimbol">*</span>*@
+                            @Html.TextBoxFor(m => m.RateSqMeterPerWeek, new { @class = "form-control input-sm" })
+                            @*@Html.ValidationMessageFor(m => m.RateSqMeterPerWeek, "", new { @class = "Error_Msg" })*@
+                        </div>
+                        <div class="col-md-2" style="padding:0px;">
+                            <label>/Sq Meter/Week</label>
+                        </div>
+
+                        <div class="col-md-offset-1 col-md-1-5">
+                            @Html.LabelFor(m => m.RateSqMeterPerMonth, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                        </div>
+                        <div class="col-md-2">
+                            @*<span class="ReQSimbol">*</span>*@
+                            @Html.TextBoxFor(m => m.RateSqMeterPerMonth, new { @class = "form-control input-sm" })
+                            @*@Html.ValidationMessageFor(m => m.RateSqMeterPerMonth, "", new { @class = "Error_Msg" })*@
+                        </div>
+                        <div class="col-md-2" style="padding:0px;">
+                            <label>/Sq Meter/Month</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5 padding_rt">
+                            <label>Days Range From:</label>
+                        </div>
+                        <div class="col-md-2">
+                            <table>
+                                <tbody>
+                                    <tr>
+                                        <td style="width:40%;">
+                                            <span class="ReQSimbol">*</span>
+                                            @Html.TextBoxFor(m => m.DaysRangeFrom, new { @class = "form-control input-sm", @style = "padding:3px 5px;" })
+                                            @Html.ValidationMessageFor(m => m.DaysRangeFrom, "", new { @class = "Error_Msg" })
+                                        </td>
+                                        <td style="text-align:center;">-</td>
+                                        <td style="width:40%;">
+                                            <span class="ReQSimbol">*</span>
+                                            @Html.TextBoxFor(m => m.DaysRangeTo, new { @class = "form-control input-sm", @style = "padding:3px 5px;" })
+                                            @Html.ValidationMessageFor(m => m.DaysRangeTo, "", new { @class = "Error_Msg" })
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-offset-3 col-md-1-5 padding_rt">
+                            <label>Commodity Type:</label>
+                        </div>
+                        <div class="col-md-2">
+                            @Html.DropDownListFor(m => m.CommodityType, new List<SelectListItem>
+                       {
+                           new SelectListItem { Text="Non HAZ",Value="2",Selected=true},
+                           new SelectListItem { Text="HAZ",Value="1"},
+                       })
+                            @Html.ValidationMessageFor(m => m.CommodityType, "", new { @class = "Error_Msg" })
+                        </div>
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-2">
+                            <label>Party Name:</label>
+                        </div>
+                        <div class="col-md-2-5">
+                            @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control input-sm", @readonly = true })
+                            @Html.HiddenFor(x => x.PartyID)
+                            <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="PartyBinding()" data-target="#PartyModal"></i></span>
+                            @Html.ValidationMessageFor(m => m.PartyName, "", new { @class = "Error_Msg" })
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                </div>
+                <div class="row SignUp_space_bottom">
+                    <div class="col-md-offset-3-5 col-md-2" style="text-align:center">
+                        <input type="submit" value="Save" class="btn log_Btn_sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="button" value="Back" class="btn log_Btn_sm" onclick="LoadStorageChargePage()" />
+                    </div>
+                </div>
+                <div class="logSuccMsg SignUp_space_bottom2" style="background-color:transparent">
+                    <div id="DivStorageChargeMsg"></div>
+                </div>
+                <div id="DivStorageChargeErrMsg" class="logErrMsg" style="background-color:transparent"></div>
+            </div>
+        </div>
+    </div>
+
+}
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of SAC Code</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="box" type="text" />
+                <ul class="navList" id="PartyList">
+                    @{
+                        if (ViewBag.ListOfSAC != null)
+                        {
+                            foreach (var item in ViewBag.ListOfSAC)
+                            {
+                                <li id="@item">@item</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="PartyModal" class="modal fade mTabindex" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal" onclick="closePartyModel()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">Choose Party Name</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Party Name Or Party Code" type="text" id="txtPartyCode" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="PartySearch()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;text-align:left;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" style="text-align:left;" width="80%">Party Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll" style="overflow: scroll; width: auto; height: 250px;">
+                    <table class="table dataTable table-bordered table-striped slim_tble">
+                        <tbody id="tbleParty"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="button" id="txtLoadMoreParty" style="width:100%; margin-left:0;" onclick="LoadPartyList()" class="btn log_Btn_sm">Load More Data</button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="closePartyModel()" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+
+

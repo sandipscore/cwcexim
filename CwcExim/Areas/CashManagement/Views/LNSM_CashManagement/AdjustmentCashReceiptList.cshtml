@@ -1,0 +1,129 @@
+﻿@model IEnumerable<CwcExim.Areas.CashManagement.Models.LNSM_AdjustmentCashReceiptModel>
+
+<table id="tblCashReceiptList" class="table table-bordered table-striped" style="width:100%">
+    <thead>
+        <tr>
+            <th class="text-center">SL. No.</th>
+            <th>Receipt No.</th>
+            <th>Receipt Date</th>
+            <th>Party Name</th>
+            <th>Amount</th>
+            <th>Print</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{ var Serial = 1;
+            if (Model != null)
+            {
+                foreach (var data in Model)
+                {
+                    <tr>
+                        <td class="text-center">@Serial.ToString()</td>
+                        <td>@data.ReceiptNo</td>
+                        <td>@data.ReceiptDate</td>
+                        <td>@data.PartyName</td>
+                        <td>@data.TotalValue</td>
+                        <td class="text-center"><a href="#" onclick="PreviewReceipt('@data.ReceiptNo')"><i class="fa fa-file-pdf-o Edit"></i></a></td>
+                    </tr>
+                    Serial++;
+                }
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+<script>
+    var Page = 0;
+    $(document).ready(function () {
+        var tblCashReceiptList = $('#tblCashReceiptList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                       { "sName": "SL. No.", "width": "8%" },
+                       { "sName": "Receipt No.", "bSortable": false, "width": "15%" },
+                       { "sName": "Receipt Date", "bSortable": false, "width": "10%" },
+                       { "sName": "Party Name", "bSortable": false, "width": "25%" },
+                       { "sName": "Amount", "bSortable": false, "width": "10%" },
+                       { "sName": "Print", "bSortable": false, "width": "10%" }
+
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0)', nRow).addClass("text-center");
+                $('td:eq(5)', nRow).addClass("text-center");
+                $('td:eq(0)', nRow).css("width", "8%");
+                $('td:eq(1)', nRow).css("width", "15%");
+                $('td:eq(2)', nRow).css("width", "10%");
+                $('td:eq(3)', nRow).css("width", "25%");
+                $('td:eq(4)', nRow).css("width", "10%");
+                $('td:eq(5)', nRow).css("width", "10%");
+               
+            }
+        });
+        new $.fn.dataTable.FixedHeader(tblCashReceiptList);
+    });
+
+    function LoadMoreListData() {
+        debugger;
+      
+        var ReceiptNo = $('#SearchReceiptNo').val().trim();
+       
+        var URL = '/CashManagement/LNSM_CashManagement/GetLoadMoreAdjustCashReceiptList?ReceiptNo=' + ReceiptNo;
+
+                $.ajax({
+                    url: URL,
+                    type: 'GET',
+                    dataType: 'JSON',
+                    data: { Page: Page + 1, ReceiptNo: ReceiptNo },
+                    success: function (data) {
+                        debugger;
+                        if (data != null && data != '' && data != undefined && data.length > 0) {
+                            Page++;
+                            var html = '';
+                            var dt = $('#tblCashReceiptList').dataTable();
+                            var len = dt.fnGetData().length;
+                            $.each(data, function (i, item) {
+                                debugger;
+                                len++;
+                                dt.fnAddData([
+                                len,
+                                [item.ReceiptNo],
+                                [item.ReceiptDate],
+                                [item.PartyName],
+                                [item.TotalValue],                               
+                                ['<a href="#" onclick=PreviewReceipt(' + [item.ReceiptNo] + ')><i class="fa fa-file-pdf-o Edit"></i></a>'],
+
+
+                                ]);
+                            });
+                        }
+                        else alert('No more data available');
+                    }
+                });
+           
+
+        }
+       
+
+
+    function PreviewReceipt(ReceiptNumber) {
+        debugger;
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetBulkAdjustReceiptReport", "LNSM_CashManagement", new { Area = "CashManagement" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                ReceiptNumber:ReceiptNumber
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }
+</script>

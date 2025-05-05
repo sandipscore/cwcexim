@@ -1,0 +1,689 @@
+﻿@model CwcExim.Areas.Report.Models.WFLD_BondBoeQuery
+
+<style>
+    #tbleCommodity.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .slimScrollDiv {
+        height: 300px;
+    }
+
+    .table.tblhd {
+        border-bottom: 0;
+    }
+</style>
+
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script>
+    $(function () {
+        $('#slim_scroll_2').slimScroll({
+            allowPageScroll: true
+        });
+        $('#slim_scroll_1').slimScroll({
+            allowPageScroll: true
+        });
+        $('#slim_scroll_3').slimScroll({
+            allowPageScroll: true
+        });        
+    });
+ 
+    $('#SacModal').on('shown.bs.modal', function () {
+        $('#SacBox').focus();
+    });
+    $('#BondModal').on('shown.bs.modal', function () {
+        $('#Bondbox').focus();
+    });
+
+    $('#BoeModal').on('shown.bs.modal', function () {
+        $('#Boebox').focus();
+
+    });
+
+</script>
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "RptInvoiceReportDetails";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+
+}
+
+@using (Ajax.BeginForm("BondBoeQueryPrint", "VLDA_ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>SAC No. / Bond No / BOE Query</h4>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1 col_cus_2 padding_rt">
+                                    <label>SAC No. :</label>
+                                </div>
+                                <div class="col-md-3">                                   
+                                    @Html.TextBoxFor(m => m.SacNO, new { @class = "form-control input_sm", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.SacNO, "", new { @class = "Error_Msg" })
+                                    <span class="search" id="SacSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="LoadSac()" data-target="#SacModal"></i></span>
+                                </div>                                                     
+                                <div class="col-md-1 col_cus_2 padding_rt">
+                                    <label>Bond No:</label>
+                                </div>
+                                <div class="col-md-3">
+                                    @Html.TextBoxFor(m => m.inBondNo, new { @class = "form-control input_sm", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.inBondNo, "", new { @class = "Error_Msg" })
+                                    <span class="search" id="BondSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="LoadBond()" data-target="#BondModal"></i></span>
+                                </div>
+                                                    
+                                <div class="col-md-1 col_cus_2 padding_rt">
+                                    <label>BOE No:</label>
+                                </div>
+                                <div class="col-md-3">
+                                    @Html.TextBoxFor(m => m.InBondBOENo, new { @class = "form-control input_sm", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.InBondBOENo, "", new { @class = "Error_Msg" })
+                                    <span class="search" id="BoeSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="LoadBoe()" data-target="#BoeModal"></i></span>
+                                </div>                           
+                        </div>
+                    </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-4 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" onclick="Validate()"/>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" value="Reset" name="Command" class="btn log_Btn_sm" id="BtnReset" onclick="Reset()" />
+                            </div>
+                        </div>
+                        <div class="logErrMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade mTabindex" id="SacModal" role="dialog">
+        <div class="modal-dialog">            
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" onclick="CloseSac()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List Of SAC No</h4>
+                </div>
+                <div class="modal-body popup_body" style="position:relative;">
+                    <input placeholder="Search By SAC No " id="Sacbox" type="text" tabindex="200" autofocus />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchBySacNo()"></i></span>
+
+                    <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="8" width="80%">SAC No</th>                               
+                            </tr>
+                        </thead>
+                    </table>
+
+                    <div id="slim_scroll_3">
+                        <table tabindex="201" class="table dataTable table-bordered table-striped slim_tble" id="tbleSAC">
+                            <tbody></tbody>                        
+                                @*@{
+                                if (ViewBag.lstSac != null)
+                                {
+                                    var tabvalue = 202;
+                                    foreach (var item in ViewBag.lstSac)
+                                    {
+                                        <tr tabindex="@tabvalue" onclick="SelectSac('@item.SacNO')" onkeypress="SelectSac('@item.SacNO')">
+                                            <td colspan="8" width="80%" class="txt_wrp">@item.SacNO</td>                                           
+                                        </tr>
+                                        tabvalue++;
+                                    }
+                                }
+                            }*@
+
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            @if (ViewBag.SacState != null && Convert.ToBoolean(ViewBag.SacState) == true)
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreSac()" class="btn log_Btn_sm" id="btnLoadSac">Load More Data</button>
+                            }
+                            else
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreSac()" class="btn log_Btn_sm" id="btnLoadSac" disabled>Load More Data</button>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" onclick="CloseSac()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade mTabindex" id="BondModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" onclick="CloseBond()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List Of Bond No</h4>
+                </div>
+                <div class="modal-body popup_body" style="position:relative;">
+                    <input placeholder="Search By Bond No " id="Bondbox" type="text" tabindex="200" autofocus />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByBondNo()"></i></span>
+
+                    <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="8" width="80%">Bond No</th>                                
+                            </tr>
+                        </thead>
+                    </table>
+
+                    <div id="slim_scroll_2">
+                        <table tabindex="202" class="table dataTable table-bordered table-striped slim_tble" id="tbleBond">
+                            <tbody></tbody>                        
+                               @*@{
+                                if (ViewBag.lstBond != null)
+                                {
+                                    var tabvalue = 202;
+                                    foreach (var item in ViewBag.lstBond)
+                                    {
+                                        <tr tabindex="@tabvalue" onclick="SelectBond('@item.inBondNo')" onkeypress="SelectBond('@item.inBondNo')">
+                                            <td colspan="8" width="80%" class="txt_wrp">@item.inBondNo</td>                                           
+                                        </tr>
+                                        tabvalue++;
+                                    }
+                                }
+                            }*@
+
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            @if (ViewBag.BondState != null && Convert.ToBoolean(ViewBag.BondState) == true)
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreBond()" class="btn log_Btn_sm" id="btnLoadBond">Load More Data</button>
+                            }
+                            else
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreBond()" class="btn log_Btn_sm" id="btnLoadBond" disabled>Load More Data</button>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" onclick="CloseBond()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade mTabindex" id="BoeModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" onclick="CloseBOE()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List Of BOE No</h4>
+                </div>
+                <div class="modal-body popup_body" style="position:relative;">
+                    <input placeholder="Search By BOE No " id="Boebox" type="text" tabindex="200" autofocus />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByBoeNo()"></i></span>
+
+                    <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="8" width="80%">BOE No</th>                                
+                            </tr>
+                        </thead>
+                    </table>
+
+                    <div id="slim_scroll_1">
+                        <table tabindex="203" class="table dataTable table-bordered table-striped slim_tble" id="tbleBOE">
+                            <tbody></tbody>
+                             @*@{
+                                if (ViewBag.lstBoe != null)
+                                {
+                                    var tabvalue = 202;
+                                    foreach (var item in ViewBag.lstBoe)
+                                    {
+                                        <tr tabindex="@tabvalue" onclick="SelectBoe('@item.InBondBOENo')" onkeypress="SelectBoe('@item.InBondBOENo')"> 
+                                            <td colspan="8" width="80%" class="txt_wrp">@item.InBondBOENo</td>                                                                                        
+                                        </tr>
+                                        tabvalue++;
+                                    }
+                                }
+                            }*@
+
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            @if (ViewBag.BOEState != null && Convert.ToBoolean(ViewBag.BOEState) == true)
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreBOE()" class="btn log_Btn_sm" id="btnLoadBOE">Load More Data</button>
+                            }
+                            else
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreBOE()" class="btn log_Btn_sm" id="btnLoadBOE" disabled>Load More Data</button>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" onclick="CloseBOE()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+                                }
+@Scripts.Render("~/bundles/jqueryval")
+<script>    
+    function RptConsumerListDtlOnFailure() { }
+    function RptInvoiceReportDetails(data) {
+        $('#DivDwnldWavMsg').html('')
+        //alert(data);
+        debugger;
+        if (data.Status == 1) {
+            window.open(data.Data + "?_t=" + (new Date().getTime()), '_blank')
+            Reset();
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+
+    // Sac No pop up
+    function LoadMoreSac() {
+        debugger;
+        $.ajax({
+            url: '/Report/VLDA_ReportCWC/LoadSacNo',
+            type: 'GET',
+            data: { SacNo: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tabvalue = 201;
+                    $.each(data.Data.lstSac, function (item, elem) {
+                        html += '<tr tabindex=' + tabvalue + ' onclick="SelectSac(&quot;' + elem.SacNO + '&quot;)" onkeypress="SelectSac(&quot;' + elem.SacNO + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.SacNO + '</td></tr>';
+                        tabvalue++;
+                    });
+                    if (Page == -1)
+                        $('#tbleSAC tbody').html(html);
+                    else
+                        $('#tbleSAC tbody').append(html);
+                    Page++;
+
+                    debugger;
+                    if (data.Data.SacState == true)
+                        $('#btnLoadSac').prop('disabled', false);
+                    else $('#btnLoadSac').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function LoadSac() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/Report/VLDA_ReportCWC/LoadSacNo',
+            type: 'GET',
+            data: { SacNo: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    $('#tbleSAC tbody').html('');
+                    var html = '';
+                    var tabvalue = 201;
+                    $.each(data.Data.lstSac, function (item, elem) {
+                        html += '<tr tabindex=' + tabvalue + ' onclick="SelectSac(&quot;' + elem.SacNO + '&quot;)" onkeypress="SelectSac(&quot;' + elem.SacNO + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.SacNO + '</td></tr>';
+                        tabvalue++;
+                    });
+
+                    $('#tbleSAC tbody').append(html);
+
+                    if (data.Data.SacState == true)
+                        $('#btnLoadSac').prop('disabled', false);
+                    else $('#btnLoadSac').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SearchBySacNo() {
+        debugger;
+        if ($('#Sacbox').val() != '') {
+            $.ajax({
+                url: '/Report/VLDA_ReportCWC/SearchBySacNo',
+                type: 'GET',
+                data: { SacNo: $('#Sacbox').val() },
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        var html = '';
+                        var tabvalue = 201;
+                        $.each(data.Data.lstSac, function (item, elem) {
+                            html += '<tr tabindex=' + tabvalue + ' onclick="SelectSac(&quot;' + elem.SacNO + '&quot;)" onkeypress="SelectSac(&quot;' + elem.SacNO + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.SacNO + '</td></tr>';
+                            tabvalue++;
+                        });
+                        $('#tbleSAC tbody').html('');
+                        $('#tbleSAC tbody').html(html);
+                        $('#btnLoadSac').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleSAC tbody').html('');
+                        Page = -1;
+                        $('#btnLoadSac').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadSac();
+    }
+    function SelectSac(SacNO) {
+        debugger;
+        $('#SacNO').val(SacNO);
+        $("#SacModal").modal("hide");
+        $('#Sacbox').val('');
+        $('[data-valmsg-for="SacNo"]').html('');
+        LoadSac();
+    }
+    function CloseSac() {
+        $('#Sacbox').val('');
+        $("#SacModal").modal("hide");
+        LoadSac();
+    }
+
+
+    //    Bond Pop Up
+
+    function LoadMoreBond() {
+        debugger;
+        $.ajax({
+            url: '/Report/VLDA_ReportCWC/LoadBondNo',
+            type: 'GET',
+            data: { BondNo: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tabvalue = 201;
+                    $.each(data.Data.lstBond, function (item, elem) {
+                        html += '<tr tabindex=' + tabvalue + ' onclick="SelectBond(&quot;' + elem.inBondNo + '&quot;)" onkeypress="SelectSac(&quot;' + elem.inBondNo + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.inBondNo + '</td></tr>';
+                        tabvalue++;
+                    });
+                    if (Page == -1)
+                        $('#tbleBond tbody').html(html);
+                    else
+                        $('#tbleBond tbody').append(html);
+                    Page++;
+
+                    debugger;
+                    if (data.Data.BondState == true)
+                        $('#btnLoadBond').prop('disabled', false);
+                    else $('#btnLoadBond').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function LoadBond() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/Report/VLDA_ReportCWC/LoadBondNo',
+            type: 'GET',
+            data: { BondNo: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    $('#tbleBond tbody').html('');
+                    var html = '';
+                    var tabvalue = 201;
+                    $.each(data.Data.lstBond, function (item, elem) {
+                        html += '<tr tabindex=' + tabvalue + ' onclick="SelectBond(&quot;' + elem.inBondNo + '&quot;)" onkeypress="SelectBond(&quot;' + elem.inBondNo + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.inBondNo + '</td></tr>';
+                        tabvalue++;
+                    });
+
+                    $('#tbleBond tbody').append(html);
+
+                    if (data.Data.BondState == true)
+                        $('#btnLoadBond').prop('disabled', false);
+                    else $('#btnLoadBond').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SearchByBondNo() {
+        debugger;
+        if ($('#Bondbox').val() != '') {
+            $.ajax({
+                url: '/Report/VLDA_ReportCWC/SearchByBondNo',
+                type: 'GET',
+                data: { BondNo: $('#Bondbox').val() },
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        var html = '';
+                        var tabvalue = 201;
+                        $.each(data.Data.lstBond, function (item, elem) {
+                            html += '<tr tabindex=' + tabvalue + ' onclick="SelectBond(&quot;' + elem.inBondNo + '&quot;)" onkeypress="SelectSac(&quot;' + elem.inBondNo + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.inBondNo + '</td></tr>';
+                            tabvalue++;
+                        });
+                        $('#tbleBond tbody').html('');
+                        $('#tbleBond tbody').html(html);
+                        $('#btnLoadBond').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleBond tbody').html('');
+                        Page = -1;
+                        $('#btnLoadBond').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        //else
+        //    LoadBond();
+    }
+    function SelectBond(inBondNo) {
+        debugger;
+        $('#inBondNo').val(inBondNo);
+        $("#BondModal").modal("hide");
+        $('#Bondbox').val('');
+        $('[data-valmsg-for="BondNo"]').html('');
+        LoadBond();
+    }
+    function CloseBond() {
+        $('#Bondbox').val('');
+        $("#BondModal").modal("hide");
+        LoadBond();
+    }
+
+    // Boe No Pop up
+
+    function LoadMoreBoe() {
+        debugger;
+        $.ajax({
+            url: '/Report/VLDA_ReportCWC/LoadBondBoeNo',
+            type: 'GET',
+            data: { BoeNo: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tabvalue = 201;
+                    $.each(data.Data.lstBoe, function (item, elem) {
+                        html += '<tr tabindex=' + tabvalue + ' onclick="SelectBoe(&quot;' + elem.InBondBOENo + '&quot;)" onkeypress="SelectBoe(&quot;' + elem.InBondBOENo + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.InBondBOENo + '</td></tr>';
+                        tabvalue++;
+                    });
+                    if (Page == -1)
+                        $('#tbleBOE tbody').html(html);
+                    else
+                        $('#tbleBOE tbody').append(html);
+                    Page++;
+
+                    debugger;
+                    if (data.Data.BoeState == true)
+                        $('#btnLoadBoe').prop('disabled', false);
+                    else $('#btnLoadBoe').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function LoadBoe() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/Report/VLDA_ReportCWC/LoadBondBoeNo',
+            type: 'GET',
+            data: { BoeNo: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    $('#tbleBOE tbody').html('');
+                    debugger;
+                    var html = '';
+                    var tabvalue = 201;
+                    $.each(data.Data.lstBoe, function (item, elem) {
+                        html += '<tr tabindex=' + tabvalue + ' onclick="SelectBoe(&quot;' + elem.InBondBOENo + '&quot;)" onkeypress="SelectBoe(&quot;' + elem.InBondBOENo + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.InBondBOENo + '</td></tr>';
+                        tabvalue++;
+                    });
+
+                    $('#tbleBOE tbody').append(html);
+
+                    if (data.Data.BoeState == true)
+                        $('#btnLoadBoe').prop('disabled', false);
+                    else $('#btnLoadBoe').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SearchByBoeNo() {
+        debugger;
+        if ($('#Boebox').val() != '') {
+            $.ajax({
+                url: '/Report/VLDA_ReportCWC/SearchByBondBoeNo',
+                type: 'GET',
+                data: { BoeNo: $('#Boebox').val() },
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        var html = '';
+                        var tabvalue = 201;
+                        $.each(data.Data.lstBoe, function (item, elem) {
+                            html += '<tr tabindex=' + tabvalue + ' onclick="SelectBoe(&quot;' + elem.InBondBOENo + '&quot;)" onkeypress="SelectBoe(&quot;' + elem.InBondBOENo + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.InBondBOENo + '</td></tr>';
+                            tabvalue++;
+                        });
+                        $('#tbleBOE tbody').html('');
+                        $('#tbleBOE tbody').html(html);
+                        $('#btnLoadBoe').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleBOE tbody').html('');
+                        Page = -1;
+                        $('#btnLoadBoe').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        //else
+        //    LoadBoe();
+    }
+    function SelectBoe(InBondBOENo) {
+        debugger;
+        $('#InBondBOENo').val(InBondBOENo);
+        $("#BoeModal").modal("hide");
+        $('#Boebox').val('');
+        $('[data-valmsg-for="BoeNo"]').html('');
+        LoadBoe();  
+    }
+    function CloseBOE() {
+        $('#Boebox').val('');
+        $("#BoeModal").modal("hide");
+        LoadBoe();
+    }
+
+    function Validate()
+    {
+        debugger;
+        var Status = true;
+        if ($('#SacNO').val() == '' && $('#inBondNo').val() == '' && $('#InBondBOENo').val() == '')
+        {
+            $('#DivDwnldWavMsg').html("Select one option.").removeClass('logSuccMsg').addClass('logErrMsg');
+            event.preventDefault();
+            return false;
+        }
+        if ($('#SacNO').val() != '' && $('#inBondNo').val() != '') {
+            $('#DivDwnldWavMsg').html("Select Only one option.").removeClass('logSuccMsg').addClass('logErrMsg');
+            event.preventDefault();
+            return false;
+        }
+        if ($('#inBondNo').val() != '' && $('#InBondBOENo').val() != '') {
+            $('#DivDwnldWavMsg').html("Select Only one option.").removeClass('logSuccMsg').addClass('logErrMsg');
+            event.preventDefault();
+            return false;;
+        }
+        if ($('#SacNO').val() != '' && $('#InBondBOENo').val() != '') {
+            $('#DivDwnldWavMsg').html("Select Only one option.").removeClass('logSuccMsg').addClass('logErrMsg');
+            event.preventDefault();
+            return false;
+        }
+        return true;
+    }
+
+    function Reset()
+    {
+        debugger;
+        $('#DivBody').load('/Report/VLDA_ReportCWC/BondBoeQuery');
+    }
+
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+    document.getElementById('Sacbox').addEventListener('keyup', debounce(function () {
+        SearchBySacNo();
+    }, 800));
+    document.getElementById('Bondbox').addEventListener('keyup', debounce(function () {
+        SearchByBondNo()
+    }, 800));
+    document.getElementById('Boebox').addEventListener('keyup', debounce(function () {
+        SearchByBoeNo()
+    }, 800));
+
+</script>
+
+
+

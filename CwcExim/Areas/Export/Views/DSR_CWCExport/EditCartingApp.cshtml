@@ -1,0 +1,696 @@
+﻿@model CwcExim.Areas.Export.Models.CartingApplication
+<script>
+    $('#ApplicationDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='ApplicationDate']").html('');
+        }
+    });
+    $('#ShippingBillDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='ShippingBillDate']").html('');
+        }
+    });
+    function ValidateCargoInvcNo(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if (CharCode == 32) {
+            return true;
+        }
+        if ( (CharCode > 57 & CharCode < 64) ||  (CharCode > 122)) {
+            evt.preventDefault();
+            return false;
+        }
+        return true;
+    }
+    $('#CHAbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstCHA > li').show();
+        else
+        {
+            $('#lstCHA > li').each(function ()
+            {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    $('#lstCHA > li').on("click", function () {
+        $('#CHAName').val($(this).text());
+        $('#CHAEximTraderId').val($(this).attr('id'));
+        $("#CHAModal").modal("hide");
+    });
+    $('#Exporterbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstExporter > li').show();
+        else {
+            $('#lstExporter > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    $('#lstExporter > li').on("click", function () {
+        $('#Exporter').val($(this).text());
+        $('#ExporterId').val($(this).attr('id'));
+        $("#ExporterModal").modal("hide");
+    });
+    $('#Commoditybox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstCommodity > li').show();
+        else {
+            $('#lstCommodity > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    $('#lstCommodity > li').on("click", function () {
+        $('#Commodity').val($(this).text());
+        $('#CommodityId').val($(this).attr('id'));
+        $("#CommodityModal").modal("hide");
+    });
+</script>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("AddEditCartingApplication", "DSR_CWCExport", new AjaxOptions
+                {
+                    Confirm = "Are you sure you want to Save?",
+                    HttpMethod = "POST",
+                    OnSuccess = "CartingOnSuccess",
+                    OnFailure = "CartingOnFailure",
+                    InsertionMode = InsertionMode.InsertAfter
+                }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.CartingAppId)
+                    @Html.HiddenFor(m => m.StringifyData)
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Carting Application</h4>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.Label("Type Of Work", new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-1-5 col_cus_2_5">
+                                @Html.Label("Carting", new { @class = "InputLabel" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                               <label>Application No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.ApplicationNo, new { @class = "form-control input_sm", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.ApplicationNo, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                @Html.LabelFor(m => m.ApplicationDate, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBoxFor(m => m.ApplicationDate, new { @class = "form-control input_sm", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.ApplicationDate, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.CHAName, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                @if (Model.CHAEximTraderId == 0)
+                            {
+                            @*@Html.DropDownListFor(m => m.CHAEximTraderId, new SelectList(Model.lstCHANames, "CHAEximTraderId", "CHAName"), "----Select----", new { @class = "form-control input-sm dropdown" })*@
+                            @Html.HiddenFor(m => m.CHAEximTraderId)
+                            @Html.TextBoxFor(m => m.CHAName, new { @class = "form-control input_sm", @readonly = true })
+                            <span class="search" id="CHASerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CHAModal"></i></span>
+                            @Html.ValidationMessageFor(m => m.CHAName, "", new { @class = "Error_Msg" })
+                            }
+                            else
+                            {
+                            @Html.HiddenFor(m => m.CHAEximTraderId)
+                            @Html.TextBoxFor(m => m.CHAName, new { @class = "form-control input_sm", @readonly = true })
+                            @Html.ValidationMessageFor(m => m.CHAName, "", new { @class = "Error_Msg" })
+                            }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top Form_Space_bottom">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.Remarks, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                @Html.TextAreaFor(m => m.Remarks, new { @class = "form-control input_sm", @style = "width:100%;height:100px;" })
+                                @Html.ValidationMessageFor(m => m.Remarks, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="Head_h5">
+                        <div id="DivShipping">
+                            @Html.Hidden("CartingAppDtlId")
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h5>Application Details</h5>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        @Html.Label("Shipping Bill No:", new { @class = "InputLabel" })
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("ShippingBillNo", "", new { @class = "form-control input-sm", @onblur = "ClearErrMsg(this)", onkeypress = "return ValidateData(event)", maxlength = "30" })
+                                        @Html.ValidationMessage("ShippingBillNo", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                        @Html.Label("Shipping Bill Date:", new { @class = "InputLabel" })
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBox("ShippingBillDate", "", new{ @class = "form-control input-sm" @*,readonly = true*@ })
+                                        @Html.ValidationMessage("ShippingBillDate", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        @Html.Label("Comm Inv No:", new { @class = "InputLabel" })
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("CommInvNo", "", new { @class = "form-control input-sm", @onblur = "ClearErrMsg(this)", onkeypress = "return ValidateCargoInvcNo(event)", maxlength = "30" })
+                                        @Html.ValidationMessage("CommInvNo", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                        @Html.Label("Packing List No:", new { @class = "InputLabel" })
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("PackingListNo", "", new { @class = "form-control input-sm", @onblur = "ClearErrMsg(this)",onkeypress = "return ValidateData(event)", maxlength = "30" })
+                                        @Html.ValidationMessage("PackingListNo", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        @Html.Label("Exporter:", new { @class = "InputLabel" })
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        @if (Convert.ToBoolean(ViewData["IsExporter"]) == false)
+                                {
+                                    @Html.Hidden("ExporterId")
+                                    @Html.TextBox("Exporter", "", new { @class = "form-control input-sm", @readonly = true })
+                                    @*@Html.DropDownList("ExporterId", new SelectList(Model.lstExporter, "EXPEximTraderId", "ExporterName"), "----Select----", new { @class = "form-control input-sm dropdown", @onblur = "ClearErrMsg(this)" })*@
+                                    <span class="search" id="ExporterSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ExporterModal"></i></span>
+                                    @Html.ValidationMessage("ExporterId", new { @class = "Error_Msg" })
+                                }
+                                else
+                                {
+                                    @Html.Hidden("ExporterId", Convert.ToInt32(ViewData["EximTraderId"]))
+                                    @Html.TextBox("Exporter", ViewData["ExporterName"].ToString(), new { @class = "form-control input-sm", @readonly = true })
+                                    @Html.ValidationMessage("ExporterId", new { @class = "Error_Msg" })
+                                }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        @Html.Label("Cargo Description:", new { @class = "InputLabel" })
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        @Html.TextArea("CargoDescription", "", new { @class = "form-control input-sm", @style = "width:100%;height:100px;", @onblur = "ClearErrMsg(this)", onkeypress = "return ValidateCargoInvcNo(event)", maxlength = "1000" })
+                                        @Html.ValidationMessage("CargoDescription", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        @Html.Label("Commodity:", new { @class = "InputLabel" })
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        @Html.Hidden("CommodityId")
+                                        @Html.TextBox("Commodity", "", new { @class = "form-control input-sm", @readonly = true })
+                                        @*@Html.DropDownList("CommodityId", new SelectList(Model.lstCommodity, "CommodityId", "CommodityName"), "----Select----", new { @class = "form-control input-sm", @onblur = "ClearErrMsg(this)" })*@
+                                        <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CommodityModal"></i></span>
+                                        @Html.ValidationMessage("CommodityId", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        @Html.Label("Cargo Type:", new { @class = "InputLabel" })
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.DropDownList("CargoType", new List<SelectListItem>
+                                {
+                                    new SelectListItem { Text="HAZ",Value="1"},
+                                    new SelectListItem { Text="Non HAZ",Value="2"}
+                                }, "----Select----", new { @class = "form-control input-sm dropdown", @onblur = "ClearErrMsg(this)"})
+                                        @Html.ValidationMessage("CargoType", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                        @Html.Label("Marks & No:")
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("MarksAndNo", "", new { @class = "form-control input-sm", @onblur = "ClearErrMsg(this)",onkeypress= "return ValidateData(event)", maxlength = "30" })
+                                        @Html.ValidationMessage("MarksAndNo", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        @Html.Label("No of Units:", new { @class = "InputLabel" })
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("NoOfUnits", "", new { @class = "form-control input-sm", @onblur = "ClearErrMsg(this)",onkeypress= "return AllowOnlyInteger(event)" })
+                                        @Html.ValidationMessage("NoOfUnits", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                        @Html.Label("Weight (Kg):")
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("Weight", "", new { @onblur = "ClearErrMsg(this)",onkeypress= "return AllowOnlyDecimal(event)", maxlength = "11" })
+                                        @Html.ValidationMessage("Weight", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        @Html.Label("FOB Value:", new { @class = "InputLabel" })
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("FobValue", "", new { @class = "form-control input-sm", @onblur = "ClearErrMsg(this)",onkeypress= "return AllowOnlyDecimal(event)", maxlength = "11" })
+                                        @Html.ValidationMessage("FobValue", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="stoke SignUp_space_top SignUp_space_bottom"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-offset-5 col-md-2  SignUp_space_bottom">
+                                <input type="button" id="btnAddShippingDet" class="btn log_Btn_sm" value="Add" onclick="AddShippingDet()" />
+                            </div>
+                        </div>
+                        <div class="row Form_Space_bottom">
+                            <div class="col-md-12">
+                                <table id="tblShippingDet" class="table table-striped table-bordered dataTable" style="width:100%;">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center" style="width:8%;">SL No</th>
+                                            <th>Shipping Bill No</th>
+                                            <th>Shipping Bill Date</th>
+                                            <th>Exporter</th>
+                                            <th>No of Units</th>
+                                            <th class="text-center">Edit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody> </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-offset-4 col-md-2">
+                            <input type="submit" id="btnUpdate" class="btn log_Btn_sm" value="Save" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" id="btnBack" class="btn log_Btn_sm" value="Back" onclick="LoadCartingApp()" />
+                        </div>
+                    </div>
+                    <div class="logErrMsg Form_Space_bottom" id="DivMsgEdit" style="background-color:transparent"></div>
+                    <div class="logSuccMsg" id="DivMsg" style="background-color:transparent"></div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="CHAModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of CHA Names</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="CHAbox" type="text" />
+                <ul class="navList" id="lstCHA">
+                    @{
+                        foreach (var item in Model.lstCHANames)
+                        {
+                            <li id="@item.CHAEximTraderId">@item.CHAName</li>
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ExporterModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Exporter</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Exporterbox" type="text" />
+                <ul class="navList" id="lstExporter">
+                    @{
+                        foreach (var item in Model.lstExporter)
+                        {
+                            <li id="@item.EXPEximTraderId">@item.ExporterName</li>
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="CommodityModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Commodity</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Commoditybox" type="text" />
+                <ul class="navList" id="lstCommodity">
+                    @{
+                        foreach (var item in Model.lstCommodity)
+                        {
+                            <li id="@item.CommodityId">@item.CommodityName</li>
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    var ArrayDet = [];
+    $(function(){
+        $('#btnAddShippingDet').prop("disabled",true);
+        ArrayDet=@Html.Raw(Json.Encode(Model.lstShipping));
+        var html='';
+        $.each(ArrayDet,function(i,data)
+        {
+            html+='<tr><td class="text-center">'+(i+1)+'</td><td>'+data.ShippingBillNo+'</td><td>'+data.ShippingDate+'</td><td>'+data.Exporter+'</td><td>'+data.NoOfUnits+'</td><td class="text-center"><a href="#" onclick="EditShippingDet('+i+')"><i class="fa fa-pencil-square Edit"></i></a></td></tr>';
+        });
+        $('#tblShippingDet tbody').html(html);
+    });
+    function LoadCartingApp()
+    {
+        $('#DivBody').load( '/Export/DSR_CWCExport/CreateCartingApplication');
+    }
+    function AddShippingDet() {
+        if (ValidateShippingDet()) {
+            var ShippingDet = {
+                "CartingAppDtlId":($('#CartingAppDtlId').val()==""||$('#CartingAppDtlId').val()==null)?0:$('#CartingAppDtlId').val(),
+                "ShippingBillNo": $('#ShippingBillNo').val(),
+                "ShippingDate": $('#ShippingBillDate').val(),
+                "CommInvcNo": $('#CommInvNo').val(),
+                "PackingListNo": $('#PackingListNo').val(),
+                "ExporterId": $('#ExporterId').val(),
+                "Exporter": $('#Exporter').val(),
+                "CargoDescription": $('#CargoDescription').val(),
+                "CommodityId": $('#CommodityId').val(),
+                "Commodity": $('#Commodity').val(),
+                "CargoType": $('#CargoType').val(),
+                "MarksAndNo": $('#MarksAndNo').val(),
+                "NoOfUnits": $('#NoOfUnits').val(),
+                "Weight": $('#Weight').val(),
+                "FoBValue": $('#FobValue').val()
+            };
+            ArrayDet.push(ShippingDet);
+            $('#tblShippingDet').html('');
+            GenerateTable();
+            ResetShippingDet();
+            $('[data-valmsg-for]').html('');
+            $('#btnAddShippingDet').prop("disabled",true);
+        }
+    }
+    function EditShippingDet(i) {
+        if(CheckExistingData())
+        {
+            $('#btnAddShippingDet').prop("disabled",false);
+            $('#CartingAppDtlId').val(ArrayDet[i].CartingAppDtlId);
+            $('#ShippingBillNo').val(ArrayDet[i].ShippingBillNo);
+            $('#ShippingBillDate').val(ArrayDet[i].ShippingDate);
+            $('#CommInvNo').val(ArrayDet[i].CommInvcNo);
+            $('#PackingListNo').val(ArrayDet[i].PackingListNo);
+            $('#Exporter').val(ArrayDet[i].Exporter);
+            $('#ExporterId').val(ArrayDet[i].ExporterId);
+            $('#CargoDescription').val(ArrayDet[i].CargoDescription);
+            $('#Commodity').val(ArrayDet[i].CommodityName);
+            $('#CommodityId').val(ArrayDet[i].CommodityId);
+            $('#MarksAndNo').val(ArrayDet[i].MarksAndNo);
+            $('#NoOfUnits').val(ArrayDet[i].NoOfUnits);
+            $('#Weight').val(ArrayDet[i].Weight);
+            $('#FobValue').val(ArrayDet[i].FoBValue);
+            $('#CargoType').val(ArrayDet[i].CargoType);
+            ArrayDet.splice(i,1);
+            $('#tblShippingDet').html('');
+            GenerateTable();
+        }
+        setTimeout(function(){$('#DivMsgEdit').html('');},5000);
+    }
+    function CheckExistingData()
+    {
+        if($('#ShippingBillNo').val()!="" || $('#CommInvNo').val()!="" || $('#PackingListNo').val()!="" ||/* $('#Exporter').val()!="" ||*/
+            $('#CargoDescription').val()!="" || $('#Commodity').val()!="" ||$('#MarksAndNo').val()!="" || $('#NoOfUnits').val()!="" ||
+            $('#Weight').val()!="" ||$('#FobValue').val()!="" || $('#CargoType').val()!="")
+        {
+            $('#DivMsgEdit').html('Add Earlier Record To Edit New Record');
+            return false;
+        }
+        else
+            return true;
+    }
+    function GenerateTable()
+    {
+        var tablehtml = '<table id="tblShippingDet" class="table table-striped table-bordered" style="width:100%;"><thead><tr><th>SL No</th><th>Shipping Bill No</th><th>Shipping Bill Date</th><th>Exporter</th><th>No of Units</th><th>Edit</th></tr></thead><tbody>';
+        $.each(ArrayDet, function (i, data) {
+            tablehtml += '<tr><td>' + (i + 1) + '</td><td>' + data.ShippingBillNo + '</td><td>' + data.ShippingDate + '</td><td>' + data.Exporter + '</td><td>' + data.NoOfUnits + '</td><td><a href="#" onclick="EditShippingDet(' + i + ')"><i class="fa fa-pencil-square Edit"></i></a></td></tr>';
+        });
+        tablehtml += '</tbody></table>';
+        $('#tblShippingDet').html(tablehtml);
+    }
+    function ResetShippingDet()
+    {
+        if ('@ViewData["IsExporter"]' == 'False')
+            $('#ShippingBillNo,#ShippingBillDate,#CommInvNo,#PackingListNo,#Exporter,#ExporterId,#CargoDescription,#Commodity,#CommodityId,#MarksAndNo,#NoOfUnits,#Weight,#FobValue,#CargoType').val('');
+        else
+            $('#ShippingBillNo,#ShippingBillDate,#CommInvNo,#PackingListNo,#CargoDescription,#Commodity,#CommodityId,#MarksAndNo,#NoOfUnits,#Weight,#FobValue,#CargoType').val('');
+    }
+    $('#btnUpdate').on("click",function() {
+        var Status=true;
+        if($('#ShippingBillNo').val()!="" || $('#CommInvNo').val()!="" || $('#PackingListNo').val()!="" ||/* $('#Exporter').val()!="" ||*/
+            $('#CargoDescription').val()!="" || $('#Commodity').val()!="" ||$('#MarksAndNo').val()!="" || $('#NoOfUnits').val()!="" ||
+            $('#Weight').val()!="" ||$('#FobValue').val()!="" || $('#CargoType').val()!="")
+        {
+            $('#DivMsgEdit').html('Add The Record To Save');
+            Status=false;
+        }
+        else
+        {
+            if($('#tblShippingDet>tbody>tr').html()=='')
+            {
+                $('#DivMsgEdit').html('Add The Record To Save');
+                Status=false;
+            }         
+        }
+        if(Status==true)
+            $('#StringifyData').val(JSON.stringify(ArrayDet));
+        setTimeout(function(){$('#DivMsgEdit').html('');},5000);
+        return Status;
+    });
+    function CartingOnSuccess(data)
+    {
+        if(data.Status==2)
+        {
+            $('#DivMsg').html(data.Message);
+            setTimeout(function(){$('#DivBody').load( '/Export/DSR_CWCExport/CreateCartingApplication');},5000);
+        }
+        else
+        {
+            $('#DivMsgEdit').html(data.Message);
+        }
+    }
+    function CartingOnFailure(){}
+    function ValidateData(evt){
+        var CharCode;
+        if(window.event){
+            CharCode=window.event.keyCode;
+        }
+        else{
+            CharCode=evt.which;
+        }
+        if(CharCode==32){
+            return true;
+        }
+        if((CharCode>31&CharCode<48)||(CharCode>57&CharCode<65)||(CharCode>90&CharCode<97)||(CharCode>122)){
+            evt.preventDefault;
+            return false;
+        }
+    }
+    function AllowOnlyDecimal(evt){
+        var CharCode;
+        if(window.event){
+            CharCode=window.event.keyCode;
+        }
+        else{
+            CharCode=evt.which;
+        }
+        if((CharCode>47&CharCode<58)||(CharCode==46)||CharCode==8){
+            return true;
+        }
+        else{
+            evt.preventDefault;
+            return false;
+        }
+    }
+    function AllowOnlyInteger(evt){
+        var CharCode;
+        if(window.event){
+            CharCode=window.event.keyCode;
+        }
+        else{
+            CharCode=evt.which;
+        }
+        if(CharCode>47&CharCode<58||CharCode==8){
+            return true;
+        }
+        else{
+            evt.preventDefault;
+            return false;
+        }
+    }
+    function ValidateShippingDet() {
+        var Status = true;
+        if ($('#ExporterId').val() == "") {
+            $('[data-valmsg-for="ExporterId"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+        if ($('#CargoDescription').val() == "") {
+            $('[data-valmsg-for="CargoDescription"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+        if ($('#CommodityId').val() == "") {
+            $('[data-valmsg-for="CommodityId"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+        if ($('#CargoType').val() == "") {
+            $('[data-valmsg-for="CargoType"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+        if ($('#NoOfUnits').val() == "") {
+            $('[data-valmsg-for="NoOfUnits"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+        if ($('#Weight').val() == "") {
+            $('[data-valmsg-for="Weight"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+        if ($('#Weight').val() != "") {
+            if (!DecimalValidationGW("Weight")) {
+                $('[data-valmsg-for="Weight"]').html('<span>Weight must be a decimal up to 2 places and less then 99999999.99<span>');
+                Status = false;
+            }
+        }
+        if ($('#FobValue').val() == "") {
+            $('[data-valmsg-for="FobValue"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+        if ($('#FobValue').val() != "") {
+            if (!DecimalValidation("FobValue")) {
+                $('[data-valmsg-for="FobValue"]').html('<span>FobValue must be a decimal up to 2 places and less then 99999999.99</span>');
+                Status = false;
+            }
+        }
+        return Status;
+    }
+    function DecimalValidation(elem) {
+        var State = true;
+        var Value = $('#' + elem).val();
+        if (!Value.match(/^[\d]{1,8}\.\d{0,2}$/) && !Value.match(/^[\d]{1,8}$/))
+            State = false;
+        return State;
+    }
+    function DecimalValidationGW(elem) {
+        var State = true;
+        var Value = $('#' + elem).val();
+        if (!Value.match(/^[\d]{1,8}\.\d{0,2}$/) && !Value.match(/^[\d]{1,8}$/))
+            State = false;
+        return State;
+    }
+</script>

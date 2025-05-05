@@ -1,0 +1,594 @@
+﻿@model CwcExim.Areas.Report.Models.BulkInvoiceReport
+
+<!--****************************************************************************************-->
+@*@if (ViewBag.ShippingLineList != null)
+{
+    <input type="hidden" id="hdnShippingLineList" value="@ViewBag.ShippingLineList" />
+}
+else
+{
+    <input type="hidden" id="hdnShippingLineList" value="" />
+}
+
+@if (ViewBag.CHAList != null)
+{
+    <input type="hidden" id="hdnCHAList" value="@ViewBag.CHAList" />
+}
+else
+{
+    <input type="hidden" id="hdnCHAList" value="" />
+}*@
+<!--****************************************************************************************-->
+
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "BulkInvoiceReportSuccess";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+
+}
+<script>
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+</script>
+@using (Ajax.BeginForm("GetBulkInvoiceReportForExternalUser", "ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+    <input type="hidden" id="JsonInvoiceLilst" name="JsonInvoiceLilst" />
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Bulk Invoice Report</h4>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2 ">
+                                    <label>Period From:</label>
+                                </div>
+                                <div class="col-md-2 Date_Img">
+                                    @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-2 padding_rt">
+                                    <label>Period To:</label>
+                                </div>
+                                <div class="col-md-2 Date_Img">
+                                    @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-3 col_cus_4">
+
+                                    @*<button id="LoadInvoice" class="btn log_Btn_sm" >Load Invoice List</button>*@
+                                    @*onclick="loadInvoiceLIst();"*@
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2 ">
+                                    <label>Shipping Line:</label>
+                                </div>
+                                <div class="col-md-6 ">
+                                    @Html.HiddenFor(m => m.ShippingLineId)
+                                    @Html.TextBoxFor(m => m.ShippingLine, new { @class = "form-control", @readonly = true ,@Value = ViewBag.PartyName })
+                                   @* <span class="search" id="ShippingLineSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ShippingLineModal"></i></span>*@
+                                    @*<span class="cross_ico" id="SLCross"><i class="fa fa-times"></i></span>*@
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2 ">
+                                    <label>CHA:</label>
+                                </div>
+                                <div class="col-md-6 ">
+                                    @Html.HiddenFor(m => m.CHAId)
+                                    @Html.TextBoxFor(m => m.CHAName, new { @class = "form-control", @readonly = true, @Value = ViewBag.PartyName })
+                                    @*<span class="search" id="CHASearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CHAModal"></i></span>
+                                    <span class="cross_ico" id="CHACross"><i class="fa fa-times"></i></span>*@
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2">
+                                    <label>Invoice Type:</label>
+                                </div>
+                                <div class="col-md-2">
+                                    @Html.DropDownListFor(m => m.InvoiceModule, new List<SelectListItem>
+                                {
+                                    new SelectListItem { Text="All",Value="All"},
+                                     //new SelectListItem { Text="Import Cargo Delivery",Value="IMPCD"},
+
+                                     new SelectListItem { Text="Import Container Delivery",Value="IMPYard"},
+                                     new SelectListItem { Text="Import Godown Destuffing",Value="IMPDest"},
+                                     new SelectListItem { Text="Godown Cargo Delivery",Value="IMPDeli"},
+                                     //new SelectListItem { Text="Empty Container Delivery",Value="ECDelv"},
+                                     new SelectListItem { Text="Empty Container(Yard)",Value="ECYard"},
+                                     new SelectListItem { Text="Empty Container(Godown)",Value="ECGodn"},
+                                     new SelectListItem { Text="Export",Value="EXP"},
+                                     new SelectListItem { Text="Export Loaded Cont",Value="EXPLod"},
+                                     new SelectListItem { Text="Back To Town",Value="BTT"},
+                                     new SelectListItem { Text="Bond Advance Payment",Value="BNDadv"},
+                                     new SelectListItem { Text="Bond Unloading",Value="BNDUnld"},
+                                     new SelectListItem { Text="Bond Delivery",Value="BND"},
+                                       new SelectListItem { Text="Auction",Value="AUC"}
+                                       //new SelectListItem { Text="Misc.Invoice",Value="MiscInv"}
+
+                                }, new { @class = "form-control input-sm dropdown" })
+                                    @Html.ValidationMessageFor(m => m.InvoiceModule, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1">
+
+                                </div>
+                                <div class="col-md-3" style="text-align:right;">
+                                    <a href="#" id="LoadInvoice" class="btn log_Btn_sm">Load Invoice List</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2">
+                                    <label>Invoice No.:</label>
+                                </div>
+                                <div class="col-md-2">
+                                    <span class="search" id="InvoiceSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#InvoiceModal"></i></span>
+                                    @Html.TextBoxFor(m => m.InvoiceNumber, new { @class = "form-control" })
+                                    @Html.ValidationMessageFor(m => m.InvoiceNumber, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-2">
+                                    @*<button onclick="GenerateInvoiceHTML()">GENERATE INV</button>*@
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <div id="InvoiceModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">Invoice List</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="InvoiceListBox" type="text" />
+                    <ul class="navList" id="lstInvoiceList"></ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ShippingLineModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Shipping Line</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="Shippingbox" type="text" />
+                    <ul class="navList" id="lstShipping">
+                        @*@{
+                                foreach (var item in Model.lstShippingLine)
+                                {
+                                    <li id="@item.ShippingLineId">@item.ShippingLineName</li>
+                                }
+                            }*@
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="CHAModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of CHA</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="CHAbox" type="text" />
+                    <ul class="navList" id="lstCHA">
+                        @*@{
+                                foreach (var item in Model.lstCHA)
+                                {
+                                    <li id="@item.CHAId">@item.CHAName</li>
+                                }
+                            }*@
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+        function CHABinding() {
+            var CHAJson = JSON.parse($('#hdnCHAList').val());
+            var html = '';
+            $.each(CHAJson, function (i, item) {
+                html += '<li id="' + item.CHAId + '">' + item.CHAName + '</li>';
+            });
+            $('#lstCHA').html(html);
+        }
+        function ShippingLineBinding() {
+            var ShippingLineJson = JSON.parse($('#hdnShippingLineList').val());
+            var html = '';
+            $.each(ShippingLineJson, function (i, item) {
+                html += '<li id="' + item.ShippingLineId + '">' + item.ShippingLineName + '</li>';
+            });
+            $('#lstShipping').html(html);
+        }
+
+
+
+        //CHABinding();
+        //ShippingLineBinding();
+
+
+
+        $('#Shippingbox').keyup(function () {
+            var val = $(this).val().toLowerCase();
+            if (val == "")
+                $('#lstShipping > li').show();
+            else {
+                $('#lstShipping > li').each(function () {
+                    var text = $(this).text().toLowerCase();
+                    (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+                });
+            }
+        });
+        $('#lstShipping > li').on("click", function () {
+            $('#ShippingLine').val($(this).text());
+            $('#ShippingLineId').val($(this).attr('id'));
+            $("#ShippingLineModal").modal("hide");
+        });
+
+        $('#CHAbox').keyup(function () {
+            var val = $(this).val().toLowerCase();
+            if (val == "")
+                $('#lstCHA > li').show();
+            else {
+                $('#lstCHA > li').each(function () {
+                    var text = $(this).text().toLowerCase();
+                    (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+                });
+            }
+        });
+        $('#lstCHA > li').on("click", function () {
+            debugger;
+            $('#CHAName').val($(this).text());
+            $('#CHAId').val($(this).attr('id'));
+            $("#CHAModal").modal("hide");
+        });
+
+        $('#SLCross').on('click', function () {
+            $('#ShippingLineId').val('0');
+            $('#ShippingLine').val('');
+        });
+        $('#CHACross').on('click', function () {
+            $('#CHAId').val('0');
+            $('#CHAName').val('');
+        });
+
+
+
+
+        $('#BtnPreview').on("click", function () {
+            //alert("in");
+            //ValidateExitDet();
+            $('#DivDwnldWavMsg').html('');
+            var From = $('#PeriodFrom').val();
+            var To = $('#PeriodTo').val();
+            var SF = From.split('/');
+            var ST = To.split('/');
+            var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+            var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+            if (FromDate > ToDate) {
+                $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+                return false;
+            }
+            return true;
+        });
+
+        $('#DebtorBox').keyup(function () {
+            var val = $(this).val().toLowerCase();
+            if (val == "")
+                $('#lstEximTraderWithInvoice > li').show();
+            else {
+                $('#lstEximTraderWithInvoice > li').each(function () {
+                    var text = $(this).text().toLowerCase();
+                    (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+                });
+            }
+        });
+
+        var SacName = "";
+
+        $('#lstEximTraderWithInvoice > li').on("click", function () {
+            $('#PartyName').val($(this).text());
+            $('#partyNameId').val($(this).attr('id'));
+            $("#ContainerModal").modal("hide");
+            SacName = $('#partyNameId').val();
+           // alert(SacName);
+
+        });
+
+        function RptConsumerListDtlOnFailure() { }
+        function BulkInvoiceReportSuccess(data) {
+            $('#DivDwnldWavMsg').html('')
+            //alert(data);
+            debugger;
+            if (data.Status == 1) {
+                if ($('#InvoiceModule').val() == 'All') {
+                    //code to call to download all files
+                    $.post("/ReportCWC/Download", function (data, status) {
+                        debugger;
+                        var fName = new Array();
+                        fName = data.Message.split(",");
+                        for (var i = 0; i < fName.length - 1; i++) {
+                            window.open(fName[i], '_blank', 'fullscreen=yes,modal=yes')
+                        }
+                    });
+                }
+                else {
+
+                    window.open(data.Data + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                    //for (var i = 0; i < data.Data.length; i++) {
+                    //    window.open(data.Data[i] + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                    //}
+                }
+            }
+            else {
+                $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+            }
+        }
+
+
+        function ValidateExitDet() {
+            var Status = true;
+
+            if ($('#PeriodFrom').val() == "") {
+                $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+                Status = false;
+            }
+
+            if ($('#PeriodTo').val() == "") {
+                $('[data-valmsg-for="txtGrossWeight"]').html('<span>Fill Out This Field</span>');
+                Status = false;
+            }
+
+
+            return Status;
+        }
+        function SaveReportPdf(data)
+        {
+            var FormDate = $("#PeriodFrom").val();
+            var ToDate = $("#PeriodTo").val();
+            var PostData = new FormData();
+            var Html = '<div style="text-align: center;border: 1px solid #000;">Bulk Invoice Report' + FormDate + ' To ' + ToDate + '</div>'
+            Html += "<table style='width:100%;font-size:9pt;font-family:Verdana,Arial,San-serif;border: 1px solid #000;border-collapse: collapse;margin-top:10px;'><thead><tr><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Invoice No.</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Date</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>values</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Closing Values</th></tr></thead><tbody>";
+            for (i = 0; i < data.Data.length;i++)
+            {
+                Html += '<tr><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].InvoiceNumber + '</td><td style="text-align: center;border: 1px solid #000;">' + data.Data[i].Date + '</td><td  style="text-align: right;border: 1px solid #000;">' + data.Data[i].Values + '</td><td  style="text-align: right;border: 1px solid #000;">' + data.Data[i].ClosingBalance + '</td></tr>'
+            }
+            Html += "</tbody></table>"
+            PostData.append("Page", Html);
+           // alert("PostData=" + PostData);
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                type: 'POST',
+                url: '@Url.Action("GenerateBulkInvoiceReportPDF", "ReportCWC", new { area = "Report" })',
+                headers: { '__RequestVerificationToken': Token },
+                data: PostData,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+
+                    if (data.Status == 1) {
+                        debugger;
+                        window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                    }
+
+                }
+            });
+        }
+
+        $("#LoadInvoice").click(function () {
+            loadInvoiceLIst();
+        });
+        function loadInvoiceLIst()
+        {
+
+            debugger;
+            var fromDt = $("#PeriodFrom").val();
+            var toDt = $("#PeriodTo").val();
+            var invModule = $("#InvoiceModule").val();
+            var shippinglineid =parseInt( $("#ShippingLineId").val());
+            var chaid = parseInt($("#CHAId").val());
+
+            if (fromDt == null || fromDt == '' || toDt == null || toDt == '') {
+                alert('Enter PeriodFrom Date and PeriodTo Date');
+                return;
+            }
+
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Report/ReportCWC/ListOfInvoiceDateWiseForExternalUser',
+                type: 'GET',
+                headers: { '__RequestVerificationToken': Token },
+                dataType: 'JSON',
+                data: { FromDate: fromDt, ToDate: toDt, Module: invModule, ShippingLineId: shippinglineid, CHAId: chaid },
+                async: false,
+                success: function (data) {
+                    // alert(data);
+                    debugger;
+                    if (data.Data != null && data.Data != "" && data.Data != undefined) {
+                        $("#JsonInvoiceLilst").val('');
+                        $("#JsonInvoiceLilst").val(data.Data);
+                        populateList();
+                    }
+                    else {
+                        debugger;
+                        $("#JsonInvoiceLilst").val('');
+                        alert(data.Message);
+
+                    }
+                }
+            });
+        }
+        function populateList()
+        {
+            debugger;
+            var jsonval = [];
+            if ($('#JsonInvoiceLilst').val() != '') {
+
+
+                jsonval = JSON.parse($('#JsonInvoiceLilst').val());
+            }
+            var html = '';
+            $.each(jsonval, function (i, item) {
+                html += '<li id="' + item.InvoiceNumber + '" " onclick="GetInv(this)">' + item.InvoiceNumber + '</li>';
+            });
+            debugger;
+            $('#lstInvoiceList').html(html);
+        }
+
+        function GetInv(elem) {
+
+            $('#InvoiceNumber').val($(elem).text());
+            //$('#ReferenceNoId').val($(elem).attr('id'));
+            var selectedReference = $('#InvoiceNumber').val();
+           // alert(selectedReference);
+            $("#InvoiceModal").modal("hide");
+            debugger;
+
+        }
+
+        $('#InvoiceListBox').keyup(function () {
+            var val = $(this).val().toLowerCase();
+            if (val == "")
+                $('#lstInvoiceList > li').show();
+            else {
+                $('#lstInvoiceList > li').each(function () {
+                    var text = $(this).text().toLowerCase();
+                    (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+                });
+            }
+        });
+        //InvoiceListBox
+
+
+        function GenerateInvoiceHTML() {
+            //var Token = $('input[name="__RequestVerificationToken"]').val();
+            var InvoiceIds = [4575, 4577, 4647, 4648, 4823, 4928, 4981, 4982, 5220, 5221, 5222, 5380, 5409, 5461, 5576, 5664, 5667, 5668, 5688];
+            /*
+                333,334,359,375,376,380,383,391,458,459,461,463,487,576,577,578,836,840,842,843,845,861,864,971,972,980,
+                1218,1219,1220,1221,1274,1275,1276,1446,1601,1605,1606,1894,1897,1899,1901,1902,1916,2120,2122,2283,2445,
+                2470,2615,2616,2700,2701,2764,2767,2777,2780,2880,2955,2957,2983,3037,3041,3090,3129,3138,3139,3258,3259,
+                3260,3347,3404,3499,3545,3546,3549,3567,3595,3658,3659,3661,3723,3962,4349,4357,4358,4429,4500,4559,4562,
+                4575,4577,4647,4648,4823,4928,4981,4982,5220,5221,5222,5380,5409,5461,5576,5664,5667,5668,5688
+            */
+
+            for (var i = 0; i < InvoiceIds.length; i++) {
+                $.ajax({
+                    url: '/CashManagement/Kol_CashManagement/GeneratePrint/?Id=' + InvoiceIds[i] + '&Type=BOND',
+                    type: 'GET',
+                    //headers: { '__RequestVerificationToken': Token },
+                    dataType: 'JSON',
+                    //data: { FromDate: fromDt, ToDate: toDt, Module: invModule, ShippingLineId: shippinglineid, CHAId: chaid },
+                    async: false,
+                    success: function (data) {
+
+                        console.log(InvoiceIds[i]);
+                    }
+                });
+            }
+        }
+
+</script>
+
+
+

@@ -1,0 +1,2698 @@
+﻿@model CwcExim.Areas.Import.Models.DSR_JobOrder
+<script src="~/Areas/Import/Scripts/App/Services/DSRJobOrderService.js"></script>
+<script src="~/Areas/Import/Scripts/App/Controllers/DSRJobOrderCtrl.js"></script>
+<script>
+    angular.bootstrap(document.getElementById('DSRJobOrderAppDiv'), ['CWCApp']);
+</script>
+<style>
+    #DivFormOneDet {
+        min-height: 50px;
+        overflow-x: hidden;
+    }
+
+    #tbleSline.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .slim_tble {
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .txt_wrp {
+        overflow: hidden;
+        word-wrap: break-word;
+    }
+
+    .brdr_sec table.table-bordered.dataTable th, .brdr_sec table.table-bordered.dataTable td {
+        font-size: 0.7em !important;
+        padding: 4px 7px;
+    }
+
+    .brdr_sec .table-striped > tbody > tr > td > input[type=text], .brdr_sec .table-striped > tbody > tr > td > select, .brdr_sec .table-striped > tfoot > tr > td > input[type=text], .brdr_sec .table-striped > tfoot > tr > td > select {
+        font-size: 0.8em;
+        padding: 3px 2px;
+    }
+    .mb1 label {
+        position: relative;
+        margin-bottom: 0.5em;
+    }
+
+    .mb1 input[type="radio"] {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+        .mb1 input[type="radio"] + label {
+            padding-left: 1.5em;
+        }
+
+            .mb1 input[type="radio"] + label:before {
+                position: absolute;
+                left: 0;
+                top: 4px;
+                content: "";
+                width: 1.1em;
+                height: 1.1em;
+                border: 2px solid #fe9b35;
+                background: none;
+                border-radius: 50%;
+            }
+
+        .mb1 input[type="radio"]:focus + label:before {
+            box-shadow: 0 1px 3px 2px #927451;
+        }
+
+        .mb1 input[type="radio"]:checked + label:before {
+            /*content: "\2713";*/ /* "✓" */
+            background: #fe9b35; 
+                       
+        }
+</style>
+
+@{
+
+    if (ViewBag.RightsList != null)
+    {
+        <input type="hidden" id="hdnRights" value="@ViewBag.RightsList" />
+    }
+    else
+    {
+        <input type="hidden" id="hdnRights" value="" />
+    }
+
+    if (ViewBag.ListOfTrainPick != null)
+    {
+        <input type="hidden" id="hdnTrainNo" value="@ViewBag.ListOfTrainPick" />
+    }
+    else
+    {
+        <input type="hidden" id="hdnTrainNo" value="" />
+    }
+
+    if (ViewBag.ListOfTrain != null)
+    {
+        <input type="hidden" id="hdnTrain" value="@ViewBag.ListOfTrain" />
+    }
+    else
+    {
+        <input type="hidden" id="hdnTrain" value="" />
+    }
+    if (ViewBag.ListOfShippingLine != null)
+    {
+        <input type="hidden" id="hdnShipping" value="@ViewBag.ListOfShippingLine" />
+    }
+    else
+    {
+        <input type="hidden" id="hdnShipping" value="" />
+    }
+
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.StringifyXML)
+    @Html.HiddenFor(m => m.ImpJobOrderId)
+    @Html.Hidden("hdnSEZ")
+    <div id="DSRJobOrderAppDiv" ng-controller="DSRJobOrderCtrl">
+        <div>
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-offset-0-5 col-md-11">
+                        <div class="Head_h4">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h4>Job Order</h4>
+                                </div>
+                            </div>
+
+                            <div class="row Form_Space_top" style="padding:0 10px;">
+                                <div class="form-group Form_Input">
+
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Job Order No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBoxFor(m => m.JobOrderNo, new { @class = "form-control input-sm", @readonly = true })
+                                        @Html.HiddenFor(m => m.ImpJobOrderId)
+                                        @Html.ValidationMessageFor(m => m.JobOrderNo, "", new { @class = "Error_Msg" })
+                                    </div>
+
+                                    <div class="col-md-offset-4 col-md-1-5 col_cus_offset_3 col_cus_2 padding_rt">
+                                        <label>Job Order Date:</label>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2_5 Date_Img">
+                                        @Html.TextBox("JobOrderDate", DateTime.Now.ToString("dd/MM/yyyy"), new { @onkeyup = "JOchecks()", @onblur = "JOcheckdat()", @tabindex = 1, @maxlength = 10 })                                        
+                                        <div class="field-validation-error" id="JOMsges" style="background-color:transparent"></div>
+                                        @*<input type="text" id="JobOrderDate"
+                                            name="date"
+                                            placeholder="dd/mm/yyyy"
+                                            onkeyup="var v = this.value;
+                                             if (v.match(/^\d{2}$/) !== null) {
+                                             this.value = v + '/';
+                                             } else if (v.match(/^\d{2}\/\d{2}$/) !== null) {
+                                             this.value = v + '/';
+                                             }"
+                                            maxlength="10" />*@
+                                        <span style="color:red" id="ErrJobOrderDate"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-2 col_cus_2">
+                                        <div class="mb1">
+                                            @Html.RadioButton("rdSummary", "rdWithSummary", new { id = "rdWithSummary", @checked = true, @onclick = "SummaryType('With')", @tabindex = 2 })
+                                            <label for="rdWithSummary">With Summary</label>
+                                            @Html.HiddenFor(m => m.TrainSummaryID)
+                                            @Html.Hidden("FormOneDetailId")
+                                            <input type="hidden" id="WithoutsummaryCheck" />
+                                            <input type="hidden" id="WithsummaryCheck" />
+                                            <input type="hidden" id="InvoiceType" />                                            
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2">
+                                        <div class="mb1">
+                                            @Html.RadioButton("rdSummary", "rdWithOutSummary", new { id = "rdWithOutSummary", @onclick = "SummaryType('Without')", @tabindex = 3 })
+                                            <label for="rdWithOutSummary">With Out Summary</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-1-5 col_cus_2 col-md-offset-3-5">
+                                        <label>SEZ:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.DropDownList("SEZ", new List<SelectListItem>
+                                        {
+                                        new SelectListItem { Text="SEZWP",Value="SEZWP"},
+                                        new SelectListItem {Text="SEZWOP",Value="SEZWOP" }
+
+                                        }, "---Select---", new { @class = "form-control input-sm dropdown" })
+                                        @Html.ValidationMessage("SEZ", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <div class="mb1">
+                                            @Html.RadioButton("InvoiceType", "Tax", new { id = "Tax", @checked = true, @onclick = "IVType('Tax')", @tabindex = 4 })
+                                            <label for="Tax">Tax Invoice</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2">
+                                        <div class="mb1">
+                                            @Html.RadioButton("InvoiceType", "Bill", new { id = "Bill", @onclick = "IVType('Bill')", @tabindex = 5 })
+                                            <label for="Bill">Bill Of Supply</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!--- Add---->
+                            <div id="divTraderModal" style="display:none">
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>Shipping Line:</label>
+                                        </div>
+                                        <div class="col-md-10-5">
+                                            <span class="ReQSimbol">*</span>
+                                            @Html.HiddenFor(m => m.ShippingLineId)
+                                            @Html.TextBoxFor(m => m.ShippingLineName, new { @class = "form-control input_sm", @readonly = true, @onkeydown = "PopupActivate('ModalTrader','SHIP');", @tabindex = 6 })
+                                            <span class="search" id="ModalShippingSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="ModalTraderSearch('SHIP')" data-target="#ModalTrader"></i></span>
+                                            @Html.ValidationMessageFor(m => m.ShippingLineName, "", new { @class = "Error_Msg" })
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>Pol:</label>
+                                        </div>
+                                        <div class="col-md-10-5">
+                                            <span class="ReQSimbol">*</span>
+                                            @Html.HiddenFor(m => m.PolId)
+                                            @Html.TextBoxFor(m => m.PolName, new { @class = "form-control input_sm", @readonly = true, onkeydown = "PopupActivate('ModalTrader','Pol');", @tabindex = 7 })
+                                            <span class="search" id="ModalPolSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="ModalTraderSearch('Pol')" data-target="#ModalTrader"></i></span>
+                                            @Html.ValidationMessageFor(m => m.PolName, "", new { @class = "Error_Msg" })
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>Importer Name:</label>
+                                        </div>
+                                        <div class="col-md-10-5">
+                                            @Html.HiddenFor(m => m.ImporterId)
+                                            <span class="ReQSimbol">*</span>
+                                            @Html.TextBoxFor(m => m.ImporterName, new { @class = "form-control input_sm", @readonly = true, @onkeydown = "PopupActivate('ModalTrader','IMP');", @tabindex = 7 })
+                                            <span class="search" id="ModalImporterSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="ModalTraderSearch('IMP')" data-target="#ModalTrader"></i></span>
+                                            @Html.ValidationMessageFor(m => m.ImporterName, "", new { @class = "Error_Msg" })
+                                        </div>
+
+                                    </div>
+                                </div>
+                                
+
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>CHA:</label>
+                                        </div>
+                                        <div class="col-md-10-5">
+                                            @Html.HiddenFor(m => m.CHAId)
+                                            <span class="ReQSimbol">*</span>
+                                            @Html.TextBoxFor(m => m.CHAName, new { @class = "form-control input-sm", @readonly = true, @onkeydown = "PopupActivate('ModalTrader','CHA');", @tabindex = 8 })
+                                            <span class="search" id="ModalCHASearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="ModalTraderSearch('CHA')" data-target="#ModalTrader"></i></span>
+                                            @Html.ValidationMessageFor(m => m.CHAName, "", new { @class = "Error_Msg" })
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>Party Name:</label>
+                                        </div>
+                                        <div class="col-md-10-5">
+                                            <span class="ReQSimbol">*</span>
+                                            @Html.HiddenFor(m => m.PartyId)
+                                            @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control input_sm", @readonly = true, @onkeydown = "PopupActivate('ModalTrader','PRT');", @tabindex = 9 })
+                                            <span class="search" id="ModalPartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="ModalTraderSearch('PRT')" data-target="#ModalTrader"></i></span>
+                                            @Html.ValidationMessageFor(m => m.PartyName, "", new { @class = "Error_Msg" })
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>Payer Name:</label>
+                                        </div>
+                                        <div class="col-md-10-5">
+                                            <span class="ReQSimbol">*</span>
+                                            @Html.HiddenFor(m => m.PayerId)
+                                            <span class="ReQSimbol">*</span>
+                                            @Html.TextBoxFor(m => m.PayerName, new { @class = "form-control input-sm", @readonly = true, @onkeydown = "PopupActivate('ModalTrader','PAY');", @tabindex = 10 })
+                                            <span class="search" id="ModalPayerSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="ModalTraderSearch('PAY')" data-target="#ModalTrader"></i></span>
+                                            @Html.ValidationMessageFor(m => m.PayerName, "", new { @class = "Error_Msg" })
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>Port:</label>
+                                        </div>
+                                        <div class="col-md-10-5">
+                                            <span class="ReQSimbol">*</span>
+                                            @Html.HiddenFor(m => m.PortId)
+                                            @Html.TextBoxFor(m => m.PortName, new { @class = "form-control input_sm", @readonly = true, onkeydown = "PopupActivate('ModalTrader','POT');", @tabindex = 11 })
+                                            <span class="search" id="ModalPortSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="ModalTraderSearch('POT')" data-target="#ModalTrader"></i></span>
+                                            @Html.ValidationMessageFor(m => m.PortName, "", new { @class = "Error_Msg" })
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>Remarks:</label>
+                                        </div>
+                                        <div class="col-md-10-5">                                                                                       
+                                            @Html.TextBoxFor(m => m.Remarks, new {@id= "Remarks", @class = "form-control input_sm", @tabindex = 12 })                                            
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!---- End -->
+
+
+
+                            <div class="row Form_Space_top" style="padding:0 10px;" id="divTrainSearch">
+                                <div class="form-group Form_Input">
+                                    @Html.HiddenFor(m => m.TrainSummaryID)
+                                    @Html.Hidden("FormOneDetailId")
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Train No.:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.Hidden("TNo")
+                                        <span class="ReQSimbol">*</span>
+                                        @Html.TextBoxFor(m => m.TrainNo, new { @class = "form-control input-sm", @readonly = true, @tabindex = 13, onkeydown = "PopupActivate('blNomodal','');" })
+                                        <span class="search" id="TrainNoSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#blNomodal"></i></span>
+                                        @Html.ValidationMessageFor(m => m.TrainNo, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-offset-4 col-md-1-5 col_cus_offset_3 col_cus_2 padding_rt">
+                                        <label>Train Date:</label>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2_5 Date_Img">
+                                        @Html.Hidden("TrainDt")
+                                        @*@Html.TextBoxFor(m => m.TrainDate, DateTime.Now.ToString("dd/MMM/yyyy hh:mm"), new { @class = "form-control input-sm", @readonly = true})*@
+                                        <input type="text" id="TrainDate" name="date" placeholder="dd/mm/yyyy" onkeyup = "JOTchecks()" onblur = "JOTcheckdat()" maxlength="10" tabindex = 14/>                                     
+                                        <div class="field-validation-error" id="JOTMsges" style="background-color:transparent"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="SignUp_space_bottom SignUp_space_top"></div>
+                            </div>
+                            <div class="brdr_sec">
+                                @*<div id="DivDeliveryAppTblErrMsg" class="logErrMsg Form_Space_top Form_Space_bottom" style="background-color:transparent"></div>*@
+                                <div class="Form_Space_top">
+                                    <div id="DivFormOneDet">
+                                        <table class="table table-bordered table-striped dataTable" style="width:100%;" ng-hide="JODetails.length==0">
+                                            <thead>
+                                                <tr>
+                                                    <th width="1%">Sl No</th>
+                                                    <th width="7%">Container</th>
+                                                    <th width="5%">Size</th>
+                                                    <th width="7%" id="thSline" style="display:none"><span class="ReQSimbol">*</span> Shipping Line</th>
+                                                    <th width="5%" id="thSlineNo" style="display:none" >Shipping Line No</th>
+                                                    <th width="7%" id="thParty" style="display:none">Party (CHA)</th>
+                                                    <th width="7%" id="thPayer" style="display:none">Payer</th>
+                                                    <th width="7%" id="thImporter" style="display:none">Importer</th>
+                                                    <th width="6%"><span class="ReQSimbol">*</span> Cargo Type</th>
+                                                    <th width="6%" ng-if="!ActiveControl">Load Type</th>
+                                                    <th width="6%">ODC Type</th>
+                                                    <th width="6%" id="thPort" style="display:none">Port</th>
+                                                    <th width="6%" id="thPol" style="display:none">Pol</th>
+
+                                                    <th width="6%">Gross Wt.(Kg)</th>
+                                                    <th width="6%" id="thRemarks" style="display:none">Remarks</th>
+                                                    <th width="6%" ng-if="ActiveControl">Amount</th>
+                                                    <th width="6%" ng-if="ActiveControl">GST</th>
+                                                    <th width="6%" ng-if="ActiveControl">Round up</th>
+                                                    <th width="10%" ng-if="ActiveControl">Invoice Amt</th>
+                                                    <th width="1%" ng-if="!ActiveControl">Delete</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr ng-repeat="j in JODetails">
+                                                    <td>{{$index+1}}</td>
+                                                    <td><input id="Container_{{$index}}" type="text" ng-model="j.Container_No" ng-disabled="ActiveControl" ng-blur="CheckContainerNo(j.Container_No,$index)" tabindex="15_{{$index}}"></td>
+                                                    @*<td width="4%"><input type="text" ng-model="j.CT_Size" ng-disabled="{{ActiveControl}}" /></td>*@
+                                                    <td>
+                                                        <select ng-model="j.CT_Size" required ng-disabled="ActiveControl" tabindex="15_{{$index}}">
+                                                            <option value="">--Select--</option>
+                                                            <option value="{{s.id}}" ng-repeat="s in SizeList">{{s.CT_Size}}</option>
+                                                        </select>
+                                                    </td>
+                                                    <td ng-show="j.Showhidde" style="position:relative;">
+                                                        <input type="text" ng-model="j.ShippingLineName" id="ShippingLineName_{{$index}}" readonly required  tabindex="15_{{$index}}" onkeydown = "PopupActivate('slmodal');"/>
+                                                        <span class="search" style="top: 5px; right: 10px;"><i style="font-size: 6pt;" class="fa fa-search" aria-hidden="true" ng-model="j.Slmodal" ng-click="onShippingLineChange($index)" data-toggle="modal" data-target="#slmodal" ng-hide="ActiveControl"></i></span>
+                                                        <input type="text" ng-hide="true" ng-model="j.ShippingLineId" />
+                                                    </td>
+                                                    <td ng-show="j.Showhidde"><input type="text" id="S_Line_{{$index}}" ng-model="j.S_Line" ng-disabled="ActiveControl" tabindex="15_{{$index}}"/></td>
+
+                                                    <td ng-show="j.Showhidde" style="position:relative;">
+                                                        <input type="text" ng-model="j.ImporterName" id="ImporterName_{{$index}}" readonly required  tabindex="15_{{$index}}" onkeydown = "PopupActivate('CHAModal');"/>
+                                                        <span class="search" style="top: 5px; right: 10px;"><i style="font-size: 6pt;" class="fa fa-search" aria-hidden="true" ng-model="j.CHAModal" ng-click="onCHAChange($index)" data-toggle="modal" data-target="#CHAModal" ng-hide="ActiveControl"></i></span>
+                                                        <input type="text" ng-hide="true" ng-model="j.ImporterId" />
+                                                    </td>
+                                                    <td ng-show="j.Showhidde" style="position:relative;">
+                                                        <input type="text" ng-model="j.PayerName" id="PayerName_{{$index}}" readonly required tabindex="15_{{$index}}" onkeydown = "PopupActivate('PayerModal');"/>
+                                                        <span class="search" style="top: 5px; right: 10px;"><i style="font-size: 6pt;" class="fa fa-search" aria-hidden="true" ng-model="j.PayerModal" ng-click="onPayerChange($index)" data-toggle="modal" data-target="#PayerModal" ng-hide="ActiveControl"></i></span>
+                                                        <input type="text" ng-hide="true" ng-model="j.PayerId" />
+                                                    </td>
+                                                    <td ng-show="j.Showhidde" style="position:relative;">
+                                                        <input type="text" ng-model="j.NewImporterName" id="NewImporterName_{{$index}}" readonly required tabindex="15_{{$index}}" onkeydown = "PopupActivate('NewImporterModal');"/>
+                                                        <span class="search" style="top: 5px; right: 10px;"><i style="font-size: 6pt;" class="fa fa-search" aria-hidden="true" ng-model="j.NewImporterModal" ng-click="onImporterChange($index)" data-toggle="modal" data-target="#NewImporterModal" ng-hide="ActiveControl"></i></span>
+                                                        <input type="text" ng-hide="true" ng-model="j.NewImporterId" />
+                                                    </td>
+                                                    <td>
+                                                        <select ng-model="j.CargoType" required ng-disabled="ActiveControl"  ng-init="j.CargoType='2'" id="CargoType_{{$index}}" tabindex="15_{{$index}}">
+                                                            @*<option value="">--Select--</option>*@
+                                                            <option value="{{s.id}}" ng-repeat="s in CargoTypeList">{{s.CargoType}}</option>
+                                                        </select>
+                                                    </td>
+                                                    <td ng-if="!ActiveControl">
+                                                        <select ng-model="j.Ct_Status" ng-disabled="ActiveControl" ng-init="j.Ct_Status='FCL'" id="Ct_Status_{{$index}}" tabindex="15_{{$index}}">
+                                                            @*<option value="">--Select--</option>*@
+                                                            <option value="{{t.id}}" ng-repeat="t in ContainerLoadTypeList">{{t.ContainerLoadType}}</option>
+                                                        </select>
+                                                    </td>
+                                                    <td>
+                                                        @*<select ng-model="j.Ct_ODC" ng-init="j.Ct_ODC = 0"  ng-disabled="ActiveControl"  id="Ct_ODC_{{$index}}" tabindex="15_{{$index}}"  ng-options="item.id as item.ContainerODCType for item in ContainerODCTypeList">*@
+                                                        <select ng-model="j.Ct_ODC" ng-disabled="ActiveControl" ng-init="j.Ct_ODC='0'" id="Ct_ODC_{{$index}}" tabindex="15_{{$index}}">
+                                                            @*<option value="">--Select--</option>*@
+                                                             <option value="{{t.id}}" ng-repeat="t in ContainerODCTypeList">{{t.ContainerODCType}}</option>
+                                                        </select>
+                                                    </td>
+
+                                                    <td ng-show="j.Showhidde">
+                                                        <select ng-model="j.PortId" ng-options="p.PortId as p.PortName for p in TransportFromList" ng-readonly tabindex="15_{{$index}}" id="PortId_{{$index}}"></select>
+                                                    </td>
+                                                    <td ng-show="j.Showhidde">
+                                                        <select ng-model="j.PolId" ng-options="p.PortId as p.PortName for p in TransportFromList" ng-readonly tabindex="15_{{$index}}" id="PolId_{{$index}}"></select>
+                                                    </td>
+
+                                                    <td><input type="text" ng-model="j.Gross_Wt" onkeypress="return isDecimalNumber(event)" ng-disabled="ActiveControl" tabindex="15_{{$index}}"/></td>
+                                                    <td ng-show="j.Showhidde"><input type="text" ng-model="j.Remarks" tabindex="15_{{$index}}" /></td>
+                                                    <td ng-if="ActiveControl"><input type="text" ng-model="j.Taxable" ng-disabled="true" onkeypress="return isDecimalNumber(event)" /></td>
+                                                    <td ng-if="ActiveControl"><input type="text" ng-model="j.GST" ng-disabled="true" onkeypress="return isDecimalNumber(event)" /></td>
+                                                    <td ng-if="ActiveControl"><input type="text" ng-model="j.Roundup" ng-disabled="true" onkeypress="return isDecimalNumber(event)" /></td>
+                                                    <td ng-if="ActiveControl"><input type="text" ng-model="j.InvoiceAmt" ng-disabled="true" onkeypress="return isDecimalNumber(event)" /></td>
+                                                    <td style="text-align:center;" ng-if="!ActiveControl"><a href="javascript:void(0);" ng-hide="!JODetails.length" ng-click="Delete($index)" tabindex="15_{{$index}}" id="Delete_{{$index}}"><i class="fa fa-window-close-o Delete" aria-hidden="true"></i></a></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+
+                                    <div id="DivFormOneDett" style="display:none;">
+                                        <table class="table table-bordered table-striped dataTable" style="width:100%;" ng-hide="JODetails.length==0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Sl No</th>
+                                                    <th width="8%">Container</th>
+                                                    <th width="4%">Size</th>
+                                                    <th ng-show="WithShow">Shipping Line</th>
+                                                    <th ng-show="WithShow" >Shipping Line No</th>
+                                                    <th ng-show="WithShow">Party (CHA)</th>
+                                                    <th ng-show="WithShow">Payer</th>
+                                                    <th ng-show="WithShow">Importer</th>
+                                                    <th>Cargo Type</th>
+                                                    <th width="4%" ng-if="!ActiveControl">Load Type</th>
+                                                    <th width="8%">ODC Type</th>
+                                                    <th ng-show="WithShow" >Port</th>
+                                                    <th ng-show="WithShow">POL</th>
+                                                    <th>Gross Wt.(Kg)</th>
+                                                    <th style="display:none" >Remarks</th>
+                                                    <th ng-if="ActiveControl">Amount</th>
+                                                    <th ng-if="ActiveControl">GST</th>
+                                                    <th ng-if="ActiveControl">Round up</th>
+                                                    <th width="10%" ng-if="ActiveControl">Invoice Amt</th>
+                                                    <th ng-if="!ActiveControl">Delete</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr ng-repeat="j in JOViewDetails">
+                                                    <td>{{$index+1}}</td>
+                                                    <td width="8%"><input type="text"  ng-model="j.Container_No" ng-disabled="ActiveControl" ng-blur="CheckContainerNo(j.Container_No,$index)" /></td>                                                    
+                                                    <td width="7%">
+                                                        <input type="text" ng-model="j.CT_Size" id="CT_Size{{$index}}" ng-disabled="true" required />
+
+
+
+                                                    </td>
+                                                    <td ng-show="j.Showhidden" style="position:relative;">
+                                                        <input type="text" ng-model="j.ShippingLineName" id="ShippingLineName_{{$index}}" ng-disabled="ActiveControl" required />
+                                                        <span class="search" style="top: 5px; right: 15px;"><i class="fa fa-search" aria-hidden="true" ng-model="j.Slmodal" ng-click="onShippingLineChange($index)" data-toggle="modal" data-target="#slmodal" ng-hide="ActiveControl"></i></span>
+                                                        <input type="text" ng-hide="true" ng-model="j.ShippingLineId" />
+                                                    </td>
+                                                    <td ng-show="j.Showhidden" width="5%"><input type="text" ng-model="j.ShippingLineNo" ng-disabled="ActiveControl" /></td>
+
+                                                    <td ng-show="j.Showhidden" style="position:relative;">
+                                                        <input type="text" ng-model="j.ImporterName" id="ImporterName_{{$index}}" ng-disabled="true" required />
+                                                        <span class="search" style="top: 5px; right: 15px;"><i class="fa fa-search" aria-hidden="true" ng-model="j.CHAModal" ng-click="onCHAChange($index)" data-toggle="modal" data-target="#CHAModal" ng-hide="ActiveControl"></i></span>
+                                                        <input type="text" ng-hide="true" ng-model="j.ImporterId" />
+                                                    </td>
+                                                    <td ng-show="j.Showhidden" style="position:relative;">
+                                                        <input type="text" ng-model="j.PayerName" id="PayerName_{{$index}}" ng-disabled="true" required />
+                                                        <span class="search" style="top: 5px; right: 15px;"><i class="fa fa-search" aria-hidden="true" ng-model="j.PayerModal" ng-click="onPayerChange($index)" data-toggle="modal" data-target="#PayerModal" ng-hide="ActiveControl"></i></span>
+                                                        <input type="text" ng-hide="true" ng-model="j.PayerId" />
+                                                    </td>
+                                                    <td ng-show="j.Showhidden" style="position:relative;">
+                                                        <input type="text" ng-model="j.NewImporterName" id="NewImporterName{{$index}}" ng-disabled="true" required />
+                                                        <span class="search" style="top: 5px; right: 15px;"><i class="fa fa-search" aria-hidden="true" ng-model="j.NewImporterModal" ng-click="onImporterChange($index)" data-toggle="modal" data-target="#NewImporterModal" ng-hide="ActiveControl"></i></span>
+                                                        <input type="text" ng-hide="true" ng-model="j.NewImporterId" />
+                                                    </td>
+                                                    <td width="6%">
+                                                        <select ng-model="j.CargoType" required ng-disabled="ActiveControl">
+                                                            <option value="">--Select--</option>
+                                                            <option value="{{s.id}}" ng-repeat="s in CargoTypeList">{{s.CargoType}}</option>
+                                                        </select>
+
+                                                    </td>
+
+
+                                                    <td width="6%" ng-if="!ActiveControl">
+                                                        <select ng-model="j.Ct_Status" ng-disabled="ActiveControl"  ng-init="j.Ct_Status='0'">
+                                                            @*<option value="">--Select--</option>*@
+                                                            <option value="{{t.id}}" ng-repeat="t in ContainerLoadTypeList">{{t.ContainerLoadType}}</option>
+                                                        </select>
+                                                    </td>
+                                                    <td width="8%">
+                                                        <select ng-model="j.Ct_ODC" ng-disabled="ActiveControl"  ng-init="j.Ct_ODC='0'">
+                                                            @*<option value="">--Select--</option>*@
+                                                            <option value="{{t.id}}" ng-repeat="t in ContainerODCTypeList">{{t.ContainerODCType}}</option>
+                                                        </select>
+                                                    </td>
+                                                    <td ng-show="j.Showhidden">
+                                                        <select ng-model="j.PortId" ng-options="p.PortId as p.PortName for p in TransportFromList" ng-disabled="ActiveControl"></select>
+
+                                                    </td>
+                                                    <td ng-show="j.Showhidden">
+                                                        <select ng-model="j.PolId" ng-options="p.PortId as p.PortName for p in TransportFromList" ng-disabled="ActiveControl"></select>
+
+                                                    </td>
+
+                                                    <td><input type="text" ng-model="j.Gross_Wt" onkeypress="return isDecimalNumber(event)" ng-disabled="ActiveControl" /></td>
+                                                    <td ng-hide="true"><input type="text" ng-model="j.Remarks" /></td>
+                                                    <td ng-if="ActiveControl"><input type="text" ng-model="j.Taxable" ng-disabled="true" onkeypress="return isDecimalNumber(event)" /></td>
+                                                    <td ng-if="ActiveControl"><input type="text" ng-model="j.GST" ng-disabled="true" onkeypress="return isDecimalNumber(event)" /></td>
+                                                    <td ng-if="ActiveControl"><input type="text" ng-model="j.Roundup" ng-disabled="true" onkeypress="return isDecimalNumber(event)" /></td>
+                                                    <td width="8%" ng-if="ActiveControl"><input type="text" ng-model="j.Total" ng-disabled="true" onkeypress="return isDecimalNumber(event)" /></td>
+                                                    <td style="text-align:center;" ng-if="!ActiveControl"><a href="javascript:void(0);" ng-hide="!JODetails.length" ng-click="Delete($index)"><i class="fa fa-window-close-o Delete" aria-hidden="true"></i></a></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                    </div>
+                                </div>
+                                
+                                <div class="row" id="divAddNewRow" style="display:none;">
+                                    <div class="col-md-offset-4 col-md-2" style="text-align:center">
+                                        <input type="button" id="AddJobOrd" value="Add Row" onclick="AddJoborder()" tabindex="16" class="btn log_Btn_sm" />
+                                    </div>
+                                </div>
+
+                            </div>
+
+
+                            <div class="row">
+                                <div class="SignUp_space_bottom SignUp_space_top"></div>
+                            </div>
+                            <div class="row">
+                                <input type="hidden" id="hdnlength" />
+                                <div class="col-md-offset-1-5 col-md-3">
+                                    <input type="button" id="Invoice" value="Generate Invoice" class="btn log_Btn_sm" ng-click="GenerateInvoice()" tabindex="17"/>
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="submit" id="btnSave" value="Save" class="btn log_Btn_sm" ng-click="OnJobOrderSave()" tabindex="18" />
+                                </div>
+
+                                <div class="col-md-3">
+                                    <input type="button" id="BtnGenerateIRN" class="btn log_Btn_sm" value="Generate IRN" onclick="GenerateIRN()" disabled="disabled" />
+                                </div>
+
+                                <div class="col-md-2">
+                                    <input type="button" id="btnPrint" value="Print" class="btn log_Btn_sm" onclick="OnJobOrderPrint()" tabindex="19" />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="button" value="Reset" class="btn log_Btn_sm" ng-click="ResetImpJODetails()" tabindex="20"/>
+                                </div>
+
+                            </div>
+
+                            <div class="logSuccMsg" style="background-color:transparent" id="DivJobOrder"></div>
+                            <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivJobOrderErrMsg"></div>
+
+                            <div class="row SignUp_space_bottom">
+                                <div class="stoke"></div>
+                            </div>
+
+                            <div class="row Form_Space_top Form_Space_bottom">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-2">
+                                        <input type="button" id="BtnCommodityLoad" value="Show List" class="btn log_Btn_sm" onclick="LoadJobOrderList()" tabindex="21" />
+                                    </div>
+                                    <div class="col-md-offset-7 col-md-3" id="TblSearch">
+                                        @Html.TextBox("ContainerNoSearch", "", new { placeholder = "Search By Container / CBT/Job Order No" , @tabindex = "22" })
+                                        <span class="search"><i class="fa fa-search" aria-hidden="true" onclick="SearchByContainerNo()" tabindex="23"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" id="TblGridHead">
+                                <div class="col-md-12">
+                                    <div id="tblEntryDet"></div>
+                                </div>
+                            </div>
+
+                            <div class="row" id="TblGridList">
+                                <div class="col-md-12 SignUp_space_bottom">
+                                    <div id="DivYardList"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div id="blNomodal" class="modal fade mTabindex" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of Train No.</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <input placeholder="Search Me" id="TrainNobox" type="text" tabindex="401" />
+                            <ul class="navList" id="lstTrainNoNo"></ul>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="slmodal" class="modal fade mTabindex" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" onclick="CloseEximTrader()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of Shipping Line</h4>
+                        </div>
+                        <div class="modal-body popup_body" style="position:relative;">
+                            <input tabindex="100" placeholder="Search By Shipping Line Or Party Code" id="ShpngLinebox" type="text" />
+                            <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByPartyCode()"></i></span>
+
+                            <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                                <thead>
+                                    <tr>
+                                        <th colspan="8" width="80%">Shipping Line Name</th>
+                                        <th colspan="4" width="20%">Party Code</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div id="slim_scroll">
+                                <table class="table dataTable table-bordered table-striped slim_tble" id="tbleSline">
+                                    @{
+                                        if (ViewBag.lstShippingLine != null)
+                                        {
+                                            var tabvalue = 101;
+                                            foreach (var item in ViewBag.lstShippingLine)
+                                            {
+                                                <tr tabindex="@tabvalue" ng-keypress="SelectShippingLineKeyPress(@item.ShippingLineId,'@item.ShippingLineName','@item.PartyCode')" ng-click="SelectShippingLine(@item.ShippingLineId,'@item.ShippingLineName','@item.PartyCode')">
+                                                    <td colspan="8" width="80%" class="txt_wrp">@item.ShippingLineName</td>
+                                                    <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                                </tr>
+
+                                                tabvalue++;
+                                            }
+                                        }
+                                    }
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                &nbsp;
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                                    {
+                                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                                    }
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" onclick="CloseEximTrader()">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="CHAModal" class="modal fade mTabindex" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" onclick="CloseCHA()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of CHA</h4>
+                        </div>
+                        <div class="modal-body popup_body" style="position:relative;">
+                            <input tabindex="201" placeholder="Search By CHA Or CHA Code" id="CHAbox" type="text" />
+                            <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByCHACode()"></i></span>
+
+                            <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                                <thead>
+                                    <tr>
+                                        <th colspan="8" width="80%">CHA Name</th>
+                                        <th colspan="4" width="20%">CHA Code</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div id="slim_scroll1">
+                                <table class="table dataTable table-bordered table-striped slim_tble" id="tbleCHA">
+                                    @{
+                                        if (ViewBag.lstCHA != null)
+                                        {
+                                            var tabvalue = 201;
+                                            foreach (var item in ViewBag.lstCHA)
+                                            {
+                                                <tr tabindex="@tabvalue" ng-keypress="SelectCHAlineKey(@item.ImporterId,'@item.ImporterName')" ng-click="SelectCHAline(@item.ImporterId,'@item.ImporterName')">
+                                                    <td colspan="8" width="80%" class="txt_wrp">@item.ImporterName</td>
+                                                    <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                                </tr>
+                                                tabvalue++;
+                                            }
+                                        }
+                                    }
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                &nbsp;
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    @if (ViewBag.CHAState != null && Convert.ToBoolean(ViewBag.CHAState) == true)
+                                    {
+                                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreCHA()" class="btn log_Btn_sm" id="btnCHALoadMore">Load More Data</button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreCHA()" class="btn log_Btn_sm" id="btnCHALoadMore" disabled>Load More Data</button>
+                                    }
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" onclick="CloseCHA()">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="NewImporterModal" class="modal fade mTabindex" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" onclick="CloseImporter()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of IMPORTER</h4>
+                        </div>
+                        <div class="modal-body popup_body" style="position:relative;">
+                            <input tabindex="400" placeholder="Search By Importer Or Importer Code" id="NewImporterbox" type="text" />
+                            <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByImporterCode()"></i></span>
+
+                            <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                                <thead>
+                                    <tr>
+                                        <th colspan="8" width="80%">Importer Name</th>
+                                        <th colspan="4" width="20%">Importer Code</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div id="slim_scroll3">
+                                <table class="table dataTable table-bordered table-striped slim_tble" id="tbleImporter">
+                                    @{
+                                        if (ViewBag.lstImporter != null)
+                                        {
+                                            var tabvalue = 401;
+                                            foreach (var item in ViewBag.lstImporter)
+                                            {
+                                                <tr tabindex="@tabvalue" ng-keypress="SelectImporterlinekey(@item.ImporterId,'@item.ImporterName')" ng-click="SelectImporterline(@item.ImporterId,'@item.ImporterName')">
+                                                    <td colspan="8" width="80%" class="txt_wrp">@item.ImporterName</td>
+                                                    <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                                </tr>
+                                                tabvalue++;
+                                            }
+                                        }
+                                    }
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                &nbsp;
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    @if (ViewBag.ImporterState != null && Convert.ToBoolean(ViewBag.ImporterState) == true)
+                                    {
+                                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreImporter()" class="btn log_Btn_sm" id="btnCHALoadMore">Load More Data</button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreImporter()" class="btn log_Btn_sm" id="btnCHALoadMore" disabled>Load More Data</button>
+                                    }
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" onclick="CloseImporter()">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="PayerModal" class="modal fade mTabindex" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" onclick="ClosePayer()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of Payer</h4>
+                        </div>
+                        <div class="modal-body popup_body" style="position:relative;">
+                            <input tabindex="300" placeholder="Search By Shipping Line Or Party Code" id="PayerLinebox" type="text" />
+                            <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByPayerCode()"></i></span>
+
+                            <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                                <thead>
+                                    <tr>
+                                        <th colspan="8" width="80%">Payer Name</th>
+                                        <th colspan="4" width="20%">Payer Code</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div id="slim_scroll2">
+                                <table class="table dataTable table-bordered table-striped slim_tble" id="tblePayer">
+                                    @{
+                                        if (ViewBag.lstPayer != null)
+                                        {
+                                            var tabvalue = 301;
+                                            foreach (var item in ViewBag.lstPayer)
+                                            {
+                                                <tr tabindex="@tabvalue" ng-keypress="SelectPayerlinekey(@item.ImporterId,'@item.ImporterName')" ng-click="SelectPayerline(@item.ImporterId,'@item.ImporterName')">
+                                                    <td colspan="8" width="80%" class="txt_wrp">@item.ImporterName</td>
+                                                    <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                                </tr>
+
+                                                tabvalue++;
+                                            }
+                                        }
+                                    }
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                &nbsp;
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    @if (ViewBag.PayerState != null && Convert.ToBoolean(ViewBag.PayerState) == true)
+                                    {
+                                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMorePayer()" class="btn log_Btn_sm" id="btnPayerLoadMore">Load More Data</button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMorePayer()" class="btn log_Btn_sm" id="btnPayerLoadMore" disabled>Load More Data</button>
+                                    }
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" onclick="ClosePayer()">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade mTabindex" id="ModalTrader" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" onclick="CloseTrader()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title" id="hShippingLine" style="display:none">List of Shipping Line Name</h4>
+                            <h4 class="modal-title" id="hImporter" style="display:none">List of Importer Name</h4>
+                            <h4 class="modal-title" id="hCHA" style="display:none">List of CHA Name</h4>
+                            <h4 class="modal-title" id="hParty" style="display:none">List of Party Name</h4>
+                            <h4 class="modal-title" id="hPayer" style="display:none">List of Payer Name</h4>
+                            <h4 class="modal-title" id="hPort" style="display:none">List of Port Name</h4>
+                            <h4 class="modal-title" id="hPol" style="display:none">List of POL Name</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <input placeholder="Search By Name Or Code" id="Traderbox" type="text" tabindex="401" />
+                            <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByTraderCode()"></i></span>
+
+                            <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                                <thead>
+                                    <tr>
+                                        <th colspan="8" width="80%">Name</th>
+                                        <th colspan="4" width="20%">Code</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div id="slim_scrollHdr">
+                                <table class="table dataTable table-bordered table-striped slim_tble" id="tblTrader"></table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input type="hidden" id="hdnTraderCode" value="" />
+                                    <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreTrader()" class="btn log_Btn_sm" id="btnLoadMoreTrader" disabled>Load More Data</button>
+
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" onclick="CloseTrader()">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+    $(function () {
+        $('#slim_scroll1').slimScroll({
+            allowPageScroll: true
+        });
+    });
+    $(function () {
+        $('#slim_scroll2').slimScroll({
+            allowPageScroll: true
+        });
+    }); 
+    $(function () {
+        $('#slim_scroll3').slimScroll({
+            allowPageScroll: true
+        });
+    }); 
+    $(function () {
+        $('#slim_scrollHdr').slimScroll({
+            allowPageScroll: true
+        });
+    });
+    $('#JobOrderDate').focus();
+</script>
+<script>
+    function SelectTrader(TraderId, TraderName) {
+        debugger;
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+
+        if ($('#hdnTraderCode').val() == 'SHIP') {
+            $('#ShippingLineName').val(TraderName);
+            $('#ShippingLineId').val(TraderId);
+            $('#PolName').focus();
+        }
+        
+        else if ($('#hdnTraderCode').val() == 'IMP') {
+            $('#ImporterName').val(TraderName);
+            $('#ImporterId').val(TraderId);
+            $('#CHAName').focus();          
+        }
+        else if ($('#hdnTraderCode').val() == 'CHA') {
+            $('#CHAName').val(TraderName);
+            $('#CHAId').val(TraderId);
+            $('#PartyName').val(TraderName);
+            $('#PartyId').val(TraderId);
+            $('#PayerName').val(TraderName);
+            $('#PayerId').val(TraderId);
+            //$('#PartyName').focus(); 
+            $('#PortName').focus();
+        }
+        else if ($('#hdnTraderCode').val() == 'PRT') {
+            $('#PartyName').val(TraderName);
+            $('#PartyId').val(TraderId);
+            $('#PayerName').val(TraderName);
+            $('#PayerId').val(TraderId);
+            $('#PayerName').focus();          
+        }
+        else if ($('#hdnTraderCode').val() == 'PAY') {
+            $('#PayerName').val(TraderName);
+            $('#PayerId').val(TraderId);
+            $('#PortName').focus();           
+        }
+        else if ($('#hdnTraderCode').val() == 'POT') {
+            $('#PortName').val(TraderName);
+            $('#PortId').val(TraderId);
+            $('#Remarks').focus();
+
+            //$('#Container_1').focus();
+            
+            //var tabindex = '14'
+           // $('[tabindex=' + tabindex + ']').focus();
+         
+        }
+        else if ($('#hdnTraderCode').val() == 'Pol') {
+            $('#PolName').val(TraderName);
+            $('#PolId').val(TraderId);
+            $('#ImporterName').focus();
+
+            //$('#Container_0').focus();
+
+            //var tabindex = '14'
+            // $('[tabindex=' + tabindex + ']').focus();
+
+        }
+
+        $("#ModalTrader").modal("hide");
+        $('#Traderbox').val('');
+        $('#hdnTraderCode').val('');
+        $('#tblTrader').html('');
+       
+    }
+
+    function CloseTrader() {
+        debugger;
+        if ($('#hdnTraderCode').val() == 'SHIP') {           
+            $('#ImporterName').focus();
+        }
+        else if ($('#hdnTraderCode').val() == 'IMP') {           
+            $('#CHAName').focus();
+        }
+        else if ($('#hdnTraderCode').val() == 'CHA') {          
+            $('#PartyName').focus();
+        }
+        else if ($('#hdnTraderCode').val() == 'PRT') {           
+            $('#PayerName').focus();
+        }
+        else if ($('#hdnTraderCode').val() == 'PAY') {           
+            $('#PortName').focus();
+        }
+        else if ($('#hdnTraderCode').val() == 'POT') {
+            $('#Remarks').focus();
+            //$('#Container_0').focus();
+            //var tabindex='14_0'
+            //$('[tabindex=' + tabindex + ']').focus();
+        }
+        $('#Traderbox').val('');
+        $("#ModalTrader").modal("hide");
+        $('#hdnTraderCode').val('');
+        $('#tblTrader').html('');
+
+    }
+
+    function ModalTraderSearch(TFlag) {
+        debugger;
+        if (TFlag == 'SHIP')
+        {
+            $('#hShippingLine').css("display", "");
+            $('#hImporter').css("display", "none");
+            $('#hCHA').css("display", "none");
+            $('#hParty').css("display", "none");
+            $('#hPayer').css("display", "none");
+            $('#hPort').css("display", "none");
+            $('#hPort').css("display", "none");
+            $('#hPol').css("display", "none");
+        }
+        else if (TFlag == 'IMP') {
+            $('#hShippingLine').css("display", "none");
+            $('#hImporter').css("display", "");
+            $('#hCHA').css("display", "none");
+            $('#hParty').css("display", "none");
+            $('#hPayer').css("display", "none");
+            $('#hPort').css("display", "none");
+            $('#hPol').css("display", "none");
+
+        }
+        else if (TFlag == 'CHA') {
+            $('#hShippingLine').css("display", "none");
+            $('#hImporter').css("display", "none");
+            $('#hCHA').css("display", "");
+            $('#hParty').css("display", "none");
+            $('#hPayer').css("display", "none");
+            $('#hPort').css("display", "none");
+            $('#hPol').css("display", "none");
+        }
+        else if (TFlag == 'PRT') {
+            $('#hShippingLine').css("display", "none");
+            $('#hImporter').css("display", "none");
+            $('#hCHA').css("display", "none");
+            $('#hParty').css("display", "");
+            $('#hPayer').css("display", "none");
+            $('#hPort').css("display", "none");
+            $('#hPol').css("display", "none");
+        }
+        else if (TFlag == 'PAY') {
+            $('#hShippingLine').css("display", "none");
+            $('#hImporter').css("display", "none");
+            $('#hCHA').css("display", "none");
+            $('#hParty').css("display", "none");
+            $('#hPayer').css("display", "");
+            $('#hPort').css("display", "none");
+            $('#hPol').css("display", "none");
+        }
+        else if (TFlag == 'POT') {
+            $('#hShippingLine').css("display", "none");
+            $('#hImporter').css("display", "none");
+            $('#hCHA').css("display", "none");
+            $('#hParty').css("display", "none");
+            $('#hPayer').css("display", "none");
+            $('#hPort').css("display", "");
+            $('#hPol').css("display", "none");
+        }
+        else if (TFlag == 'Pol') {
+            $('#hShippingLine').css("display", "none");
+            $('#hImporter').css("display", "none");
+            $('#hCHA').css("display", "none");
+            $('#hParty').css("display", "none");
+            $('#hPayer').css("display", "none");
+            $('#hPort').css("display", "none");
+            $('#hPol').css("display", "");
+        }
+        LoadTrader(TFlag);
+        $('#Traderbox').focus();
+        $('#hdnTraderCode').val(TFlag);
+    }
+
+
+    var Page = 0;
+    function LoadMoreTrader() {
+        debugger;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/LoadTraderList',
+            type: 'GET',
+            data: { PartyCode: "", TFlag: $('#hdnTraderCode').val(), Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tab = 401;
+                    $.each(data.Data.lstTrader, function (item, elem) {
+                        //debugger;
+                        html += '<tr tabindex=' + tab + ' onclick="SelectTrader(' + elem.TraderId + ',&quot;' + elem.TraderName + '&quot;)" onkeypress="SelectTrader(' + elem.TraderId + ',&quot;' + elem.TraderName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.TraderName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.TraderCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tblTrader').html(html);
+                    else
+                        $('#tblTrader').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMoreTrader').prop('disabled', false);
+                    else $('#btnLoadMoreTrader').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadTrader(TFlag) {
+        Page = 0;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/LoadTraderList',
+            type: 'GET',
+            data: { PartyCode: "", TFlag: TFlag, Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tab = 401;
+                    $.each(data.Data.lstTrader, function (item, elem) {
+                        debugger;
+                        html += '<tr tabindex=' + tab + ' onclick="SelectTrader(' + elem.TraderId + ',&quot;' + elem.TraderName + '&quot;)" onkeypress="SelectTrader(' + elem.TraderId + ',&quot;' + elem.TraderName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.TraderName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.TraderCode + '</td></tr>';
+                    });
+                    $('#tblTrader').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMoreTrader').prop('disabled', false);
+                    else $('#btnLoadMoreTrader').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SearchByTraderCode() {
+        debugger;
+        Page = 0;
+        if ($('#Traderbox').val() != '') {
+            $.ajax({
+                url: '/Import/DSR_CWCImport/SearchByTraderCode',
+                type: 'GET',
+                data: { PartyCode: $('#Traderbox').val(), TFlag: $('#hdnTraderCode').val(), Page: Page },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        var tab = 401;
+                        $.each(data.Data.lstTrader, function (item, elem) {
+                            html += '<tr tabindex=' + tab + ' onclick="SelectTrader(' + elem.TraderId + ',&quot;' + elem.TraderName + '&quot;)" onkeypress="SelectTrader(' + elem.TraderId + ',&quot;' + elem.TraderName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.TraderName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.TraderCode + '</td></tr>';
+                        });
+                        $('#tblTrader').html('');
+                        $('#tblTrader').html(html);
+                        $('#btnLoadMoreTrader').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tblTrader').html('');
+                        Page = -1;
+                        $('#btnLoadMoreTrader').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadTrader($('#hdnTraderCode').val());
+    }
+
+    $('#Traderbox').keyup(function () {
+        SearchByTraderCode();
+    });
+    
+
+    $('#ModalTrader').on('shown.bs.modal', function () {
+        $('#Traderbox').focus();
+    });
+    $('#blNomodal').on('shown.bs.modal', function () {
+        $('#TrainNobox').focus();
+    });
+    $('#slmodal').on('shown.bs.modal', function () {
+        $('#ShpngLinebox').focus();
+    });
+    $('#CHAModal').on('shown.bs.modal', function () {
+        $('#CHAbox').focus();
+    });
+    $('#PayerModal').on('shown.bs.modal', function () {
+        $('#PayerLinebox').focus();
+    });
+    $('#NewImporterModal').on('shown.bs.modal', function () {
+        $('#NewImporterbox').focus();
+    });
+
+   
+
+    $('.mTabindex').keydown(function (e) {
+        //debugger;
+        var $focusable = $(this).find("[tabindex]:not([tabindex='-1'])");
+        if ($focusable.last().is(":focus") && !e.shiftKey && e.key == "Tab") {
+            e.preventDefault();
+            $focusable.first().focus();
+        }
+        else
+            if ($focusable.first().is(":focus") && e.shiftKey && e.key == "Tab") {
+                e.preventDefault();
+                $focusable.last().focus();
+            }
+    });
+
+    function PopupActivate(Id,TFlag) {
+        debugger;
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+
+        if (CharCode == 32) {
+
+            $('#' + Id).modal('show');
+
+
+            if (Id == "ModalTrader") {
+                ModalTraderSearch(TFlag);
+                $('#ContainerNobox').focus();
+            }
+            if (Id == "blNomodal") {
+                TrainNoSearch();
+                $('#TrainNobox').focus();
+            }
+            if (Id == "slmodal") {
+               // SelectShippingLine(TFlag)
+                LoadEximTrader();
+                $('#ShpngLinebox').focus();
+            }
+            if (Id == "CHAModal") {
+                LoadCHA();
+                $('#CHAbox').focus();
+            }
+            if (Id == "PayerModal") {
+                LoadPayer();
+                $('#PayerLinebox').focus();
+            }
+            if (Id == "NewImporterModal") {
+                LoadNewImporter();
+                $('#NewImporterbox').focus();
+            }
+            
+
+        }
+    }
+
+    function JOchecks() {
+        debugger;
+
+        $('#JobOrderDate').val($('#JobOrderDate').val().replace(/^(\d\d)(\d)$/g, '$1/$2').replace(/^(\d\d\/\d\d)(\d+)$/g, '$1/$2').replace(/[^\d\/]/g, ''));
+
+    }
+    function JOcheckdat() {
+        debugger;
+        if ($('#JobOrderDate').val() != '') {
+            var result = moment($('#JobOrderDate').val(), "DD/MM/YYYY", true).isValid();
+            if (!result) {
+                $('#JOMsges').html('Incorrect Date');
+                setTimeout(function () { $('#JOMsges').html(''); }, 5000);
+                $('#JobOrderDate').val('');
+            }
+        }
+
+    }
+    function JOTchecks() {
+        debugger;
+
+        $('#TrainDate').val($('#TrainDate').val().replace(/^(\d\d)(\d)$/g, '$1/$2').replace(/^(\d\d\/\d\d)(\d+)$/g, '$1/$2').replace(/[^\d\/]/g, ''));
+
+    }
+    function JOTcheckdat() {
+        debugger;
+        if ($('#TrainDate').val() != '') {
+            var result = moment($('#TrainDate').val(), "DD/MM/YYYY", true).isValid();
+            if (!result) {
+                $('#JOTMsges').html('Incorrect Date');
+                setTimeout(function () { $('#JOTMsges').html(''); }, 5000);
+                $('#TrainDate').val('');
+            }
+        }
+
+    }
+    
+</script>
+<script>
+    function OnJobOrderPrint() {
+        debugger;
+        if ($('#ImpJobOrderId').val() != 0) {
+
+
+            debugger;
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Report/DSR_ReportCWC/PrintJOTwoInvoice',
+                type: 'POST',
+                data: { ImpJobOrderId: $('#ImpJobOrderId').val() },
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                success: function (data) {
+                    debugger
+                    if (data.Status == 1)
+                        window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                    else
+                        alert(data.Message);
+                }
+            });
+
+            //  PrintImpJODet($('#ImpJobOrderId').val());
+
+        }
+    }
+    var FormOneDetails = [];
+
+
+    function PrintImpJODet(ImpJobOrderId) {
+        debugger;
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/Import/DSR_CWCImport/PrintJO',
+            type: 'POST',
+            data: { ImpJobOrderId: ImpJobOrderId },
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+    }
+
+    function GenerateIRN() {
+        debugger;
+        if ($('#ImpJobOrderId').val() != 0) {
+
+
+            debugger;
+            //var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Import/DSR_CWCImport/IRNJO',
+                type: 'POST',
+                data: { ImpJobOrderId: $('#ImpJobOrderId').val() },
+                //headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                success: function (data) {
+                    debugger
+                    if (data.Status == 1) {
+                        var printjson = JSON.parse(data.Message);
+                        alert(printjson.Message);
+                    }
+                    else
+                        alert(data.Message);
+                }
+            });
+
+            //  PrintImpJODet($('#ImpJobOrderId').val());
+
+        }
+    }
+
+
+    var dt;
+    $(function () {
+        //$('#TblSearch').hide();
+        $('#TblGridHead').hide();
+        $('#DivYardList').hide();
+        GenerateEntryTable();
+        var today = new Date();
+        var dd = today.getDate();
+        var mm = today.getMonth() + 1; //January is 0!
+
+        var yyyy = today.getFullYear();
+        if (dd < 10) {
+            dd = '0' + dd;
+        }
+        if (mm < 10) {
+            mm = '0' + mm;
+        }
+        var today = dd + '/' + mm + '/' + yyyy;
+
+
+        $('#JobOrderDate').val(today);
+        $('#joborderCheck').val(new Date());
+        $('#trainCheck').val(new Date());
+
+        TimeInSeconds = 5000;
+        SubDomain = '@System.Configuration.ConfigurationManager.AppSettings["SubDomain"]';
+
+    });
+
+
+    function isDecimalNumber(event) {
+        let charCode = (event.which) ? event.which : event.keyCode;
+        if (charCode != 46 && charCode > 31
+            && (charCode < 48 || charCode > 57))
+            return false;
+        return true;
+    }
+
+
+    $('#TrainNobox').keyup(function () {
+        TrainNoSearch();
+        //var val = $(this).val().toLowerCase();
+        //if (val == "")
+        //    $('#lstTrainNoNo > li').show();
+        //else {
+        //    $('#lstTrainNoNo > li').each(function () {
+        //        var text = $(this).text().toLowerCase();
+        //        (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+        //    });
+        //}
+    });
+    $('#Invoice').removeAttr('disabled');
+    $('#btnSave').prop('disabled', true);
+
+    $('#btnPrint').attr("disabled", true);
+    $('#btnPrint').prop('disabled', true);
+    var ListOfTrainNo = 0;
+    var FormOneDetails = [];
+
+    function TrainNoSearch() {        
+        $.ajax({
+            url: "/Import/DSR_CWCImport/GetAllTrainNo",
+            type: "GET",
+            dataType: "JSON",
+            data:{SearchValue:$('#TrainNobox').val()},
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    var Html = '';
+                    var tab = 401;
+                    ListOfTrainNo = data.Data;
+                    $.each(data.Data, function (i, item) {
+                        debugger
+                        Html += '<li tabindex=' + tab + ' id=' + item.TrainNo + ' onclick="FillTrainBox(&quot;' + item.TrainNo + '&quot;,' + item.TrainSummaryID + ')" onkeypress="FillTrainBox(&quot;' + item.TrainNo + '&quot;,' + item.TrainSummaryID + ')">' + item.TrainNo + '</li>';
+                        tab++;
+                    });
+                    $('#lstTrainNNo').html('');
+                    $('#lstTrainNoNo').html(Html);
+                }
+            }
+
+        });
+    }
+    $('#TrainNoSearch').on("click", function () {
+        debugger;
+        TrainNoSearch();
+    });
+
+    $('#TraninNobox').keyup(function () {
+        //SearchByTraderCode();
+    });
+
+    function FillTrainBox(TrainNo, TrainSummaryID) {
+        debugger;
+        //var ContainerNo=ContainerNo.id==''?ContainerNo:ContainerNo.id;
+        $('#TrainNo').val(TrainNo);
+        $('#TrainSummaryID').val(TrainSummaryID);
+        $('#WithsummaryCheck').val('1');
+        //$('#InvoiceType').val('Tax');
+
+       
+        $('#thSline').css("display", "");       
+        $('#thSlineNo').css("display", "");
+        $('#thParty').css("display", "");
+        $('#thPayer').css("display", "");
+        $('#thImporter').css("display", "");
+        $('#thPort').css("display", "");
+
+        $('#thPol').css("display", "");
+        $('#thRemarks').css("display", "");
+        
+
+        $("#blNomodal").modal("hide");
+        angular.element('#DSRJobOrderAppDiv').scope().GetTrainDetails();
+        angular.element('#DSRJobOrderAppDiv').scope().$apply();
+    }
+
+
+
+
+
+    var Page = 0;
+    function LoadMoreEximTrader() {
+        debugger;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/LoadEximtradeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tab = 401;
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+                        debugger;
+                        html += '<tr tabindex=' + tab + ' onclick="SelectSline(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;,&quot;' + elem.PartyCode + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        tab++;
+                    });
+                    if (Page == -1)
+                        $('#tbleSline tbody').html(html);
+                    else
+                        $('#tbleSline tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SelectSline(ShippingLineId, ShippingLineName, PartyCode) {
+        angular.element(document.querySelector('[ng-controller="DSRJobOrderCtrl"]')).scope().
+        SelectShippingLine(ShippingLineId, ShippingLineName, PartyCode);
+
+    }
+
+
+    function SelectSlinekey(ShippingLineId, ShippingLineName, PartyCode) {
+
+        debugger;
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        //if (CharCode == 13) {
+
+            angular.element(document.querySelector('[ng-controller="DSRJobOrderCtrl"]')).scope().
+            SelectShippingLineKeyPress(ShippingLineId, ShippingLineName, PartyCode);
+        //}
+
+    }
+    function SelectShippingLine(ShippingLineId, ShippingLineName, PartyCode) {
+        debugger;
+        //$('#ShippingLineName').val(ShippingLineName);
+        //$('#ShippingLineId').val(ShippingLineId);
+        angular.element('#JobOrderByRoadAppDiv').scope().JODetails[ind].ShippingLineName = ShippingLineName;
+        angular.element('#JobOrderByRoadAppDiv').scope().JODetails[ind].ShippingLineId = ShippingLineId;
+        angular.element('#JobOrderByRoadAppDiv').scope().JODetails[ind].S_Line = PartyCode;
+
+        angular.element('#JobOrderByRoadAppDiv').scope().$apply();
+
+        $("#ShippingLineModal").modal("hide");
+        $('#ShpngLinebox').val('');
+        LoadEximTrader();
+    }
+    function LoadEximTrader() {
+        Page = 0;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/LoadEximtradeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tabvalue = 101;
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+                        debugger;
+                        html += '<tr tabindex=' + tabvalue + ' onkeypress="SelectSlinekey(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;,&quot;' + elem.PartyCode + '&quot;)"    onclick="SelectSline(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;,&quot;' + elem.PartyCode + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        tabvalue++;
+                    });
+
+                    $('#tbleSline tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function CloseEximTrader() {
+        $('#ShpngLinebox').val('');
+        $("#slmodal").modal("hide");
+        LoadEximTrader();
+    }
+    function SearchByPartyCode() {
+        if ($('#ShpngLinebox').val() != '') {
+            $.ajax({
+                url: '/Import/DSR_CWCImport/SearchByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#ShpngLinebox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        var tabvalue = 101;
+                        $.each(data.Data.lstShippingLine, function (item, elem) {
+                            html += '<tr tabindex=' + tabvalue + ' onkeypress="SelectSlinekey(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;,&quot;' + elem.PartyCode + '&quot;)" onclick="SelectSline(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;,&quot;' + elem.PartyCode + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                            tabvalue++;
+                        });
+                        $('#tbleSline tbody').html('');
+                        $('#tbleSline tbody').html(html);
+                        $('#btnLoadMore').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleSline tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadEximTrader();
+    }
+
+
+    var Page = 0;
+    function LoadMoreCHA() {
+        debugger;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/ListOfChaForPage',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tab = 401;
+                    $.each(data.Data.lstCHA, function (item, elem) {
+                        debugger;
+                        html += '<tr tabindex=' + tab + ' onclick="SelectCHAline(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        tab++;
+                    });
+                    if (Page == -1)
+                        $('#tbleCHA tbody').html(html);
+                    else
+                        $('#tbleCHA tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnCHALoadMore').prop('disabled', false);
+                    else $('#btnCHALoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SelectCHAline(ImporterId, ImporterName) {
+        angular.element(document.querySelector('[ng-controller="DSRJobOrderCtrl"]')).scope().
+        SelectCHAline(ImporterId, ImporterName);
+
+    }
+
+    function SelectCHAlinekey(ImporterId, ImporterName) {
+        debugger;
+
+        angular.element(document.querySelector('[ng-controller="DSRJobOrderCtrl"]')).scope().
+        SelectCHAlineKey(ImporterId, ImporterName);
+
+    }
+
+    function SelectImporterline(ImporterId, ImporterName) {
+        angular.element(document.querySelector('[ng-controller="DSRJobOrderCtrl"]')).scope().
+        SelectImporterline(ImporterId, ImporterName);
+
+    }
+
+
+    function SelectImporterlinekey(ImporterId, ImporterName) {
+        angular.element(document.querySelector('[ng-controller="DSRJobOrderCtrl"]')).scope().
+        SelectImporterlinekey(ImporterId, ImporterName);
+
+    }
+    function SelectCHA(ImporterId, ImporterName) {
+        debugger;
+
+        angular.element('#DSRJobOrderAppDiv').scope().JODetails[ind].ImporterName = ImporterName;
+        angular.element('#DSRJobOrderAppDiv').scope().JODetails[ind].ImporterId = ImporterId;
+        angular.element('#DSRJobOrderAppDiv').scope().$apply();
+
+        $("#CHAModal").modal("hide");
+        $('#CHAbox').val('');
+        //LoadCHA();
+    }
+
+    function SelectImporter(ImporterId, ImporterName) {
+        debugger;
+
+        angular.element('#DSRJobOrderAppDiv').scope().JODetails[ind].NewImporterName = ImporterName;
+        angular.element('#DSRJobOrderAppDiv').scope().JODetails[ind].NewImporterId = ImporterId;
+        angular.element('#DSRJobOrderAppDiv').scope().$apply();
+
+        $("NewImporterModal").modal("hide");
+        $('#Importerbox').val('');
+        //LoadCHA();
+    }
+    function LoadCHA() {
+        Page = 0;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/ListOfChaForPage',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tab = 401;
+                    $.each(data.Data.lstCHA, function (item, elem) {
+                        debugger;
+                        html += '<tr tabindex=' + tab + '  onclick="SelectCHAline(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)" onkeypress="SelectCHAlinekey(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        tab++;
+                    });
+                    $('#tbleCHA tbody').html(html);
+
+                    if (data.Data.CHAState == true)
+                        $('#btnCHALoadMore').prop('disabled', false);
+                    else $('#btnCHALoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+    $('#ShpngLinebox').keyup(function () {
+        debugger;
+        SearchByPartyCode();
+    });
+
+
+    $('#CHAbox').keyup(function () {
+        debugger;
+        SearchByCHACode();
+    });
+
+    $('#PayerLinebox').keyup(function () {
+        debugger;
+        SearchByPayerCode();        
+    });
+
+    $('#NewImporterbox').keyup(function () {
+        debugger;
+        SearchByImporterCode();        
+    });
+    //$('#CountrySearch').on("click", function () {
+    //    //debugger;
+    //    CountrySearch();
+    //});
+    function LoadNewImporter() {
+        Page = 0;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/ImporterSearchByPartyCode',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tabvalue = 401;
+                    $.each(data.Data.lstImporter, function (item, elem) {
+                        debugger;
+                        html += '<tr tabindex=' + tabvalue + ' onkeypress="SelectImporterlinekey(' + elem.ImporterId + ',&quot;' + elem.ImporterName + '&quot;)"   onclick="SelectImporterline(' + elem.ImporterId + ',&quot;' + elem.ImporterName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ImporterName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        tabvalue++;
+                    });
+
+                    $('#tbleImporter tbody').html(html);
+
+                    if (data.Data.CHAState == true)
+                        $('#btnImporterLoadMore').prop('disabled', false);
+                    else $('#btnImporterLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function CloseCHA() {
+        $('#CHAbox').val('');
+        $("#CHAModal").modal("hide");
+
+    }
+
+    function CloseImporter() {
+        $('#NewImporterbox').val('');
+        $("#NewImporterModal").modal("hide");
+
+    }
+
+    function SearchByCHACode() {
+        debugger;
+        if ($('#CHAbox').val() != '') {
+            $.ajax({
+                url: '/Import/DSR_CWCImport/CHASearchByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#CHAbox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        var tabvalue = 201;
+                        $.each(data.Data.lstCHA, function (item, elem) {
+                            html += '<tr tabindex=' + tabvalue + '  onkeypress="SelectCHAlinekey(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)" onclick="SelectCHAline(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                            tabvalue++;
+                        });
+
+                        $('#tbleCHA tbody').html('');
+                        $('#tbleCHA tbody').html(html);
+                        $('#btnCHALoadMore').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleCHA tbody').html('');
+                        Page = -1;
+                        $('#btnCHALoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadCHA();
+    }
+
+
+    function SearchByImporterCode() {
+        if ($('#NewImporterbox').val() != '') {
+            $.ajax({
+                url: '/Import/DSR_CWCImport/ImporterSearchByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#NewImporterbox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        var tabvalue = 401;
+                        $.each(data.Data.lstImporter, function (item, elem) {
+                            html += '<tr tabindex=' + tabvalue + ' onkeypress="SelectImporterlinekey(' + elem.ImporterId + ',&quot;' + elem.ImporterName + '&quot;)" onclick="SelectImporterline(' + elem.ImporterId + ',&quot;' + elem.ImporterName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ImporterName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                            tabvalue++;
+                        });
+                        $('#tbleImporter tbody').html('');
+                        $('#tbleImporter tbody').html(html);
+                        $('#btnImporterLoadMore').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleImporter tbody').html('');
+                        Page = -1;
+                        $('#btnImporterLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadNewImporter();
+    }
+    var Page = 0;
+
+    function LoadMorePayer() {
+        debugger;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/ListOfPayerForPage',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tabvalue = 301;
+                    $.each(data.Data.lstCHA, function (item, elem) {
+                        debugger;
+                        html += '<tr tabindex=' + tabvalue + ' onkeypress="SelectPayerlinekey(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)" onclick="SelectPayerline(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        tabvalue++;
+                    });
+                    if (Page == -1)
+                        $('#tblePayer tbody').html(html);
+                    else
+                        $('#tblePayer tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnPayerLoadMore').prop('disabled', false);
+                    else $('#btnPayerLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SelectPayerline(PayerId, PayerName) {
+        debugger;
+        angular.element(document.querySelector('[ng-controller="DSRJobOrderCtrl"]')).scope().
+        SelectPayerline(PayerId, PayerName);
+
+    }
+
+    function SelectPayerlinekey(PayerId, PayerName) {
+        debugger;
+        angular.element(document.querySelector('[ng-controller="DSRJobOrderCtrl"]')).scope().
+        SelectPayerlinekey(PayerId, PayerName);
+
+    }
+    function SelectPayer(PayerId, PayerName) {
+        debugger;
+
+        angular.element('#DSRJobOrderAppDiv').scope().JODetails[ind].PayerName = PayerName;
+        angular.element('#DSRJobOrderAppDiv').scope().JODetails[ind].PayerId = PayerId;
+        angular.element('#DSRJobOrderAppDiv').scope().$apply();
+
+        $("#PayerModal").modal("hide");
+        $('#PayerModal').val('');
+        LoadPayer();
+    }
+    function LoadPayer() {
+        Page = 0;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/ListOfPayerForPage',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tabvalue = 301;
+                    $.each(data.Data.lstCHA, function (item, elem) {
+                        debugger;
+                        html += '<tr tabindex=' + tabvalue + ' onkeypress="SelectPayerlinekey(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"  onclick="SelectPayerline(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        tabvalue++;
+                    });
+
+                    $('#tblePayer tbody').html(html);
+
+                    if (data.Data.PayerState == true)
+                        $('#btnPayerLoadMore').prop('disabled', false);
+                    else $('#btnPayerLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function ClosePayer() {
+        $('#Payerbox').val('');
+        $("#PayerModal").modal("hide");
+        LoadPayer();
+    }
+
+    function SearchByPayerCode() {
+        if ($('#PayerLinebox').val() != '') {
+            $.ajax({
+                url: '/Import/DSR_CWCImport/CHASearchByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#PayerLinebox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        var tabvalue = 301;
+                        $.each(data.Data.lstCHA, function (item, elem) {
+                            html += '<tr tabindex=' + tabvalue + ' onkeypress="SelectPayerlinekey(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)" onclick="SelectPayerline(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                            tabvalue++;
+                        });
+                        $('#tblePayer tbody').html('');
+                        $('#tblePayer tbody').html(html);
+                        $('#btnPayerLoadMore').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tblePayer tbody').html('');
+                        Page = -1;
+                        $('#btnPayerLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadPayer();
+    }
+
+
+
+    function checklenrem() {
+        if ($('#Remarks').val().length > 200) {
+            $('#ErrRemarks').html('Exceed Max langth 200 characters');
+            return false;
+        }
+        else {
+            $('#ErrRemarks').html('');
+        }
+    }
+
+    function checklencar() {
+        if ($('#CargoDescription').val().length > 200) {
+            $('#ErrCargoDescription').html('Exceed Max langth 200 characters');
+            return false;
+        }
+        else {
+            $('#ErrCargoDescription').html('');
+        }
+    }
+
+    function AddJoborder() {
+        debugger;
+
+
+        
+        
+        angular.element('#DSRJobOrderAppDiv').scope().GetBlankTrainDetails();
+        angular.element('#DSRJobOrderAppDiv').scope().$apply();
+        //var joborderln = $scope.JODetails.length;
+        //var joborderln = Object.keys($scope.JODetails).length;
+        //Container_ hdnlength
+        var idd = $("#hdnlength").val();
+        var ln = parseInt(idd);
+        if(ln >0)
+            $("#Container_" + ln).focus();
+        else
+        $('#ShippingLineName').focus();
+
+
+    }
+
+
+    function ResetJobOrder() {
+        $('#CNNo, #size, #CSNo, #SLNo,#SLine,#Remarks,#CargoDescription').val('');
+        $('#GWeg,#NPckg').val('0');
+
+        $('#CrType, #CLType,#TransportForm').prop('selectedIndex', 0);
+
+    }
+
+    function GenerateTable() {
+        var html = '';
+
+
+        $('#StringifyXML').val(JSON.stringify(FormOneDetails));
+
+
+
+
+
+
+        html = '<table class="table table-bordered table-striped dataTable"><thead><tr><th class="text-center" style="width:10%;">SL No</th><th>Container / CBT No</th>' +
+        '<th>Size</th><th>Shipping Line No</th><th style="width:15%;">Cargo Type</th>  <th width="8%">Container / CBT Load Type</th><th>Transport From</th> <th width="8%">Gross Wt.</th> <th>Remarks</th><th style="text-align:center; width:10%;">Edit</th><th class="text-center" style="width:10%;">Delete</th></tr></thead><tbody>';
+
+        if (FormOneDetails != null) {
+            $.each(FormOneDetails, function (i, elem) {
+                html += '<tr><td class="text-center" style="width:10%;">' + (i + 1) + '</td><td><input type="text" id="ContainerNo_' + i + '" value="' + elem.Container_No + '"/></td><td><input type="text" id="CT_Size_' + i + '" value="' + elem.CT_Size + '"/>';
+                html += '</td><td><input type="text" id="S_Line_' + i + '" value="' + elem.S_Line + '"/></td>';
+                html += '<td><input type="text" id="ShippingLineNo_' + i + '" value="' + elem.S_Line + '"/></td>';
+                html += '<td><input type="text" id="ShippingLineName_' + i + '" value="' + elem.ShippingLineName + '"/></td>';
+                html += '<td><select ng-model="j.CargoType" required><option value="">--Select--</option><option value="{{s.id}}" ng-repeat="s in CargoTypeList">{{s.CargoType}}</option> </select></td>';
+                // html += '<td><select id="CargoType_' + i + '"><option value="0">--Select--</option><option value="0">HAZ</option><option value="0">Non-HAZ</option></select></td>';
+                html += '<td><select id="ContainerLoadType_' + i + '"><option value="0">--Select--</option><option value="FCL">FCL</option><option value="LCL">LCL</option><option value="DD">DD</option></select></td>';
+
+                html += '<td>  <select ng-model="j.PortId" ng-options="p.PortId as p.PortName for p in TransportFromList"></select></td>';
+                html += '<td><input type="text" id="GrossWt_' + i + '" value="' + elem.Gross_Wt + '"/></td>';
+                html += '<td><input type="text" id="Remarks_' + i + '" value=""/></tdTransport Form>';
+                html += '<td class="text-center"><a href="#" onclick="EditContainerDet(' + i + ')"><i class="fa fa-pencil-square Edit" aria-hidden="true"></i></a></td><td class="text-center" style="width:10%;"><a href="#" onclick="DeleteContainerDet(' + i + ')"><i class="fa fa-window-close-o Delete"></i></a></td></tr>';
+            });
+            html += '</tbody></table>';
+            $('#DivFormOneDet').html('');
+            $('#DivFormOneDet').html(html);
+        }
+        else {
+            $('#DivDeliveryAppTblErrMsg').html('Container / CBT details data is not found for this job order');
+        }
+
+    }
+
+    function DeleteContainerDet(FormOneDetailId) {
+        debugger;
+        var Confirm = confirm("Are You Sure You Want To Delete?");
+        if (Confirm == true) {
+
+            FormOneDetails.splice(FormOneDetailId, 1);
+            GenerateTable();
+        }
+
+    }
+    var flagg = 0;
+
+    function EditContainerDet(i) {
+        debugger;
+
+
+        if (flagg == 0) {
+            flagg = 1;
+            $('#AddJobOrd').prop("disabled", false);
+            $('#TrainSummarySerial').val(FormOneDetails[i].TrainSummarySerial);
+            $('#TrainSummaryID').val(FormOneDetails[i].TrainSummaryID);
+            $('#TNo').val(FormOneDetails[i].TrainNo);
+            $('#TrainDt').val(FormOneDetails[i].TrainDate);
+            $('#PortID').val(FormOneDetails[i].PortId);
+            $('#PortID').val(FormOneDetails[i].PolId);
+            $('#TransportForm').val(FormOneDetails[i].TransportForm);
+            $('#CNNo').val(FormOneDetails[i].Container_No);
+            $('#size').val(FormOneDetails[i].CT_Size);
+            $('#CSNo').val(FormOneDetails[i].CustomSealNo);
+            $('#SLNo').val(FormOneDetails[i].ShippingLineNo);
+            $('#SlineId').val(FormOneDetails[i].ShippingLineId);
+            $('#SLine').val(FormOneDetails[i].ShippingLineName);
+            $('#CrType').val(FormOneDetails[i].CargoType);
+            $('#CLType').val(FormOneDetails[i].ContainerLoadType);
+            $('#NPckg').val(FormOneDetails[i].NoOfPackages);
+            $('#GWeg').val(FormOneDetails[i].Gross_Wt);
+            $('#Remarks').val(FormOneDetails[i].Remarks);
+            $('#CargoDescription').val(FormOneDetails[i].CargoDescription);
+            $('#Wagon_No').val(FormOneDetails[i].Wagon_No);
+            $('#Line_Seal_No').val(FormOneDetails[i].Line_Seal_No);
+            $('#Cont_Commodity').val(FormOneDetails[i].Cont_Commodity);
+            $('#Ct_Tare').val(FormOneDetails[i].Ct_Tare);
+            $('#Cargo_Wt').val(FormOneDetails[i].Cargo_Wt);
+            $('#Ct_Status').val(FormOneDetails[i].Ct_Status);
+            $('#Destination').val(FormOneDetails[i].Destination);
+            $('#Smtp_No').val(FormOneDetails[i].Smtp_No);
+            $('#Received_Date').val(FormOneDetails[i].Received_Date);
+            $('#Genhaz').val(FormOneDetails[i].Genhaz);
+            FormOneDetails.splice(i, 1);
+            GenerateTable();
+
+        }
+
+        else {
+            alert("Add Current Container / CBT");
+        }
+    }
+
+    var TaxType = '';
+    var SearchType = '';
+    function SummaryType(Type) {
+        debugger;
+        SearchType = Type;
+
+
+        $('#rdWithSummary').prop('disabled', false);
+        $('#rdWithOutSummary').prop('disabled', false);
+        $('#Tax').prop('disabled', false);
+        $('#Bill').prop('disabled', false);
+        $('#Remarks').attr('readonly', false);
+          
+        angular.element('#DSRJobOrderAppDiv').scope().ResetArray();
+        angular.element('#DSRJobOrderAppDiv').scope().$apply();
+        if (SearchType == 'With') {
+            $('#WithsummaryCheck').val('1');
+           // $('#Container_0').focus();
+            $('#thSline').css("display", "");
+            $('#thSlineNo').css("display", "");
+            $('#thParty').css("display", "");
+            $('#thPayer').css("display", "");
+            $('#thImporter').css("display", "");
+            $('#thPort').css("display", "");
+            $('#thPort').css("display", "");
+            $('#thRemarks').css("display", "");
+
+            $('#rdWithSummary').prop('checked', true);
+            $('#divTrainSearch').css("display", "");
+            $('#divAddNewRow').css("display", "none");
+            $('#divTraderModal').css("display", "none");
+ 
+        }
+        else {
+            $('#WithsummaryCheck').val('0');
+            $('#rdWithOutSummary').prop('checked', true);
+            $('#ShippingLineName').focus();
+            $('#AddJobOrd').prop("disabled", false);
+            //$('#Container_0').focus();
+            
+            document.getElementById('ModalShippingSearch').style.visibility = "visible";
+            document.getElementById('ModalImporterSearch').style.visibility = "visible";
+            document.getElementById('ModalCHASearch').style.visibility = "visible";
+            document.getElementById('ModalPartySearch').style.visibility = "visible";
+            document.getElementById('ModalPayerSearch').style.visibility = "visible";
+            document.getElementById('ModalPortSearch').style.visibility = "visible";
+            document.getElementById('ModalPolSearch').style.visibility = "visible";
+            //$('#Tax').prop('disabled', true);
+            //$('#Bill').prop('disabled', true);
+            $('#Remarks').attr('readonly', false);
+
+            $('#thSline').css("display", "none");
+            $('#thSlineNo').css("display", "none");
+            $('#thParty').css("display", "none");
+            $('#thPayer').css("display", "none");
+            $('#thImporter').css("display", "none");
+            $('#thPort').css("display", "none");
+            $('#thPol').css("display", "none");
+            $('#thRemarks').css("display", "none");           
+           
+
+            $('#ShippingLineName').val('');
+            $('#ShippingLineId').val(0);
+            $('#ImporterName').val('');
+            $('#ImporterId').val(0);
+            $('#CHAName').val('');
+            $('#CHAId').val(0);
+            $('#PartyName').val('');
+            $('#PartyId').val(0);
+            $('#PayerName').val('');
+            $('#PayerId').val(0);
+            $('#PortName').val('');
+            $('#PortId').val(0);
+            $('#PolId').val(0);
+            $('#Remarks').val('');
+
+            $('#divTrainSearch').css("display", "none");
+            $('#divAddNewRow').css("display", "");
+            $('#divTraderModal').css("display", "");
+            angular.element('#DSRJobOrderAppDiv').scope().HiddenArray();
+            angular.element('#DSRJobOrderAppDiv').scope().$apply();
+            AddJoborder();
+        }
+    }
+    function IVType(Type) {
+        TaxType = Type;
+        if (TaxType == 'Tax') {
+            $('#InvoiceType').val('Tax');
+            $('#Tax').prop('checked', true);
+            $('#Bill').prop('checked', false);
+        }
+        else {
+            $('#InvoiceType').val('Bill');
+            $('#Bill').prop('checked', true);
+            $('#Tax').prop('checked', false);
+        }
+    }
+
+
+
+    function SearchByContainerNo() {
+        debugger;
+        if ($('#ContainerNoSearch').val().trim() == "" || $('#ContainerNoSearch').val().trim() == null) {
+            LoadJobOrderList();
+        }
+        else {
+            $('#tblEntryDet').hide();
+            $('#TblGridHead').show();
+            $('#DivYardList').show();
+            $('#DivYardList').load('/Import/DSR_CWCImport/SearchListOfJobOrderDetails?ContainerNo=' + $('#ContainerNoSearch').val().trimLeft());
+        }
+    }
+
+    function LoadJobOrderList() {
+        debugger;
+       // $('#TblSearch').show();
+        $('#TblGridHead').show();
+        $('#DivYardList').show();
+        $('#ContainerNoSearch').val('');
+
+
+        $('#tblEntryDet').html('');
+        $('#DivYardList').load('/Import/DSR_CWCImport/ListOfJobOrderDetails');
+    }
+
+    function impJOOnSuccess(data) {
+        if (data.Status == 1) {
+            $('#DivJobOrder').html(data.Message);
+            setTimeout(function () {
+                $('#DivBody').load('/Import/DSR_CWCImport/CreateJobOrder');
+            }, 5000)
+        }
+        else {
+            $('#DivJobOrderErrMsg').html(data.Message);
+        }
+
+    }
+    function impJOOnFailure() { }
+
+    function SaveDetails() {
+        $('#StringifyXML').val(JSON.stringify(FormOneDetails));
+    }
+
+
+    function BindTrain(PickUp) {
+
+
+        if ($('#hdnTrainNo').val() != '') {
+            var TrainNoJson = JSON.parse($('#hdnTrainNo').val());
+            var html = '';
+            $.each(TrainNoJson, function (i, item) {
+                //if (PickUp == item.PickUpLoc) {
+                html += '<li id="' + item.TrainSummaryID + '" onclick="selectTrain(' + item.TrainSummaryID + ');">' + item.TrainNo + '</li>';
+                //}
+            });
+            $('#TrainNo').val('');
+            FormOneDetails = [];
+
+            $('#lstTrainNoNo').html(html);
+            $('#DivFormOneDet').html('');
+            //  GenerateTable();
+        }
+    }
+    $('#JobOrderDate').datepicker({
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        dateFormat: "dd/mm/yy",
+        altField: "#slider_example_4andHalf_alt",
+        altFieldTimeOnly: false,
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+    function selectTrain(Tid) {
+        $("#blNomodal").modal("hide");
+        $.ajax({
+            url: '/Import/DSR_CWCImport/GetTrainDetl',
+            dataType: 'JSON',
+            type: 'GET',
+            data: { TrainSumId: Tid },
+            success: function (data) {
+                if (data != null) {
+                    var html = '';
+                    FormOneDetails = [];
+                    $.each(data, function (i, elem) {
+                        $('#TrainNo').val(elem.TrainNo);
+                        $('#TrainDate').val(elem.TrainDate).toString("dd/MMM/yyyy hh:mm");
+
+                        //   html += '<li id="' + elem.YardId + '" onclick="SelectYard(this)">' + elem.YardName + '</li>';
+
+                        //  $('#lstYard').html(html);
+                        var flag = 0;
+                        $.each(FormOneDetails, function (i1, elem1) {
+
+                            if (elem.Container_No == elem1.Container_No) {
+
+                                flag = 1;
+
+                            }
+                        });
+
+                        debugger;
+                        if (flag == 0) {
+                            var TrainDetail = {
+                                "TrainSummarySerial": elem.TrainSummarySerial,
+                                "TrainSummaryID": elem.TrainSummaryID,
+                                "TrainNo": elem.TrainNo,
+                                "TrainDate": elem.TrainDate,
+                                "PortId": elem.PortId,
+                                "PolId": elem.PolId,
+                                "Wagon_No": elem.Wagon_No,
+                                "Container_No": elem.Container_No,
+                                "CT_Size": elem.CT_Size,
+                                "CustomSealNo": elem.Line_Seal_No,
+                                "ShippingLineNo": elem.S_Line,
+                                "ShippingLineId": 0,
+                                "ShippingLineName": "",
+                                "CargoType": "",
+                                "ContainerLoadType": "",
+                                "TransportForm": elem.TransportName,
+                                "NoOfPackages": 0,
+                                "Line_Seal_No": elem.Line_Seal_No,
+                                "Cont_Commodity": elem.Cont_Commodity,
+                                "S_Line": elem.S_Line,
+                                "Ct_Tare": elem.Ct_Tare,
+                                "Cargo_Wt": elem.Cargo_Wt,
+                                "Gross_Wt": elem.Gross_Wt,
+                                "Ct_Status": elem.Ct_Status,
+                                "Destination": elem.Destination,
+                                "Smtp_No": elem.Smtp_No,
+                                "Received_Date": elem.Received_Date,
+                                "Genhaz": elem.Genhaz,
+                                "Remarks": "",
+                                "CargoDescription": ""
+                            }
+                            FormOneDetails.push(TrainDetail);
+                        }
+
+                    });
+                    GenerateTable();
+                }
+            }
+        });
+
+    }
+
+
+    function TrainBinding() {
+        debugger;
+        var TrainJson = JSON.parse($('#hdnTrain').val());
+        var html = '';
+        $.each(TrainJson, function (i, item) {
+            html += '<li id="' + item.TrainSummaryID + '">' + item.TrainNo + '</li>';
+        });
+
+
+        $('#lstTrainNoNo').html(html);
+    }
+    function datevalidation() {
+        debugger;
+
+        var joborderdt = $('#joborderCheck').val();
+        var traindate = $('#trainCheck').val();
+        var jdt = new Date(joborderdt);
+
+        var tdt = new Date(traindate);
+
+        if ($('#TrainNo').val() == '') {
+            // $('[data-valmsg-for="PartyName"]').html('<span>Fill Out This Field</span>');
+            //  $('#ErrPartyName').html('Fill Out This Field');
+            return false;
+        }
+        else if (jdt < tdt) {
+            alert("Job Order Date should not be less from TrainDate");
+            $('#JobOrderDate').val('');
+            //   $('#ErrJobOrderDate').html('Job Order Date should not be less from TrainDate');
+            return false;
+
+        }
+
+
+        else if (FormOneDetails.length <= 0) {
+            $('#PickUpLocation').val('');
+
+            alert("Container / CBT should not be blank");
+            return false;
+        }
+
+        else if (FormOneDetails.length > 0) {
+
+            var flag = 0;
+            $.each(FormOneDetails, function (i1, elem1) {
+
+                if (elem1.ContainerLoadType == '' || elem1.CargoType == '' || elem1.ShippingLineName == '') {
+
+                    flag = 1;
+
+                }
+            });
+
+            if (flag == 1) {
+                $('#PickUpLocation').val('');
+                $('#DivDeliveryAppTblErrMsg').html('Please Edit Container / CBT details some fields are blank');
+                return false;
+
+            }
+            else {
+                return true;
+            }
+
+        }
+        else {
+
+
+
+
+            return true;
+            //var conf = confirm("Do you want to save ?");
+
+            //if (conf) {
+            //    try {
+            //        $('#btnSave').attr('disabled', true);
+            //       // $('form#JobOrder').submit();
+
+            //    }
+            //    catch (e) {
+            //        $('#btnSave').removeAttr('disabled');
+            //    }
+            //}
+        }
+
+
+
+    }
+    //<th class="text-center">Edit</th><th class="text-center">Delete</th>
+    function GenerateEntryTable() {
+        tablehtml = '';
+        var tablehtml = '<table id="tblEntryDet" class="table table-striped table-bordered dataTable" style="width:100%;"><thead><tr><th class="text-center">SL No</th><th>Job Order No</th><th>Job Order Date</th><th>Train No</th><th class="text-center">View</th><th class="text-center">Job order print</th><th class="text-center">Job order print</th></tr></thead><tbody>';
+        tablehtml += '</tbody></table>';
+        $('#tblEntryDet').html(tablehtml);
+    }
+
+
+
+    //POL _start here
+    //var Page = 0;
+    //function LoadMoreEximTrader() {
+    //    debugger;
+    //    $.ajax({
+    //        url: '/Import/DSR_CWCImport/LoadPolList',
+    //        type: 'GET',
+    //        data: { PolCode: "", Page: Page + 1 },
+    //        success: function (data) {
+    //            if (data.Status == 1) {
+    //                debugger;
+    //                var html = '';
+    //                var tab = 601;
+    //                $.each(data.Data.lstPol, function (item, elem) {
+    //                    debugger;
+    //                    html += '<tr tabindex=' + tab + ' onclick="SelectPol(' + elem.PolId + ',&quot;' + elem.PolName + '&quot;,&quot;' + elem.PolCode + '&quot;)" onkeypress="SelectPol(' + elem.PolId + ',&quot;' + elem.PolName + '&quot;,&quot;' + elem.PolCode + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PoleName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+    //                    tab++;
+    //                });
+    //                if (Page == -1)
+    //                    $('#tbleSline tbody').html(html);
+    //                else
+    //                    $('#tbleSline tbody').append(html);
+    //                Page++;
+
+    //                if (data.Data.State == true)
+    //                    $('#btnLoadMore').prop('disabled', false);
+    //                else $('#btnLoadMore').prop('disabled', true);
+    //            }
+    //        }
+    //    });
+    //}
+    //function SelectPol(PolId, PolName, PolCode) {
+    //    angular.element(document.querySelector('[ng-controller="DSRJobOrderCtrl"]')).scope().
+    //    SelectPol(PolId, PolName, PolCode);
+
+    //}
+
+
+    //function Polkey(PolId, PolName, PolCode) {
+
+    //    debugger;
+    //    var CharCode;
+    //    if (window.event) {
+    //        CharCode = window.event.keyCode;
+    //    }
+    //    else {
+    //        CharCode = evt.which;
+    //    }
+    //    //if (CharCode == 13) {
+
+    //    angular.element(document.querySelector('[ng-controller="DSRJobOrderCtrl"]')).scope().
+    //    SelectShippingLineKeyPress(ShippingLineId, ShippingLineName, PartyCode);
+    //    //}
+
+    //}
+    //function SelectShippingLine(ShippingLineId, ShippingLineName, PartyCode) {
+    //    debugger;
+    //    //$('#ShippingLineName').val(ShippingLineName);
+    //    //$('#ShippingLineId').val(ShippingLineId);
+    //    angular.element('#JobOrderByRoadAppDiv').scope().JODetails[ind].ShippingLineName = ShippingLineName;
+    //    angular.element('#JobOrderByRoadAppDiv').scope().JODetails[ind].ShippingLineId = ShippingLineId;
+    //    angular.element('#JobOrderByRoadAppDiv').scope().JODetails[ind].S_Line = PartyCode;
+
+    //    angular.element('#JobOrderByRoadAppDiv').scope().$apply();
+
+    //    $("#ShippingLineModal").modal("hide");
+    //    $('#ShpngLinebox').val('');
+    //    LoadEximTrader();
+    //}
+    //function LoadEximTrader() {
+    //    Page = 0;
+    //    $.ajax({
+    //        url: '/Import/DSR_CWCImport/LoadEximtradeList',
+    //        type: 'GET',
+    //        data: { PartyCode: "", Page: Page },
+    //        success: function (data) {
+    //            if (data.Status == 1) {
+    //                debugger;
+    //                var html = '';
+    //                var tabvalue = 101;
+    //                $.each(data.Data.lstShippingLine, function (item, elem) {
+    //                    debugger;
+    //                    html += '<tr tabindex=' + tabvalue + ' onkeypress="SelectSlinekey(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;,&quot;' + elem.PartyCode + '&quot;)"    onclick="SelectSline(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;,&quot;' + elem.PartyCode + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+    //                    tabvalue++;
+    //                });
+
+    //                $('#tbleSline tbody').html(html);
+
+    //                if (data.Data.State == true)
+    //                    $('#btnLoadMore').prop('disabled', false);
+    //                else $('#btnLoadMore').prop('disabled', true);
+    //            }
+    //        }
+    //    });
+    //}
+    //function CloseEximTrader() {
+    //    $('#ShpngLinebox').val('');
+    //    $("#slmodal").modal("hide");
+    //    LoadEximTrader();
+    //}
+    //function SearchByPartyCode() {
+    //    if ($('#ShpngLinebox').val() != '') {
+    //        $.ajax({
+    //            url: '/Import/DSR_CWCImport/SearchByPartyCode',
+    //            type: 'GET',
+    //            data: { PartyCode: $('#ShpngLinebox').val() },
+    //            success: function (data) {
+    //                if (data.Status == 1) {
+    //                    var html = '';
+    //                    var tabvalue = 101;
+    //                    $.each(data.Data.lstShippingLine, function (item, elem) {
+    //                        html += '<tr tabindex=' + tabvalue + ' onkeypress="SelectSlinekey(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;,&quot;' + elem.PartyCode + '&quot;)" onclick="SelectSline(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;,&quot;' + elem.PartyCode + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+    //                        tabvalue++;
+    //                    });
+    //                    $('#tbleSline tbody').html('');
+    //                    $('#tbleSline tbody').html(html);
+    //                    $('#btnLoadMore').prop('disabled', false);
+    //                    Page = -1;
+    //                }
+    //                else {
+    //                    $('#tbleSline tbody').html('');
+    //                    Page = -1;
+    //                    $('#btnLoadMore').prop('disabled', false);
+    //                }
+
+    //            }
+    //        });
+    //    }
+    //    else
+    //        LoadEximTrader();
+    //}
+
+    //POL
+
+
+</script>

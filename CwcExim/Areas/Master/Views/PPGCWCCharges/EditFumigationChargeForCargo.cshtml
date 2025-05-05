@@ -1,0 +1,305 @@
+﻿@model CwcExim.Areas.Master.Models.PpgFumigationCharge
+@{
+    AjaxOptions options = new AjaxOptions();
+    //options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "ChargesEntryOnSuccess";
+    options.OnFailure = "ChargesEntryOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<div id="DivAddFumigationCharge">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="row SignUp_space_bottom">
+                <div class="col-md-12 cwc_body">
+                    <h5>Fumigation Charges <span class="triangle"></span></h5>
+                </div>
+            </div>
+            @using (Ajax.BeginForm("AddEditFumigationChargeForCargo", "PPGCWCCharges", options))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.FumigationChargeId)
+                @Html.HiddenFor(m => m.StringifyData)
+                <div class="row Form_Space_top">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label class="Radiocontainer">
+                                Cargo
+                                @Html.RadioButton("Type", "1", new { @class = "", @id = "Cargo", @checked = true, @disabled = true })
+                                <span class="checkmark"></span>
+                            </label>
+                            <label class="Radiocontainer">
+                                Container
+                                @Html.RadioButton("Type", "2", new { @class = "", @id = "Container", @disabled = true })
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <span class="ReQSimbol">*</span>
+                            <label>Effective Date:</label>
+                            <div class="position-relative Date_Img">
+                                @Html.TextBoxFor(m => m.EffectiveDate, new { @class = "", @readonly = "readonly" })
+                                @Html.ValidationMessageFor(m => m.EffectiveDate, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <span class="ReQSimbol">*</span>
+                            <label>Area From:</label>
+                            <div class="position-relative Date_Img">
+                                @Html.TextBoxFor(m => m.FromWeight, new { @class = "" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="ReQSimbol">*</span>
+                        <label>Area To:</label>
+                        @Html.TextBoxFor(m => m.ToWeight, new { @class = "" })
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <span class="ReQSimbol">*</span>
+                            <label>Rate:</label>
+                            <div class="position-relative Date_Img">
+                                @Html.TextBoxFor(m => m.WeightRate, new { @class = "" })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="stoke SignUp_space_top SignUp_space_bottom"></div>
+                </div>
+
+                <div class="d-flex justify-content-left">
+                    <input type="button" class="btn btn-primary mr-1 btn-100px" id="btnChargeDet" value="Add" onclick="AddEntryDet()">
+                </div>
+
+                <div class="row Form_Space_bottom">
+                    <div class="col-md-12">
+                        <table id="tblEntryDet" class="table table-striped table-bordered dataTable" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">Edit</th>
+                                    <th class="text-center" style="width:8%;">SL No</th>
+                                    <th>Effective Date</th>
+                                    <th>Area From</th>
+                                    <th>Area To</th>
+                                    <th>Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody> </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                </div>
+
+                <div class="d-flex justify-content-left">
+                    <input type="submit" class="btn btn-primary mr-1 btn-100px" value="Save" id="BtnSave">
+                    <input type="button" class="btn btn-primary-border btn-100px" id="btnBack" value="Back" onclick="LoadChargeDet()">
+                </div>
+
+                        <div class="logErrMsg Form_Space_bottom" id="DivMsgEdit" style="background-color:transparent"></div>
+                        <div class="logSuccMsg" id="DivMsg" style="background-color:transparent"></div>
+            }
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="DivChargeEntryList"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    var ArrayDet = [];
+    $(function(){
+        $('#btnChargeDet').prop("disabled",true);
+        ArrayDet=@Html.Raw(Json.Encode(Model.lstChargeForCargo));
+        var html='';
+        $.each(ArrayDet,function(i,data)
+        {
+            html+='<tr><td class="text-center"><div class="table_icon"><a href="#" onclick="EditChargeDet('+i+')"><i class="fa fa-pencil"></i></a></div></td><td class="text-center">'+(i+1)+'</td><td>'+data.EffectiveDate+'</td> <td>'+data.Fromweight+'</td><td>'+data.Toweight+'</td><td>'+data.WeightRate+'</td></tr>';
+        });
+        $('#tblEntryDet tbody').html(html);
+    });
+
+    function CheckExistingData()
+    {
+        if($('#EffectiveDate').val()!=""|| $('#FromWeight').val()!="" || $('#ToWeight').val()!="" || $('#WeightRate').val()!="" )
+        {
+            $('#DivMsgEdit').html('Add Earlier Record To Edit New Record');
+            return false;
+        }
+        else
+            return true;
+    }
+    function EditChargeDet(i) {
+        if(CheckExistingData())
+        {
+            $('#btnChargeDet').prop("disabled",false);
+            $('#EffectiveDate').val(ArrayDet[i].EffectiveDate);
+            $('#FromWeight').val(ArrayDet[i].Fromweight);
+            $('#ToWeight').val(ArrayDet[i].Toweight);
+            $('#WeightRate').val(ArrayDet[i].WeightRate);
+            ArrayDet.splice(i,1);
+            $('#tblEntryDet').html('');
+            GenerateTable();
+        }
+        setTimeout(function(){$('#DivMsgEdit').html('');},5000);
+    }
+
+    $('#BtnSave').on("click", function () {
+        debugger;
+        if ($('#tblEntryDet>tbody').html() == '' || $('#tblEntryDet>tbody').html() == undefined) {
+            $('#DivMsg').html('Add The Record To Save');
+
+        }
+
+        else {
+            $('#StringifyData').val(JSON.stringify(ArrayEntryDet));
+            LoadChargeList();
+            setTimeout(function () { $('#DivMsg').html(''); }, 5000);
+        }
+
+    });
+
+    function ChargesEntryOnSuccess(data)
+    {
+        if(data.Status==2)
+        {
+            $('#DivMsg').html(data.Message);
+            setTimeout(function(){$('#DivAddFumigationCharge').load( '/Master/PPGCWCCharges/CreateFumigationCharge');},5000);
+        }
+        else
+        {
+            $('#DivMsgEdit').html(data.Message);
+        }
+    }
+    function LoadChargeDet()
+    {
+        $('#DivAddFumigationCharge').load( '/Master/PPGCWCCharges/CreateFumigationCharge');
+    }
+
+    //function AddChargeDet() {
+    //    //if (ValidateEntryData()) {
+    //    debugger;
+    //    if ($('#FromWeight').val() == '') {
+    //        alert("Fill Out Weight From Field");
+    //        return false;
+
+    //    }
+    //    if ($('#FromWeight').val() != "") {
+    //        if (!DecimalValidationGW("FromWeight")) {
+    //            alert("Weight must be a decimal up to 2 places and less then 99999999.99");
+    //            return false;
+    //        }
+    //    }
+    //    if ($('#ToWeight').val() == '') {
+    //        alert("Fill Out Weight To Field");
+    //        return false;
+
+    //    }
+
+    //    if ($('#WeightRate').val() == '') {
+    //        alert("Fill Out Rate Field");
+    //        return false;
+
+    //    }
+
+    //    else {
+    //        var ChargeEntryDet = {
+    //            "FromWeight": $('#FromWeight').val(),
+    //            "ToWeight": $('#ToWeight').val(),
+    //            "WeightRate": $('#WeightRate').val()
+    //        };
+    //        ArrayEntryDet.push(ChargeEntryDet);
+    //        $('#tblEntryDet').html('');
+    //        GenerateTable();
+    //        ResetEntryDet();
+    //        $('[data-valmsg-for]').html('');
+    //    }
+    //}
+    var ArrayEntryDet = [];
+    function AddEntryDet() {
+        //if (ValidateEntryData()) {
+        debugger;
+        if ($('#FromWeight').val() == '') {
+            alert("Fill Out Weight From Field");
+            return false;
+
+        }
+        if ($('#FromWeight').val() != "") {
+            if (!DecimalValidationGW("FromWeight")) {
+                alert("Weight must be a decimal up to 2 places and less then 99999999.99");
+                return false;
+            }
+        }
+        if ($('#ToWeight').val() == '') {
+            alert("Fill Out Weight To Field");
+            return false;
+
+        }
+        if ($('#ToWeight').val() != "") {
+            if (!DecimalValidationGW("ToWeight")) {
+                alert("Weight must be a decimal up to 2 places and less then 99999999.99");
+                return false;
+            }
+        }
+
+        if ($('#WeightRate').val() == '') {
+            alert("Fill Out Rate Field");
+            return false;
+
+        }
+        if ($('#WeightRate').val() != "") {
+            if (!DecimalValidationGW("WeightRate")) {
+                alert("Rate must be a decimal up to 2 places and less then 99999999.99");
+                return false;
+            }
+        }
+        var ChargeEntryDet = {
+            "EffectiveDate":$('#EffectiveDate').val(),
+            "FromWeight": $('#FromWeight').val(),
+            "ToWeight": $('#ToWeight').val(),
+            "WeightRate": $('#WeightRate').val()
+        };
+        ArrayEntryDet.push(ChargeEntryDet);
+        $('#tblEntryDet').html('');
+        GenerateTable();
+        ResetEntryDet();
+        $('[data-valmsg-for]').html('');
+    }
+
+    function GenerateTable() {
+        var tablehtml = '<table id="tblEntryDet" class="table table-striped table-bordered dataTable" style="width:100%;"><thead><tr><th class="text-center">SL No</th><th>Area From</th><th>Area To</th><th>Rate</th><th class="text-center">Remove</th></tr></thead><tbody>';
+        $.each(ArrayEntryDet, function (i, data) {
+            tablehtml += '<tr><td class="text-center">' + (i + 1) + '</td><td>'+data.EffectiveDate+'</td><td>' + data.FromWeight + '</td><td>' + data.ToWeight + '</td><td>' + data.WeightRate + '</td><td class="text-center"><a href="#" onclick="DeleteEntryDet(' + i + ')"><i class="fa fa-window-close Delete"></i></a></td></tr>';
+        });
+        tablehtml += '</tbody></table>';
+        $('#tblEntryDet').html(tablehtml);
+    }
+    function ResetEntryDet() {
+        $('[data-valmsg-for]').html('');
+        $('input[type="text"],Select,textarea').val('');
+    }
+
+    function DecimalValidationGW(elem) {
+        var State = true;
+        var Value = $('#' + elem).val();
+        if (!Value.match(/^[\d]{1,8}\.\d{0,2}$/) && !Value.match(/^[\d]{1,8}$/))
+            State = false;
+        return State;
+    }
+    function LoadChargeList() {
+        debugger;
+        $('#DivChargeEntryList').load('/Master/PPGCWCCharges/ListOfFumigationChargeDetails');
+    }
+</script>

@@ -1,0 +1,362 @@
+﻿@model IEnumerable<CwcExim.Areas.GateOperation.Models.DSREntryThroughGate>
+@Html.DropDownList("searchType",new List<SelectListItem> {
+    new SelectListItem
+    {
+        Text="All",
+        Value="All"
+    },
+    new SelectListItem
+    {
+        Text="Container",
+        Value="Container"
+    },
+    new SelectListItem
+    {
+        Text="Vehicle",
+        Value="Vehicle"
+    },
+},new { @onchange="typechange()",@style= "position: absolute; right: 20px; top: 6px;" })
+
+
+<input type="hidden" id="hdnlstFlag" value="@TempData["lstFlag"].ToString()" />
+<input type="hidden" id="ContainerType" value="@ViewBag.ContainerType.ToString()" />
+<input type="hidden" id="OperationType" value="@ViewBag.OperationType.ToString()" />
+
+
+
+
+<table id="tblGateEntryList" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+    <thead>
+        <tr>
+            <th style="text-align:center; width:5%;">@Html.DisplayName("SL No")</th>
+            <th style="width:10%;">@Html.DisplayName("CFS Code")</th>
+            <th style="width:10%;">@Html.DisplayNameFor(m => m.GateInNo)</th>
+            <th style="width:10%;">@Html.DisplayName("Gate In Date & Time")</th>
+            <th style="width:10%;">@Html.DisplayNameFor(m => m.ReferenceNo)</th>
+            <th style="width:10%;">@Html.DisplayNameFor(m => m.VehicleNo)</th>
+            <th style="width:10%;">@Html.DisplayNameFor(m => m.ContainerNo)</th>
+            <th style="text-align:center;width:5%;"class="text-center">@Html.DisplayName("Edit")</th>
+            <th style="text-align:center;width:5%;"class="text-center">@Html.DisplayName("View")</th>
+            <th style="text-align:center;width:5%;"class="text-center">@Html.DisplayName("Delete")</th>
+            @*<th style="text-align:center;width:5%;">@Html.DisplayName("Print")</th>*@
+        </tr>
+    </thead>
+    <tbody>
+       @{
+           var SerialNo = 1;
+           foreach (var elem in Model)
+           {
+            <tr>
+                <td style="width:5%;" class="text-center">@SerialNo.ToString()</td>
+                <td style="width:10%;">@elem.DisPlayCfs</td>
+                <td style="width:10%;">@elem.GateInNo</td>
+                <td style="width:10%;">@elem.EntryDateTime</td>
+                <td style="width:10%;">@elem.ReferenceNo</td>
+                <td style="width:10%;">@elem.VehicleNo</td>
+                <td style="width:10%;">@elem.ContainerNo</td>
+                <td style="width:5%;" class="text-center">
+                    <a href="#" class="edit" onclick="EditGateEntry(@elem.EntryId,&quot;@elem.OperationType&quot;,&quot;@elem.ContainerType&quot;)">
+                        <input id="OperationType" type="hidden" value="@elem.OperationType" />
+                        <input type="hidden" value="@elem.ContainerType" />
+                        <i class="fa fa-pencil-square Edit"></i>
+                    </a>
+                </td>
+                <td style="width:5%;" class="text-center"><a href="#" class="view" onclick="ViewGateEntryDet(@elem.EntryId,&quot;@elem.OperationType&quot;,'@elem.ContainerType')"><i class="fa fa-search-plus Edit"></i></a></td>
+                <td style="width:5%;" class="text-center"><a href="#" class="delete" onclick="DeleteGateEntryDet(@elem.EntryId)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                @*<td style="width:5%;" class="text-center"><a href="#" class="print" onclick="PrintInvoiceByNo('@elem.InvoiceNo')"><i class="fa fa-print"></i></a></td>*@
+            </tr>
+               SerialNo = SerialNo + 1;
+         
+                   }
+                   }
+    </tbody>
+</table>
+
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+
+
+<script>
+   // debugger;
+    var r2 = JSON.parse($("#hdnRights").val());
+    if (r2.CanEdit == 1) {
+        //$('.edit').css('display', 'block');
+        //$('.edit').disabled=false;
+    } else {
+        //$('.edit').css('display', 'none');
+        $('.edit').removeAttr('onclick');
+        $('.edit').attr('onclick', 'return false');
+    }
+
+    if (r2.CanDelete == 1) {
+        //$('.delete').css('display', 'block');
+
+    } else {
+        //$('.delete').css('display', 'none');
+
+        $('.delete').removeAttr('onclick');
+        $('.delete').attr('onclick', 'return false');
+    }
+
+    if (r2.CanView == 1) {
+        //$('.view').css('display', 'block');
+
+    } else {
+        //$('.view').css('display', 'none');
+        $('.view').removeAttr('onclick');
+        $('.view').attr('onclick', 'return false');
+    }
+    var Page = 0;
+   
+    var lstFlag="";
+    $(document).ready(function(){
+        var TblGateEntry= $('#tblGateEntryList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns": [
+                { "sName": "SL No", "width": "5%" },
+                { "sName": "CFS", "bSortable": false, "width": "10%" },
+                { "sName": "Gate In No.", "bSortable": false, "width": "10%" },
+                { "sName": "Gate In Date&Time.", "bSortable": false, "width": "10%" },
+                { "sName": "Reference No.", "bSortable": false, "width": "10%" },
+                { "sName": "Vehicle No", "width": "10%" },
+                { "sName": "Container No", "width": "10%" },
+                { "sName": "View", "bSortable": false, "width": "5%" },
+                { "sName": "Edit", "bSortable": false, "width": "5%" },
+                { "sName": "Delete", "bSortable": false, "width": "5%" },
+                //{ "sName": "Print", "bSortable": false, "width": "5%" }
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                //$('td:eq(6),td:eq(7)', nRow).addClass("text-center");
+                $('td:eq(0)', nRow).css("width", "5%").addClass("text-center");
+                $('td:eq(1)', nRow).css("width", "10%").addClass("text-center");
+                $('td:eq(2)', nRow).css("width", "10%").addClass("text-center");
+                $('td:eq(3)', nRow).css("width", "10%").addClass("text-center");
+                $('td:eq(4)', nRow).css("width", "10%").addClass("text-center");
+                $('td:eq(5)', nRow).css("width", "10%").addClass("text-center");
+                $('td:eq(6)', nRow).css("width", "10%").addClass("text-center");
+                $('td:eq(7)', nRow).css("width", "5%").addClass("text-center");
+                $('td:eq(8)', nRow).css("width", "5%").addClass("text-center");
+                $('td:eq(9)', nRow).css("width", "5%").addClass("text-center");
+                //$('td:eq(10)', nRow).css("width", "5%");
+            }
+        });
+        new $.fn.dataTable.FixedHeader(TblGateEntry);
+
+        $('#searchType').val($('#hdnlstFlag').val());
+    });
+
+    function typechange() {
+        debugger;
+       var t=$('#searchType').val();
+       $('#DivGateEntryList').load('/GateOperation/DSR_GateOperation/EntryThroughGateList/?lstFlag=' + t);
+    }
+
+    function LoadEntryThroughGateList() {
+        debugger;
+        $('#DivBody').load('/GateOperation/DSR_GateOperation/CreateEntryThroughGate');
+    }
+    function EditGateEntry(EntryId, OperationType, ContainerType) {
+        //var OperationType = $("#Operation").val();
+        debugger;
+    if (OperationType == "Import" && (ContainerType == "Empty")) {
+            $('#DivBody').load('/GateOperation/DSR_GateOperation/EditEntryThroughGateImportEmpty?EntryId=' + EntryId);
+        }
+    if (OperationType == "Import" && (ContainerType == "Loaded"))
+        {
+            $('#DivBody').load('/GateOperation/DSR_GateOperation/EditEntryThroughGate?EntryId=' + EntryId);
+        }
+        else if (OperationType == "Export" && (ContainerType == "Empty" || ContainerType == "EmptyVehicle"))
+        {
+            $('#DivBody').load('/GateOperation/DSR_GateOperation/EditEntryThroughGateExport?EntryId=' + EntryId);
+        }
+        
+        else if (OperationType == "Bond")
+        {
+            $('#DivBody').load('/GateOperation/DSR_GateOperation/EditEntryThroughGateBond?EntryId=' + EntryId);
+        }
+        else if (OperationType == "Export" && ContainerType=="Loaded") {
+            $('#DivBody').load('/GateOperation/DSR_GateOperation/EditEntryThroughGateLoadContainer?EntryId=' + EntryId);
+
+        }
+    }
+    function ViewGateEntryDet(EntryId, OperationType,ContainerType) {
+        debugger;
+        if (OperationType == "Bond") {
+            $('#DivBody').load('/GateOperation/DSR_GateOperation/ViewEntryThroughGateBond?EntryId=' + EntryId);
+        }
+        else if(OperationType=="Import" && ContainerType=="Loaded")
+        {
+            $('#DivBody').load('/GateOperation/DSR_GateOperation/ViewEntryThroughGateImpLoad?EntryId=' + EntryId);
+        }
+        else if (OperationType == "Export" && ContainerType == "Empty")
+        {
+            $('#DivBody').load('/GateOperation/DSR_GateOperation/ViewEntryThroughGateExpEmp?EntryId=' + EntryId);
+        }
+        else if (OperationType == "Import" && ContainerType == "Empty") {
+            $('#DivBody').load('/GateOperation/DSR_GateOperation/ViewEntryThroughGateImpEmp?EntryId=' + EntryId);
+        }
+        else if (OperationType == "Export" && ContainerType == "Loaded")
+        {
+            $('#DivBody').load('/GateOperation/DSR_GateOperation/ViewEntryThroughGateExpLoad?EntryId=' + EntryId);
+        }
+        else {
+            $('#DivBody').load('/GateOperation/DSR_GateOperation/ViewEntryThroughGate?EntryId=' + EntryId);
+        }
+    }
+    function DeleteGateEntryDet(EntryId) {
+
+        var Confirm = confirm("Are you sure you want to delete?")
+        debugger;
+        if (Confirm == true) {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("DeleteEntryThroughGate", "DSR_GateOperation", new { Area = "GateOperation" }) ',
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                type: 'POST',
+                data: { EntryId: EntryId },
+                success: function (data) {
+                   if (data.Status == 1) {
+
+                        debugger;
+                        //if(data.Status==1)
+                        //{
+                            //LoadEntryThroughGateList();
+                            GateEntryDeleteSuccess(data);
+
+                       }
+                        else {
+                            alert(data.Message);
+                        }
+
+                   // }
+                }
+            });
+        }
+    }
+    var TimeInSeconds = 4000;
+    function GateEntryDeleteSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            // ResetGateEntry();
+            if ($('#DivEntryThroughGateMsg').hasClass('logErrMsg'))
+                $('#DivEntryThroughGateMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivEntryThroughGateMsg').html(data.Message);
+            setTimeout(LoadEntryThroughGateList, TimeInSeconds);
+            debugger;
+           // LoadEntryThroughGateList();
+        }
+        else if (data.Status == 3) {
+            if ($('#DivEntryThroughGateMsg').hasClass('logErrMsg'))
+                $('#DivEntryThroughGateMsg').removeClass('logErrMsg').addClass('logErrMsg');
+            $('#DivEntryThroughGateMsg').html(data.Message);
+        }
+        else {
+            if ($('#DivEntryThroughGateMsg').hasClass('logSuccMsg'))
+                $('#DivEntryThroughGateMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivEntryThroughGateMsg').html(data.Message);
+            setTimeout(clearData, TimeInSeconds);
+        }
+    }
+    function clearData()
+    {
+        $('#DivEntryThroughGateMsg').html('');
+    }
+
+
+    function LoadMoreListData() {       
+        debugger;
+        console.log(Page);
+        if (typeof Page === "undefined") {
+            Page = 1;
+        }
+        //Page = Page + 1;
+        var oprationType = '';
+    
+           oprationType = $('#OperationType').val();
+            ContainerType = $('#ContainerType').val();
+             
+        
+        $.ajax({
+            url: '/GateOperation/DSR_GateOperation/LoadMoreEntryThroughGateList?OperationType=' + oprationType+'&ContainerType='+ContainerType,
+            type: 'GET',
+            dataType: 'JSON',
+            data:
+                {
+                    Page: Page + 1                    
+                },         
+            success: function (data) {              
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblGateEntryList').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.DisPlayCfs],
+        [item.GateInNo],
+        [item.EntryDateTime],
+        [item.ReferenceNo],
+        [item.VehicleNo],
+        [item.ContainerNo],   
+         ['<a href="#" onclick=EditGateEntry(' + [item.EntryId] + ',' + '&quot;' + [item.OperationType] + '&quot;' + ',' + '&quot;' + [item.ContainerType] + '&quot;' + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        //['<a href="#" onclick=EditGateEntry(' + [item.EntryId] + ',' + [item.OperationType] + ',' + [item.ContainerType] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#" onclick=ViewGateEntryDet(' + [item.EntryId] + ',' + '&quot;' + [item.OperationType] +  '&quot;' + ')><i class="fa fa-search-plus Edit"></i></a>'],
+        ['<a href="#" onclick=DeleteGateEntryDet(' + [item.EntryId] + ')><i class="fa fa-window-close-o Delete"></i></a>'],
+        //['<a href="#" onclick=PrintInvoiceByNo(' + [item.InvoiceNo] + ')><i class="fa fa-print Print"></i></a>'],     
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+
+    function PrintInvoice(invoiceid) {
+        //debugger;
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GateEntryInvoicePrint", "DSR_GateOperation", new { Area = "GateOperation" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: { InvoiceID: invoiceid },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+    }
+
+    function PrintInvoiceByNo(invoiceno) {
+        debugger;
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetBulkInvoiceReport", "CHN_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                InvoiceNumber: invoiceno,
+                InvoiceModule:'GE',
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                InvoiceModuleName: 'GATE ENTRY',
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }
+
+</script>

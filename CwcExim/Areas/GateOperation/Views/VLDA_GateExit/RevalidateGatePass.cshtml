@@ -1,0 +1,299 @@
+﻿@model CwcExim.Areas.GateOperation.Models.RevalidateGatePass
+    <script>
+        //$(function () {
+        //    $('#DivWeighmentList').load('/GateOperation/Weighment/GetWeighmentList');
+        //});
+        $('#ExpiryDT').datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            minDate: 0,
+            showAnima: "fadein",
+            onClose: function () {
+                $("[data-valmsg-for='WeightmentDate']").html('');
+            }
+        });
+        function LoadWeighmentPage() {
+            $('#DivBody').load('/GateOperation/Ppg_GateExit/RevalidateGatePass');
+            //'GateOperation/kol_CWCGateExit/RevalidateGatePass'
+        }
+        function UpdateGpOnSuccess(data) {
+            if (data.Status == 1) {
+                debugger;
+                $('#DivWeighmentMsg').html(data.Message);
+                setTimeout(LoadWeighmentPage, 5000);
+            }
+            else {
+                $('#DivWeighmentErrMsg').html(data.Message);
+            }
+        }
+
+        function UpdateGpOnFailure() { }
+
+        //function WeighmentReset() {
+        //    $('#DivWeighmentErrMsg').html('');
+        //    $('#DivWeighmentMsg').html('');
+        //    $('[data-valmsg-for]').html('<span></span>');
+        //    $('#DivCreateWeighment').find('input:text').val('');
+        //    $('#DivCreateWeighment').find('input:hidden').val('');
+        //}
+
+        $('#GatePassBox').keyup(function () {
+            var valThis = $(this).val().toLowerCase();
+            if (valThis == "") {
+                $('#GatePassModal .navList > li').show();
+            } else {
+                $('#GatePassModal .navList > li').each(function () {
+                    var text = $(this).text().toLowerCase();
+                    (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+                });
+            };
+        });
+        $('#GatePassList li').on("click", function () {
+            debugger;
+            $('#ContainerNo').val($(this).text());
+            $('#CFSCode').val($(this).attr('id'));
+            
+            $("#GatePassModal").modal("hide");
+        });
+
+        
+
+        function GenerateLstGatePass() {
+            
+            if ($('#LstGatePassJson').val() != null && $('#LstGatePassJson').val() != "") {
+                var parties = JSON.parse($('#LstGatePassJson').val());
+                debugger;
+                if (parties != null) {
+                    var html = '';
+                    $.each(parties, function (i, item) {
+                        html += '<li id="' + item.GatePassId + '" " onclick="GetPayByDetails(this)">' + item.GatePassNo + '</li>';
+                    });
+                    $('#GatePassList').html(html);
+                }
+                else {
+                    alert("No Data Found Against This Gate Pass Or All Container Exited");
+
+
+                    //$('#txtShippingLine').val('');
+                    //$('#shippingLineId').val('');
+                    //$('#txtCFSCode').val('');
+
+                    //$('#txtContainerNo').val('');
+
+                    //$('#txtReefer').prop('checked', false);
+
+                    //$('#txtSize').val('');
+                    //$('#txtCargoType').val('');
+                    //$('#txtCargoDescription').val('');
+                    //$('#txtNoOfPackages').val('');
+                    //$('#txtVehicleNo').val('');
+                    //$('#txtGrossWeight').val('');
+                    //$('#txtOperationType').val('');
+                }
+            }
+        }
+        GenerateLstGatePass();
+
+
+        $('#BtnWeighmentSave').on("click", function () {
+            //alert("in");
+            //ValidateExitDet();
+            //$('#DeliveryDate').val(payby.DeliveryDate);
+            //$('#ExpiryDT').val(payby.ExpiryDT);
+
+            $('#DivWeighmentErrMsg').html('');
+            var From = $('#ExpiryDT').val();
+            var To = $('#DeliveryDate').val();
+            var SF = From.split('/');
+            var ST = To.split('/');
+            var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+            var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+            if (FromDate > ToDate) {
+                $('#DivWeighmentErrMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('Extended Date should Be Less Than  Delivery Date');
+                return false;
+            }
+            return true;
+        });
+            
+        //$('#VehicleBox').keyup(function () {
+        //    var valThis = $(this).val().toLowerCase();
+        //    if (valThis == "") {
+        //        $('#VehicleModal .navList > li').show();
+        //    } else {
+        //        $('#VehicleModal .navList > li').each(function () {
+        //            var text = $(this).text().toLowerCase();
+        //            (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+        //        });
+        //    };
+        //});
+        //$('#VehicleList li').on("click", function () {
+        //    $('#VehicleNumber').val($(this).text());
+        //    $('#VehicleMasterId').val($(this).attr('id'));
+        //    $("#VehicleModal").modal("hide");
+        //})
+
+        function GetPayByDetails(elem) {
+
+            $('#GatePassNo').val($(elem).text());
+            $('#GatePassId').val($(elem).attr('id'));
+
+            $("#GatePassModal").modal("hide");
+            debugger;
+            var parties = JSON.parse($('#LstGatePassJson').val());
+            var payby = $.grep(parties, function (item) { return item.GatePassId == $(elem).attr('id'); })[0];
+
+            $('#DeliveryDate').val(payby.DeliveryDate);
+            $('#ExpiryDT').val(payby.ExpiryDT);
+            
+           
+        }
+    </script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "UpdateGpOnSuccess";
+    options.OnFailure = "UpdateGpOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+<div id="DivCreateWeighment"class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+    @using (Ajax.BeginForm("SaveRevalidateGatePass", "Ppg_GateExit", options))
+    {
+        @Html.AntiForgeryToken()
+        <div class="row SignUp_space_bottom">
+            <div class="col-md-12">
+                <h4>Revalidate Gate Pass</h4>
+            </div>
+        </div>
+        if (ViewBag.GpLstJson != null)
+        {
+            <input type="hidden" id="LstGatePassJson" value="@ViewBag.GpLstJson.ToString()" />
+        }
+        else
+        {
+            <input type="hidden" id="LstGatePassJson" value="" />
+        }
+
+        <div class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-1-5 col_cus_2 padding_rt">
+                    @Html.HiddenFor(m => m.GatePassId)
+                    @*@Html.HiddenFor(m => m.DeliveryDate)*@
+                    @Html.LabelFor(m => m.GatePassNo, new { @class = "InputLabel" })<label class="LabelColon">:</label>
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(m => m.GatePassNo, "", new { @class = "form-control input-sm", @readonly = true })
+                    <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#GatePassModal"></i></span>
+                    @Html.ValidationMessageFor(m => m.GatePassNo, "", new { @class = "Error_Msg" })
+
+                </div>
+                <div class="col-md-offset-2-5 col_cus_offset_2_5 col-md-1-5 col_cus_2 padding_rt">
+                    @Html.LabelFor(m => m.DeliveryDate, new { @class = "InputLabel" })<label class="LabelColon">:</label>
+                </div>
+                <div class="col-md-3-5 Date_Img">
+                    @Html.TextBoxFor(m => m.DeliveryDate, "", new { @class = "form-control input-sm", @readonly = true })
+                    @Html.ValidationMessageFor(m => m.DeliveryDate, "", new { @class = "Error_Msg" })
+                </div>
+                @*<div class="col-md-offset-3-5 col_cus_offset_2_5 col-md-1-5 col_cus_2">
+                    @Html.LabelFor(m => m.ExpiryDT, new { @class = "InputLabel" })<label class="LabelColon">:</label>
+                </div>
+                <div class="col-md-2 col_cus_2_5 Date_Img">
+                    @Html.TextBoxFor(m => m.ExpiryDT, "", new { @class = "form-control input-sm", @readonly = true })
+                    @Html.ValidationMessageFor(m => m.ExpiryDT, "", new { @class = "Error_Msg" })
+                </div>*@
+            </div>
+        </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        @*<div class="col-md-1-5 col_cus_2 padding_rt">
+                                            @Html.LabelFor(m => m.DeliveryDate, new { @class = "InputLabel" })<label class="LabelColon">:</label>
+                                        </div>
+                                        <div class="col-md-3 Date_Img">
+                                            @Html.TextBoxFor(m => m.DeliveryDate, "", new { @class = "form-control input-sm", @readonly = true })
+                                            @Html.ValidationMessageFor(m => m.DeliveryDate, "", new { @class = "Error_Msg" })
+                                        </div>*@
+
+
+                                        <div class="col-md-1-5 col_cus_2">
+                                           <label class="InputLabel">Valid Upto :</label> 
+                                        </div>
+                                        <div class="col-md-3 col_cus_2_5 Date_Img">
+                                            @Html.TextBoxFor(m => m.ExpiryDT, "", new { @class = "form-control input-sm", @readonly = true })
+                                            @Html.ValidationMessageFor(m => m.ExpiryDT, "", new { @class = "Error_Msg" })
+                                        </div>
+                                    </div>
+                                </div>
+
+                                    <div class="row">
+                                        <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                                    </div>
+                                    <div class="row SignUp_space_bottom">
+                                        <div class="col-md-offset-4 col-md-2" style="text-align:center">
+                                            <input type="submit" id="BtnWeighmentSave" value="Save" class="btn log_Btn_sm" />
+                                        </div>
+                                        @*<div class="col-md-2">
+                                                <input type="button" id="BtnWeighmentReset" value="Reset" class="btn log_Btn_sm" onclick="WeighmentReset()" />
+                                            </div>*@
+                                    </div>
+                                    <div class="logErrMsg" style="background-color:transparent" id="DivWeighmentErrMsg"></div>
+                                    <div class="logSuccMsg SignUp_space_bottom2" style="background-color:transparent">
+                                        <div id="DivWeighmentMsg"></div>
+                                    </div>
+                                    }
+                                    <div class="row">
+                                        <div class="col-md-12 SignUp_space_bottom">
+                                            <div id="DivWeighmentList">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+</div>
+
+<div class="modal fade" id="GatePassModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Gate Pass</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="GatePassBox" type="text" />
+                <ul class="navList" id="GatePassList">
+                    @*@{
+                        if (ViewBag.GatePassList != null)
+                        {
+                            foreach (var item in ViewBag.GatePassList)
+                            {
+                                <li id="@item.Value">@item.Text</li>
+                            }
+                        }
+                    }*@
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@Scripts.Render("~/bundles/jqueryval")

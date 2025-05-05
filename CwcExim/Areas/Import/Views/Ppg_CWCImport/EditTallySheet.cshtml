@@ -1,0 +1,218 @@
+﻿@model CwcExim.Areas.Import.Models.TallySheet
+<div class="row">
+    <div class="col-md-12">
+        <div class="Head_h4">
+            <div class="row">
+                <div class="col-md-12">
+                    <h4>Tally Sheet</h4>
+                </div>
+            </div>
+            @using (Ajax.BeginForm("AddEditTallySheet", "Ppg_CWCImport",
+                new AjaxOptions
+                {
+                    Confirm = "Are you sure you want to Save?",
+                    HttpMethod = "POST",
+                    OnSuccess = "TallySheetOnSuccess",
+                    OnFailure = "TallySheetOnFailure"
+                }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.TallySheetId)
+                @Html.HiddenFor(m => m.SealCuttingId)
+                @Html.HiddenFor(m => m.ContainerId)
+                @Html.HiddenFor(m => m.GodownId)
+                @Html.HiddenFor(m => m.StringifyXML)
+                {
+                    if (ViewBag.RightsList != null)
+                    {
+                        <input type="hidden" id="hdnRights" value="@ViewBag.RightsList" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="hdnRights" value="" />
+                    }
+                }
+
+                <div class="content_wrp">
+                    <div id="DivCreateDeliveryApp">
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.TallySheetNo) :
+                                    @Html.TextBoxFor(m => m.TallySheetNo, new { @readonly = true })
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 col-md-offset-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.TallySheetDate) :
+                                    <div class="position-relative Date_Img">
+                                        @Html.TextBoxFor(m => m.TallySheetDate, new { @readonly = true })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Container / CBT No :</label>
+                                    @Html.TextBoxFor(m => m.ContainerNo, new { @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.ContainerNo)
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 col-md-offset-1-5">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.CFSCode) :
+                                    @Html.TextBoxFor(m => m.CFSCode, new { @readonly = true })
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 col-md-offset-1-5">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Size) :
+                                    @Html.TextBoxFor(m => m.Size, new { @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.GodownId):
+                                    @Html.TextBoxFor(m => m.GodownName, new { @readonly = true })
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 col-md-offset-6">
+                                <div class="form-group">
+                                    <label>Gate In No. :</label>
+                                    @Html.TextBoxFor(m => m.GateInNo, new { @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row Form_Space_top">
+                            <div class="col-md-12" id="tblData"></div>
+                        </div>
+
+                        <div class="row">
+                            <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                        </div>
+
+                        <div class="d-flex justify-content-left">
+                            <input type="submit" id="BtnSaveApp" class="btn btn-primary mr-1 btn-100px" value="Save">
+                            <input type="button" class="btn btn-primary btn-100px" value="Back" onclick="ResetAll()">
+                        </div>
+
+                        <div id="DivMsg" class="logSuccMsg" style="background-color:transparent"></div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    var JsonData = [];
+    var r2;
+    var data;
+    $(function () {
+        r2 = JSON.parse($("#hdnRights").val());
+        if(r2.CanAdd==0)
+        {
+            $('#BtnSaveApp').prop('disabled', true);
+        }
+        data=@Html.Raw(Json.Encode(Model.lstDtl));
+        BindData();
+        $("#TallySheetDate").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $('[data-valmsg-for="Data"]').html('<span></span>');
+            }
+
+        });
+        $("#TallySheetDate").datepicker("option", "minDate", '@Model.SealCuttingDt');
+    });
+
+    function LoadTallyList() {
+        $('#DivTallyList').load('/Import/Ppg_CWCImport/GetTallySheetList');
+    }
+    function ResetAll() {
+        $('#DivBody').load('/Import/Ppg_CWCImport/GetTallySheet');
+    }
+    function BindData() {
+        var tablehtml = '<table class="table table-bordered table-striped dataTable Table_center"><thead><tr><th colspan="2">OBL / HBL</th><th rowspan="2">IGM No.</th><th rowspan="2">Line No.</th><th rowspan="2">Cargo</th>' +
+            '<th rowspan="2">No Of Pkg</th><th rowspan="2">Wt</th><th rowspan="2">UOM</th>' +
+            '<th rowspan="2">Area(Approx.)</th></tr>' +
+            '<tr><th>No.</th><th>Date</th></tr></thead><tbody>';
+        $.each(data, function (i, elem) {
+            tablehtml += '<tr><td>' + elem.OblNo + '</td><td>' + elem.OblDate + '</td><td>' + elem.IGMNo + '</td><td>' + elem.LineNo + '</td>' +
+                '<td>' + elem.Cargo + '</td><td>' + elem.Pkg + '</td><td>' + elem.Wt + '</td><td><select id="txtUOM' + elem.TallySheetDtlId +'"><option value="' +elem.UOM + '" selected=true>'+elem.UOM+'</option></select></td><td><input type="text" onkeypress="return numbersonly(this, event);" id="txtArea' + elem.TallySheetDtlId + '" value="' + elem.Area + '"/></td></tr>';
+        });
+        tablehtml += '</tbody></table>';
+
+        $('#tblData').html(tablehtml);
+
+    }
+    function TallySheetOnSuccess(data) {
+        if (data.Status == 2) {
+            if ($('#DivMsg').hasClass('logErrMsg'))
+                $('#DivMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivMsg').html(data.Message);
+            setTimeout(ResetAll,5000);
+        }
+        else {
+            if ($('#DivMsg').hasClass('logSuccMsg'))
+                $('#DivMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivMsg').html(data.Message);
+        }
+        setTimeout(function () { $('#DivMsg').html(''); }, 5000);
+    }
+    function TallySheetOnFailure() {
+
+    }
+    $('#BtnSaveApp').on('click', function () {
+        $.each(data, function (i, elem) {
+            elem.Area = ($('#txtArea' + elem.TallySheetDtlId).val()==''?0:$('#txtArea' + elem.TallySheetDtlId).val());
+            elem.UOM = $('#txtUOM' + elem.TallySheetDtlId).val();
+        });
+        $('#StringifyXML').val(JSON.stringify(data));
+    });
+    function numbersonly(myfield, e, dec) {
+        var key;
+        var keychar;
+
+        if (window.event)
+            key = window.event.keyCode;
+        else if (e)
+            key = e.which;
+        else
+            return true;
+        keychar = String.fromCharCode(key);
+
+        //control keys
+        if ((key == null) || (key == 0) || (key == 8) || (key == 9) || (key == 13) || (key == 27))
+            return true;
+
+            //numbers
+        else if ((("0123456789.").indexOf(keychar) > -1))
+            return true;
+
+            //decimal point jump
+            /*else if (dec && (keychar == ".")) {
+            myfield.form.elements[dec].focus();
+            return false;
+            }*/
+        else
+            return false;
+    }
+</script>

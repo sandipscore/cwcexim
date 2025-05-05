@@ -1,0 +1,102 @@
+﻿@model IEnumerable<CwcExim.Areas.Import.Models.ImportJobOrderList>
+<table class="table table-bordered table-striped" id="tblImpJOList">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("SL No")</th>
+            <th>Job Order No</th>
+            <th>Job Order Date</th>
+            <th>Form 1 No</th>
+            <th class="text-center">@Html.DisplayName("Edit")</th>
+            <th class="text-center">@Html.DisplayName("View")</th>
+            <th class="text-center">@Html.DisplayName("Delete")</th>
+            <th class="text-center">@Html.DisplayName("Preview")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var Serial = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center">@Serial</td>
+                    <td>@item.JobOrderNo</td>
+                    <td>@item.JobOrderDate</td>
+                    <td>@item.FormOneNo</td>
+                    <td class="text-center"><a href="#" onclick="EditImpJODet(@item.ImpJobOrderId)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="ViewImpJODet(@item.ImpJobOrderId)"><i class="fa fa-search-plus Edit"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="DeleteImpJODet(@item.ImpJobOrderId)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="PrintImpJODet(@item.ImpJobOrderId)"><i class="fa fa-file-pdf-o Edit"></i></a></td>
+                </tr>
+                Serial++;
+            }
+        }
+    </tbody>
+</table>
+<script>
+    $(document).ready(function () {
+        var tblImpJOList = $('#tblImpJOList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                       { "sName": "Sl No","width": "8%" },
+                       { "sName": "Job Order No", "bSortable": false },
+                       { "sName": "Job Order Date", "bSortable": false },
+                       { "sName": "Form1 No", "bSortable": false, },
+                       { "sName": "Edit", "bSortable": false, "width": "10%" },
+                       { "sName": "View", "bSortable": false, "width": "10%" },
+                       { "sName": "Delete", "bSortable": false, "width": "10%" },
+                       { "sName": "Preview", "bSortable": false, "width": "10%" }
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(tblImpJOList);
+    });
+    function EditImpJODet(ImpJobOrderId)
+    {
+        $('#DivBody').load('/Import/CWCImport/EditJobOrder?ImpJobOrderId='+ImpJobOrderId);
+    }
+    function ViewImpJODet(ImpJobOrderId)
+    {
+        $('#DivBody').load('/Import/CWCImport/ViewJobOrder?ImpJobOrderId=' + ImpJobOrderId);
+    }
+    function DeleteImpJODet(ImpJobOrderId)
+    {
+        var Confirm = confirm("Are you sure you want to delete?");
+        if(Confirm==true)
+        {
+            var Token=$('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Import/CWCImport/DeleteJobOrder',
+                type:'POST',
+                data:{ImpJobOrderId:ImpJobOrderId},
+                headers:{"__RequestVerificationToken":Token},
+                dataType:'JSON',
+                success:function(data)
+                {
+                    if(data.Status==1)
+                        $('#DivBody').load('/Import/CWCImport/CreateJobOrder');
+                    else
+                        alert(data.Message);
+                }
+            });
+        }
+    }
+    function PrintImpJODet(ImpJobOrderId)
+    {
+        var Token=$('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/Import/CWCImport/PrintJO',
+            type:'POST',
+            data:{ImpJobOrderId:ImpJobOrderId},
+            headers:{"__RequestVerificationToken":Token},
+            dataType:'JSON',
+            success:function(data)
+            {
+                if(data.Status==1)
+                    window.open(data.Message+"?_t="+(new Date().getTime()),"_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+
+    }
+</script>

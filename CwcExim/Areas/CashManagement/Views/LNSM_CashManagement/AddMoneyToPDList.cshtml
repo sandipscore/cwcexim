@@ -1,0 +1,133 @@
+﻿
+    @model IEnumerable<CwcExim.Areas.CashManagement.Models.LNSM_AddMoneyToPDListModel>
+
+<div>
+
+    <script>
+        $(document).ready(function () {
+            var table = $('#DivTblAddMoneyToPDList').DataTable({
+                "bFilter": false,
+                "bInfo": false,
+                "aoColumns": [
+                    { "sName": "Sl No", "bSortable": true, "width": "5%" },
+                    { "sName": "Receipt No", "bSortable": false, "width": "25%" },
+                    { "sName": "Receipt Date", "bSortable": false, "width": "15%" },
+                    { "sName": "Receipt Amount", "bSortable": false, "width": "15%" },
+                    { "sName": "Action", "bSortable": false, "width": "10%" }
+                ],
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $('td:eq(0)', nRow).addClass("text-center");
+                    $('td:eq(4)', nRow).addClass("text-center");                   
+                }
+                //responsive: true
+            });
+
+            new $.fn.dataTable.FixedHeader(table);
+        });
+        
+        function Print(ReceiptNo) {
+            //debugger;
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("GetBulkReceiptReport", "LNSM_CashManagement", new { Area = "CashManagement" }) ',
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                type: 'POST',
+                data: {
+                    PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                    PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                    ReceiptNumber: ReceiptNo,
+                },
+                success: function (data) {
+                    if (data.Status == 1)
+                        window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                    else
+                        alert(data.Message);
+                }
+            });
+        }
+        var Page=0;
+        function LoadMoreListData() {
+            //debugger;
+            $.ajax({
+                url: '/CashManagement/LNSM_CashManagement/GetAddMoneyToPDListLoadMore',
+                type: 'GET',
+                dataType: 'JSON',
+                data: { Page: Page + 1 },
+                success: function (data) {
+                    //debugger;
+                    if (data.Data != null && data.Data != '' && data.Data != undefined && data.Data.length > 0) {
+                        Page++;
+                        var html = '';
+                        var dt = $('#DivTblAddMoneyToPDList').dataTable();
+                        var len = dt.fnGetData().length;
+                        $.each(data.Data, function (i, item) {
+                            //debugger;
+                            len++;
+                            dt.fnAddData([
+                            len,
+                            [item.ReceiptNo],
+                            [item.ReceiptDate],
+                            [item.Amount],
+                           
+                            ['<a href="#" onclick=Print("' + [item.ReceiptNo] + '")><i class="fa fa-file-pdf-o Edit"></i></a>'],
+                            ]);
+                        });
+                        if(data.State=="0")
+                        {
+                            $('#btnLoadMore').attr('disabled', true);
+                        }
+                        else {
+                            $('#btnLoadMore').attr('disabled', false);
+                        }
+                    }
+                    else alert('No more data available');
+                }
+            });
+        }
+    </script>
+    
+    <table id="DivTblAddMoneyToPDList" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+        <thead>
+            <tr>
+                <th>Sl No</th>                
+                <th>Receipt No</th>
+                <th>Receipt Date</th>
+                <th>Receipt Amount</th>
+                <th style="text-align:center;">@Html.DisplayName("Action")</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                var SerialNo = 1;
+                if (Model != null)
+                {
+                    foreach (var item in Model)
+                    {
+
+                        <tr>
+                            <td>@SerialNo.ToString()</td>
+                            <td>@Html.DisplayFor(modelItem => item.ReceiptNo)</td>
+                            <td>@Html.DisplayFor(modelItem => item.ReceiptDate)</td>
+                            <td>@Html.DisplayFor(modelItem => item.Amount)</td>
+                            <td style="text-align:center;"><a href="#" onclick="Print('@item.ReceiptNo')"><i class="fa fa-file-pdf-o Edit" aria-hidden="true"></i></a></td>
+                        </tr>
+                        SerialNo = SerialNo + 1;
+                    }
+                }
+
+            }
+        </tbody>
+    </table>
+    <div class="col-md-3">
+       @if (ViewBag.State == "1")
+       {
+        <input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" id="btnLoadMore" value="Load More Data" onclick="LoadMoreListData()" />
+       }
+       else
+       {
+        <input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" disabled />
+       }
+
+    </div>
+</div>

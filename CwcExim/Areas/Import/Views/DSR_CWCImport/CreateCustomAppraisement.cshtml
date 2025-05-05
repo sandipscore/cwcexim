@@ -1,0 +1,2814 @@
+﻿@model CwcExim.Areas.Import.Models.DSRCustomAppraisementNew
+<style>
+    #tbleSline.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    #tbleCha.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    #tbleChaDtl.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .slimScrollDiv {
+        height: 300px;
+    }
+    ResetAllFields
+    .table.tblhd {
+        border-bottom: 0;
+    }
+</style>
+
+<script>
+    var ArrayOfCustomAppraisement = [];
+    var TimeInSeconds;
+    var SubDomain;
+    $(function () {
+        TimeInSeconds = 5000;
+        $('#AppraisementDateCheck').val(new Date());
+        SubDomain = '@System.Configuration.ConfigurationManager.AppSettings["SubDomain"]';
+        //GetCustomAppraisementList();
+        $('#TblCustomAppraisementDet').hide();
+
+        if ($('#WithoutDO').val() == '2') {
+            $("#DivDeliveryOrderDetails").css("display", "none");
+            $("#IssuedBy").val('');
+            $("#CargsDelivered").val('');
+            $("#ddlValidType").val('');
+            $("#ValidDate").val('');
+            $('#TblDeliveryAppOrd>tbody').html('');
+            $('#rdoHdn').val('2');
+        }
+        else {
+            $("#DivDeliveryOrderDetails").css("display", "");
+        }
+
+    });
+    function AllowOnlyDecimal(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || (CharCode == 46) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+
+    $('#AppraisementDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onSelect: function (dateText) {
+            dateText = $('#AppraisementDate').datepicker({ dateFormat: 'MM/dd/yyyy' }).val();
+            var dt = dateText.split("/");
+            var dt1 = dt[1] + "/" + dt[0] + "/" + dt[2];
+
+            $('#AppraisementDateCheck').val(dt1);
+        },
+        onClose: function () {
+            $("[data-valmsg-for='AppraisementDate']").html('');
+        }
+    });
+    $('#ValidDate').datepicker({
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        dateFormat: "dd/mm/yy",
+        altField: "#slider_example_4andHalf_alt",
+        altFieldTimeOnly: false,
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+    var ArrayOfDeliveryOrd = [];
+
+    $('#BOEDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='BOEDate']").html('');
+        }
+    });
+
+    $('#OBLDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='OBLDate']").html('');
+        }
+    });
+
+    function GetCustomAppraisementList() {
+        $('#DivCustomAppraisementList').load('/Import/DSR_CWCImport/GetCustomAppraisementList');
+    }
+
+    function ReloadCstmAppraise() {
+        $('#DivBody').load('/Import/DSR_CWCImport/CreateCustomAppraisement');
+    }
+
+    function ResetAllFields() {
+        debugger;
+        ArrayOfCustomAppraisement = [];
+        //$('input:hidden').val('');
+        $('#DivAddCustomAppraisement').find('input:hidden').val('');
+        $('#DivAddCustomAppraisement').find('input:text,textarea,select').val('');
+        $('#DivAddCustomAppraisement #DivCustomAppraisementMsg').html('');
+        $('#DivAddCustomAppraisement #DivCustomAppraisementErrMsg').html('');
+        $('[data-valmsg-for]').html('<span><span>');
+        $('#DivAddCustomAppraisement #TblCustomAppraisementDet >tbody').html('');
+        $('#TblDeliveryAppOrd > tbody').html('');
+        $('#TblCustomAppraisementDet').hide();
+        $('#DivCustomAppraisementTblMsg').html('');
+    }
+    function ResetEntryFields() {
+        debugger;
+
+        $('#DivAddCustomAppraisement').find('input:hidden').val('');
+        $('#DivAddCustomAppraisement').find('input:text,textarea,select').val('');
+
+        $('[data-valmsg-for]').html('<span><span>');
+        $('#Size').prop("selectedIndex", 0);
+        $('#LCLFCL').prop("selectedIndex", 0);
+        $('#ContainerType').prop("selectedIndex", 0);
+        $('#CargoType').prop("selectedIndex", 0);
+        $('#RMSValue').prop("selectedIndex", 0);
+        $('#ODCType').prop("selectedIndex",0);
+        $('#BOENo').val('');
+        $('#BOEDate').val('');
+        $('#CNoOfPackages').val('');
+        $('#CGrossWeight').val('');
+
+
+        $('#CIFValue').val('');
+        $('#Duty').val('');
+        $('#ManualWT').val('');
+        $('#MechanicalWT').val('');
+        $('#chkInterShifting').prop('checked', false);
+        $('#chkLiftOn').prop('checked', false);
+        $('#chkLiftOff').prop('checked', false);
+        $('#chkReworking').prop('checked', false);
+        $('#chkWeighment').prop('checked', false);
+
+        $('#DivCustomAppraisementTblMsg').html('');
+    }
+    function CstmAppraiseOnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            $('#DivCustomAppraisementMsg').html(data.Message);
+            setTimeout(function () {
+                $('#DivBody').load('/Import/DSR_CWCImport/CreateCustomAppraisement');
+            }, 5000)
+
+
+            //   setTimeout(CstmAppraiseOnSuccess, TimeInSeconds);
+            // $('#ContainerList #' + $('#ContainerNo').val()).remove();
+            // setTimeout(ResetAllFields, TimeInSeconds);
+            // GetCustomAppraisementList();
+        }
+        else {
+            $('#DivCustomAppraisementErrMsg').html(data.Message);
+        }
+    }
+
+    function SearchContainerWise() {
+        debugger;
+        var OBLn = $('#OBLNo').val();
+        if ($('#ContainerWiseSearch').val() == "1") {
+            OBLn = '';
+        }
+        $.ajax({
+            url: '/Import/DSR_CWCImport/SearchContainerWise',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { OBL: OBLn },
+            success: function (data) {
+                //-------------------------------------------------------------
+                //debugger;
+                if (ArrayOfCustomAppraisement.length > 0) {
+
+                    data.filter(myFunc);
+
+                    function myFunc() {
+                        //debugger;
+                        for (var i = 0; i < ArrayOfCustomAppraisement.length; ++i) {
+                            // to remove every occurrence of the matched value
+                            for (var j = data.length; j--;) {
+                                if (data[j].ContainerNo == ArrayOfCustomAppraisement[i].ContainerNo) {
+                                    // remove the element
+                                    data.splice(j, 1);
+                                }
+                            }
+                        }
+                    }
+
+                }
+                //-------------------------------------------------------------
+
+                var html = '';
+                  oblcount = 0;
+                $.each(data, function (item, elem) {
+                      oblcount = oblcount + 1;
+                    html += '<li id="' + elem.CFSCode + '"  onclick="SelectContainer(&quot;' + elem.ContainerNo + '&quot;,&quot;' + elem.CFSCode + '&quot;)">' + elem.ContainerNo + '</li>';
+                });
+
+                $('#ContainerList').html(html);
+                $('#ContainerModal').find('#ContainerBox').focus();
+
+            }
+        });
+    }
+    function SearchOBLWise() {
+        debugger;
+        var CFSCoden = $('#CFSCode').val();
+        if ($('#OBLWiseSearch').val() == "1") {
+            CFSCoden = '';
+        }
+        $.ajax({
+            url: '/Import/DSR_CWCImport/GetContainerBOL',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { CFSCode: CFSCoden },
+            success: function (data) {
+                //-------------------------------------------------------------
+                //debugger;
+                if (ArrayOfCustomAppraisement.length > 0) {
+
+                    data.filter(myFunc);
+
+                    function myFunc() {
+                        //debugger;
+                        for (var i = 0; i < ArrayOfCustomAppraisement.length; ++i) {
+                            // to remove every occurrence of the matched value
+                            for (var j = data.length; j--;) {
+                                if (data[j].OBLNo == ArrayOfCustomAppraisement[i].OBLNo) {
+                                    // remove the element
+                                    data.splice(j, 1);
+                                }
+                            }
+                        }
+                    }
+
+                }
+                //-------------------------------------------------------------
+                var html = '';
+                oblcount = 0;
+                $.each(data, function (item, elem) {
+                    oblcount = oblcount + 1;
+                    html += '<li id="' + elem.OBLDate + '" onclick="GetOBldtl(&quot;' + elem.OBLNo + '&quot;,&quot;' + elem.OBLDate + '&quot;,&quot;' + elem.NoOfPackages + '&quot;,&quot;' + elem.GrossWeight + '&quot;,&quot;' + elem.ImporterId + '&quot;,&quot;' + elem.Importer + '&quot;,&quot;' + elem.CargoDescription + '&quot;,&quot;' + elem.CIFValue + '&quot;,&quot;' + elem.ShippingLine + '&quot;,&quot;' + elem.ShippingLineId + '&quot;,&quot;' + elem.CHAId + '&quot;,&quot;' + elem.CHAName + '&quot;)">' + elem.OBLNo + '</li>';
+                });
+
+                if ($('#OBLWiseSearch').val() == '1') {
+                    oblcount = 1;
+                }
+                $('#ContainerOBLList').html(html);
+            }
+        });
+    }
+
+    function callChangeRMSfunc(EximValue)
+    {
+        if (EximValue != '3') {
+            $('#chkLiftOn').prop('checked', true);
+            $('#chkLiftOff').prop('checked', true);
+        }
+        else
+        {
+            $('#chkLiftOn').prop('checked', false);
+            $('#chkLiftOff').prop('checked', false);
+        }
+    }
+
+    function SearchType(Type) {
+        ResetCstmAppraiseDet();
+        if (Type == 'ContainerWise') {
+            $('#ContainerWiseSearch').val('1');
+            $('#OBLWiseSearch').val('0');
+            $('#ContainerWise').prop('checked', true);
+            //$('#divOBLWise').remove().insertAfter($('#divContainerWise'));
+            $('#divOBLWise').insertAfter($('#divContainerWise'));
+            $('#OBLNo').val('');
+            $('#ContainerNo').val('');
+        }
+        else {
+            $('#ContainerWiseSearch').val('0');
+            $('#OBLWiseSearch').val('1');
+            $('#OBLWise').prop('checked', true);
+            //$('#divContainerWise').remove().insertAfter($('#divOBLWise'));
+            $('#divContainerWise').insertAfter($('#divOBLWise'));
+            $('#OBLNo').val('');
+            $('#ContainerNo').val('');
+            $('#hdnCIFValue').val(0);
+
+        }
+    }
+    function CstmAppraiseOnFailure() { }
+    function SaveEnabled() {
+        $('#BtnSaveCustomAppraisement').attr('enabled', 'enabled');
+    };
+    function SaveDisabled() {
+        $('#BtnSaveCustomAppraisement').attr('disabled', 'disabled');
+
+    }
+    var Page = 0;
+    function LoadMoreEximTrader() {
+        debugger;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/LoadEximtradeListForCustApr',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleSline tbody').html(html);
+                    else
+                        $('#tbleSline tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SearchByPartyCode() {
+        if ($('#ShpngLinebox').val() != '') {
+            $.ajax({
+                url: '/Import/DSR_CWCImport/SearchByPartyCodeForCustApr',
+                type: 'GET',
+                data: { PartyCode: $('#ShpngLinebox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstShippingLine, function (item, elem) {
+                            html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleSline tbody').html('');
+                        $('#tbleSline tbody').html(html);
+                        $('#btnLoadMore').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleSline tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadEximTrader();
+    }
+
+    function SelectShippingLine(ShippingLineId, ShippingLineName) {
+        $('#ShippingLine').val(ShippingLineName);
+        $('#ShippingLineId').val(ShippingLineId);
+        $("#ShippingLineModal").modal("hide");
+        $('#ShpngLinebox').val('');
+        LoadEximTrader();
+    }
+
+    function LoadEximTrader() {
+        Page = 0;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/LoadEximtradeListForCustApr',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    $('#tbleSline tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function CloseEximTrader() {
+        $('#ShpngLinebox').val('');
+        $("#ShippingLineModal").modal("hide");
+        LoadEximTrader();
+    }
+
+    function LoadMoreCHA() {
+        debugger;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/LoadCHAList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstCHA, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectCHA(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleCha tbody').html(html);
+                    else
+                        $('#tbleCha tbody').append(html);
+                    Page++;
+
+                    debugger;
+                    if (data.Data.State == true)
+                        $('#btnLoadCHA').prop('disabled', false);
+                    else $('#btnLoadCHA').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadCHA() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/LoadCHAList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstCHA, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectCHA(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+
+                    $('#tbleCha tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadCHA').prop('disabled', false);
+                    else $('#btnLoadCHA').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SelectCHA(CHAId, CHAName) {
+        debugger;
+        $('#CHAName').val(CHAName);
+        $('#CHAId').val(CHAId);
+        $("#CHAHdrModal").modal("hide");
+        $('#Chabox').val('');
+        LoadCHA();
+    }
+    function SearchChaByPartyCode() {
+        debugger;
+        if ($('#Chabox').val() != '') {
+            $.ajax({
+                url: '/Import/DSR_CWCImport/CHASearchByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#Chabox').val() },
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstCHA, function (item, elem) {
+                            html += '<tr onclick="SelectCHA(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleCha tbody').html('');
+                        $('#tbleCha tbody').html(html);
+                        $('#btnLoadCHA').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleCha tbody').html('');
+                        Page = -1;
+                        $('#btnLoadCHA').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadCHA();
+    }
+    function CloseCHA() {
+        $('#Chabox').val('');
+        $("#CHAHdrModal").modal("hide");
+        LoadCHA();
+    }
+    function LoadMoreCHAdtl() {
+        debugger;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/LoadCHAList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstCHA, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectCHAdtl(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleChaDtl tbody').html(html);
+                    else
+                        $('#tbleChaDtl tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadCHAdtl').prop('disabled', false);
+                    else $('#btnLoadCHAdtl').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadCHAdtl() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/LoadCHAList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstCHA, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectCHAdtl(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+
+                    $('#tbleChaDtl tbody').html(html);
+                    debugger;
+                    if (data.Data.State == true)
+                        $('#btnLoadCHAdtl').prop('disabled', false);
+                    else $('#btnLoadCHAdtl').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function AllowOnlyInteger(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+    function SelectCHAdtl(CHAId, CHAName) {
+        debugger;
+        $('#CHAName').val(CHAName);
+        $('#CHAId').val(CHAId);
+        $("#CHADtlModal").modal("hide");
+        $('#ChaDtlbox').val('');
+        LoadCHAdtl();
+    }
+
+    function SearchChaDtlByPartyCode() {
+        debugger;
+        if ($('#ChaDtlbox').val() != '') {
+            debugger;
+            $.ajax({
+                url: '/Import/DSR_CWCImport/CHASearchByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#ChaDtlbox').val() },
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstCHA, function (item, elem) {
+                            html += '<tr onclick="SelectCHAdtl(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleChaDtl tbody').html('');
+                        $('#tbleChaDtl tbody').html(html);
+                        $('#btnLoadCHAdtl').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleChaDtl tbody').html('');
+                        Page = -1;
+                        $('#btnLoadCHAdtl').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadCHAdtl();
+    }
+
+    function CloseCHAdtl() {
+        $('#ChaDtlbox').val('');
+        $("#CHADtlModal").modal("hide");
+        LoadCHAdtl();
+    }
+
+    // Importer
+
+
+    //importer modal
+    document.getElementById('Impbox').addEventListener('keyup', debounce(function () {
+        if (document.getElementById('Impbox').value != "")
+            SearchImporterByPartyCode();
+        else {
+            $('#tbleImp tbody').html('');
+            LoadImporter();
+        } SaveCstmAppraiseDtl
+    }, 800));
+    function SelectImporter(ImporterId, ImporterName)
+    {
+        debugger;
+        $('#Importer').val(ImporterName);
+        $('#ImporterId').val(ImporterId);
+
+        CloseImporter();
+    }
+
+    function LoadMoreImporter() {
+        debugger;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/LoadImporterList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tabvalue=2001;
+                    $.each(data.Data.lstImporter, function (item, elem) {
+                        debugger;
+                        //html += '<tr onclick="SelectImporter(' + elem.ImporterId + ',&quot;' + elem.ImporterName + '&quot;)"><td>' + elem.ImporterName + '</td></tr>';
+                        html += '<tr tabindex=' + tabvalue + '_'+ item +' onkeypress="SelectImporter(' + elem.ImporterId + ',&quot;' + elem.ImporterName.replace(/\r?\n|\r/g,"") + '&quot;)" onclick="SelectImporter(' + elem.ImporterId + ',&quot;' + elem.ImporterName.replace(/\r?\n|\r/g,"") + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ImporterName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+
+                    });
+                    if (Page == -1)
+                        $('#tbleImp tbody').html(html);
+                    else
+                        $('#tbleImp tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadImp').prop('disabled', false);
+                    else $('#btnLoadImp').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    var Page=0;
+    function LoadImporter() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/LoadImporterList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tabindex=2001;
+                    $.each(data.Data.lstImporter, function (item, elem) {
+                        debugger;
+                        html += '<tr tabindex=' + tabindex + '_'+ item +' onkeypress="SelectImporter(' + elem.ImporterId + ',&quot;' + elem.ImporterName.replace(/\r?\n|\r/g,"") + '&quot;)" onclick="SelectImporter(' + elem.ImporterId + ',&quot;' + elem.ImporterName.replace(/\r?\n|\r/g,"") + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ImporterName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    $('#tbleImp tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadImp').prop('disabled', false);
+                    else $('#btnLoadImp').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SearchImporterByPartyCode() {
+        if ($('#Impbox').val() != '') {
+            $.ajax({
+                url: '/Import/DSR_CWCImport/SearchImporterByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#Impbox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        var tabindex=2001;
+                        $.each(data.Data.lstImporter, function (item, elem) {
+                            html += '<tr tabindex=' + tabindex + '_'+ item +' onkeypress="SelectImporter(' + elem.ImporterId + ',&quot;' + elem.ImporterName.replace(/\r?\n|\r/g,"") + '&quot;)" onclick="SelectImporter(' + elem.ImporterId + ',&quot;' + elem.ImporterName.replace(/\r?\n|\r/g,"") + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ImporterName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleImp tbody').html('');
+                        $('#tbleImp tbody').html(html);
+                        $('#LoadMoreImporter').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleImp tbody').html('');
+                        Page = -1;
+                        $('#btnLoadImp').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadImporter();
+    }
+
+    function CloseImporter()
+    {
+        $('#Impbox').val('');
+        $("#ImporterModal").modal("hide");
+        $('#ShippingLine').focus();
+        LoadImporter();
+    }
+
+
+
+
+
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+    document.getElementById('Chabox').addEventListener('keyup', debounce(function () {
+        if (document.getElementById('Chabox').value != "")
+            SearchChaByPartyCode();
+        else {
+            $('#tbleCha tbody').html('');
+            //LoadMoreCHA();
+            LoadCHA();
+        }
+    }, 800));
+    document.getElementById('ShpngLinebox').addEventListener('keyup', debounce(function () {
+        if (document.getElementById('ShpngLinebox').value != "")
+            SearchByPartyCode();
+        else {
+            $('#tbleSline tbody').html('');
+            LoadEximTrader();
+        }
+    }, 800));
+
+
+
+
+
+    $('#ContainerBox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#ContainerModal .navList > li').show();
+        } else {
+            $('#ContainerModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    //$('#ContainerList li').on("click", function () {
+    //    debugger;
+    //    ResetCstmAppraiseDet();
+    //    $('#ContainerNo').val($(this).text());
+    //    $('#CFSCode').val($(this).attr('id'));
+    //    var CFSCode = $('#CFSCode').val();
+    //    $("#ContainerModal").modal("hide");
+    //    GetContainerDet(CFSCode);
+    //    GetContainerOBL(CFSCode);
+    //});
+    function SelectContainer(containerno, cfscode) {
+
+        $('#ContainerNo').val(containerno);
+        $('#CFSCode').val(cfscode);
+        var CFSCode = $('#CFSCode').val();
+        $("#ContainerModal").modal("hide");
+        GetContainerDet(CFSCode);
+
+    }
+    function GetContainerDet(CFSCode) {
+        debugger;
+        $.ajax({
+            url: '/Import/DSR_CWCImport/GetCntrDetForCstmAppraise',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { CFSCode: CFSCode, LineNo: 0 },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    // $('#CustomAppraisementDtlId').val(data.Data.CustomAppraisementDtlId),
+                    //  data.Data.ShippingLineId == 0 ? "" : $('#ShippingLineId').val(data.Data.ShippingLineId);
+                   // $('#ShippingLine').val(data.Data.ShippingLine);
+                  //  $('#ShippingLineId').val(data.Data.ShippingLineId);
+                    $('#ContainerNo').val(data.Data.ContainerNo);
+                    $('#CFSCode').val(data.Data.CFSCode);
+                    $('#Size').val(data.Data.Size);
+                    $('#LCLFCL').val(data.Data.ContainerLoadType);
+                    $('#ODCType').val(data.Data.ODCType);
+                    $('#LineNo').val(data.Data.LineNo);
+                   // //$('#ImporterId').val(data.Data.ImporterId);
+                   //// $('#Importer').val(data.Data.Importer);
+                   // $('#IssuedBy').val(data.Data.Importer);
+                   // $('#CargsDelivered').val(data.Data.Importer);
+                    // $('#CHAId').val(data.Data.CHAId);
+                   // $('#CHANameId').val(data.Data.CHAId);
+                   // $('#CHA').val(data.Data.CHAName);
+                    // $('#CHAName').val(data.Data.CHAName);
+                   // $('#CargoDescription').val(data.Data.CargoDescription);
+                    $('#CNoOfPackages').val(data.Data.NoOfPackages);
+                    $('#CGrossWeight').val(data.Data.GrossWeight);
+                    $('#Vessel').val(data.Data.Vessel);
+                    $('#Voyage').val(data.Data.Voyage);
+                    $('#Rotation').val(data.Data.Rotation);
+                    $('#GateEntryDate').val(data.Data.GateEntryDate);
+                    $('#ContainerType').val('2');
+                    data.Data.CargoType == 0 ? $('#CargoType').val('') : $('#CargoType').val(data.Data.CargoType);
+                      data.Data.Reefer == 0 ? $('#Reefer').prop("checked", false) : $('#Reefer').prop("checked", true);
+                    $('#RMSValue').prop("selectedIndex", 0);                    
+
+                }
+            }
+        });
+    }
+    $('#ContainerOBLBox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#ContainerOBLModal .navList > li').show();
+        } else {
+            $('#ContainerOBLModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+    var oblcount = 0;
+    function GetContainerOBL(CFSCode) {
+        debugger;
+        //var CFSCode = $('#CFSCode').val();
+        if (CFSCode == '' || CFSCode == null) {
+            alert('Please Enter Container');
+            return false;
+        }
+        $.ajax({
+            url: '/Import/DSR_CWCImport/GetContainerBOL',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { CFSCode: $('#CFSCode').val() },
+            success: function (data) {
+                debugger;
+                var html = '';
+                oblcount = 0;
+                $.each(data, function (item, elem) {
+                    oblcount = oblcount + 1;                                  
+                    html += '<li id="' + elem.OBLDate + '" onclick="GetOBldtl(&quot;' + elem.OBLNo + '&quot;,&quot;' + elem.OBLDate + '&quot;,&quot;' + elem.NoOfPackages + '&quot;,&quot;' + elem.GrossWeight + '&quot;,&quot;' + elem.ImporterId + '&quot;,&quot;' + elem.Importer + '&quot;,&quot;' + elem.CargoDescription + '&quot;,&quot;' + elem.CIFValue + '&quot;,&quot;' + elem.ShippingLine + '&quot;,&quot;' + elem.ShippingLineId + '&quot;,&quot;' + elem.CHAId + '&quot;,&quot;' + elem.CHAName + '&quot;)">' + elem.OBLNo + '</li>';
+                });
+                if ($('#OBLWiseSearch').val() == '1')
+                {
+                    oblcount = 1;
+                }
+                $('#ContainerOBLList').html(html);
+            }
+        });
+    }
+    function GetOBldtl(OBLNo, OBLDate, NoOfPackages, GrossWeight,  ImporterId, Importer, CargoDescription, CIFValue, ShippingLine, ShippingLineId, CHAId, CHAName) {
+        debugger;
+       
+        $('#OBLNo').val(OBLNo);
+        $('#OBLDate').val(OBLDate);        
+        $('#NoOfPackages').val(NoOfPackages);
+        $('#GrossWeight').val(GrossWeight);
+        $('#ImporterId').val(ImporterId);
+        $('#Importer').val(Importer);
+        $('#ShippingLine').val(ShippingLine);
+        $('#ShippingLineId').val(ShippingLineId);
+        $('#CHAId').val(CHAId);
+        $('#CHAName').val(CHAName);
+        $('#CargoDescription').val(CargoDescription);
+        $("#ContainerOBLModal").modal("hide");
+        $('#CIFValue').val(CIFValue);
+        $('#hdnCIFValue').val(CIFValue);
+    };
+    function ResetContainerDtl(){
+        $('#ContainerNo').val('');
+        $('#CFSCode').val('');       
+        $('#LineNo').val('');       
+        $('#CHANameId').val(0);
+        $('#CHA').val('');
+        $('#Size').prop("selectedIndex", 0);
+        $('#LCLFCL').prop("selectedIndex",0);
+        $('#ContainerType').val(2);
+        $('#CargoType').prop("selectedIndex", 0);
+        $('#RMSValue').prop("selectedIndex", 0);
+        $('#ODCType').prop("selectedIndex", 0);
+        
+    }
+    function GetBOEDetail() {
+        debugger
+        if ($('#BOENo').val() != '' || $('#BOENo').val() != null) {
+            $.ajax({
+                url: '/Import/DSR_CWCImport/GetBOEDetail',
+                type: 'GET',
+                dataType: 'JSON',
+                data: { BOENo: $('#BOENo').val() },
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        $('#BOEDate').val(data.BOEDate);
+                        $('#CIFValue').val(data.CIFValue);
+                        $('#Duty').val(data.Duty);
+                    }
+                }
+            });
+        }
+    }
+    function GetOBLContainer() {
+        debugger;
+        OBLNo = $('#OBLNo').val();
+        if (OBLNo == '' || OBLNo == null) {
+            alert('Please Enter OBLNo');
+            return false;
+        }
+        $.ajax({
+            url: '/Import/DSR_CWCImport/GetOBLContainer',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { OBLNo: $('#OBLNo').val() },
+            success: function (data) {
+                debugger;
+                var html = '';
+                //$.each(data, function (i, item) {
+                //    html += '<li id="' + item.ContainerId + '" " onclick="GetContainerSize(this)">' + item.ContainerNo + '</li>';
+                //});
+                //$('#lstContainer').html(html);
+            }
+        });
+    }
+    function SaveCstmAppraiseDtl() {
+        debugger;
+        $('#DivCustomAppraisementTblMsg').html('');
+        if ($('#Size').val() == '') {
+            alert('Please Enter Container Size');
+            return false;
+        }
+        if (($('#RMSValue').val() == '' || $('#RMSValue').val() == null)) {
+            alert('Please Select Examination Type');
+            return false;
+        }
+        if ($('#BOENo').val() == '') {
+            alert('Please Enter BOENo');
+            return false;
+        }
+        if ($('#BOEDate').val() == '') {
+            alert('Please Enter BOEDate');
+            return false;
+        }
+        
+        
+        debugger;
+
+        var Manual = 0;
+        var Mechanical = 0;
+        if ($('#ManualWT').val() == "") {
+            Manual = 0;
+        }
+        else {
+            Manual = $('#ManualWT').val();
+        }
+        if ($('#MechanicalWT').val() == "") {
+            Mechanical = 0;
+        }
+        else {
+            Mechanical = $('#MechanicalWT').val();
+        }
+
+        if ((Number(Manual) + Number(Mechanical)) <= 0) {
+            alert('Manual or Mechanical weight will be greater than zero');
+            return false;
+        }
+
+        if ($('#RMSValue').val() != '3')
+        {
+            if ((Number(Manual) + Number(Mechanical)) <= 0) {
+                alert('Manual or Mechanical weight will be greater than zero');
+                return false;
+            }
+        }
+        
+
+        /*if ($('#CargoType').val() == '') {
+            $('[data-valmsg-for="CargoType"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }*/
+        var Appdt = $('#AppraisementDateCheck').val();
+        var GateEntryDt = $('#GateEntryDate').val();
+        var jdt = new Date(Appdt);
+        var tdt = new Date(GateEntryDt);
+
+
+
+
+
+        //if (jdt >= tdt) {
+            debugger;
+            if ($('#CFSCode').val() != "") {
+                //if ($('#BOEDate').val() != '') {
+                if ($('#CargoType').val() != '') {
+                    if ($('#Importer').val() != '') {
+                        if ($('#CHA').val() != '') {
+                            var CstmAppraiseDtl = {
+                                "ContainerNo": $('#ContainerNo').val(),
+                                "CFSCode": $('#CFSCode').val(),
+                                "Size": $('#Size').val(),
+                                "LCLFCL": $('#LCLFCL').val(),
+                                "ODCType": $('#ODCType').val(),
+                                "CargoDeliveryType": $('#CargoDeliveryType').val(),
+                                "InterShifting": 0,
+                                "LiftOn": 0,
+                                "LiftOff": 0,
+                                "Reworking": 0,
+                                "Weighment": 0,
+                                "LineNo": $('#LineNo').val(),
+                                "BOENo": $('#BOENo').val(),
+                                "BOEDate": $('#BOEDate').val(),
+                                "OBLNo": $('#OBLNo').val(),
+                                "OBLDate": $('#OBLDate').val(),
+                                "CHANameId": $('#CHAId').val() == "" ? 0 : $('#CHAId').val(),
+                                "CHA": $('#CHAName').val(),
+                                "ImporterId": $('#ImporterId').val() == "" ? 0 : $('#ImporterId').val(),
+                                "Importer": $('#Importer').val(),
+                                "CargoDescription": $('#CargoDescription').val(),
+                                "NoOfPackages": $('#NoOfPackages').val() == "" ? 0 : $('#NoOfPackages').val(),
+                                "GrossWeight": $('#GrossWeight').val() == "" ? 0 : $('#GrossWeight').val(),
+                                "Duty": $('#Duty').val() == "" ? 0 : $('#Duty').val(),
+                                "ManualWT": $('#Manual').val() == "" ? 0 : $('#Manual').val(),
+                                "MechanicalWT": $('#Mechanical').val() == "" ? 0 : $('#Mechanical').val(),
+                                "CIFValue": $('#CIFValue').val() == "" ? 0 : $('#CIFValue').val(),
+                                "WithoutDOSealNo": $('#WithoutDOSealNo').val() == "" ? 0 : $('#WithoutDOSealNo').val(),
+                                "Vessel": $('#Vessel').val(),
+                                "Voyage": $('#Voyage').val(),
+                                "ContainerType": $('#ContainerType').val() == '' ? 0 : $('#ContainerType').val(),
+                                "CargoType": $('#CargoType').val() == '' ? 0 : $('#CargoType').val(),
+                                "Reefer": $('#Reefer').prop("checked") == false ? 0 : 1,
+                                "RMSValue": $('#RMSValue').val() == '' || $('#RMSValue').val() == null ? 0 : $('#RMSValue').val(),
+                                "HeavyScrap": $('#HeavyScrap').prop("checked") == false ? 0 : 1,
+                                "AppraisementPerct": $('#AppraisementPerct').val() == '' ? 0 : $('#AppraisementPerct').val(),
+                                "IsInsured": $('#IsInsured').is(":checked") == false ? 0 : 1,
+                                "ShippingLineSealNo": $('#ShippingLineSealNo').val()
+                              
+                                
+                            }
+
+
+                            if (ArrayOfCustomAppraisement.filter(x=>x.CFSCode == CstmAppraiseDtl.CFSCode).length > 0) {
+
+
+                                //if (ArrayOfCustomAppraisement.filter(x=>x.CFSCode == CstmAppraiseDtl.CFSCode
+                                //    && x.RMSValue == CstmAppraiseDtl.RMSValue).length <= 0) {
+                                //    alert("RMS Not Matched.");
+                                //    return false;
+                                //}
+
+                                //if (ArrayOfCustomAppraisement.filter(x=>x.CFSCode == CstmAppraiseDtl.CFSCode
+                                //    && x.CHANameId == CstmAppraiseDtl.CHANameId).length <= 0) {
+                                //    alert("CHA Not Matched.");
+                                //    return false;
+                                //}
+
+                                //if (ArrayOfCustomAppraisement.filter(x=>x.CFSCode == CstmAppraiseDtl.CFSCode
+                                //    && x.ImporterId == CstmAppraiseDtl.ImporterId).length <= 0) {
+                                //    alert("Importer Not Matched.");
+                                //    return false;
+                                //}
+
+                                if (CstmAppraiseDtl.OBLNo == '') {
+                                    alert("OBL No Can not be Blank for Multiple OBL of same Container.");
+                                    return false;
+                                }
+
+                               
+                                if ($('#OBLWiseSearch').val() == '1') {
+                                    if (ArrayOfCustomAppraisement.filter(x=>x.CFSCode == CstmAppraiseDtl.CFSCode
+                                   && x.OBLNo == CstmAppraiseDtl.OBLNo).length > 0) {
+                                        alert("Duplicate Container Number.");
+                                        return false;
+                                    }
+                                    
+                                }
+                                else {
+                                    if (ArrayOfCustomAppraisement.filter(x=>x.CFSCode == CstmAppraiseDtl.CFSCode
+                                   && x.OBLNo == CstmAppraiseDtl.OBLNo).length > 0) {
+                                        alert("Duplicate OBL No.");
+                                        return false;
+                                    }
+                                    
+                                }
+                                if (ArrayOfCustomAppraisement.filter(x=>x.CFSCode == CstmAppraiseDtl.CFSCode
+                                    && x.OBLNo == '').length > 0) {
+                                    alert("OBL No Can not be Blank for Multiple OBL of same Container.");
+                                    return false;
+                                }
+
+
+
+
+                            }
+
+
+
+                            //var flag = 0;
+                            //$.each(ArrayOfCustomAppraisement, function (i, item) {
+
+                            //    if (item.CFSCode == $('#CFSCode').val()) {
+                            //        flag = 1;
+                            //    }
+
+                            //});
+                            //if (flag == 0)
+                            ArrayOfCustomAppraisement.push(CstmAppraiseDtl);
+                            //$('#ContainerList #' + $('#ContainerNo').val()).remove();
+                            ResetCstmAppraiseDet();
+                            GenerateCstmAppraiseTable();
+                        }
+
+                        else {
+                            $('[data-valmsg-for="CHA"]').html('<span>Fill Out This Field</span>');
+                            return false;
+                        }
+                    }
+                    else {
+                        $('[data-valmsg-for="Importer"]').html('<span>Fill Out This Field</span>');
+                        return false;
+                    }
+                }
+                else {
+                    $('[data-valmsg-for="CargoType"]').html('<span>Fill Out This Field</span>');
+                    return false;
+                }
+                //}
+                //else {
+                //    $('[data-valmsg-for="BOEDate"]').html('<span>Fill Out This Field</span>');
+                //}
+            }
+            else {
+                $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+                //$('#DivCustomAppraisementTblMsg').html('Please Select A Container No In Order To Add Details');
+                // $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            }
+       // }
+        //else {
+        //    $('#ErrAppDate').html('Custom Apprisement Date should not be less Gate Entry Date');
+        //    return false;
+
+        //}
+
+        var CIFValue = 0;
+        var Duty = 0;
+        var Pkg = 0;
+        var WT = 0;
+
+        $.each(ArrayOfCustomAppraisement, function (i, j) {
+            CIFValue = CIFValue+Number(j.CIFValue);
+            Duty = CIFValue + Number(j.Duty);
+            Pkg = Pkg + Number(j.NoOfPackages);
+            WT = WT + Number(j.GrossWeight);
+
+        });
+
+        $('#Fob').val(CIFValue);
+        $('#GrossDuty').val(Duty);
+        $('#CNoOfPackages').val(Pkg);
+        $('#CGrossWeight').val(WT);
+        
+
+    }
+
+    function ResetCstmAppraiseDet() {
+        debugger;
+        $('#btnReset').prop("value", "Reset");
+        $('#BtnAddCustomAppraisement').prop("disabled", false);
+        $('#Reefer').prop("checked", false);
+        $('#RMS').prop("checked", false);
+        $('#HeavyScrap').prop("checked", false);
+        if ($('#OBLWiseSearch').val() == '1') {
+            var BOENO = '';
+            var BOEDate = '';
+            var OBLNO = '';
+            var OBLDate = '';
+            var CargoDesc = '';
+            //var CIFValue = 0;
+            BOENO = $('#BOENo').val();
+            BOEDate = $('#BOEDate').val();
+            OBLNO = $('#OBLNo').val();
+            OBLDate = $('#OBLDate').val();
+            CargoDesc = $('#CargoDescription').val();
+            CIFValue = $('#hdnCIFValue').val();
+
+            $('#DivCustomAppraisementDet').find('input:text,textarea,select').val('');
+            $('#BOENo').val(BOENO);
+            $('#BOEDate').val(BOEDate);
+            $('#OBLNo').val(OBLNO);
+            $('#OBLDate').val(OBLDate);
+            $('#ContainerWiseSearch').val('0');
+            $('#OBLWiseSearch').val('1');
+            $('#divOBLWise').prop('checked', true);
+            $('#CargoDescription').val(CargoDesc);
+            $('#CIFValue').val(CIFValue);
+          
+
+            $('#ContainerNo').val('');
+            $('#CFSCode').val('');
+            $('#Size').val('');
+            $('#LCLFCL').val('');
+
+            $('#ContainerType').val(2);
+            $('#CargoType').val(2);
+            $('#RMSValue').val('');
+            $('#LineNo').val('');
+            $('#ODCType').val(0);
+
+        }
+        else {
+            var ContainerNo = '';
+            var CFSCode = '';
+            var Size = '';
+            var LCLFCL = '';
+            var ContainerType = '';
+            var CargoType = '';
+            var RMSValue = '';
+            var LineNo = '';
+            var ODCType = '0';
+            var CHAId = 0;
+            var CHAName = '';
+           
+            ContainerNo = $('#ContainerNo').val();
+            CFSCode = $('#CFSCode').val();
+            Size = $('#Size').val();
+            LCLFCL = $('#LCLFCL').val();
+            ContainerType = $('#ContainerType').val();
+            CargoType = $('#CargoType').val();
+            RMSValue = $('#RMSValue').val();
+            LineNo = $('#LineNo').val();
+            ODCType = $('#ODCType').val();
+            CHAId=$('#CHANameId').val();
+            CHAName=$('#CHA').val();
+
+            $('#DivCustomAppraisementDet').find('input:text,textarea,select').val('');
+
+            $('#ContainerNo').val(ContainerNo);
+            $('#CFSCode').val(CFSCode);
+            $('#Size').val(Size);
+            $('#LCLFCL').val(LCLFCL);
+
+            $('#ContainerType').val(ContainerType);
+            $('#CargoType').val(CargoType);
+            $('#RMSValue').val(RMSValue);
+            $('#LineNo').val(LineNo);
+            $('#ODCType').val(ODCType);
+            $('#ContainerWiseSearch').val('1');
+            $('#OBLWiseSearch').val('0');
+            $('#ContainerWise').prop('checked', true);
+            $('#CHANameId').val(CHAId);
+            $('#CHA').val(CHAName);
+           
+        }
+    
+
+      
+      
+        $('#NoOfPackages').val('');
+        $('#GrossWeight').val('');
+
+
+        $('#ManualWT').val('');
+        $('#MechanicalWT').val('');
+
+        $('#AppraisementPerct').val("2");
+        $('#IsInsured').prop("checked", false);
+
+        $('#CargoDeliveryType').val('1');
+        $('#chkInterShifting').prop('checked', false);
+        $('#chkLiftOn').prop('checked', false);
+        $('#chkLiftOff').prop('checked', false);
+        $('#chkReworking').prop('checked', false);
+        $('#chkWeighment').prop('checked', false);
+        $('[data-valmsg-for]').html('<span><span>');
+    }
+
+    function GenerateCstmAppraiseTable() {
+        $('#TblCustomAppraisementDet').hide();
+        var Html = '';
+        if (ArrayOfCustomAppraisement.length != 0) {
+            $.each(ArrayOfCustomAppraisement, function (i, item) {
+                Html += '<tr><td class="text-center">' + (i + 1) + '</td><td>' + item.CFSCode + '</td><td>' + item.ContainerNo + '</td><td>' + item.OBLNo + '</td><td>' + item.BOENo + '</td><td class="text-center"><a href="#" onclick="EditCstmAppraise(' + i + ')"><i class="fa fa fa-pencil-square Edit" aria-hidden="true"></i></a></td><td class="text-center"><a href="#" onclick="ViewCstmAppraise(' + i + ')"><i class="fa fa-search-plus Edit" aria-hidden="true"></i></a></td></tr>';
+            });
+            $('#TblCustomAppraisementDet>tbody').html(Html);
+            $('#TblCustomAppraisementDet').show();
+        }
+    }
+
+    function EditCstmAppraise(Index) {
+        //if ($('#CFSCode').val() == '') {
+        $('#BtnAddCustomAppraisement').prop("disabled", false);
+        $('#CHADtlSearch').css("display", "block");
+        $('#ContainerNo').val(ArrayOfCustomAppraisement[Index].ContainerNo);
+        $('#CFSCode').val(ArrayOfCustomAppraisement[Index].CFSCode);
+        $('#Size').val(ArrayOfCustomAppraisement[Index].Size);
+        $('#LCLFCL').val(ArrayOfCustomAppraisement[Index].LCLFCL);
+        $('#LineNo').val(ArrayOfCustomAppraisement[Index].LineNo);
+        $('#BOENo').val(ArrayOfCustomAppraisement[Index].BOENo);
+        $('#BOEDate').val(ArrayOfCustomAppraisement[Index].BOEDate);
+        $('#OBLNo').val(ArrayOfCustomAppraisement[Index].OBLNo);
+        $('#OBLDate').val(ArrayOfCustomAppraisement[Index].OBLDate);
+        $('#CHANameId').val(ArrayOfCustomAppraisement[Index].CHANameId);
+        $('#CHA').val(ArrayOfCustomAppraisement[Index].CHA);
+        $('#ImporterId').val(ArrayOfCustomAppraisement[Index].ImporterId);
+        $('#Importer').val(ArrayOfCustomAppraisement[Index].Importer);
+        $('#CargoDescription').val(ArrayOfCustomAppraisement[Index].CargoDescription);
+        $('#NoOfPackages').val(ArrayOfCustomAppraisement[Index].NoOfPackages);
+        $('#GrossWeight').val(ArrayOfCustomAppraisement[Index].GrossWeight);
+        $('#Duty').val(ArrayOfCustomAppraisement[Index].Duty);
+        $('#ManualWT').val(ArrayOfCustomAppraisement[Index].ManualWT);
+        $('#MechanicalWT').val(ArrayOfCustomAppraisement[Index].MechanicalWT);
+        $('#CIFValue').val(ArrayOfCustomAppraisement[Index].CIFValue);
+        $('#WithoutDOSealNo').val(ArrayOfCustomAppraisement[Index].WithoutDOSealNo);
+        $('#Vessel').val(ArrayOfCustomAppraisement[Index].Vessel);
+        $('#Voyage').val(ArrayOfCustomAppraisement[Index].Voyage);
+        ArrayOfCustomAppraisement[Index].ContainerType == 0 ? $('#ContainerType').val('') : $('#ContainerType').val(ArrayOfCustomAppraisement[Index].ContainerType);
+        ArrayOfCustomAppraisement[Index].CargoType == 0 ? $('#CargoType').val('') : $('#CargoType').val(ArrayOfCustomAppraisement[Index].CargoType);
+        ArrayOfCustomAppraisement[Index].Reefer == 0 ? $('#Reefer').prop("checked", false) : $('#Reefer').prop("checked", true);
+        ArrayOfCustomAppraisement[Index].RMS == 0 ? $('#RMS').prop("checked", false) : $('#RMS').prop("checked", true);
+        ArrayOfCustomAppraisement[Index].HeavyScrap == 0 ? $('#HeavyScrap').prop("checked", false) : $('#HeavyScrap').prop("checked", true);
+        ArrayOfCustomAppraisement[Index].AppraisementPerct == 0 ? $('#AppraisementPerct').val('') : $('#AppraisementPerct').val(ArrayOfCustomAppraisement[Index].AppraisementPerct);
+        $('#IsInsured').prop("checked", ArrayOfCustomAppraisement[Index].IsInsured);
+        // $('#ContainerType').val(ArrayOfCustomAppraisement[Index].ContainerType);
+        //$('#CargoType').val(ArrayOfCustomAppraisement[Index].CargoType);
+        // $('#CustomAppraisementDtlId').val(ArrayOfCustomAppraisement[Index].CustomAppraisementDtlId);
+        $('#RMSValue').val(ArrayOfCustomAppraisement[Index].RMSValue);
+        $('#CargoDeliveryType').val(ArrayOfCustomAppraisement[Index].CargoDeliveryType);
+        ArrayOfCustomAppraisement[Index].InterShifting == 0 ? $('#chkInterShifting').prop("checked", false) : $('#chkInterShifting').prop("checked", true);
+        ArrayOfCustomAppraisement[Index].LiftOn == 0 ? $('#chkLiftOn').prop("checked", false) : $('#chkLiftOn').prop("checked", true);
+        ArrayOfCustomAppraisement[Index].LiftOff == 0 ? $('#chkLiftOff').prop("checked", false) : $('#chkLiftOff').prop("checked", true);
+        ArrayOfCustomAppraisement[Index].Reworking == 0 ? $('#chkReworking').prop("checked", false) : $('#chkReworking').prop("checked", true);
+        ArrayOfCustomAppraisement[Index].Weighment == 0 ? $('#chkWeighment').prop("checked", false) : $('#chkWeighment').prop("checked", true);
+        $('#ODCType').val(ArrayOfCustomAppraisement[Index].ODCType);
+
+        ArrayOfCustomAppraisement.splice(Index, 1);
+        GenerateCstmAppraiseTable();
+        //    $('#DivCustomAppraisementTblMsg').html('');
+        //}
+        //else
+        //    $('#DivCustomAppraisementTblMsg').html('Please add the above record to edit another');
+    }
+   
+    function ViewCstmAppraise(Index) {
+        debugger;
+        
+        $('#btnReset').prop("value", "Back");
+        $('#BtnAddCustomAppraisement').prop("disabled", true);
+        $('#CHADtlSearch').css("display", "none");
+        $('#ContainerNo').val(ArrayOfCustomAppraisement[Index].ContainerNo);
+        $('#CFSCode').val(ArrayOfCustomAppraisement[Index].CFSCode);
+        $('#Size').val(ArrayOfCustomAppraisement[Index].Size);
+        $('#LCLFCL').val(ArrayOfCustomAppraisement[Index].LCLFCL);
+        $('#LineNo').val(ArrayOfCustomAppraisement[Index].LineNo);
+        $('#BOENo').val(ArrayOfCustomAppraisement[Index].BOENo);
+        $('#BOEDate').val(ArrayOfCustomAppraisement[Index].BOEDate);
+        $('#OBLNo').val(ArrayOfCustomAppraisement[Index].OBLNo);
+        $('#OBLDate').val(ArrayOfCustomAppraisement[Index].OBLDate);
+        $('#CHANameId').val(ArrayOfCustomAppraisement[Index].CHANameId);
+        $('#CHA').val(ArrayOfCustomAppraisement[Index].CHA);
+        $('#ImporterId').val(ArrayOfCustomAppraisement[Index].ImporterId);
+        $('#Importer').val(ArrayOfCustomAppraisement[Index].Importer);
+        $('#CargoDescription').val(ArrayOfCustomAppraisement[Index].CargoDescription);
+        $('#NoOfPackages').val(ArrayOfCustomAppraisement[Index].NoOfPackages);
+        $('#GrossWeight').val(ArrayOfCustomAppraisement[Index].GrossWeight);
+        $('#Duty').val(ArrayOfCustomAppraisement[Index].Duty);
+        $('#ManualWT').val(ArrayOfCustomAppraisement[Index].ManualWT);
+        $('#MechanicalWT').val(ArrayOfCustomAppraisement[Index].MechanicalWT);
+        $('#CIFValue').val(ArrayOfCustomAppraisement[Index].CIFValue);
+        $('#WithoutDOSealNo').val(ArrayOfCustomAppraisement[Index].WithoutDOSealNo);
+        $('#Vessel').val(ArrayOfCustomAppraisement[Index].Vessel);
+        $('#Voyage').val(ArrayOfCustomAppraisement[Index].Voyage);
+        ArrayOfCustomAppraisement[Index].ContainerType == 0 ? $('#ContainerType').val('') : $('#ContainerType').val(ArrayOfCustomAppraisement[Index].ContainerType);
+        ArrayOfCustomAppraisement[Index].CargoType == 0 ? $('#CargoType').val('') : $('#CargoType').val(ArrayOfCustomAppraisement[Index].CargoType);
+        ArrayOfCustomAppraisement[Index].Reefer == 0 ? $('#Reefer').prop("checked", false) : $('#Reefer').prop("checked", true);
+        // ArrayOfCustomAppraisement[Index].RMS == 0 ? $('#RMS').prop("checked", false) : $('#RMS').prop("checked", true);
+        ArrayOfCustomAppraisement[Index].HeavyScrap == 0 ? $('#HeavyScrap').prop("checked", false) : $('#HeavyScrap').prop("checked", true);
+        ArrayOfCustomAppraisement[Index].AppraisementPerct == 0 ? $('#AppraisementPerct').val('') : $('#AppraisementPerct').val(ArrayOfCustomAppraisement[Index].AppraisementPerct);
+        $('#IsInsured').prop("checked", ArrayOfCustomAppraisement[Index].IsInsured);
+        $('#RMSValue').val(ArrayOfCustomAppraisement[Index].RMSValue);
+        $('#CargoDeliveryType').val(ArrayOfCustomAppraisement[Index].CargoDeliveryType);
+        $('#InterShifting').val(ArrayOfCustomAppraisement[Index].InterShifting);
+        $('#LiftOn').val(ArrayOfCustomAppraisement[Index].LiftOn);
+        $('#LiftOff').val(ArrayOfCustomAppraisement[Index].LiftOff);
+        $('#Reworking').val(ArrayOfCustomAppraisement[Index].Reworking);
+        $('#Weighment').val(ArrayOfCustomAppraisement[Index].Weighment);
+        // $('#ContainerType').val(ArrayOfCustomAppraisement[Index].ContainerType);
+        // $('#CargoType').val(ArrayOfCustomAppraisement[Index].CargoType);
+        // $('#CustomAppraisementDtlId').val(ArrayOfCustomAppraisement[Index].CustomAppraisementDtlId);
+    }
+
+    $('#BtnSaveCustomAppraisement').on("click", function () {
+        debugger;
+
+        //if ($('#CHAName').val() == '') {
+        //    alert('Please Enter CHA Name');
+        //    return false;
+        //}
+        //if ($('#CHAId').val() == '0' || $('#CHAId').val() == '') {
+        //    alert('Please Enter CHA Name');
+        //    return false;
+        //}
+       
+        var Appdt = $('#AppraisementDateCheck').val();
+        var GateEntryDt = $('#GateEntryDate').val();
+        var jdt = new Date(Appdt);
+        var tdt = new Date(GateEntryDt);
+
+        if ($('#ContainerWiseSearch').val() == '1')
+        {
+            $('#operationType').val(0);
+        }
+        else
+        {
+            $('#operationType').val(1);
+        }
+        debugger;
+        var Manual = 0;
+        var Mechanical = 0;
+        if ($('#Manual').val() == "") {
+            Manual = 0;
+        }
+        else {
+            Manual = $('#Manual').val();
+        }
+        if ($('#Mechanical').val() == "") {
+            Mechanical = 0;
+        }
+        else {
+            Mechanical = $('#Mechanical').val();
+        }
+
+        if ((Number(Manual) + Number(Mechanical)) <= 0) {
+            alert('Manual or Mechanical weight will be greater than zero');
+            return false;
+        }
+
+
+        $('#DivCustomAppraisementTblMsg').html('');
+        debugger;
+        //if (jdt < tdt) {
+        //    $('#ErrAppDate').html('Custom Apprisement Date should not be less Gate Entry Date');
+        //    return false;
+
+        //}
+        //else
+        if ($('#OBLWiseSearch').val() != '1') {
+          
+                if (ArrayOfCustomAppraisement.length < oblcount) {
+                    $('#DivCustomAppraisementTblMsg').html('Please add all OBL details under Container');
+                    return false;
+                }
+            
+           
+        }
+         if ($('#ContainerNo').val() == "" && $('#TblCustomAppraisementDet >tbody').html() != "") {
+            debugger;
+            if (ArrayOfCustomAppraisement.length != 0) {
+                $('#CustomAppraisementXML').val(JSON.stringify(ArrayOfCustomAppraisement));
+            }
+            
+            if (ArrayOfDeliveryOrd.length != 0) {
+                $('#CAOrdDtlXml').val(JSON.stringify(ArrayOfDeliveryOrd));
+            }
+            else {
+                if ($('#rdoHdn').val() == '1') {
+                    $('#DivDeliveryOrdTblErrMsg').html('Please Add The Above Records');
+                    return false;
+                }
+
+            }
+        }
+
+         else if ($('#ContainerNo').val() != "" && $('#BtnAddCustomAppraisement').prop("disabled") == false) {
+             debugger;
+            if (ArrayOfCustomAppraisement.length != 0) {
+                $('#CustomAppraisementXML').val(JSON.stringify(ArrayOfCustomAppraisement));
+            }
+            else {
+                $('#DivCustomAppraisementTblMsg').html('Please Add The Above Records');
+                return false;
+            }
+            if (ArrayOfDeliveryOrd.length != 0) {
+                $('#CAOrdDtlXml').val(JSON.stringify(ArrayOfDeliveryOrd));
+            }
+            else {
+                if ($('#rdoHdn').val() == '1')
+                {
+                    $('#DivDeliveryOrdTblErrMsg').html('Please Add The Above Records');
+                    return false;
+                }
+                
+            }
+        }
+
+
+        else {
+            $('#DivCustomAppraisementTblMsg').html('Please Add The Above Records');
+            return false;
+        }
+
+
+    });
+    //****************************************************************************************************
+    function SaveDeliveryOrdDtl() {
+        debugger;
+        if ($('#IssuedBy').val() == '') {
+            $('[data-valmsg-for="IssuedBy"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+
+        if ($('#CargsDelivered').val() == '') {
+            $('[data-valmsg-for="CargsDelivered"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        //if ($('#ddlValidType').val() == '') {
+        //    $('#ErrddlValidType').html('Fill Out This Field');
+
+        //    return false;
+        //}
+        $('#DivDeliveryOrdTblErrMsg').html('');
+        var dtvalue = "";
+        if ($('#ValidDate').val() == '') {
+            $('[data-valmsg-for="ErrValidDate"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+
+
+        //if ($('#ddlValidType').val() == "Open") {
+        //    dtvalue = "";
+        //}
+        //else {
+        //    dtvalue = $('#ValidDate').val();
+        //}
+
+
+        var DeliveryAppDtl = {
+            "OrderId": 0,
+            "CustomAppraisementId": 0,
+            "IssuedBy": $('#IssuedBy').val(),
+            "DeliveredTo": $('#CargsDelivered').val(),
+            "ValidType": $('#ddlValidType').val(),
+            "ValidDate": $('#ValidDate').val(),
+            // "CommodityId": $('#CommodityId').val(),
+        }
+        ArrayOfDeliveryOrd.push(DeliveryAppDtl);
+        debugger;
+        // $('#BOELineNoList #' + $('#DestuffingEntryDtlId').val()).remove();
+        ResetDeliveryOrdDet();
+        GenerateDeliveryOrdTable();
+        //$('#BtnAddDeliveryOrd').prop("disabled", true);
+
+
+    }
+    function GenerateDeliveryOrdTable() {
+        debugger;
+        $('#TblDeliveryAppOrd').hide();
+        var Html = '';
+        if (ArrayOfDeliveryOrd.length != 0) {
+            $.each(ArrayOfDeliveryOrd, function (i, item) {
+                debugger;
+                Html += '<tr><td class="text-center">' + (i + 1) + '</td><td>' + item.IssuedBy + '</td><td>' + item.DeliveredTo + '</td><td class="text-center"><a href="#" onclick="EditDeliveryOrdDtl(' + i + ')"><i class="fa fa fa-pencil-square Edit" aria-hidden="true"></i></a></td><td class="text-center"><a href="#" onclick="ViewDeliveryOrdDtl(' + i + ')"><i class="fa fa-search-plus" aria-hidden="true"></i></a></td></tr>';
+            });
+            $('#TblDeliveryAppOrd>tbody').html(Html);
+            $('#TblDeliveryAppOrd').show();
+        }
+    }
+    function ResetDeliveryOrdDet() {
+        debugger;
+        $('[data-valmsg-for="IssuedBy"]').html('');
+        $('[data-valmsg-for="CargsDelivered"]').html('');
+        $('#ErrddlValidType').html('');
+        $('#DivDeliveryOrderDetails').find('input:text,textarea').val('');
+
+        $('#ddlValidType').prop("selectedIndex", 0);
+
+    }
+
+    function EditDeliveryOrdDtl(Index) {
+        debugger;
+        $('#DivDeliveryOrdTblErrMsg').html('');
+        //if ($('#BtnAddDeliveryOrd').prop("disabled") == true) {
+
+        $('#IssuedBy').val(ArrayOfDeliveryOrd[Index].IssuedBy);
+        $('#CargsDelivered').val(ArrayOfDeliveryOrd[Index].DeliveredTo);
+        $('#ddlValidType').val(ArrayOfDeliveryOrd[Index].ValidType);
+        $('#ValidDate').val(ArrayOfDeliveryOrd[Index].ValidDate);
+        $('#BtnAddDeliveryOrd').prop("disabled", false);
+        ArrayOfDeliveryOrd.splice(Index, 1);
+        GenerateDeliveryOrdTable();
+        //}
+        //else {
+        //    $('#DivDeliveryOrdTblErrMsg').html('Please Add The Above Records');
+        //}
+    }
+
+    function ViewDeliveryOrdDtl(Index) {
+        debugger;
+        $('#DivDeliveryOrdTblErrMsg').html('');
+        //if ($('#BtnAddDeliveryOrd').prop("disabled") == true) {
+
+        $('#IssuedBy').val(ArrayOfDeliveryOrd[Index].IssuedBy);
+        $('#CargsDelivered').val(ArrayOfDeliveryOrd[Index].DeliveredTo);
+        $('#ddlValidType').val(ArrayOfDeliveryOrd[Index].ValidType);
+        $('#ValidDate').val(ArrayOfDeliveryOrd[Index].ValidDate);
+
+        //   ArrayOfDeliveryOrd.splice(Index, 1);
+        // GenerateDeliveryOrdTable();
+        //}
+        //else {
+        //    $('#DivDeliveryOrdTblErrMsg').html('Please Add The Above Records');
+        //}
+
+    }
+    function ValidDt(vtype) {
+        //debugger;
+        //if (vtype.value == "Open") {
+        //    $("#ValidDate").datepicker("option", "disabled", true);
+        //    $("#ValidDate").val("");
+        //}
+        //else {
+
+        //    $("#ValidDate").datepicker("option", "disabled", false);
+        //}
+    }
+
+    $('#WithDo').on("click", function () {
+        $("#DivDeliveryOrderDetails").css("display", "block");
+        $('#rdoHdn').val('1');
+    });
+    $('#WithoutDO').on("click", function () {
+        $("#DivDeliveryOrderDetails").css("display", "none");
+        $("#IssuedBy").val('');
+        $("#CargsDelivered").val('');
+        $("#ddlValidType").val('');
+        $("#ValidDate").val('');
+        $('#TblDeliveryAppOrd>tbody').html('');
+        $('#rdoHdn').val('2');
+    });
+
+    $('#Cargobox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstCargo > li').show();
+        else {
+            $('#lstCargo > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    function GetCargo(elem) {
+        debugger;
+        $('#CargsDelivered').val($(elem).text());
+
+        $("#CargoPartyModal").modal("hide");
+    }
+    var PartyDet = "";
+    $('#CargoPartySearch').on("click", function () {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("ListOfCargoParty", "DSR_CWCImport", new { Area = "Import" })',
+            dataType: 'JSON',
+            type: 'GET',
+            success: function (data) {
+                debugger;
+                PartyDet = data;
+                var html = '';
+                $.each(data, function (i, item) {
+                    html += '<li id="' + item.IssueBy + '" " onclick="GetCargo(this)">' + item.IssueBy + '</li>';
+                });
+                $('#lstCargo').html(html);
+            }
+        });
+
+    });
+
+
+    $('#IssuePartySearch').on("click", function () {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("ListOfIssueParty", "DSR_CWCImport", new { Area = "Import" })',
+            dataType: 'JSON',
+            type: 'GET',
+            success: function (data) {
+                debugger;
+                PartyDet = data;
+                var html = '';
+                $.each(data, function (i, item) {
+                    html += '<li id="' + item.IssueBy + '" " onclick="GetIssue(this)">' + item.IssueBy + '</li>';
+                });
+                $('#lstIssue').html(html);
+            }
+        });
+
+    });
+    function GetIssue(elem) {
+        debugger;
+        $('#IssuedBy').val($(elem).text());
+
+        $("#IssuePartyModal").modal("hide");
+    }
+    $('#Issuebox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstIssue > li').show();
+        else {
+            $('#lstIssue > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+</script>
+
+@*@{
+    AjaxOptions options = new AjaxOptions();
+    OnComplete = "SaveDisabled";
+    OnBegin = "SaveEnabled";
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "CstmAppraiseOnSuccess";
+    options.OnFailure = "CstmAppraiseOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}*@
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("AddEditCustomAppraisement", "DSR_CWCImport", new AjaxOptions
+                {
+                    OnComplete = "SaveDisabled",
+                    OnBegin = "SaveEnabled",
+                    Confirm = "Are you sure you want to Save?",
+                    // HttpMethod = "POST",
+                    OnSuccess = "CstmAppraiseOnSuccess",
+                    OnFailure = "CstmAppraiseOnFailure",
+                    InsertionMode = InsertionMode.InsertAfter
+                }))
+                {
+
+
+
+                    if (ViewBag.RightsList != null)
+                    {
+                        <input type="hidden" id="hdnRights" value="@ViewBag.RightsList" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="hdnRights" value="" />
+                    }
+                    @*if (ViewBag.ContainerOBLList != null)
+            {
+                <input type="hidden" id="ContainerOBLList" value="@ViewBag.ContainerOBLList" />
+            }
+            else
+            {
+                <input type="hidden" id="ContainerOBLList" value="" />
+            }*@
+
+
+                    @Html.AntiForgeryToken()
+                    <div id="DivAddCustomAppraisement">
+                        @Html.HiddenFor(m => m.CustomAppraisementXML)
+                        @Html.HiddenFor(m => m.CAOrdDtlXml)
+                        @Html.Hidden("hdnCIFValue")
+                        @Html.Hidden("CFSCode")
+                        @*@Html.Hidden("CustomAppraisementDtlId")*@
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Custom Appraisement Application</h4>
+                            </div>
+                        </div>
+                        @*<div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5">
+                            <label>Container No:</label>
+                        </div>
+                        <div class="col-md-2-5">
+                            @Html.TextBoxFor(m => m.ContainerNo, new { @class = "form-control input-sm", @readonly = true })
+                            @Html.ValidationMessageFor(m => m.ContainerNo, "", new { @class = "Error_Msg" })
+                        </div>
+                    </div>
+                </div>*@
+                        @*<div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5 col_cus_2 padding_rt">
+                            <label>Application For:</label>
+                        </div>
+
+                        <div class="col-md-2 col-md-offset-1-5 col_cus_offset_2 col_cus_3">
+                            <div class="boolean-container">
+                                @Html.RadioButton("ApplicationForApp", "1", new { @class = "", @id = "AppMent", @checked = true })
+                                <label for="AppMent"><i class="circle"></i><span>Appraisement</span></label>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col_cus_3">
+                            <div class="boolean-container">
+                                @Html.RadioButton("ApplicationForApp", "2", new { @class = "", @id = "DestuffingApp" })
+                                <label for="DestuffingApp"><i class="circle"></i><span>DeStuffing</span></label>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>*@
+                        @*<div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5 col_cus_2 padding_rt">
+                            <label>OBL No.:</label>
+                        </div>
+                        <div class="col-md-2-5">
+                            @Html.TextBoxFor(m => m.OBLNo, new { @class = "form-control input-sm"})
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" id="btnOblSearch" value="Search" onclick="GetOBLContainer()"/>
+                        </div>
+                    </div>
+                </div>*@
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2 col_cus_3 hidden">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("Search", "1", new { @class = "", @id = "ContainerWise", @checked = true, @onclick = "SearchType('ContainerWise')" })
+                                        <label for="ContainerWise"><i class="circle"></i><span>Container Wise</span></label>
+
+                                    </div>
+                                </div>
+                                <div class="col-md-2 col_cus_3 hidden">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("Search", "2", new { @class = "", @id = "OBLWise", @onclick = "SearchType('OBLWise')" })
+                                        <label for="OBLWise"><i class="circle"></i><span>OBL Wise</span></label>
+                                        <input type="hidden" id="ContainerWiseSearch" />
+                                        <input type="hidden" id="OBLWiseSearch" />
+                                        <input type="hidden" id="rdoHdn" />
+
+                                    </div>
+                                </div>
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Appraisement No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.AppraisementNo, new { @class = "form-control input-sm", @readonly = true })
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    <label>Appraisement Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    <input type="hidden" id="AppraisementDateCheck" />
+                                    @Html.TextBoxFor(m => m.AppraisementDate, new { @class = "form-control input-sm", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.AppraisementDate, "", new { @class = "Error_Msg" })
+                                    <span style="color:red" id="ErrAppDate"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="divContainerWise">
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Container / CBT No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+
+                                        @Html.TextBox("ContainerNo", "", new { @class = "form-control input-sm", @readonly = true })
+                                        <span class="search" onclick="SearchContainerWise()"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerModal"></i></span>
+                                        @Html.ValidationMessage("ContainerNo", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5">
+                                        <label>Size:</label>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2">
+                                        @Html.DropDownList("Size", new List<SelectListItem> {
+                               new SelectListItem { Text="20",Value="20"},
+                               new SelectListItem {Text="40",Value="40" },
+                              // new SelectListItem {Text="ODC",Value="ODC" }
+                               }, "---Select---", new { @class = "form-control input-sm dropdown" })
+                                        @Html.ValidationMessage("Size", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5">
+                                        <label>NoOfPackages</label>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2 Date_Img">
+                                        @Html.TextBox("CNoOfPackages", "", new { @class = "form-control input-sm" })
+                                        @Html.ValidationMessage("CNoOfPackages", "", new { @class = "Error_Msg" })
+                                    </div>
+
+                                </div>
+
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Weight</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+
+                                        @Html.TextBox("CGrossWeight", "", new { @class = "form-control input-sm" })
+                                        @Html.ValidationMessage("CGrossWeight", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5">
+                                        <label>Value:</label>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2">
+
+                                        @Html.TextBox("Fob", "", new { @class = "form-control input-sm" })
+                                        @Html.ValidationMessage("Fob", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5">
+                                        <label>Duty</label>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2 Date_Img">
+                                        @Html.TextBox("GrossDuty", "", new { @class = "form-control input-sm" })
+                                        @Html.ValidationMessage("GrossDuty", "", new { @class = "Error_Msg" })
+                                    </div>
+
+                                </div>
+
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Manual Weight (Kg)</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+
+                                        @Html.TextBox("Manual", "", new { @class = "form-control input-sm" })
+                                        @Html.ValidationMessage("Manual", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5">
+                                        <label>Mechanical Weight (Kg):</label>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2">
+
+                                        @Html.TextBox("Mechanical", "", new { @class = "form-control input-sm" })
+                                        @Html.ValidationMessage("Mechanical", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5">
+                                        <label>Custom Seal No</label>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2 Date_Img">
+                                        @Html.TextBox("CustomSealNo", "", new { @class = "form-control input-sm" })
+                                        @Html.ValidationMessage("CustomSealNo", "", new { @class = "Error_Msg" })
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+
+                                    <div class="col-md-1-5 padding_rt">
+                                        <label>Shipping Line Seal No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("ShippingLineSealNo", "", new { @class = "form-control input-sm" })
+                                        @Html.ValidationMessage("ShippingLineSealNo", "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Vessel:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+
+                                        @Html.TextBoxFor(m => m.Vessel, new { @class = "form-control input-sm", @tabindex = 13 })
+                                        @Html.ValidationMessageFor(m => m.Vessel, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="DivRotation" class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Voyage:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBoxFor(m => m.Voyage, "", new { @class = "form-control input-sm", @tabindex = 14 })
+                                        @Html.ValidationMessageFor(m => m.Voyage, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                        <label>Rotation:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBoxFor(m => m.Rotation, "", new { @class = "form-control input-sm", @tabindex = 15 })
+                                        @Html.ValidationMessageFor(m => m.Rotation, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+
+
+
+
+
+
+
+
+                        </div>
+
+                        <div id="DivCustomAppraisementDet" class="Head_h5">
+
+
+
+
+                            <div id="divOBLWise">
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>OBL No:</label>
+                                        </div>
+                                        <div class="col-md-2-5">
+
+                                            @Html.TextBox("OBLNo", "", new { @class = "form-control input-sm", @disabled = true })
+                                            <span class="search" onclick="SearchOBLWise()"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerOBLModal"></i></span>
+
+                                        </div>
+                                        <div class="col-md-1-5">
+                                            <label>OBL Date:</label>
+                                        </div>
+                                        <div class="col-md-2-5 col_cus_2 Date_Img">
+
+                                            @Html.TextBox("OBLDate", "", new { @class = "form-control input-sm", @readonly = true })
+                                            @Html.ValidationMessage("OBLDate", "", new { @class = "Error_Msg" })
+                                        </div>
+                                        <div class="col-md-1-5">
+                                            <label>BOE No:</label>
+                                        </div>
+                                        <div class="col-md-2-5 col_cus_2 Date_Img">
+                                            @Html.TextBox("BOENo", "", new { @class = "form-control input-sm", @maxlength = "45" })
+                                            <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target=""></i></span>
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>BOE Date:</label>
+                                        </div>
+                                        <div class="col-md-2-5 Date_Img">
+                                            @Html.TextBox("BOEDate", "", new { @class = "form-control input-sm", @readonly = true })
+                                            @Html.ValidationMessage("BOEDate", "", new { @class = "Error_Msg" })
+                                        </div>
+
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>CIF Value:</label>
+                                        </div>
+                                        <div class="col-md-2-5">
+                                            @Html.TextBox("CIFValue", "", new { @class = "form-control input-sm", @maxlength = "11", @onkeypress = "return AllowOnlyDecimal(event)" })
+                                        </div>
+                                        <div class="col-md-1-5">
+                                            <label>Duty:</label>
+                                        </div>
+                                        <div class="col-md-2-5 col_cus_2">
+                                            @Html.TextBox("Duty", "", new { @class = "form-control input-sm", @maxlength = "11", @onkeypress = "return AllowOnlyDecimal(event)" })
+                                        </div>
+
+                                        @Html.Hidden("LCLFCL")
+                                        @Html.Hidden("CargoDescription")
+                                        @Html.Hidden("CargoType")
+                                        @Html.Hidden("ODCType")
+                                        @Html.Hidden("ContainerType")
+                                        @Html.Hidden("WithoutDOSealNo")
+
+
+
+                                    </div>
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>No of Packages:</label>
+                                        </div>
+                                        <div class="col-md-2-5 Date_Img">
+                                            @Html.TextBox("NoOfPackages", "", new { @class = "form-control input-sm", @onkeypress = "return AllowOnlyInteger(event)" })
+                                            @Html.ValidationMessage("NoOfPackages", "", new { @class = "Error_Msg" })
+                                        </div>
+
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>Gross Weight(Kg):</label>
+                                        </div>
+                                        <div class="col-md-2-5">
+                                            @Html.TextBox("GrossWeight", "", new { @class = "form-control input-sm", @onkeypress = "return AllowOnlyDecimal(event)" })
+                                        </div>
+                                        <div class="col-md-1-5">
+
+                                        </div>
+                                        <div class="col-md-2-5 col_cus_2">
+
+                                        </div>
+
+
+
+                                    </div>
+                                </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>Importer:</label>
+                                        </div>
+                                        <div class="col-md-10-5 col_cus_10">
+                                            @Html.TextBox("Importer", "", new { @class = "form-control input-sm", @readonly = true, @tabindex = 10, @onkeydown = "PopupActivate('ImporterModal');" })
+                                            <span class="search" id="ImporterSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ImporterModal"></i></span>
+                                            @Html.ValidationMessage("Importer", "", new { @class = "Error_Msg" })
+                                            @Html.Hidden("ImporterId")
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="DivShippingLine" class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>Shipping Line:</label>
+                                        </div>
+                                        <div class="col-md-10-5 col_cus_10">
+                                            @Html.TextBoxFor(m => m.ShippingLine, "", new { @class = "form-control input-sm", @readonly = true, @tabindex = 11, @onkeydown = "PopupActivate('ShippingLineModal');" })
+                                            <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ShippingLineModal"></i></span>
+                                            @Html.HiddenFor(m => m.ShippingLineId)
+                                            @Html.ValidationMessageFor(m => m.ShippingLine, "", new { @class = "Error_Msg" })
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>Foreign line:</label>
+                                        </div>
+                                        <div class="col-md-10-5 col_cus_10">
+                                            @Html.TextBoxFor(m => m.ForeignLine, new { @class = "form-control input-sm", @disabled = true })
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>CHA:</label>
+                                        </div>
+                                        <div class="col-md-10-5 col_cus_10">
+                                            @Html.HiddenFor(m => m.CHAId)
+                                            @Html.HiddenFor(m => m.operationType)
+                                            <span class="ReQSimbol">*</span>
+                                            @Html.TextBoxFor(m => m.CHAName, new { @class = "form-control input-sm", @readonly = true, @tabindex = 12, @onkeydown = "PopupActivate('CHAHdrModal');" })
+                                            <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CHAHdrModal"></i></span>
+                                            @Html.ValidationMessageFor(m => m.CHAName, "", new { @class = "Error_Msg" })
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+
+                                        <div class="col-md-1-5">
+                                            <label>Line No:</label>
+                                        </div>
+                                        <div class="col-md-2-5">
+                                            <input type="hidden" id="GateEntryDate" />
+                                            @Html.TextBox("LineNo", "", new { @class = "form-control input-sm", @tabindex = 16 })
+
+                                        </div>
+                                        <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                            <label>Exam Type:</label>
+                                        </div>
+                                        <div class="col-md-2-5">
+                                            @Html.DropDownList("RMSValue", new List<SelectListItem>{
+                                                new SelectListItem {Text="Upto 25%",Value="1" },
+                                                new SelectListItem {Text="Beyond 25% ",Value="2" },
+                                                new SelectListItem {Text="RMS Non Exim",Value="3" }
+                                              }, new { @class = "form-control input-sm dropdown", @tabindex = 17 })@*@onchange = "callChangeRMSfunc(this.value)"*@
+                                            @Html.ValidationMessage("RMSValue", "", new { @class = "Error_Msg" })
+                                        </div>
+                                        @*<div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2" >
+                                    <label>ODC Type:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.DropDownList("ODCType", new List<SelectListItem>{
+                                        new SelectListItem {Text="Normal",Value="0" },
+                                        new SelectListItem {Text="Single Side ODC",Value="1" },
+                                        new SelectListItem {Text="Double Side ODC",Value="2" },
+                                        new SelectListItem {Text="Three Side ODC",Value="3" }
+                                      }, new { @class = "form-control input-sm dropdown", @tabindex = 17 })
+                                </div>*@
+                                    </div>
+                                </div>
+
+
+
+
+                            </div>
+
+
+
+                            <div class="row">
+                                <div class="stoke SignUp_space_top SignUp_space_bottom"></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-offset-4 col-md-2">
+                                    <input type="button" id="BtnAddCustomAppraisement" class="btn log_Btn_sm" value="Add" onclick="SaveCstmAppraiseDtl()" />
+
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="button" id="btnReset" class="btn log_Btn_sm" value="Reset" onclick="ResetCstmAppraiseDet()" />
+                                </div>
+                            </div>
+                            <div id="DivCustomAppraisementTblMsg" class="logErrMsg Form_Space_top Form_Space_bottom" style="background-color:transparent"></div>
+                            <div class="row Form_Space_top">
+                                <div class="col-md-12">
+                                    <table class="table table-striped table-bordered dataTable" id="TblCustomAppraisementDet" style="width:100%;">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center" style="width:8%;">@Html.DisplayName("SL No")</th>
+                                                <th>@Html.DisplayName("ICD No")</th>
+                                                <th>@Html.DisplayName("Container / CBT No")</th>
+                                                <th>@Html.DisplayName("OBL No")</th>
+                                                <th>@Html.DisplayName("BOE No")</th>
+                                                <th class="text-center" style="width:10%;">@Html.DisplayName("Edit")</th>
+                                                <th class="text-center" style="width:10%;">@Html.DisplayName("View")</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="DivDeliveryOrderDetails" class="Head_h5">
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2-5 col_cus_2 padding_rt">
+                                    <label>Do Issued By:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("IssuedBy", "", new { @class = "form-control input-sm", @disabled = true })
+                                    <span class="search" id="IssuePartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#IssuePartyModal"></i></span>
+                                    @Html.ValidationMessage("IssuedBy", "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-2-5">
+                                    <label>Cargs. Delivered To:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    @Html.TextBox("CargsDelivered", "", new { @class = "form-control input-sm", @disabled = true })
+                                    <span class="search" id="CargoPartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CargoPartyModal"></i></span>
+                                    @Html.ValidationMessage("CargsDelivered", "", new { @class = "Error_Msg" })
+
+
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2-5 col_cus_2" style="display:none;">
+                                    <label>Valid Type</label>
+                                </div>
+                                <div class="col-md-2-5" style="display:none;">
+                                    @Html.DropDownList("ddlValidType", new List<SelectListItem>
+                                        {
+                                        new SelectListItem { Text="Open",Value="Open"},
+                                        new SelectListItem { Text="Closed",Value="Closed"},
+
+                                        }, "----Select----", new { @class = "form-control input-sm", @onchange = "ValidDt(this);" })
+                                    <span class="field-validation-error" id="ErrddlValidType"></span>
+                                </div>
+                                <div class="col-md-2-5">
+                                    <label>Do Valid Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+
+                                    @*@Html.TextBoxFor(m => m.InvoiceDate, new { @readonly = true, Value = DateTime.Today.ToString("dd/MM/yyyy") })*@
+                                    @Html.TextBox("ValidDate", "", new { @readonly = true, Value = DateTime.Now.ToString("dd/MM/yyyy") })
+                                    <span class="field-validation-error" id="ErrValidDate"></span>
+
+                                </div>
+
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="stoke SignUp_space_top SignUp_space_bottom"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-offset-4 col-md-2">
+                                <input type="button" id="BtnAddDeliveryOrd" class="btn log_Btn_sm" value="Add" onclick="SaveDeliveryOrdDtl()" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" class="btn log_Btn_sm" value="Reset" onclick="ResetDeliveryOrdDet()" />
+                            </div>
+                        </div>
+                        <div id="DivDeliveryOrdTblErrMsg" class="logErrMsg Form_Space_top Form_Space_bottom" style="background-color:transparent"></div>
+                        <table class="table table-striped table-bordered dataTable" id="TblDeliveryAppOrd" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">@Html.DisplayName("SL No")</th>
+                                    <th>@Html.DisplayName("Issued By")</th>
+                                    <th>@Html.DisplayName("Cargo. Delivered")</th>
+                                    <th>@Html.DisplayName("Edit")</th>
+                                    <th class="text-center">@Html.DisplayName("View")</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-offset-4 col-md-2 SignUp_space_bottom">
+                            <input type="submit" class="btn log_Btn_sm cancel" value="Save" id="BtnSaveCustomAppraisement" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Reset" onclick="ResetAllFields()" />
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-2">
+                                <input type="button" value="Show List" onclick="ShowList()" class="btn log_Btn_sm" />
+                            </div>
+                            <div class="col-md-offset-5 col-md-3">
+                                <input type="text" placeholder="Appraisement No / OBL No" id="SearchAppraisementNo" />
+                            </div>
+
+                            <div class="col-md-2">
+                                <input type="button" value="Search" onclick="SearchAppraisementNo()" class="btn log_Btn_sm" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="logSuccMsg" style="background-color:transparent" id="DivCustomAppraisementMsg"></div>
+                    <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivCustomAppraisementErrMsg"></div>
+
+                }
+                @Scripts.Render("~/bundles/jqueryval")
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="DivCustomAppraisementList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+    $(function () {
+        $('#slim_scroll_1').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+    $(function () {
+        $('#slim_scroll_2').slimScroll({
+            allowPageScroll: true
+        });
+    });
+    $('#Impbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstImp > li').show();
+        else {
+            $('#lstImp > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    $('#lstImp > li').on("click", function () {
+        $('#Importer').val($(this).text());
+        $('#ImporterId').val($(this).attr('id'));
+        $("#ImporterModal").modal("hide");
+    });
+
+    function ShowList() {
+        GetCustomAppraisementList();
+    }
+    function SearchAppraisementNo() {
+        //debugger;
+        if ($('#SearchAppraisementNo').val().trim() != "" || $('#SearchAppraisementNo').val().trim() != null) {
+            $('#DivCustomAppraisementList').load('/Import/DSR_CWCImport/SearchContainerWiseCustomAppraisementList?AppraisementNo=' + $('#SearchAppraisementNo').val().trim());
+        }
+    }
+
+</script>
+
+<div class="modal fade" id="CHAHdrModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseCHA()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List Of CHA</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By CHA Name Or Party Code " id="Chabox" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchChaByPartyCode()"></i></span>
+
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">CHA Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+
+                <div id="slim_scroll_1">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tbleCha">
+                        @{
+                            if (ViewBag.lstCHA != null)
+                            {
+                                foreach (var item in ViewBag.lstCHA)
+                                {
+                        <tr onclick="SelectCHA(@item.CHAId,'@item.CHAName')">
+                            <td colspan="8" width="80%" class="txt_wrp">@item.CHAName</td>
+                            <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                        </tr>
+                                }
+                            }
+                        }
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.CHAState != null && Convert.ToBoolean(ViewBag.CHAState) == true)
+                        {
+                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreCHA()" class="btn log_Btn_sm" id="btnLoadCHA">Load More Data</button>
+                        }
+                        else
+                        {
+                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreCHA()" class="btn log_Btn_sm" id="btnLoadCHA" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseCHA()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="ShippingLineModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseEximTrader()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Shipping Line</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Shipping Line Name Or Party Code" id="ShpngLinebox" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByPartyCode()"></i></span>
+
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Shipping Line Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+
+                <div id="slim_scroll">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tbleSline">
+                        @{
+    if (ViewBag.lstShippingLine != null)
+    {
+        foreach (var item in ViewBag.lstShippingLine)
+        {
+                        <tr onclick="SelectShippingLine(@item.ShippingLineId,'@item.ShippingLineName')">
+                            <td colspan="8" width="80%" class="txt_wrp">@item.ShippingLineName</td>
+                            <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                        </tr>
+                                }
+                            }
+                        }
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                        {
+                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+                        }
+                        else
+                        {
+                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseEximTrader()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="ContainerModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Container / CBT No.</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="ContainerBox" type="text" />
+                <ul class="navList" id="ContainerList">
+                    @*@{
+                            if (ViewBag.ContainerList != null)
+                            {
+                                foreach (var item in ViewBag.ContainerList)
+                                {
+                                    <li id="@item.Value">@item.Text</li>
+                                }
+                            }
+                        }*@
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="ContainerOBLModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of OBL No.</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="ContainerOBLBox" type="text" />
+                <ul class="navList" id="ContainerOBLList"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="CHADtlModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseCHAdtl()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List Of CHA</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By CHA Name Or Party Code" id="ChaDtlbox" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchChaDtlByPartyCode()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">CHA Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll_2">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tbleChaDtl">
+                        @{
+                            if (ViewBag.lstCHA != null)
+                            {
+                                foreach (var item in ViewBag.lstCHA)
+                                {
+                                    <tr onclick="SelectCHAdtl(@item.CHAId,'@item.CHAName')">
+                                        <td colspan="8" width="80%" class="txt_wrp">@item.CHAName</td>
+                                        <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                    </tr>
+                                }
+                            }
+                        }
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.CHAState != null && Convert.ToBoolean(ViewBag.CHAState) == true)
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreCHAdtl()" class="btn log_Btn_sm" id="btnLoadCHAdtl">Load More Data</button>
+                        }
+                        else
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreCHAdtl()" class="btn log_Btn_sm" id="btnLoadCHAdtl" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseCHAdtl()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade mTabindex" id="ImporterModal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseImporter()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Importer Name</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Importer Name Or Party Code" tabindex="2001" id="Impbox" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchImporterByPartyCode()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Importer Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll_3">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tbleImp">
+                        @{
+                            if (ViewBag.lstImporter != null)
+                            {
+                                var tabvalue = 2001;
+                                var tab = 0;
+                                var u = "_";
+                                foreach (var item in ViewBag.lstImporter)
+                                {
+                                    <tr tabindex="@tabvalue@u@tab" onkeypress="SelectImporter(@item.ImporterId,'@item.ImporterName')" onclick="SelectImporter(@item.ImporterId,'@item.ImporterName')">
+                                        <td colspan="8" width="80%" class="txt_wrp">@item.ImporterName</td>
+                                        <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                    </tr>
+                                    tab++;
+                                }
+                            }
+                        }
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.ImpState != null && Convert.ToBoolean(ViewBag.ImpState) == true)
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreImporter()" class="btn log_Btn_sm" id="btnLoadImp">Load More Data</button>
+                        }
+                        else
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreImporter()" class="btn log_Btn_sm" id="btnLoadImp" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseImporter()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="CargoPartyModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of cargo delivered to</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Cargobox" type="text" />
+                <ul class="navList" id="lstCargo">
+                    @*@{
+                        foreach (var item in Model.lstGodownList)
+                        {
+                        <li id="@item.GodownId">@item.GodownName</li>
+                        }
+                        }*@
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="IssuePartyModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of issued by</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Issuebox" type="text" />
+                <ul class="navList" id="lstIssue">
+                    @*@{
+                        foreach (var item in Model.lstGodownList)
+                        {
+                        <li id="@item.GodownId">@item.GodownName</li>
+                        }
+                        }*@
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

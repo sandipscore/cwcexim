@@ -1,0 +1,2096 @@
+﻿
+@model CwcExim.Areas.Export.Models.CCINEntry
+<style>
+    #tbleCommodity.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .slimScrollDiv {
+        height: 300px;
+    }
+
+    .table.tblhd {
+        border-bottom: 0;
+    }
+</style>
+<script>
+    //function PaymentMode() {
+    //    var PaymentMode = $('#hdnPaymentMode').val();
+    //    alert(PaymentMode);
+    //}
+</script>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>CCIN Entry</h4>
+                    </div>
+                    @*<input type="hidden" id="hdnPaymentMode" value="@ViewBag.PaymentMode" />*@
+                </div>
+                @using (Ajax.BeginForm("AddEditCCINEntry", "Loni_CWCExport", new AjaxOptions
+                {
+                    
+                    HttpMethod = "POST",
+                    OnSuccess = "OnSuccess",
+                    OnFailure = "OnFailure"
+                }, new { id = "frmCCINEntry" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.Id)
+                    @Html.HiddenFor(m => m.InvoiceId)
+                    @Html.HiddenFor(m => m.PartySDBalance)
+                    @Html.HiddenFor(m => m.IsInGateEntry)
+                    @Html.HiddenFor(m => m.OTEHr)
+                    if (ViewBag.check != null)
+                    {
+                        <input type="hidden" id="hdnShippingLineList" value="@ViewBag.check" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="hdnShippingLineList" value="" />
+                    }
+                    if (ViewBag.ListOfSBNo != null)
+                    {
+                        <input type="hidden" id="hdnShippingBillList" value="@ViewBag.ListOfSBNo" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="hdnShippingBillList" value="" />
+                    }
+
+                    if (ViewBag.ListOfPort != null)
+                    {
+                        <input type="hidden" id="hdnPortName" value="@ViewBag.PortName" />
+                        <input type="hidden" id="hdnPortId" value="@ViewBag.PortId" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="hdnPortName" value="" />
+                        <input type="hidden" id="hdnPortId" value="" />
+                        <input type="hidden" id="hdnListOfPort" value="" />
+                    }
+
+                    <div class="panel with-nav-tabs panel-primary cwc_panel" style="margin-top: 15px;">
+
+                        <div class="panel-heading cwc_panel_heading">
+                            <ul class="nav nav-tabs" id="DivTabs">
+                                <li class="active"><a href="#DivCCIN" data-toggle="tab" onclick="SetActiveTab('CCIN')">CCIN</a></li>
+                                <li><a href="#DivInvoice" data-toggle="tab" onclick="SetActiveTab('Invoice')">Invoice</a></li>
+                            </ul>
+                        </div>
+
+                        <div class="panel-body">
+                            <div class="tab-content">
+                                <div class="tab-pane fade in active" id="DivCCIN">
+                                    <div id="DivJOHdr" class="Form_Space_bottom">
+
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>CCIN No:</label>
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    @Html.TextBoxFor(m => m.CCINNo, new { @class = "form-control input_sm", @readonly = true })
+                                                </div>
+                                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                                    <label>CCIN Date:</label>
+                                                </div>
+                                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                                    @Html.TextBoxFor(m => m.CCINDate, new { @class = "form-control input_sm", @readonly = true })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>SB No:</label>
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    @Html.HiddenFor(m => m.SBId)
+                                                    @Html.TextBoxFor(m => m.SBNo, new { @class = "form-control input_sm" })
+                                                    @Html.ValidationMessageFor(m => m.SBNo, "", new { @class = "Error_Msg" })
+                                                    <span class="search" id="ShippingBillLineSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="ShippingBillSerach();" data-target="#SBNoModal"></i></span>
+                                                </div>
+                                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                                    <label>SB Date:</label>
+                                                </div>
+                                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                                    @Html.TextBoxFor(m => m.SBDate, new { @class = "form-control input_sm", @readonly = true })
+                                                    @Html.ValidationMessageFor(m => m.SBDate, "", new { @class = "Error_Msg" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>SB Type:</label>
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    @Html.DropDownListFor(m => m.SBType, new List<SelectListItem>
+                                                    {
+                                                    new SelectListItem {Text="Baggage",Value="1" },
+                                                    new SelectListItem {Text="Duty Free Goods",Value="2" },
+                                                    new SelectListItem {Text="Cargo in Drawback",Value="3" }
+                                                    }, "----Select----", new { @class = "form-control input_sm dropdown" })
+                                                    @Html.ValidationMessageFor(m => m.SBType, "", new { @class = "Error_Msg" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                                    <label>Exporter:</label>
+                                                </div>
+                                                <div class="col-md-10">
+                                                    @Html.HiddenFor(m => m.ExporterId)
+                                                    @Html.TextBoxFor(m => m.ExporterName, new { @class = "form-control input_sm", @readonly = true })
+                                                    @Html.ValidationMessageFor(m => m.ExporterName, "", new { @class = "Error_Msg" })
+                                                    <span class="search" id="ShippingLineSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ExporterModal"></i></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                                    <label>Shipping Line:</label>
+                                                </div>
+                                                <div class="col-md-10">
+                                                    @Html.HiddenFor(m => m.ShippingLineId)
+                                                    @Html.TextBoxFor(m => m.ShippingLineName, new { @class = "form-control input_sm", @readonly = true })
+                                                    <span class="search" id="ShippingLineSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="ShippingLineSerach();" data-target="#ShippingLineModal"></i></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                                    <label>CHA:</label>
+                                                </div>
+                                                <div class="col-md-10">
+                                                    @Html.HiddenFor(m => m.CHAId)
+                                                    @Html.TextBoxFor(m => m.CHAName, new { @class = "form-control input_sm", @readonly = true })
+                                                    @Html.ValidationMessageFor(m => m.CHAName, "", new { @class = "Error_Msg" })
+                                                    <span class="search" id="ShippingLineSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="ChaNameSerach();" data-target="#CHAModal"></i></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                                    <label>Consignee:</label>
+                                                </div>
+                                                <div class="col-md-10">
+                                                    @Html.TextBoxFor(m => m.ConsigneeName, new { @class = "form-control input_sm" })
+                                                    @Html.ValidationMessageFor(m => m.ConsigneeName, "", new { @class = "Error_Msg" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                                    <label>Consignee Address:</label>
+                                                </div>
+                                                <div class="col-md-10">
+                                                    @Html.TextAreaFor(m => m.ConsigneeAdd, new { @class = "form-control input_sm" })
+                                                    @Html.ValidationMessageFor(m => m.ConsigneeAdd, "", new { @class = "Error_Msg" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5">
+                                                    @Html.LabelFor(m => m.CountryId)
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    @if (ViewBag.Country != null)
+                                                    {
+                                                        @Html.DropDownListFor(m => m.CountryId, new SelectList(ViewBag.Country, "CountryId", "CountryName"), "---Select---", new { @class = "form-control input-sm", @onchange = "GetStateList()" })
+                                                    }
+                                                    else
+                                                    {
+                                                        @Html.DropDownListFor(m => m.CountryId, new SelectList("", "Value", "Text"), "---Select---", new { @class = "form-control input-sm dropdown" })
+                                                    }
+                                                    @Html.ValidationMessageFor(m => m.CountryId, "", new { @class = "Error_Msg" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5">
+                                                    @Html.HiddenFor(m => m.SelectStateId)
+                                                    @Html.LabelFor(m => m.StateId, new { @class = "InputLabel" })
+                                                </div>
+                                                @*<div class="col-md-2-5">
+                                                        @Html.DropDownListFor(m => m.StateId, new SelectList("", "Value", "Text"), "---Select---", new { @class = "form-control input-sm dropdown", @onchange = "GetCityList()" })
+                                                        @Html.ValidationMessageFor(m => m.StateId, "", new { @class = "Error_Msg" })
+                                                    </div>*@
+                                                <div class="col-md-10">
+                                                    @Html.HiddenFor(m => m.PortOfDestId)
+                                                    @Html.TextBoxFor(m => m.PortOfDestName, new { @class = "form-control input_sm", @readonly = true })
+                                                    <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="PortOfDestSerach();" data-target="#PortDestModal"></i></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>Commodity:</label>
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    @Html.HiddenFor(m => m.CommodityId)
+                                                    @Html.TextBoxFor(m => m.CommodityName, new { @class = "form-control input_sm", @readonly = true })
+                                                    <span class="search" id="ShippingLineSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="CommoditySerach();" data-target="#CommodityModal"></i></span>
+                                                </div>
+                                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                                    <label>Pack UQC :</label>
+                                                </div>
+                                                <div class="col-md-2 col_cus_2_5">
+                                                    @Html.HiddenFor(m => m.PackUQCId)
+                                                    @Html.HiddenFor(m => m.PackUQCCode)
+                                                    @Html.TextBoxFor(m => m.PackUQCDescription, new { @class = "form-control input_sm", @readonly = true, tabindex = 18, onkeydown = "PopupActivate('PackUQCModal');" })
+                                                    @Html.ValidationMessageFor(m => m.PackUQCDescription, "", new { @class = "Error_Msg" })
+                                                    <span class="search" id="PackUQCSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PackUQCModal"></i></span>
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 ">
+                                                    <label>Cargo Type:</label>
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    @Html.DropDownListFor(m => m.CargoType, new List<SelectListItem>
+                                                    {
+                                                        new SelectListItem {Text="HAZ",Value="1" },
+                                                        new SelectListItem {Text="NON-HAZ",Value="2"}
+                                                    }, "----Select----", new { @class = "form-control input_sm dropdown" })
+                                                    @Html.ValidationMessageFor(m => m.CargoType, "", new { @class = "Error_Msg" })
+                                                </div>
+                                                <div class="col-md-1-5" style="display:none">
+                                                    @Html.HiddenFor(m => m.SelectCityId)
+                                                    @Html.LabelFor(m => m.CityId, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                                </div>
+                                                <div class="col-md-2-5" style="display:none">
+                                                    @Html.DropDownListFor(m => m.CityId, new SelectList("", "Value", "Text"), "---Select---", new { @class = "form-control input-sm dropdown" })
+                                                    @*@Html.ValidationMessageFor(m => m.CityId, "", new { @class = "Error_Msg" })*@
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>Port of Loading:</label>
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    @Html.HiddenFor(m => m.PortOfLoadingId)
+                                                    @Html.TextBoxFor(m => m.PortOfLoadingName, new { @class = "form-control input_sm", @readonly = true })
+                                                    <span class="search" id="ShippingLineSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="PortOfDestSerach();" data-target="#PortModal"></i></span>
+                                                </div>
+                                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                                    <label>Port of Discharge:</label>
+                                                </div>
+                                                <div class="col-md-2 col_cus_2_5">
+                                                    @Html.TextBoxFor(m => m.PortOfDischarge, new { @class = "form-control input_sm" })
+                                                    @Html.ValidationMessageFor(m => m.PortOfDischarge, "", new { @class = "Error_Msg" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>No of Package:</label>
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    @Html.TextBoxFor(m => m.Package, new { @class = "form-control input_sm" })
+                                                </div>
+                                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                                    <label>Weight (Kg):</label>
+                                                </div>
+                                                <div class="col-md-2 col_cus_2_5">
+                                                    @Html.TextBoxFor(m => m.Weight, new { @class = "form-control input_sm", @onblur = "ResetInvoice()" })
+                                                    @Html.ValidationMessageFor(m => m.Weight, "", new { @class = "Error_Msg" })
+                                                </div>
+
+                                             
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+
+
+                                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                                    <label>Godown:</label>
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    @Html.TextBoxFor(m => m.GodownName, new { @class = "form-control intpu-sm", @readonly = true })
+                                                    @Html.HiddenFor(m => m.GodownId, "0")
+                                                </div>
+                                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                                    <label>FOB:</label>
+                                                </div>
+                                                <div class="col-md-2 col_cus_2_5">
+                                                    @Html.TextBoxFor(m => m.FOB, new { @class = "form-control input_sm", @onblur = "ResetInvoice()" })
+                                                    @Html.ValidationMessageFor(m => m.FOB, "", new { @class = "Error_Msg" })
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="DivInvoice">
+
+                                    <div class="row Form_Space_top">
+                                        <div class="form-group Form_Input">
+                                            <div class="col-md-1-5 col_cus_2">
+                                                <label>Invoice No:</label>
+                                            </div>
+                                            <div class="col-md-2-5">
+                                                @Html.TextBoxFor(m => m.InvoiceNo, new { @class = "form-control input_sm", @readonly = true })
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row Form_Space_top">
+                                        <div class="form-group Form_Input">
+                                            <div class="col-md-1-5 col_cus_2">
+                                                <label>Payment Mode:</label>
+                                            </div>
+                                            <div class="col-md-2-5">
+                                                @Html.TextBoxFor(m => m.PaymentMode, new { @class = "form-control input_sm", @readonly = true })
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row Form_Space_top">
+                                        <div class="form-group Form_Input">
+                                            <div class="col-md-1-5 col_cus_2">
+                                                <label>Party Name:</label>
+                                            </div>
+                                            <div class="col-md-10-5 col_cus_10">
+                                                @Html.HiddenFor(m => m.PartyId)
+                                                @Html.TextBoxFor(m => m.PartyName, new { @readonly = true })
+                                                <span class="search" id="PartySearch"><i class="fa fa-search" aria-hidden="true" onclick="InvParty();" data-toggle="modal" data-target="#PartyModal"></i></span>
+                                                @Html.ValidationMessageFor(m => m.PartyName)
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="Head_h4" style="border:0;">
+                                        <div class="Head_h5">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <h5>Charges</h5>
+                                                </div>
+                                            </div>
+
+
+                                            <div class="row Form_Space_top">
+                                                <div class="col-md-12">
+                                                    <table id="tblCWCCharges" class="table table-bordered table-striped dataTable Table_center">
+                                                        <thead>
+                                                            <tr>
+                                                                <th rowspan="2">Charges</th>
+                                                                <th rowspan="2">Value</th>
+                                                                <th colspan="2" class="text-center">IGST</th>
+                                                                <th colspan="2" class="text-center">CGST</th>
+                                                                <th colspan="2" class="text-center">SGST</th>
+                                                                <th rowspan="2" style="width:15%;">Total</th>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>%</th>
+                                                                <th>Amt</th>
+                                                                <th>%</th>
+                                                                <th>Amt</th>
+                                                                <th>%</th>
+                                                                <th style="border-right:1px solid #ddd;">Amt</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody></tbody>
+                                                        <tfoot>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
+                                            </div>
+
+                                            <div class="row Form_Space_top">
+                                                <div class="form-group Form_Input">
+                                                    <div class="col-md-offset-8 col_cus_offset_7 col_cus_2 col-md-1-5">
+                                                        <label>Total Value:</label>
+                                                    </div>
+                                                    <div class="col-md-2-5 col_cus_3">
+                                                        @*@Html.TextBoxFor(m => m.AllTotal, new { @readonly = true })*@
+                                                        @Html.TextBoxFor(m => m.AllTotal, "0", new { @readonly = true, @style = "text-align:right;" })
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row Form_Space_top">
+                                                <div class="form-group Form_Input">
+                                                    <div class="col-md-offset-8 col_cus_offset_7 col_cus_2 col-md-1-5">
+                                                        <label>Round Up:</label>
+                                                    </div>
+                                                    <div class="col-md-2-5 col_cus_3">
+                                                        @*@Html.TextBoxFor(m => m.RoundUp, new { @onblur = "CalcInvoice()" })*@
+                                                        @Html.TextBoxFor(m => m.RoundUp, "0", new { @readonly = true, @style = "text-align:right;" })
+                                                        @*@Html.TextBox("RoundUp", "0", new { @onblur = "CalcInvoice()", @style = "text-align:right;" })*@
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row Form_Space_top">
+                                                <div class="form-group Form_Input">
+                                                    <div class="col-md-offset-8 col_cus_offset_7 col_cus_2 col-md-1-5">
+                                                        <label>Invoice Value:</label>
+                                                    </div>
+                                                    <div class="col-md-2-5 col_cus_3">
+                                                        @*@Html.TextBoxFor(m => m.InvoiceValue, new { @readonly = true })*@
+                                                        @Html.TextBoxFor(m => m.InvoiceValue, "0", new { @readonly = true, @style = "text-align:right;" })
+                                                        @Html.HiddenFor(m => m.PaymentSheetModelJson)
+                                                        @Html.HiddenFor(m => m.TotalCGST)
+                                                        @Html.HiddenFor(m => m.TotalSGST)
+                                                        @Html.HiddenFor(m => m.TotalIGST)
+                                                        @Html.HiddenFor(m => m.TotalAmt)
+                                                        @Html.HiddenFor(m => m.IsPartyStateInCompState)
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                    <div class="row Form_Space_top">
+                                        <div class="form-group Form_Input">
+                                            <div class="col-md-1-5 col_cus_2">
+                                                <label>Remarks:</label>
+                                            </div>
+                                            <div class="col-md-10-5 col_cus_10">
+                                                @Html.TextAreaFor(m => m.Remarks, new { @style = "height:75px;", @maxlength = "500" })
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                    </div>
+                    <div class="row SignUp_space_top2">
+                        <div class="col-md-offset-3 col-md-2">
+                            <input type="button" id="btnSave" class="btn log_Btn_sm" onclick="return validate();" value="Save" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" id="btnReset" class="btn log_Btn_sm" value="Reset" onclick="ResetAllField()" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" id="btnPrint" class="btn log_Btn_sm" value="Print" onclick="PrintInvoice()" disabled />
+                        </div>
+                    </div>
+                    <div class="logSuccMsg Form_Space_top" id="DivSucMsg" style="background-color:transparent"></div>
+                    <div class="logErrMsg Form_Space_bottom" id="DivErrMsg" style="background-color:transparent"></div>
+                                                                }
+                <div class="row">
+                    <div class="col-md-2 SignUp_space_bottom">
+                        <input type="button" id="BtnCCINEntryLoad" value="Show List" class="btn log_Btn_sm" onclick="LoadCCINEntryList()" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="tblEntryDet"></div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="CCINEntryList"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ShippingLineModal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Shipping Line Names</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="ShippingLinebox" type="text" />
+                <ul class="navList" id="lstShippingLine">
+                    
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="ExporterModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Exporter Name</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Exporterbox" type="text" />
+                <ul class="navList" id="lstExporter">
+                    @{
+                        if (ViewBag.ListOfExporter != null)
+                        {
+                            foreach (var item in ViewBag.ListOfExporter)
+                            {
+                                <li id="@item.EXPEximTraderId">@item.ExporterName</li>
+                            }
+                        }
+                        else
+                        {
+                            <li></li>
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="CHAModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of CHA Name</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="CHAbox" type="text" />
+                <ul class="navList" id="lstCHA">
+                   
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="PortDestModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Port Name</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="PortDestbox" type="text" />
+                <ul class="navList" id="lstDestPort">
+                    
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="PortModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Port Name</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Portbox" type="text" />
+                <ul class="navList" id="lstPort">
+                   
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="CommodityModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal" style="width:80%;">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseCommodity()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Commodity</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Commodity Name" id="CommodityBox" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchCommodityByPartyCode()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Commodity Name</th>
+
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll_2">
+                    <table class="table dataTable table-bordered table-striped" id="tbleCommodity">
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-4">
+                        @if (ViewBag.CommodityState != null && Convert.ToBoolean(ViewBag.CommodityState) == true)
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreCommodity()" class="btn log_Btn_sm" id="btnLoadMoreCommodity">Load More Data</button>
+                        }
+                        else
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreCommodity()" class="btn log_Btn_sm" id="btnLoadMoreCommodity" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-offset-5 col-md-3">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseCommodity()">Close</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div id="SBNoModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of SBNo</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="SBNobox" type="text" />
+                <ul class="navList" id="lstSBNo">
+                    
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade mTabindex" id="PackUQCModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="ClosePackUQC()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List Of Pack UOM</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Pack UQC Name Or Pack UQC Code " id="PackUQCbox" type="text" tabindex="200" autofocus />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchPackUQCByCode()"></i></span>
+
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Pack UOM Description</th>
+                            <th colspan="4" width="20%">Pack UOM Code</th>
+                        </tr>
+                    </thead>
+                </table>
+
+                <div id="slim_scroll_3">
+                    <table tabindex="201" class="table dataTable table-bordered table-striped slim_tble" id="tblePackUQC">
+                        @{
+                            if (ViewBag.lstPackUQC != null)
+                            {
+                                var tabvalue = 202;
+                                foreach (var item in ViewBag.lstPackUQC)
+                                {
+                                    <tr tabindex="@tabvalue" onclick="SelectPackUQC(@item.PackUQCId,'@item.PackUQCDescription','@item.PackUQCCode')" onkeypress="SelectPackUQC(@item.PackUQCId,'@item.PackUQCDescription','@item.PackUQCCode')">
+                                        <td colspan="8" width="80%" class="txt_wrp">@item.PackUQCDescription</td>
+                                        <td colspan="4" width="20%" class="txt_wrp">@item.PackUQCCode</td>
+                                    </tr>
+                                    tabvalue++;
+                                }
+                            }
+                        }
+
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.PackUQCState != null && Convert.ToBoolean(ViewBag.PackUQCState) == true)
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMorePackUQC()" class="btn log_Btn_sm" id="btnLoadPackUQC">Load More Data</button>
+                        }
+                        else
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMorePackUQC()" class="btn log_Btn_sm" id="btnLoadPackUQC" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="ClosePackUQC()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="PartyModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Party</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Partybox" type="text" />
+                <ul class="navList" id="lstParty">
+                   
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script>
+
+    function PopupActivate(Id) {
+        //debugger;
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+
+        if (CharCode == 32) {
+
+            $('#' + Id).modal('show');
+
+            //if (Id == "CHAModal") {
+            //    ChaNameSerach();
+            //}
+
+            //if (Id == "ShippingLineModal") {
+            //    ShippingLineSerach();
+            //}
+
+            //if (Id == "PortDestModal") {
+            //    PortOfDestSerach();
+            //}
+            //if (Id == "CommodityModal") {
+            //    CommoditySerach();
+            //}
+
+          
+          
+
+            if (Id == "PackUQCModal") {
+                //debugger;
+                $('#PackUQCbox').focus();
+            }
+
+          
+        }
+
+    }
+
+    $(function () {
+        $('#slim_scroll_2').slimScroll({
+            allowPageScroll: true
+        });
+        $('#slim_scroll_3').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+    $(function () {
+        // document.getElementById('CargoType').value = "2";
+        debugger;
+        //var ListOfPort =JSON.parse($('#hdnListOfPort').val());
+        //var returnedData = $.grep(ListOfPort, function (element, index) {
+        //    return element.PortName == "ICD PPG";
+        //});
+        //document.getElementById('PortOfLoadingName').value = $('#hdnPortName').val();  //returnedData[0].PortId;
+        //document.getElementById('PortOfLoadingId ').value = $('#hdnPortId').val();  //returnedData[0].PortName;]
+        GenerateEntryTable();
+        $('#PortOfLoadingName').val($('#hdnPortName').val());  //returnedData[0].PortId;
+        $('#PortOfLoadingId').val($('#hdnPortId').val());
+        // Decimal Number
+        $("#Weight,#FOB").keydown(function (e) {
+            if (e.keyCode == 190 || e.keyCode == 110) {
+                if ($(this).val().indexOf('.') >= 0) {
+                    e.preventDefault();
+                }
+            }
+            // Allow: backspace, delete, tab, escape, enter and .
+            if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 110, 190]) !== -1 ||
+                // Allow: Ctrl+A, Command+A
+                (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+                // Allow: home, end, left, right, down, up
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                // let it happen, don't do anything
+                return;
+            }
+            // Ensure that it is a number or character
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                e.preventDefault();
+            }
+        });
+
+        // Integer Number
+        $("#Package").keydown(function (e) {
+            // Allow: backspace, delete, tab, escape, enter and .
+            if ($.inArray(e.keyCode, [46, 8, 9, 27, 13]) !== -1 ||
+                // Allow: Ctrl+A, Command+A
+                (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+                // Allow: home, end, left, right, down, up
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                // let it happen, don't do anything
+                return;
+            }
+            // Ensure that it is a number or character
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                e.preventDefault();
+            }
+        });
+
+        // Text Box
+        $("#SBNo").keydown(function (e) {
+            // Allow: backspace, delete, tab, escape, enter and .
+            if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 110, 190]) !== -1 ||
+                // Allow: Ctrl+A, Command+A
+                (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+                // Allow: home, end, left, right, down, up
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                // let it happen, don't do anything
+                return;
+            }
+            // Ensure that it is a number or character
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105) && (e.keyCode < 65 || e.keyCode > 90)) {
+                e.preventDefault();
+            }
+        });
+
+        // Text Box with space
+        $("#ConsigneeName,#PortOfDischarge").keydown(function (e) {
+            //alert(e.keyCode);
+            // Allow: backspace, delete, tab, escape, enter and .
+            if (e.keyCode == 32) {
+                return true;
+            }
+            else if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 110, 190]) !== -1 ||
+                // Allow: Ctrl+A, Command+A
+                (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+                // Allow: home, end, left, right, down, up
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                // let it happen, don't do anything
+                return;
+            }
+            // Ensure that it is a number or character
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105) && (e.keyCode < 65 || e.keyCode > 90)) {
+                e.preventDefault();
+            }
+        });
+
+        // Text Box with space and (),./-&|
+        $("#ConsigneeAdd").keydown(function (e) {
+            //alert(e.keyCode);
+            // Allow: backspace, delete, tab, escape, enter and .
+            if (e.keyCode == 32 || e.keyCode == 48 || e.keyCode == 57 || e.keyCode == 188 || e.keyCode == 191 || e.keyCode == 189 || e.keyCode == 55 || e.keyCode == 220) {
+                return true;
+            }
+            else if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 110, 190]) !== -1 ||
+                // Allow: Ctrl+A, Command+A
+                (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+                // Allow: home, end, left, right, down, up
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                // let it happen, don't do anything
+                return;
+            }
+            // Ensure that it is a number or character
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105) && (e.keyCode < 65 || e.keyCode > 90)) {
+                e.preventDefault();
+            }
+        });
+
+        // LoadCCINEntryList();
+
+        if ($('#Id').val() > 0) {
+            debugger;
+            GetStateList();
+            GetCityList();
+            debugger;
+            $('#btnReset').attr('disabled', true);
+            if ($('#IsInGateEntry').val() == 1) {
+                $('#btnSave').attr('disabled', true);
+                $('#btnPrint').attr('disabled', false);
+            }
+            else {
+                $('#btnSave').attr('disabled', false);
+                $('#btnPrint').attr('disabled', true);
+            }
+            ChargeDetails();
+            var OTEHr = Number($('#OTEHr').val());
+            $('#OTHr').val(OTEHr);
+            if (OTEChargeName == "Over Time Export") {
+                //CalcTax(OTEChargeId);
+                CalcTaxForEdit(OTEChargeId);
+            }
+        }
+    });
+
+    function LoadMorePackUQC() {
+        debugger;
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/LoadPackUQCList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tabvalue = 202;
+                    $.each(data.Data.lstPackUQC, function (item, elem) {
+                        html += '<tr tabindex=' + tabvalue + ' onclick="SelectPackUQC(' + elem.PackUQCId + ',&quot;' + elem.PackUQCDescription + '&quot,&quot;' + elem.PackUQCCode + '&quot;)" onkeypress="SelectPackUQC(' + elem.PackUQCId + ',&quot;' + elem.PackUQCDescription + '&quot,&quot;' + elem.PackUQCCode + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PackUQCDescription + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PackUQCCode + '</td></tr>';
+                        tabvalue++;
+                    });
+                    if (Page == -1)
+                        $('#tblePackUQC tbody').html(html);
+                    else
+                        $('#tblePackUQC tbody').append(html);
+                    Page++;
+
+                    debugger;
+                    if (data.Data.PackUQCState == true)
+                        $('#btnLoadPackUQC').prop('disabled', false);
+                    else $('#btnLoadPackUQC').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadPackUQC() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/LoadPackUQCList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tabvalue = 202;
+                    $.each(data.Data.lstPackUQC, function (item, elem) {
+                        html += '<tr tabindex=' + tabvalue + ' onclick="SelectPackUQC(' + elem.PackUQCId + ',&quot;' + elem.PackUQCDescription + '&quot,&quot;' + elem.PackUQCCode + '&quot;)" onkeypress="SelectPackUQC(' + elem.PackUQCId + ',&quot;' + elem.PackUQCDescription + '&quot,&quot;' + elem.PackUQCCode + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PackUQCDescription + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PackUQCCode + '</td></tr>';
+                        tabvalue++;
+                    });
+
+                    $('#tblePackUQC tbody').html(html);
+
+                    if (data.Data.PackUQCState == true)
+                        $('#btnLoadPackUQC').prop('disabled', false);
+                    else $('#btnLoadPackUQC').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SearchPackUQCByCode() {
+        debugger;
+        if ($('#PackUQCbox').val() != '') {
+            $.ajax({
+                url: '/Export/Loni_CWCExport/SearchPackUQCByCode',
+                type: 'GET',
+                data: { PartyCode: $('#PackUQCbox').val() },
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        var html = '';
+                        var tabvalue = 202;
+                        $.each(data.Data.lstPackUQC, function (item, elem) {
+                            html += '<tr tabindex=' + tabvalue + ' onclick="SelectPackUQC(' + elem.PackUQCId + ',&quot;' + elem.PackUQCDescription + '&quot,&quot;' + elem.PackUQCCode + '&quot;)" onkeypress="SelectPackUQC(' + elem.PackUQCId + ',&quot;' + elem.PackUQCDescription + '&quot,&quot;' + elem.PackUQCCode + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PackUQCDescription + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PackUQCCode + '</td></tr>';
+                            tabvalue++;
+                        });
+                        $('#tblePackUQC tbody').html('');
+                        $('#tblePackUQC tbody').html(html);
+                        $('#btnLoadPackUQC').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tblePackUQC tbody').html('');
+                        Page = -1;
+                        $('#btnLoadPackUQC').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadPackUQC();
+    }
+    function SelectPackUQC(PackUQCId, PackUQCDescription, PackUQCCode) {
+        debugger;
+        $('#PackUQCDescription').val(PackUQCDescription);
+        $('#PackUQCCode').val(PackUQCCode);
+        $('#PackUQCId').val(PackUQCId);
+        $("#PackUQCModal").modal("hide");
+        $('#PackUQCbox').val('');
+        $('[data-valmsg-for="PackUQCDescription"]').html('');
+        LoadPackUQC();
+        $('#Package').focus();
+    }
+    function ClosePackUQC() {
+        debugger;
+        $('#PackUQCbox').val('');
+        $("#PackUQCModal").modal("hide");
+        LoadPackUQC();
+    }
+
+    $('#CCINDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $('[data-valmsg-for="CCINDate"]').html('');
+        }
+    });
+
+    $('#SBDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $('[data-valmsg-for="SBDate"]').html('');
+        }
+    });
+
+    $('#ShippingLinebox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstShippingLine > li').show();
+        else {
+            $('#lstShippingLine > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+   
+    $('#Exporterbox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#lstExporter > li').show();
+        } else {
+            $('#lstExporter > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('#lstExporter li').on("click", function () {
+        $('#ExporterName').val($(this).text());
+        $('#ExporterId').val($(this).attr('id'));
+        $("#ExporterModal").modal("hide");
+        $('[data-valmsg-for="ExporterName"]').html('<span></span>');
+    });
+    $('#CHAbox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#lstCHA > li').show();
+        } else {
+            $('#lstCHA > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('#lstCHA li').on("click", function () {
+        //$('#CHAName').val($(this).text());
+        //$('#CHAId').val($(this).attr('id'));
+        //$("#CHAModal").modal("hide");
+        //$('[data-valmsg-for="CHAName"]').html('<span></span>');
+    });
+    $('#Portbox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#lstPort > li').show();
+        } else {
+            $('#lstPort > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('#lstPort li').on("click", function () {
+        //$('#PortOfLoadingName').val($(this).text());
+        //$('#PortOfLoadingId').val($(this).attr('id'));
+        //$("#PortModal").modal("hide");
+    });
+    $('#PortDestbox').keyup(function () {
+        debugger;
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#lstDestPort > li').show();
+        } else {
+            $('#lstDestPort > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('#lstDestPort li').on("click", function () {
+        debugger;
+        //$('#PortOfDestName').val($(this).text());
+        //$('#PortOfDestId').val($(this).attr('id'));
+        //$("#PortDestModal").modal("hide");
+    });
+
+    function SelectCommodity(CommodityId, CommodityName,CommodityType) {
+        $('#CommodityName').val(CommodityName);
+        $('#CommodityId').val(CommodityId);
+        $('#CargoType').val(CommodityType);
+        $('#CommodityModal').modal('hide');
+        $('#CommodityBox').val('');
+        LoadCommodity();
+    }
+
+    function LoadMoreCommodity() {
+        debugger;
+        $.ajax({
+            url: '/Export/Loni_CWCExport/LoadCommodityList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.LstCommodity, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectCommodity(' + elem.CommodityId + ',&quot;' + elem.CommodityName + '&quot;,&quot;' + elem.CommodityType + '&quot;)"><td colspan="8" width="80%">' + elem.CommodityName + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleCommodity tbody').html(html);
+                    else
+                        $('#tbleCommodity tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMoreCommodity').prop('disabled', false);
+                    else $('#btnLoadMoreCommodity').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    var Page = 0;
+    function LoadCommodity() {
+        Page = 0;
+        $.ajax({
+            url: '/Export/Loni_CWCExport/LoadCommodityList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.LstCommodity, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectCommodity(' + elem.CommodityId + ',&quot;' + elem.CommodityName + '&quot;,&quot;' + elem.CommodityType + '&quot;)"><td colspan="8" width="80%">' + elem.CommodityName + '</td></tr>';
+                    });
+                    $('#tbleCommodity tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMoreCommodity').prop('disabled', false);
+                    else $('#btnLoadMoreCommodity').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SearchCommodityByPartyCode() {
+        if ($('#CommodityBox').val() != '') {
+            $.ajax({
+                url: '/Export/Loni_CWCExport/SearchCommodityByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#CommodityBox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.LstCommodity, function (item, elem) {
+                            html += '<tr onclick="SelectCommodity(' + elem.CommodityId + ',&quot;' + elem.CommodityName + '&quot;,&quot;' + elem.CommodityType + '&quot;)"><td colspan="8" width="80%">' + elem.CommodityName + '</td></tr>';
+                        });
+                        $('#tbleCommodity tbody').html('');
+                        $('#tbleCommodity tbody').html(html);
+                        $('#btnLoadMoreCommodity').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleCommodity tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMoreCommodity').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadCommodity();
+    }
+
+    function CloseCommodity() {
+        $('#CommodityBox').val('');
+        $("#CommodityModal").modal("hide");
+        LoadCommodity();
+    }
+
+
+    $('#SBNobox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#lstSBNo > li').show();
+        } else {
+            $('#lstSBNo > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+   
+
+     
+    $('#Partybox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#lstParty > li').show();
+        } else {
+            $('#lstParty > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('#lstParty li').on("click", function () {
+        debugger;
+        //var Party = $(this).text();
+        //var PartyName = Party.split('_');
+        //$('#PartyName').val(PartyName[0]);
+        //$('#PartyId').val($(this).attr('id'));
+        //$("#PartyModal").modal("hide");
+        //ProcessInvoice();
+    });
+    $('#PackUQCModal').on('shown.bs.modal', function () {
+        $('#PackUQCbox').focus();
+
+    });
+    var OTEChargeId = 0;
+    var OTEChargeName = '';
+    function ProcessInvoice() {
+
+        if ($('#Weight').val() != null && $('#Weight').val() != '' && $('#FOB').val() != null && $('#FOB').val() != '') {
+            if ($('#Weight').val() > 0 && $('#FOB').val() > 0) {
+
+                $.ajax({
+                    url: '/Export/Loni_CWCExport/GetCCINCharges',
+                    type: 'Get',
+                    data: { CCINEntryId: $('#Id').val(), PartyId: $('#PartyId').val(), Weight: $('#Weight').val(), FOB: $('#FOB').val(), CargoType: $('#CargoType').val() },
+                    async: false,
+                    success: function (data) {
+                        debugger;
+                        if (data.Status == 1) {
+
+                            $('#TotalCGST').val(data.Data.TotalCGST);
+                            $('#TotalSGST').val(data.Data.TotalSGST);
+                            $('#TotalIGST').val(data.Data.TotalIGST);
+                            $('#IsPartyStateInCompState').val(data.Data.IsPartyStateInCompState);
+                            $('#PartySDBalance').val(data.Data.PartySDBalance);
+                            $('#PaymentMode').val(data.Data.PaymentMode);
+                            $('#PaymentSheetModelJson').val(data.Data.PaymentSheetModelJson);
+                            var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+                            html = '';
+
+                            $.each(rawJson, function (i, item) {
+                                debugger;
+                                if (item.ChargeName == "Over Time Export") {
+                                    OTEChargeId = item.ChargeId;
+                                    OTEChargeName = item.ChargeName;
+                                    html += '<tr><td>' + item.ChargeName + '</td>'
+                                            + '<td>Hour <input class="text-right" id="OTHr" type="text" value="0" style="width:30%" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)"/>&nbsp;<input class="text-right" id="' + item.ChargeId + '" type="text" value="' + item.Rate.toFixed(2) + '" style="width:50%" readonly/></td>'
+                                            + '<td><input class="text-right" id="IGSTP' + item.ChargeId + '" type="text" value="' + item.IGSTPer + '" readonly /></td>'
+                                            + '<td><input class="text-right" id="IGSTA' + item.ChargeId + '" type="text" value="' + item.IGSTAmt.toFixed(2) + '" readonly /></td>'
+                                            + '<td><input class="text-right" id="CGSTP' + item.ChargeId + '" type="text" value="' + item.CGSTPer + '" readonly /></td>'
+                                            + '<td><input class="text-right" id="CGSTA' + item.ChargeId + '" type="text" value="' + item.CGSTAmt.toFixed(2) + '" readonly /></td>'
+                                            + '<td><input class="text-right" id="SGSTP' + item.ChargeId + '" type="text" value="' + item.SGSTPer + '" readonly /></td>'
+                                            + '<td><input class="text-right" id="SGSTA' + item.ChargeId + '" type="text" value="' + item.SGSTAmt.toFixed(2) + '" readonly /></td>'
+                                            + '<td><input class="text-right" id="TOT' + item.ChargeId + '" type="text" value="' + Math.ceil(item.Total) + '" readonly /></td></tr>';
+                                }
+                                else {
+
+                                    html += '<tr><td>' + item.ChargeName + '</td>'
+                                            + '<td><input class="text-right" id="' + item.ChargeId + '" type="text" value="' + item.Amount.toFixed(2) + '" readonly /></td>'
+                                            + '<td><input class="text-right" id="IGSTP' + item.ChargeId + '" type="text" value="' + item.IGSTPer + '"  readonly /></td>'
+                                            + '<td><input class="text-right" id="IGSTA' + item.ChargeId + '" type="text" value="' + item.IGSTAmt.toFixed(2) + '" readonly /></td>'
+                                            + '<td><input class="text-right" id="CGSTP' + item.ChargeId + '" type="text" value="' + item.CGSTPer + '"  readonly /></td>'
+                                            + '<td><input class="text-right" id="CGSTA' + item.ChargeId + '" type="text" value="' + item.CGSTAmt.toFixed(2) + '" readonly /></td>'
+                                            + '<td><input class="text-right" id="SGSTP' + item.ChargeId + '" type="text" value="' + item.SGSTPer + '"  readonly /></td>'
+                                            + '<td><input class="text-right" id="SGSTA' + item.ChargeId + '" type="text" value="' + item.SGSTAmt.toFixed(2) + '" readonly /></td>'
+                                            + '<td><input class="text-right" id="TOT' + item.ChargeId + '" type="text" value="' + Math.ceil(item.Total) + '" readonly /></td></tr>';
+                                }
+
+
+                            });
+                            $('#tblCWCCharges tbody').html(html);
+                            // $('.search').css('display', 'none');
+                            // $('#Weight').attr('readonly', true);
+                            // $('#FOB').attr('readonly', true);
+                            CalcInvoice();
+                        }
+                        else {
+                            //alert("Error occered.");
+                            //return false;
+                        }
+                    }
+                });
+            }
+            else {
+                $('#PartyName').val('');
+                $('#PartyId').val(0);
+                alert("Please enter greater than 0 in Weight and FOB both.");
+                return false;
+            }
+        }
+        else {
+            $('#PartyName').val('');
+            $('#PartyId').val(0);
+            alert("Please enter value in Weight and FOB both.");
+            return false;
+        }
+    }
+
+    function ChargeDetails()
+    {
+        debugger;
+        var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+        html = '';
+
+        $.each(rawJson, function (i, item) {
+            debugger;
+            if (item.ChargeName == "Over Time Export") {
+                OTEChargeId = item.ChargeId;
+                OTEChargeName = item.ChargeName;
+                html += '<tr><td>' + item.ChargeName + '</td>'
+                        + '<td>Hour <input class="text-right" id="OTHr" type="text" value="0" style="width:30%" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)"/>&nbsp;<input class="text-right" id="' + item.ChargeId + '" type="text" value="' + item.Rate.toFixed(2) + '" style="width:50%" readonly/></td>'
+                        + '<td><input class="text-right" id="IGSTP' + item.ChargeId + '" type="text" value="' + item.IGSTPer + '" readonly /></td>'
+                        + '<td><input class="text-right" id="IGSTA' + item.ChargeId + '" type="text" value="' + item.IGSTAmt.toFixed(2) + '" readonly /></td>'
+                        + '<td><input class="text-right" id="CGSTP' + item.ChargeId + '" type="text" value="' + item.CGSTPer + '" readonly /></td>'
+                        + '<td><input class="text-right" id="CGSTA' + item.ChargeId + '" type="text" value="' + item.CGSTAmt.toFixed(2) + '" readonly /></td>'
+                        + '<td><input class="text-right" id="SGSTP' + item.ChargeId + '" type="text" value="' + item.SGSTPer + '" readonly /></td>'
+                        + '<td><input class="text-right" id="SGSTA' + item.ChargeId + '" type="text" value="' + item.SGSTAmt.toFixed(2) + '" readonly /></td>'
+                        + '<td><input class="text-right" id="TOT' + item.ChargeId + '" type="text" value="' + /*Math.ceil(*/item.Total/*)*/ + '" readonly /></td></tr>';
+            }
+            else {
+
+                html += '<tr><td>' + item.ChargeName + '</td>'
+                        + '<td><input class="text-right" id="' + item.ChargeId + '" type="text" value="' + item.Amount.toFixed(2) + '" readonly /></td>'
+                        + '<td><input class="text-right" id="IGSTP' + item.ChargeId + '" type="text" value="' + item.IGSTPer + '"  readonly /></td>'
+                        + '<td><input class="text-right" id="IGSTA' + item.ChargeId + '" type="text" value="' + item.IGSTAmt.toFixed(2) + '" readonly /></td>'
+                        + '<td><input class="text-right" id="CGSTP' + item.ChargeId + '" type="text" value="' + item.CGSTPer + '"  readonly /></td>'
+                        + '<td><input class="text-right" id="CGSTA' + item.ChargeId + '" type="text" value="' + item.CGSTAmt.toFixed(2) + '" readonly /></td>'
+                        + '<td><input class="text-right" id="SGSTP' + item.ChargeId + '" type="text" value="' + item.SGSTPer + '"  readonly /></td>'
+                        + '<td><input class="text-right" id="SGSTA' + item.ChargeId + '" type="text" value="' + item.SGSTAmt.toFixed(2) + '" readonly /></td>'
+                        + '<td><input class="text-right" id="TOT' + item.ChargeId + '" type="text" value="' + /*Math.ceil(*/item.Total/*)*/ + '" readonly /></td></tr>';
+            }
+
+
+        });
+        $('#tblCWCCharges tbody').html(html);
+        CalcInvoice();
+        // $('.search').css('display', 'none');
+        // $('#Weight').attr('readonly', true);
+        // $('#FOB').attr('readonly', true);
+    }
+
+    function CalcTax(elem) {
+        debugger;
+        var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+        
+        var selectedItem = $.grep(rawJson, function (item) { return item.ChargeId == elem; })[0];
+
+        var Hour = Number($('#OTHr').val());
+        $('#OTEHr').val(Hour);
+        var MAmt = Hour * selectedItem.Rate;
+        $('#' + elem).val(MAmt);
+        var IP = 0;
+        var CP = 0;
+        var SP = 0;
+
+        //if (JSON.parse($('#IsPartyStateInCompState').val())) {
+        if ($('#IsPartyStateInCompState').val()) {
+            CP = Number($('#CGSTP' + elem).val());
+            SP = Number($('#SGSTP' + elem).val());
+        }
+        else {
+            IP = Number($('#IGSTP' + elem).val());
+        }
+
+        $('#IGSTA' + elem).val(Math.ceil((MAmt * (IP / 100)).toFixed(2)).toFixed(2)); //ceil added
+        $('#CGSTA' + elem).val(Math.ceil((MAmt * (CP / 100)).toFixed(2)).toFixed(2)); //ceil added
+        $('#SGSTA' + elem).val(Math.ceil((MAmt * (SP / 100)).toFixed(2)).toFixed(2)); //ceil added
+        // $('#TOT' + elem).val((MAmt + (MAmt * (IP / 100)) + (MAmt * (CP / 100)) + (MAmt * (SP / 100))).toFixed(2));  // decimal value
+        //$('#TOT' + elem).val(Math.ceil(MAmt + (MAmt * (IP / 100)) + (MAmt * (CP / 100)) + (MAmt * (SP / 100))));     // ceilling value
+
+
+        selectedItem.Quantity = Hour;
+        selectedItem.Amount = MAmt;
+        selectedItem.Taxable = MAmt;
+        //selectedItem.IGSTPer = IP;
+        selectedItem.IGSTAmt =Math.ceil((MAmt * (IP / 100)).toFixed(2)); //ceil added
+        //selectedItem.CGSTPer = CP;
+        selectedItem.CGSTAmt = Math.ceil((MAmt * (CP / 100)).toFixed(2)); //ceil added
+        //selectedItem.SGSTPer = SP;
+        selectedItem.SGSTAmt = Math.ceil((MAmt * (SP / 100)).toFixed(2)); //ceil added
+        // selectedItem.Total = (MAmt + (MAmt * (IP / 100)) + (MAmt * (CP / 100)) + (MAmt * (SP / 100)));          // decimal value
+        //selectedItem.Total = Math.ceil(MAmt + (MAmt * (IP / 100)) + (MAmt * (CP / 100)) + (MAmt * (SP / 100)));  // ceilling value
+        selectedItem.Total = selectedItem.Amount + selectedItem.IGSTAmt + selectedItem.CGSTAmt + selectedItem.SGSTAmt;
+        $('#TOT' + elem).val(selectedItem.Total);
+
+        $('#PaymentSheetModelJson').val(JSON.stringify(rawJson));
+
+        CalcInvoice();
+    }
+
+    function CalcTaxForEdit(elem) {
+        debugger;
+        var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+
+        var selectedItem = $.grep(rawJson, function (item) { return item.ChargeId == elem; })[0];
+
+        var Hour = Number($('#OTHr').val());
+        $('#OTEHr').val(Hour);
+        var MAmt = Hour * selectedItem.Rate;
+        $('#' + elem).val(MAmt);
+        var IP = 0;
+        var CP = 0;
+        var SP = 0;
+
+        if ($('#IsPartyStateInCompState').val() == "True") {
+            CP = Number($('#CGSTP' + elem).val());
+            SP = Number($('#SGSTP' + elem).val());
+        }
+        else {
+            IP = Number($('#IGSTP' + elem).val());
+        }
+
+        $('#IGSTA' + elem).val(Math.ceil((MAmt * (IP / 100)).toFixed(2)).toFixed(2)); //ceil added
+        $('#CGSTA' + elem).val(Math.ceil((MAmt * (CP / 100)).toFixed(2)).toFixed(2)); //ceil added
+        $('#SGSTA' + elem).val(Math.ceil((MAmt * (SP / 100)).toFixed(2)).toFixed(2)); //ceil added
+        // $('#TOT' + elem).val((MAmt + (MAmt * (IP / 100)) + (MAmt * (CP / 100)) + (MAmt * (SP / 100))).toFixed(2));  // decimal value
+        //$('#TOT' + elem).val(Math.ceil(MAmt + (MAmt * (IP / 100)) + (MAmt * (CP / 100)) + (MAmt * (SP / 100))));     // ceilling value
+
+
+        selectedItem.Quantity = Hour;
+        selectedItem.Amount = MAmt;
+        selectedItem.Taxable = MAmt;
+        //selectedItem.IGSTPer = IP;
+        selectedItem.IGSTAmt = Math.ceil((MAmt * (IP / 100)).toFixed(2)); //ceil added
+        //selectedItem.CGSTPer = CP;
+        selectedItem.CGSTAmt = Math.ceil((MAmt * (CP / 100)).toFixed(2)); //ceil added
+        //selectedItem.SGSTPer = SP;
+        selectedItem.SGSTAmt = Math.ceil((MAmt * (SP / 100)).toFixed(2)); //ceil added
+        // selectedItem.Total = (MAmt + (MAmt * (IP / 100)) + (MAmt * (CP / 100)) + (MAmt * (SP / 100)));          // decimal value
+        //selectedItem.Total = Math.ceil(MAmt + (MAmt * (IP / 100)) + (MAmt * (CP / 100)) + (MAmt * (SP / 100)));  // ceilling value
+        selectedItem.Total = selectedItem.Amount + selectedItem.IGSTAmt + selectedItem.CGSTAmt + selectedItem.SGSTAmt;
+        $('#TOT' + elem).val(selectedItem.Total);
+
+        $('#PaymentSheetModelJson').val(JSON.stringify(rawJson));
+
+        CalcInvoice();
+    }
+
+    function CalcInvoice() {
+
+        var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+        var TotalCGST = 0;
+        var TotalSGST = 0;
+        var TotalIGST = 0;
+        var AllTotal = 0;
+        var TotalAmt = 0;
+
+        $.each(rawJson, function (i, item) {
+            TotalCGST += item.CGSTAmt;
+            TotalSGST += item.SGSTAmt;
+            TotalIGST += item.IGSTAmt;
+            AllTotal += Math.ceil(item.Total);
+            TotalAmt += item.Amount;
+
+            if (item.ChargeName == 'Over Time' && $('#Id').val() > 0) {
+                var MAmtOT = Number($('#' + item.ChargeId).val());
+                $('#OTHr').val(Number(MAmtOT / item.Rate))
+            }
+        });
+
+        $('#TotalCGST').val(TotalCGST);
+        $('#TotalSGST').val(TotalSGST);
+        $('#TotalIGST').val(TotalIGST);
+        $('#TotalAmt').val(TotalAmt);
+        // $('#AllTotal').val(parseFloat(AllTotal).toFixed(2));      // decimal value
+        $('#AllTotal').val(Math.ceil(AllTotal));                   // ceilling value
+        $('#InvoiceValue').val(Math.ceil(AllTotal));
+        var round = Math.ceil(AllTotal) - AllTotal;
+        // $('#RoundUp').val(round.toFixed(2));      // decimal value
+        $('#RoundUp').val(0);                       // ceilling value
+    }
+
+    function ClearInvoice() {
+        $('#PaymentSheetModelJson').val('');
+        $('#tblCWCCharges tbody').html('');
+        $('#TotalCGST').val(0);
+        $('#TotalSGST').val(0);
+        $('#TotalIGST').val(0);
+        $('#AllTotal').val(0);
+        $('#InvoiceValue').val(0);
+        $('#RoundUp').val(0);
+        $('.search').css('display', 'block');
+        $('#Weight').attr('readonly', false);
+        $('#FOB').attr('readonly', false);
+
+    }
+
+    function ResetInvoice() {
+        debugger;
+        $('#PaymentSheetModelJson').val('');
+        $('#tblCWCCharges tbody').html('');
+        $('#TotalCGST').val(0);
+        $('#TotalSGST').val(0);
+        $('#TotalIGST').val(0);
+        $('#AllTotal').val(0);
+        $('#InvoiceValue').val(0);
+        $('#RoundUp').val(0);
+        $('.search').css('display', 'block');
+        $('#PartyName').val('');
+    }
+
+    var ActiveTab = 'CCIN';
+
+    function SetActiveTab(activeTab) {
+        ActiveTab = activeTab;
+    }
+
+    function validate() {
+        debugger;
+
+        var IsValid = true;
+
+        if ($('#SBNo').val() == null || $('#SBNo').val() == '') {
+            IsValid = false;
+        }
+        if ($('#SBDate').val() == null || $('#SBDate').val() == '') {
+            IsValid = false;
+        }
+        if ($('#SBType').val() == null || $('#SBType').val() == '----Select----' || $('#SBType').val() == '') {
+            IsValid = false;
+        }
+        if ($('#ExporterName').val() == null || $('#ExporterName').val() == '') {
+            IsValid = false;
+        }
+        if ($('#CHAId').val() == 0) {
+            IsValid = false;
+        }
+        if ($('#CountryId').val() == 0) {
+            IsValid = false;
+        }
+        /*if ($('#StateId').val() == 0) {
+            IsValid = false;
+        }
+        if ($('#CityId').val() == 0) {
+            IsValid = false;
+        }*/
+        if ($('#CargoType').val() == 0) {
+            IsValid = false;
+        }
+        if ($('#PortOfDischarge').val() == null || $('#PortOfDischarge').val() == '') {
+            IsValid = false;
+        }
+        if ($('#Weight').val() == null || $('#Weight').val() == '') {
+            IsValid = false;
+        }
+        if ($('#FOB').val() == null || $('#FOB').val() == '') {
+            IsValid = false;
+        }
+
+
+
+        if (IsValid) {
+            if ($('#PartyId').val() > 0) {
+                /*if (parseFloat($('#PartySDBalance').val())==0)
+                {
+                    return true;
+                }
+                else
+                {
+                    if (parseFloat($('#PartySDBalance').val()) < parseFloat($('#InvoiceValue').val())) {
+                        alert("This Party has insufficient SD Balance to save the Invoice.");
+                        return false;
+                    }
+                    else {
+                        return true;
+                    }
+                }*/
+
+
+
+                if (confirm("Are You Sure You Want To Save?")) {
+                    $('#btnSave').attr('disabled', true);
+                    $('#btnSave').submit();
+                }
+            }
+            else {
+                alert("Please choose Party for the Invoice.");
+                return false;
+            }
+           
+        }
+        else {
+            if (ActiveTab == 'Invoice') {
+                alert("Please fill all the mandatory fields in CCIN Tab.");
+                return false;
+            }
+            else {
+                return true;
+            }
+
+        }
+
+    }
+
+    function GetStateList() {
+        //debugger;
+        /* var CountryId = $('#CountryId').val();
+         ClearCityDropdown();
+         if (CountryId != "") {
+             $.ajax({
+                 url: '/City/GetStatesByCountry',
+                 type: 'Get',
+                 data: { CountryId: CountryId },
+                 async: false,
+                 success: function (data) {
+                     //debugger;
+                     if (data.Status == 1) {
+                         ClearStateDropdown();
+                         $.each(data.Data, function (i, item) {
+                             //debugger;
+                             var SelectStateId = parseInt($('#SelectStateId').val());
+                             $('#StateId').append($('<option></option>').val(item.StateId).html(item.StateName));
+                             if (SelectStateId > 0) {
+                                 $('#StateId').val(SelectStateId);
+                             }
+                         });
+                     }
+                     else {
+                         ClearStateDropdown();
+                     }
+                 }
+             });
+         }
+         else {
+             ClearStateDropdown();
+         }*/
+    }
+    function GetCityList() {
+        //debugger;
+        var StateId = $('#StateId').val();
+        if (StateId != "") {
+            $.ajax({
+                url: '/City/GetCitiesByState',
+                type: 'Get',
+                data: { StateId: StateId },
+                async: false,
+                success: function (data) {
+                    //debugger;
+                    if (data.Status == 1) {
+                        ClearCityDropdown();
+                        $.each(data.Data, function (i, item) {
+                            //debugger;
+                            var SelectCityId = parseInt($('#SelectCityId').val());
+                            $('#CityId').append($('<option></option>').val(item.CityId).html(item.CityName));
+                            if (SelectCityId > 0) {
+                                $('#CityId').val(SelectCityId);
+                            }
+                        });
+                    }
+                    else {
+                        ClearCityDropdown();
+                    }
+                }
+            });
+        }
+        else {
+            ClearCityDropdown();
+        }
+    }
+    function ClearStateDropdown() {
+        $('#StateId').html("");
+        $('#StateId').append($('<option></option>').val("").html("---Select---"));
+    }
+    function ClearCityDropdown() {
+        $('#CityId').html("");
+        $('#CityId').append($('<option></option>').val("").html("---Select---"));
+    }
+
+    function LoadCCINEntryList() {
+        $('#tblEntryDet').html('');
+        $('#CCINEntryList').load('/Export/Loni_CWCExport/ListOfCCINEntry');
+    }
+
+    function OnSuccess(data) {
+        if (data.Status == 1 || data.Status == 2) {
+            $('#DivSucMsg').html(data.Message);
+            $('#CCINNo').val(data.Data.split('#')[0]);
+            $('#InvoiceNo').val(data.Data.split('#')[1]);
+            $('#DivErrMsg').html('');
+            $('#btnReset').attr('disabled', false);
+            $('#btnSave').attr('disabled', true);
+            $('#btnPrint').attr('disabled', false);
+            // setTimeout(ResetAllField, 3000);
+            // LoadCCINEntryList();
+        }
+        else {
+            $('#DivErrMsg').html(data.Message);
+        }
+        // setTimeout(function () { $('#DivErrMsg,#DivSucMsg').html(''); }, 5000);
+    }
+
+    function FormattedCurrentDate() {
+        var today = new Date();
+        var dd = today.getDate();
+        var mm = today.getMonth() + 1; //January is 0!
+        var yyyy = today.getFullYear();
+        if (dd < 10) {
+            dd = '0' + dd;
+        }
+        if (mm < 10) {
+            mm = '0' + mm;
+        }
+        var todayDate = dd + '/' + mm + '/' + yyyy;
+
+        return todayDate;
+    }
+    function OnFailure() { }
+
+    function ResetAllField() {
+        $('#DivBody').load('/Export/Loni_CWCExport/CCINEntry');
+    }
+
+    function PrintInvoice() {
+        //debugger;
+
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetBulkInvoiceReport", "Ppg_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                InvoiceNumber: $('#InvoiceNo').val(),
+                InvoiceModule: 'CCIN',
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                InvoiceModuleName: 'CCIN Entry',
+            },
+            success: function (data) {
+                $('#DivErrMsg,#DivSucMsg').html('');
+                if (data.Status == 1)
+                    window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }
+
+
+    function GenerateEntryTable() {
+        tablehtml = '';
+        var tablehtml = '<table id="tblEntryDet" class="table table-striped table-bordered dataTable" style="width:100%;"><thead><tr><th class="text-center">SL No</th><th>CCIN No</th><th>CCIN Date</th><th>SB No</th><th>SB Date</th><th class="text-center">Edit</th><th class="text-center">Delete</th><th class="text-center">Print</th></tr></thead><tbody>';
+        tablehtml += '</tbody></table>';
+        $('#tblEntryDet').html(tablehtml);
+    }
+
+
+    function ShippingBillSerach()
+    {
+        debugger;
+        $.ajax({
+            url: '/Export/Loni_CWCExport/GetShippingBill',
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                    $('#hdnShippingBillList').val(data);
+                    var EcJson = JSON.parse(data);
+                    var html = '';
+                    $.each(EcJson, function (i, item) {
+                        html += '<li id="' + item.SBId + '" onclick="selectSBNo(' + item.SBId + ');">' + item.SBNo + '</li>';
+                    });
+                    $('#lstSBNo').html(html);
+                }
+            }
+        });
+    }
+
+
+
+    function selectSBNo(id)
+    {
+        debugger;
+        $('#SBId').val(id);
+        if ($('#SBId').val() > 0) {
+
+            $.ajax({
+                url: '/Export/Loni_CWCExport/GetSBDetailsBySBId',
+                type: 'Get',
+                data: { SBId: $('#SBId').val() },
+                async: false,
+                success: function (data) {
+                    if (data != null) {
+                        debugger;
+                        $('#SBNo').val(data.SBNo);
+                        $('#SBDate').val(data.SBDate);
+                        $('#ExporterName').val(data.ExporterName);
+                        $('#ExporterId').val(data.ExporterId);
+                        $('#FOB').val(data.FOB);
+
+                    }
+                }
+            });
+        }
+
+        $("#SBNoModal").modal("hide");
+        $('[data-valmsg-for="SBNo"]').html('<span></span>');
+    }
+
+    function ShippingLineSerach()
+    {
+        debugger;
+        $.ajax({
+            url: '/Export/Loni_CWCExport/GetShippingLine',
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                    $('#hdnShippingLineList').val(data);
+                    var EcJson = JSON.parse(data);
+                    var html = '';
+                    $.each(EcJson, function (i, item) {
+                        html += '<li id="' + item.ShippingLineId + '" onclick="selectShippingBill(' + item.ShippingLineId + ');">' + item.ShippingLineName + '</li>';
+                    });
+                    $('#lstShippingLine').html(html);
+                }
+            }
+        });
+    }
+
+    function ChaNameSerach() {
+        debugger;
+        $.ajax({
+            url: '/Export/Loni_CWCExport/GetCHAName',
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                    //$('#hdnShippingLineList').val(data);
+                    var EcJson = JSON.parse(data);
+                    var html = '';
+                    $.each(EcJson, function (i, item) {
+                        html += '<li id="' + item.CHAEximTraderId + '" onclick="selectChName(' + item.CHAEximTraderId + ',&quot;' + item.CHAName + '&quot;);">' + item.CHAName + '</li>';
+                    });
+                    $('#lstCHA').html(html);
+                }
+            }
+        });
+    }
+
+
+
+    function InvParty() {
+        debugger;
+        $.ajax({
+            url: '/Export/Loni_CWCExport/GetInvParty',
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                    //$('#hdnShippingLineList').val(data);
+                    var EcJson = JSON.parse(data);
+                    var html = '';
+                    $.each(EcJson, function (i, item) {
+                        html += '<li id="' + item.PartyId + '" onclick="selectInvName(' + item.PartyId + ',&quot;' + item.PartyName + '&quot;);">' + item.PartyName + '</li>';
+                    });
+                    $('#lstParty').html(html);
+                }
+            }
+        });
+    }
+    function selectInvName(id, Name) {
+       
+        $('#PartyName').val(Name);
+        $('#PartyId').val(id);
+        $("#PartyModal").modal("hide");
+        ProcessInvoice();
+    }
+    function PortOfDestSerach() {
+        debugger;
+        $.ajax({
+            url: '/Export/Loni_CWCExport/GetPortOfDest',
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                    //$('#hdnShippingLineList').val(data);
+                    var EcJson = JSON.parse(data);
+                    var html = '';
+                    $.each(EcJson, function (i, item) {
+                        html += '<li id="' + item.PortId + '" onclick="selectPortDest(' + item.PortId + ',&quot;' + item.PortName + '&quot;);">' + item.PortName + '</li>';
+                    });
+                    $('#lstDestPort').html(html);
+                    var html = '';
+                    $.each(EcJson, function (i, item) {
+                        html += '<li id="' + item.PortId + '" onclick="selectPortLoad(' + item.PortId + ',&quot;' + item.PortName + '&quot;);">' + item.PortName + '</li>';
+                    });
+                   
+                    $('#lstPort').html(html);
+                    
+                }
+            }
+        });
+    }
+
+
+    function CommoditySerach() {
+        debugger;
+        $.ajax({
+            url: '/Export/Loni_CWCExport/GetCommodity',
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                    //$('#hdnShippingLineList').val(data);
+                    var EcJson = JSON.parse(data);
+                    var html = '';
+                    $.each(EcJson.LstCommodity, function (i, item) {
+                        html += '<tr id="' + item.CommodityId + '" onclick="SelectCommodity(' + item.CommodityId + ',&quot;' + item.CommodityName + '&quot;,&quot;' + item.CommodityType + '&quot;);"><td colspan="8" width="80%">' + item.CommodityName + '</td></tr>';
+                    });
+                    $('#tbleCommodity tbody').html(html);
+                    
+                }
+            }
+        });
+    }
+
+    
+
+    function selectPortDest(id, Name) {
+        $('#PortOfDestName').val(Name);
+        $('#PortOfDestId').val(id);
+        $("#PortDestModal").modal("hide");
+    }
+
+    function selectPortLoad(id,Name)
+    {
+        $('#PortOfLoadingName').val(Name);
+        $('#PortOfLoadingId').val(id);
+        $("#PortModal").modal("hide");
+    }
+    function selectShippingBill(id)
+    {
+        debugger;
+       
+        $('#ShippingLineId').val(id);
+
+        var parties = JSON.parse($('#hdnShippingLineList').val());
+        var GodownId = $.grep(parties, function (item) { return item.ShippingLineId == $('#ShippingLineId').val(); })[0].GodownId;
+        $('#GodownId').val(GodownId);
+
+        var GodownName = $.grep(parties, function (item) { return item.ShippingLineId == $('#ShippingLineId').val(); })[0].GodownName;
+        var ShipName = $.grep(parties, function (item) { return item.ShippingLineId == $('#ShippingLineId').val(); })[0].ShippingLineName;
+
+        $('#GodownName').val(GodownName);
+        $('#ShippingLineName').val(ShipName);
+        $("#ShippingLineModal").modal("hide");
+    }
+
+    function selectChName(id, Name) {
+        $('#CHAName').val(Name);
+        $('#CHAId').val(id);
+        $("#CHAModal").modal("hide");
+        $('[data-valmsg-for="CHAName"]').html('<span></span>');
+    }
+</script>

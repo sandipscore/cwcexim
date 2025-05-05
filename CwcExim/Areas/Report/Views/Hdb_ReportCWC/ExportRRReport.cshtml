@@ -1,0 +1,281 @@
+﻿@model CwcExim.Areas.Report.Models.HDBExportRRReport
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "RptInvoiceReportDetails";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+
+}
+<script>
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+
+        $("#Date").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onSelect: function (selectedDate) {
+                GetGatePassNo(selectedDate)
+            },
+            onClose: function () {               
+                $(".Date_Img .Error_Msg").text("");
+            }            
+        });
+
+    });
+
+</script>
+@using (Ajax.BeginForm("GetExportRRReport", "Hdb_ReportCWC", options))
+{
+    if (ViewBag.LstGatePass != null)
+    {
+        <input type="hidden" id="hdnContainer" value="@ViewBag.LstGatePass" />
+    }
+    else
+    {
+        <input type="hidden" id="hdnContainer" value="" />
+    }
+
+
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Export RR Report</h4>
+                            </div>
+                        </div>
+                      
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1 col_cus_2 padding_rt">
+                                    <label>Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    <input type="text" class="form-control input-sm" id="Date" value="@DateTime.Now.ToString("dd-MM-yyyy")" />
+                                </div>
+                                <div class="col-md-offset-5 col-md-1-5 col_cus_2 padding_rt">
+                                    <label>GatePass No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.HiddenFor(m=>m.GatePassId)                                                                      
+                                    @Html.TextBoxFor(m => m.GatePassNo, new { @class = "form-control input-sm", @readonly = true })
+                                    <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#BOENoModal"></i></span>
+                                    @Html.ValidationMessageFor(m => m.GatePassNo, "", new { @class = "Error_Msg" })
+                                    <span style="color:red" id="ErrGatePass"></span>
+                                </div>
+                               
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="BOENoModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Gate Pass No</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="BOENobox" type="text" />
+                    <ul class="navList" id="BOENoList">
+                        @{
+                            if (ViewBag.LstGatePass != null)
+                            {
+                                foreach (var item in ViewBag.LstGatePass)
+                                {
+
+                                    <li id="@item.Value" onclick="SelectBOENo(this)">@item.Text</li>
+                                }
+                            }
+                        }
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+                            }
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $('#BOENobox').keyup(function () {
+        debugger;
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#BOENoList > li').show();
+        else {
+            $('#BOENoList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    //$('#Date').on("click", function () {
+    //    debugger;
+    //    GetGatePassNo(Date);
+    //});
+
+    function GetGatePassNo(GatePassDate) {
+        debugger;
+            $.ajax({
+                url: '/Report/Hdb_ReportCWC/GetGatePassNo',
+                type: 'GET',
+                data: { GatePassDate: GatePassDate },
+                dataType: 'JSON',
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data, function (item, elem) {
+                            debugger;
+                            html += '<li id="' + elem.GatePassId + '" onclick="SelectGatePassNo(' + elem.GatePassId + ',&quot;' + elem.GatePassNo + '&quot;)">' + elem.GatePassNo + '</li>';
+                        });
+                        $('#BOENoList').html(html);
+                    }
+                }
+            });
+    }
+
+    function SelectGatePassNo(GatePassId, GatePassNo)
+    {
+        debugger;
+        $('#GatePassId').val(GatePassId);
+        $('#GatePassNo').val(GatePassNo);
+        $("#BOENoModal").modal("hide");
+        $('#ErrGatePass').html('');
+    }
+
+    function SelectBOENo(data) {
+        debugger;
+        $('#GatePassId').val(data.id);
+        $('#GatePassNo').val(data.innerText);
+        $("#BOENoModal").modal("hide");
+        $('#ErrGatePass').html('');
+      
+    }
+
+    $('#BtnPreview').on("click", function () {
+        $('#DivDwnldWavMsg').html('');
+        if ($('#GatePassNo').val() == "") {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('Please Select Gate Pass No');
+            return false;
+        }
+        return true;
+    });
+    function RptConsumerListDtlOnFailure() { }
+    function RptInvoiceReportDetails(data) {
+        $('#DivDwnldWavMsg').html('')
+        //alert(data);
+        debugger;
+        if (data.Status == 1) {
+
+            debugger;
+            window.open(data.Data + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+
+
+    function ValidateExitDet() {
+        var Status = true;
+
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="GatePassNo"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+        return Status;
+    }
+    function SaveReportPdf(data)
+    {
+        debugger;
+        var GatePassId = $("#GatePassId").val();
+        var PostData = new FormData();
+       
+        PostData.append("GatePassId", GatePassId);
+       // alert("PostData=" + PostData);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GenerateDailyPdaActivityReportPDF", "Hdb_ReportCWC", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+
+            }
+        });
+    }
+
+</script>
+
+
+

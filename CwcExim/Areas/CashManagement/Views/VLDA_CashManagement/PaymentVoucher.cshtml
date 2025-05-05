@@ -1,0 +1,2026 @@
+﻿@model CwcExim.Areas.CashManagement.Models.WFLD_NewPaymentValucherModel
+
+<script>
+    $('#PaymentDate').focus();
+    
+    $("#PaymentDate").datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+    $('#PaymentDate').focus();
+
+    $("#InvoiceDate").datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+    function ShowList()
+    {
+        $('#SearchVoucherNo').val('');
+        $('#divVoucher').css("display", "none");
+        GetPVList();
+    }
+    function GetPVList() {
+        $('#DivPaymentVoucherList').load('@Url.Action("GetPaymentVoucherList", "VLDA_CashManagement", new { area = "CashManagement" })');
+    }
+
+    function SearchVoucher() {
+        debugger;
+        var SearchVoucher = $('#SearchVoucherNo').val().trim();
+        $('#DivPaymentVoucherList').load('/CashManagement/VLDA_CashManagement/GetPaymentVoucherList?SearchValue=' + SearchVoucher);
+    }
+
+    function AddNewRow() {
+        debugger;
+
+        if ($('#Purpose').val() != '') {
+            $('#txtPurpose').val($('#Purpose').val());
+            $("#Purpose").prop("disabled", true);
+            if($('#ExpensesJson').val() != '')
+            {
+                var ExpTable = JSON.parse($('#ExpensesJson').val());
+                var Status = 0;
+                for (var i = 0; i < ExpTable.length; i++) {
+                    if (Number(ExpTable[i].Amount) == 0) {
+                        Status = 1;
+                    }
+                  }
+                if (Status == 1) {
+                        alert('Voucher Amount should be greater than 0');
+                        return false;
+                    }
+                    else {
+                        var countRow = $('#ExpTable tbody tr').length > 0 ? $('#ExpTable tbody tr').length + 1 : 1;
+                        for (let i = 1; i < countRow; i++) {
+                            $('#exp' + i).attr("disabled", 'disabled');
+                            $('#sgst' + i).attr("disabled", 'disabled');
+                            $('#igst' + i).attr("disabled", 'disabled');
+                            $('#cgst' + i).attr("disabled", 'disabled');
+                            $('#amt' + i).attr("disabled", 'disabled');
+
+                            $('#sgstamt' + i).attr("disabled", 'disabled');
+                            $('#cgstamt' + i).attr("disabled", 'disabled');
+                            $('#igstamt' + i).attr("disabled", 'disabled');
+                            $('#hsn' + i).attr("disabled", 'disabled');
+                            $('#voucher' + i).attr("disabled", 'disabled');
+                            $('.Delete').css('pointer-events', 'none');
+                        }
+
+                        //var countRow = $('#ExpTable tbody tr').length > 0 ? $('#ExpTable tbody tr').length + 1:1;
+                        var exps = JSON.parse($('#Expenses').val());
+                        var voucher = '';
+
+
+
+                        var expSelect = '<select id="exp' + countRow + '" onchange="GenerateHSN(' + countRow + ')" ><option value="">--- Select ---</option>';
+                        $.each(exps, function (i, item) {
+                            expSelect += '<option value="' + item.HeadId + '">' + item.HeadName + '</option>';
+                        });
+                        expSelect += '</select>';
+
+                        var newrow = '<tr data-row-id=' + countRow + '><td>' + expSelect + '</td><td><select id="hsn' + countRow + '" onchange="GenerateGST(' + countRow + ')"><option value="">--- Select ---</option></select></td><td><select id="voucher' + countRow + '" onchange="ReceiptVoucherBalance(value,' + countRow + ')"><option value="">--- Select ---</option></select></td><td><input type="text" id="balance' + countRow + '" value="0" class="text-right" Readonly /></td><td><input type="text" id="amt' + countRow + '" value="0" class="text-right" onkeypress="return ValidateAndCalculate(' + countRow + ',event)" onblur="BindJSON(' + countRow + ')" /></td><td><input type="text" id="igst' + countRow + '" class="text-right" onblur="BindIgstJSON(' + countRow + ')" /></td><td><input type="text" id="igstamt' + countRow + '" class="text-right" onblur="BindIgstAmtJSON(' + countRow + ')" /></td><td><input type="text" id="cgst' + countRow + '" class="text-right" onblur="BindCgstJSON(' + countRow + ')" /></td><td><input type="text" id="cgstamt' + countRow + '" class="text-right" onblur="BindCgstAmtJSON(' + countRow + ')" /></td><td><input type="text" id="sgst' + countRow + '" class="text-right" onblur="BindSgstJSON(' + countRow + ')"/></td><td><input type="text" id="sgstamt' + countRow + '" class="text-right" onblur="BindSgstAmtJSON(' + countRow + ')" /></td><td><input type="text" id="amount' + countRow + '" class="text-right"  /></td><td style="text-align:center;"><i class="fa fa-window-close-o Delete" onclick="RemoveExpenses(this,' + countRow + ')"></i></td></tr>';
+
+                        $('#ExpTable tbody').append(newrow);
+
+                        var orgJson = $('#ExpensesJson').val() == '' ? [] : JSON.parse($('#ExpensesJson').val());
+                        var jObj = {
+                            'ExpId': 0,
+                            'HsnId': 0,
+                            'ReceiptId': 0,
+                            'Amount': 0,
+                            'IGST': 0,
+                            'CGST': 0,
+                            'SGST': 0,
+                            'IGSTAmt': 0,
+                            'CGSTAmt': 0,
+                            'SGSTAmt': 0,
+                        };
+                        orgJson.push(jObj);
+
+                        $('#ExpensesJson').val(JSON.stringify(orgJson));
+
+                        $('#exp' + countRow).focus();
+                    }
+                //}
+            }
+            else
+            {
+                var countRow = $('#ExpTable tbody tr').length > 0 ? $('#ExpTable tbody tr').length + 1 : 1;
+                for (let i = 1; i < countRow; i++) {
+                    $('#exp' + i).attr("disabled", 'disabled');
+                    $('#sgst' + i).attr("disabled", 'disabled');
+                    $('#igst' + i).attr("disabled", 'disabled');
+                    $('#cgst' + i).attr("disabled", 'disabled');
+                    $('#amt' + i).attr("disabled", 'disabled');
+
+                    $('#sgstamt' + i).attr("disabled", 'disabled');
+                    $('#cgstamt' + i).attr("disabled", 'disabled');
+                    $('#igstamt' + i).attr("disabled", 'disabled');
+                    $('#voucher' + i).attr("disabled", 'disabled');
+                    $('#hsn' + i).attr("disabled", 'disabled');
+                    $('.Delete').css('pointer-events', 'none');
+                    
+                }
+
+                //var countRow = $('#ExpTable tbody tr').length > 0 ? $('#ExpTable tbody tr').length + 1:1;
+                var exps = JSON.parse($('#Expenses').val());
+                var voucher = '';
+
+
+
+                var expSelect = '<select id="exp' + countRow + '" onchange="GenerateHSN(' + countRow + ')" ><option value="">--- Select ---</option>';
+                $.each(exps, function (i, item) {
+                    expSelect += '<option value="' + item.HeadId + '">' + item.HeadName + '</option>';
+                });
+                expSelect += '</select>';
+
+                var newrow = '<tr data-row-id=' + countRow + '><td>' + expSelect + '</td><td><select id="hsn' + countRow + '" onchange="GenerateGST(' + countRow + ')"><option value="">--- Select ---</option></select></td><td><select id="voucher' + countRow + '" onchange="ReceiptVoucherBalance(value,' + countRow + ')"><option value="">--- Select ---</option></select></td><td><input type="text" id="balance' + countRow + '" value="0" class="text-right"  /></td><td><input type="text" id="amt' + countRow + '" value="0" class="text-right" onkeypress="return ValidateAndCalculate(' + countRow + ',event)" onblur="BindJSON(' + countRow + ')" /></td><td><input type="text" id="igst' + countRow + '" class="text-right" onblur="BindIgstJSON(' + countRow + ')" /></td><td><input type="text" id="igstamt' + countRow + '" class="text-right" onblur="BindIgstAmtJSON(' + countRow + ')" /></td><td><input type="text" id="cgst' + countRow + '" class="text-right" onblur="BindCgstJSON(' + countRow + ')" /></td><td><input type="text" id="cgstamt' + countRow + '" class="text-right" onblur="BindCgstAmtJSON(' + countRow + ')" /></td><td><input type="text" id="sgst' + countRow + '" class="text-right" onblur="BindSgstJSON(' + countRow + ')"/></td><td><input type="text" id="sgstamt' + countRow + '" class="text-right" onblur="BindSgstAmtJSON(' + countRow + ')" /></td><td><input type="text" id="amount' + countRow + '" class="text-right"  /></td><td style="text-align:center;"><i class="fa fa-window-close-o Delete" onclick="RemoveExpenses(this,' + countRow + ')"></i></td></tr>';
+
+                $('#ExpTable tbody').append(newrow);
+
+                var orgJson = $('#ExpensesJson').val() == '' ? [] : JSON.parse($('#ExpensesJson').val());
+                var jObj = {
+                    'ExpId': 0,
+                    'HsnId': 0,
+                    'ReceiptId': 0,
+                    'Amount': 0,
+                    'IGST': 0,
+                    'CGST': 0,
+                    'SGST': 0,
+                    'IGSTAmt': 0,
+                    'CGSTAmt': 0,
+                    'SGSTAmt': 0,
+                };
+                orgJson.push(jObj);
+
+                $('#ExpensesJson').val(JSON.stringify(orgJson));
+
+                $('#exp' + countRow).focus();
+            }
+        }
+        else {
+            alert('Please select purpose');
+            return false;
+        }
+
+    }
+
+    
+    function RemoveExpenses(elem, index) {
+        debugger;
+        $('#tigst').val(Number($('#tigst').val()) - Number($('#igstamt' + index).val()));
+        $('#tcgst').val(Number($('#tcgst').val()) - Number($('#cgstamt' + index).val()));
+        $('#tsgst').val(Number($('#tsgst').val()) - Number($('#sgstamt' + index).val()));
+        $('#TotalAmount').val(Number($('#TotalAmount').val()) - Number($('#amount' + index).val()));
+       
+        $(elem).closest('tr').remove();
+        var orgJson = [];
+        var cgsttotal = 0;
+        var sgsttotal = 0;
+        var igsttotal = 0;
+        var gtotal = 0;        
+        $('#ExpTable tbody tr').each(function () {
+            var id = $(this).attr('data-row-id');
+            var jObj = {
+                'ExpId': Number($('#exp' + id).val()),
+                'HsnId': Number($('#hsn' + id).val()),
+                'ReceiptId': Number($('#voucher' + id).val()),
+                'Amount': Number($('#amt' + id).val()),
+                'IGST': Number($('#igst' + id).val()),
+                'CGST': Number($('#cgst' + id).val()),
+                'SGST': Number($('#sgst' + id).val()),
+                'IGSTAmt': Number($('#igstamt' + id).val()),
+                'CGSTAmt': Number($('#cgstamt' + id).val()),
+                'SGSTAmt': Number($('#sgstamt' + id).val())
+            };
+            orgJson.push(jObj);
+            cgsttotal += Number($('#cgstamt' + id).val());
+            sgsttotal += Number($('#sgstamt' + id).val());
+            igsttotal += Number($('#igstamt' + id).val());
+            gtotal += Number($('#amount' + id).val());
+        });
+        if (orgJson.length > 0) {
+            
+            $('#tcgst').val(cgsttotal.toFixed(2));
+            $('#tsgst').val(sgsttotal.toFixed(2));
+            $('#tigst').val(igsttotal.toFixed(2));
+            $('#TotalAmount').val(gtotal.toFixed(2));
+            $('#ExpensesJson').val(JSON.stringify(orgJson));
+        }
+        else {
+            $('#ExpensesJson').val('');
+        }
+    }
+
+    function GenerateHSN(index) {
+        debugger;
+
+        try {
+            debugger;
+            var id = $('#exp' + index).val() == "" ? 0 : $('#exp' + index).val();
+            var exps = JSON.parse($('#Expenses').val());
+            var exp = $.grep(exps, function (item) { return item.HeadId == id; })[0];
+
+            var exphsn = JSON.parse($('#ExpHSN').val());
+            var filterexphsn = $.grep(exphsn, function (item) { return item.ExpCode == exp.HeadCode; });
+
+            var hsns = JSON.parse($('#HSN').val());
+            var filterhsn = [];
+            $.each(filterexphsn, function (i, item) {
+                filterhsn.push($.grep(hsns, function (t) { return t.HSNCode == item.HSNCode; })[0]);
+            });
+
+            var hsnSelect = '<option value="">--- Select ---</option>';
+            
+            $.each(filterhsn, function (i, item) {
+                if (item != undefined) {
+                    hsnSelect += '<option value="' + item.HSNId + '">' + item.HSNCode + '</option>';
+                }
+            });           
+            
+            $('#hsn' + index).html(hsnSelect);
+
+
+        }
+        catch (e) {
+            //console.log(e.message);
+            $('#hsn' + index).html('<option value="">--- Select ---</option>');
+
+        }
+        //try {
+        //    var varexpid = $('#exp' + index).val();
+        //    var varexps = JSON.parse($('#Expenses').val());
+        //    var varTotalAssignAmt = 0;
+
+
+        //    for (var i = 1; i <= index; i++) {
+        //        var FlagID = $('#exp' + i).val();
+        //        if (FlagID == varexpid) {
+        //            varTotalAssignAmt = varTotalAssignAmt + Number($('#amount' + i).val())
+        //        }
+
+        //    }
+
+        //    if (varexpid != '')
+        //    {
+        //        var balanceinHand = $.grep(varexps, function (item) { return item.HeadId == varexpid; })[0];
+        //        var varFinalBalance = Number(balanceinHand.BalanceinHand) - Number(varTotalAssignAmt);
+        //        $('#balance' + index).val(varFinalBalance);
+        //    }
+        //    else
+        //    {
+        //        $('#balance' + index).val(0);
+        //    }
+        //}
+        //catch (e) {
+        //    $('#balance' + index).val(0);
+        //}
+       
+        var varexpid = $('#exp' + index).val();
+        if (varexpid != '') {
+            BindReceiptVoucher(varexpid, index);
+        }
+        else {
+            ChangeExpenceHead(index);
+        }
+    }
+    var arrayReceiptVoucher = [];
+    function BindReceiptVoucher(Id, index) {
+        var Purpose = $('#Purpose').val();
+        $.ajax({
+            url: '/CashManagement/VLDA_CashManagement/GetAmountForPaymentVoucher',
+            dataType: 'JSON',
+            type: 'GET',
+            data: { HeadId: Id, Purpose: Purpose },
+            success: function (data) {
+                debugger;
+                //alert(data.Data);
+               
+                $('#voucher' + index).html('<option value="">--- Select ---</option>');
+                ChangeExpenceHead(index);
+                if (data.Data != null) {
+                    var html = '';
+                    var RValue = JSON.stringify(data.Data);
+                    $('#ReceiptValue').val(RValue);
+                    
+                    //-------------------------------------
+                    var RPurpose = $('#Purpose').val();
+                    var EValue = JSON.parse($('#ExpensesJson').val());
+                    var arrayRV = EValue.filter(function (finaldata) {
+                        return finaldata.ReceiptId != 0;
+                    });
+                    if (arrayRV.length > 0)
+                    {                        
+                        if (RPurpose == 'Imprest') {
+                            for (var i = 0; i < arrayRV.length; i++) {
+                                var varTotalAssignAmt = 0;
+                                for (var j = 0; j < data.Data.length; j++) {
+                                    if (arrayRV[i].ReceiptId == data.Data[j].ReceiptId) {                                       
+                                        data.Data[j].BalanceAmount = Number(data.Data[j].BalanceAmount) - (Number(arrayRV[i].Amount) + Number(arrayRV[i].CGSTAmt) + Number(arrayRV[i].SGSTAmt) + Number(arrayRV[i].IGSTAmt));
+                                    }
+                                }
+                            }
+                            var arrayFRV = data.Data.filter(function (finaldata) {
+                                return finaldata.BalanceAmount != 0;
+                            });
+                            $.each(arrayFRV, function (i, item) {
+                                html += '<option value="' + item.ReceiptId + '">' + item.VoucherNo + '</option>';                       
+                            });
+                        }
+                        else {
+                            for (var i = 0; i < arrayRV.length; i++) {
+                                var varTotalAssignAmt = 0;
+                                for (var j = 0; j < data.Data.length; j++) {
+                                    if (arrayRV[i].ReceiptId == data.Data[j].ReceiptId && arrayRV[i].ExpId == data.Data[j].ExpenseId) {
+                                       // varTotalAssignAmt = varTotalAssignAmt + arrayRV[i].Amount;
+                                        data.Data[j].BalanceAmount = Number(data.Data[j].BalanceAmount) - Number(arrayRV[i].Amount);
+                                    }
+                                }
+
+                            }
+                            var arrayFRV = data.Data.filter(function (finaldata) {
+                                return finaldata.BalanceAmount != 0;
+                            });
+                            $.each(arrayFRV, function (i, item) {
+                                html += '<option value="' + item.ReceiptId + '">' + item.VoucherNo + '</option>';
+                            });
+                        }
+                    }
+                    else
+                    {
+                        $.each(data.Data, function (i, item) {
+                            html += '<option value="' + item.ReceiptId + '">' + item.VoucherNo + '</option>';                       
+                        });
+                    }
+                    
+                    //-------------------------------------
+
+                    //$.each(data.Data, function (i, item) {
+                    //    html += '<option value="' + item.ReceiptId + '">' + item.VoucherNo + '</option>';                       
+                    //});
+
+                    $('#voucher' + index).append(html);
+                }
+            },
+            error: function (data) {
+                debugger;
+                alert('error');
+            }
+        });
+    }
+
+    function ReceiptVoucherBalance(Value, index) {
+        debugger;
+        var RPurpose = $('#Purpose').val();
+        var RValue = JSON.parse($('#ReceiptValue').val());
+        var BAmount = $.grep(RValue, function (item) { return item.ReceiptId == Value; });
+        var BalanceAmount = BAmount[0].BalanceAmount;
+        if (RPurpose == 'Imprest')
+        {
+            try {
+                //var varexpid = $('#exp' + index).val();
+                var recvoucherid = $('#voucher' + index).val();
+                var varTotalAssignAmt = 0;
+
+                for (var i = 1; i <= index; i++) {
+                    //var FlagID = $('#exp' + i).val();
+                    var RVFlagID = $('#voucher' + i).val();
+                    if (RVFlagID == recvoucherid) {
+                        varTotalAssignAmt = varTotalAssignAmt + Number($('#amount' + i).val())
+                    }
+                }
+                if ( recvoucherid != '') {
+                    var varFinalBalance = Number(BalanceAmount) - Number(varTotalAssignAmt);
+
+                    $('#balance' + index).val(varFinalBalance);
+                }
+                else {
+                    $('#balance' + index).val(0);
+                }
+            } catch (e) {
+                $('#balance' + index).val(0);
+            }
+        }
+        else
+        {
+            try {
+                var varexpid = $('#exp' + index).val();
+                var recvoucherid = $('#voucher' + index).val();
+                var varTotalAssignAmt = 0;
+
+                for (var i = 1; i <= index; i++) {
+                    var FlagID = $('#exp' + i).val();
+                    var RVFlagID = $('#voucher' + i).val();
+                    if (FlagID == varexpid && RVFlagID == recvoucherid) {
+                        varTotalAssignAmt = varTotalAssignAmt + Number($('#amount' + i).val())
+                    }
+                }
+                if (varexpid != '' && recvoucherid != '') {
+                    var varFinalBalance = Number(BalanceAmount) - Number(varTotalAssignAmt);
+
+                    $('#balance' + index).val(varFinalBalance);
+                }
+                else {
+                    $('#balance' + index).val(0);
+                }
+            } catch (e) {
+                $('#balance' + index).val(0);
+            }
+        }
+        
+
+    }
+
+
+
+    function GenerateGST(index) {
+
+        try {
+            var igst = 0;
+            var gst = 0;
+            var cgst = 0;
+            var sgst = 0;
+            var id = $('#hsn' + index).val();
+            var hsns = JSON.parse($('#HSN').val());
+            var gst = $.grep(hsns, function (item) { return item.HSNId == id; })[0].GST;
+            var partygstno = $('#GSTNo').val().substr(0, 2);
+            var owngstno = $('#ComGST').val().substr(0, 2);
+            if (partygstno == owngstno) {
+                cgst = gst / 2;
+                sgst = gst / 2;
+            }
+            else {
+                var igst = gst;
+            }
+            $('#igst' + index).val(igst);
+            $('#cgst' + index).val(cgst);
+            $('#sgst' + index).val(sgst);
+        }
+        catch (e) { }
+    }
+
+    function ValidateAndCalculate(index, evt) {
+        evt = (evt) ? evt : window.event;
+        var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if (charCode != 46 && charCode > 31 && (charCode < 48 || charCode > 57)) {
+            alert("Allow only numbers");
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
+
+    function ChangeExpenceHead(index)
+    {
+        debugger;
+        $('#balance' + index).val(0);
+        $('#amt' + index).val(0);
+        $('#igst' + index).val('');
+        $('#cgst' + index).val('');
+        $('#sgst' + index).val('');
+        $('#igstamt' + index).val('');
+        $('#cgstamt' + index).val('');
+        $('#sgstamt' + index).val('');
+        $('#amount' + index).val('');
+
+        var tigst = 0;
+        var tcgst = 0;
+        var tsgst = 0;
+        var igstamt = 0;
+        var cgstamt = 0;
+        var sgstamt = 0;
+        var gtotal = 0;
+        for (var i = 1; i <= index; i++) {
+            tigst += Number($('#igst' + i).val() == '' ? 0 : $('#igst' + i).val());
+            tcgst += Number($('#cgst' + i).val() == '' ? 0 : $('#cgst' + i).val());
+            tsgst += Number($('#sgst' + i).val() == '' ? 0 : $('#sgst' + i).val());
+            igstamt += Number($('#igstamt' + i).val() == '' ? 0 : $('#igstamt' + i).val());
+            cgstamt += Number($('#cgstamt' + i).val() == '' ? 0 : $('#cgstamt' + i).val());
+            sgstamt += Number($('#sgstamt' + i).val() == '' ? 0 : $('#sgstamt' + i).val());
+            gtotal += Number($('#amount' + i).val() == '' ? 0 : $('#amount' + i).val());
+        }
+        
+        $('#tigst').val(igstamt.toFixed(2));
+        $('#tcgst').val(cgstamt.toFixed(2));
+        $('#tsgst').val(sgstamt.toFixed(2));
+        $('#TotalAmount').val(gtotal.toFixed(2));
+        $('#voucher' + index).html('<option value="">--- Select ---</option>');
+    }
+    function BindJSON(index) {
+
+
+        debugger;
+
+        var varbalanceInHand = Number($('#balance' + index).val());
+
+        var varAmt = Number($('#amt' + index).val());
+
+
+
+       // if ($('#Purpose').val() == 'Temporary Advance') {
+
+
+
+            if (varbalanceInHand >= varAmt) {
+
+
+                var val = Number($('#amt' + index).val());
+                var igst = Number($('#igst' + index).val());
+                var cgst = Number($('#cgst' + index).val());
+                var sgst = Number($('#sgst' + index).val());
+                if (igst > 0) {
+                    var igstamt = Number($('#igstamt' + index).val(val * igst / 100));
+                }
+                else {
+                    var igstamt = 0;
+                }
+                if (cgst > 0) {
+                    var cgstamt = Number($('#cgstamt' + index).val(val * cgst / 100));
+                }
+                else {
+                    var cgstamt = 0;
+                }
+                if (sgst > 0) {
+                    var sgstamt = Number($('#sgstamt' + index).val(val * sgst / 100));
+                }
+                else {
+                    var sgstamt = 0;
+                }
+                
+                var total = val + Number($('#igstamt' + index).val()) + Number($('#cgstamt' + index).val()) + Number($('#sgstamt' + index).val());
+                $('#amount' + index).val(total.toFixed(2));
+
+                var orgJson = $('#ExpensesJson').val() == '' ? [] : JSON.parse($('#ExpensesJson').val());
+
+                if (orgJson.length > 0) {
+                    orgJson[index - 1].ExpId = Number($('#exp' + index).val());
+                    orgJson[index - 1].HsnId = Number($('#hsn' + index).val());
+                    orgJson[index - 1].ReceiptId = Number($('#voucher' + index).val());
+                    orgJson[index - 1].Amount = Number($('#amt' + index).val());
+                    orgJson[index - 1].IGST = Number($('#igst' + index).val());
+                    orgJson[index - 1].CGST = Number($('#cgst' + index).val());
+                    orgJson[index - 1].SGST = Number($('#sgst' + index).val());
+                    orgJson[index - 1].IGSTAmt = Number($('#igstamt' + index).val());
+                    orgJson[index - 1].CGSTAmt = Number($('#cgstamt' + index).val());
+                    orgJson[index - 1].SGSTAmt = Number($('#sgstamt' + index).val());
+                }
+
+
+                $('#ExpensesJson').val(JSON.stringify(orgJson));
+
+                var tigst = 0;
+                var tcgst = 0;
+                var tsgst = 0;
+                var igstamt = 0;
+                var cgstamt = 0;
+                var sgstamt = 0;
+                var gtotal = 0;
+                for (var i = 1; i <= index; i++) {
+                    tigst += Number($('#igst' + i).val());
+                    tcgst += Number($('#cgst' + i).val());
+                    tsgst += Number($('#sgst' + i).val());
+                    igstamt += Number($('#igstamt' + i).val());
+                    cgstamt += Number($('#cgstamt' + i).val());
+                    sgstamt += Number($('#sgstamt' + i).val());
+                    gtotal += Number($('#amount' + i).val());
+                }
+                //$('#tigst').val(tigst.toFixed(2));
+                //$('#tcgst').val(tcgst.toFixed(2));
+                //$('#tsgst').val(tsgst.toFixed(2));
+                $('#tigst').val(igstamt.toFixed(2));
+                $('#tcgst').val(cgstamt.toFixed(2));
+                $('#tsgst').val(sgstamt.toFixed(2));
+                $('#TotalAmount').val(gtotal.toFixed(2));
+            }
+            else {
+                alert('Can not excess amount payment');
+                $('#amt' + index).val(0);
+                var val = Number($('#amt' + index).val());
+                var igst = Number($('#igst' + index).val());
+                var cgst = Number($('#cgst' + index).val());
+                var sgst = Number($('#sgst' + index).val());
+                var igstamt = Number($('#igstamt' + index).val(val * igst / 100));
+                var cgstamt = Number($('#cgstamt' + index).val(val * cgst / 100));
+                var sgstamt = Number($('#sgstamt' + index).val(val * sgst / 100));
+                var total = val + Number($('#igstamt' + index).val()) + Number($('#cgstamt' + index).val()) + Number($('#sgstamt' + index).val());
+                $('#amount' + index).val(total.toFixed(2));
+
+                var orgJson = $('#ExpensesJson').val() == '' ? [] : JSON.parse($('#ExpensesJson').val());
+
+                if (orgJson.length > 0) {
+                    orgJson[index - 1].ExpId = Number($('#exp' + index).val());
+                    orgJson[index - 1].HsnId = Number($('#hsn' + index).val());
+                    orgJson[index - 1].ReceiptId = Number($('#voucher' + index).val());
+                    orgJson[index - 1].Amount = Number($('#amt' + index).val());
+                    orgJson[index - 1].IGST = Number($('#igst' + index).val());
+                    orgJson[index - 1].CGST = Number($('#cgst' + index).val());
+                    orgJson[index - 1].SGST = Number($('#sgst' + index).val());
+                    orgJson[index - 1].IGSTAmt = Number($('#igstamt' + index).val());
+                    orgJson[index - 1].CGSTAmt = Number($('#cgstamt' + index).val());
+                    orgJson[index - 1].SGSTAmt = Number($('#sgstamt' + index).val());
+                }
+
+
+                $('#ExpensesJson').val(JSON.stringify(orgJson));
+
+                var tigst = 0;
+                var tcgst = 0;
+                var tsgst = 0;
+                var igstamt = 0;
+                var cgstamt = 0;
+                var sgstamt = 0;
+                var gtotal = 0;
+                for (var i = 1; i <= index; i++) {
+                  
+                    igstamt += Number($('#igstamt' + i).val());
+                    cgstamt += Number($('#cgstamt' + i).val());
+                    sgstamt += Number($('#sgstamt' + i).val());
+                    gtotal += Number($('#amount' + i).val());
+                }
+              
+                $('#tigst').val(igstamt.toFixed(2));
+                $('#tcgst').val(cgstamt.toFixed(2));
+                $('#tsgst').val(sgstamt.toFixed(2));
+                $('#TotalAmount').val(gtotal.toFixed(2));
+
+
+            }
+       
+    }
+
+    function BindIgstJSON(index) {
+        debugger;
+
+        var varbalanceInHand = Number($('#balance' + index).val());
+        var varAmt = Number($('#amt' + index).val());
+        if (varAmt > 0)
+        {
+            var val = Number($('#amt' + index).val());
+            var pigst = Number($('#igst' + index).val() == '' ? 0 : $('#igst' + index).val());
+            var pcgst = Number($('#cgst' + index).val() == '' ? 0 : $('#cgst' + index).val());
+            var psgst = Number($('#sgst' + index).val() == '' ? 0 : $('#sgst' + index).val());           
+            var figstamt=0;           
+            if (pigst > 0) {
+                figstamt = (val * (pigst / 100)).toFixed(2);
+                $('#igst' + index).val(pigst);
+                $('#igstamt' + index).val(figstamt)
+                var igstamt = Number(figstamt);
+            }            
+            else {
+                var igstamt = 0;
+            }
+            var cgstamt = Number($('#cgstamt' + index).val() == '' ? 0 : $('#cgstamt' + index).val());
+            var sgstamt = Number($('#sgstamt' + index).val() == '' ? 0 : $('#sgstamt' + index).val());
+            
+            var total = val + igstamt + cgstamt + sgstamt;
+            if (total <= varbalanceInHand)
+            {
+                debugger;
+                $('#amount' + index).val(total.toFixed(2));
+
+
+                var orgJson = $('#ExpensesJson').val() == '' ? [] : JSON.parse($('#ExpensesJson').val());
+
+                if (orgJson.length > 0) {
+                    orgJson[index - 1].ExpId = Number($('#exp' + index).val());
+                    orgJson[index - 1].HsnId = Number($('#hsn' + index).val());
+                    orgJson[index - 1].ReceiptId = Number($('#voucher' + index).val());
+                    orgJson[index - 1].Amount = Number($('#amt' + index).val());
+                    orgJson[index - 1].IGST = Number($('#igst' + index).val());
+                    orgJson[index - 1].CGST = Number($('#cgst' + index).val());
+                    orgJson[index - 1].SGST = Number($('#sgst' + index).val());
+                    orgJson[index - 1].IGSTAmt = Number($('#igstamt' + index).val());
+                    orgJson[index - 1].CGSTAmt = Number($('#cgstamt' + index).val());
+                    orgJson[index - 1].SGSTAmt = Number($('#sgstamt' + index).val());
+                }
+
+
+                $('#ExpensesJson').val(JSON.stringify(orgJson));
+
+                var tigst = 0;
+                var tcgst = 0;
+                var tsgst = 0;
+                var igstamt = 0;
+                var cgstamt = 0;
+                var sgstamt = 0;
+                var gtotal = 0;
+                for (var i = 1; i <= index; i++) {
+                    tigst += Number($('#igst' + i).val());
+                    tcgst += Number($('#cgst' + i).val());
+                    tsgst += Number($('#sgst' + i).val());
+                    igstamt += Number($('#igstamt' + i).val());
+                    cgstamt += Number($('#cgstamt' + i).val());
+                    sgstamt += Number($('#sgstamt' + i).val());
+                    gtotal += Number($('#amount' + i).val());
+                }
+
+                $('#tigst').val(igstamt.toFixed(2));
+                $('#tcgst').val(cgstamt.toFixed(2));
+                $('#tsgst').val(sgstamt.toFixed(2));
+                $('#TotalAmount').val(gtotal.toFixed(2));
+            }
+            else
+            {
+                $('#igstamt' + index).val(0);
+                $('#igst' + index).val(0);
+                alert('Can not excess amount payment');
+                //return false;
+                               
+            }
+            
+        }
+        else
+        {
+            $('#igstamt' + index).val(0);
+            $('#igst' + index).val(0);
+            alert('Payment Amount should be greater than 0');
+            //return false;
+        }
+
+        
+    }
+    function BindIgstAmtJSON(index) {
+        debugger;
+
+        var varbalanceInHand = Number($('#balance' + index).val());
+        var varAmt = Number($('#amt' + index).val());
+        if (varAmt > 0) {
+            var val = Number($('#amt' + index).val());
+           
+            var pcgst = Number($('#cgst' + index).val() == '' ? 0 : $('#cgst' + index).val());
+            var psgst = Number($('#sgst' + index).val() == '' ? 0 : $('#sgst' + index).val());
+            var gstamt = 0;
+           
+            gstamt = Number($('#igstamt' + index).val() == '' ? 0 : $('#igstamt' + index).val());
+            
+            if (gstamt > 0) {
+                var igstamt = gstamt;
+                //$('#igst' + index).val(0);
+            }
+            else {
+                var igstamt = 0;
+            }
+            var cgstamt = Number($('#cgstamt' + index).val() == '' ? 0 : $('#cgstamt' + index).val());
+            var sgstamt = Number($('#sgstamt' + index).val() == '' ? 0 : $('#sgstamt' + index).val());
+
+            var total = val + igstamt + cgstamt + sgstamt;
+            if (total <= varbalanceInHand) {
+                $('#amount' + index).val(total.toFixed(2));
+
+
+                var orgJson = $('#ExpensesJson').val() == '' ? [] : JSON.parse($('#ExpensesJson').val());
+
+                if (orgJson.length > 0) {
+                    orgJson[index - 1].ExpId = Number($('#exp' + index).val());
+                    orgJson[index - 1].HsnId = Number($('#hsn' + index).val());
+                    orgJson[index - 1].ReceiptId = Number($('#voucher' + index).val());
+                    orgJson[index - 1].Amount = Number($('#amt' + index).val());
+                    orgJson[index - 1].IGST = Number($('#igst' + index).val());
+                    orgJson[index - 1].CGST = Number($('#cgst' + index).val());
+                    orgJson[index - 1].SGST = Number($('#sgst' + index).val());
+                    orgJson[index - 1].IGSTAmt = Number($('#igstamt' + index).val());
+                    orgJson[index - 1].CGSTAmt = Number($('#cgstamt' + index).val());
+                    orgJson[index - 1].SGSTAmt = Number($('#sgstamt' + index).val());
+                }
+
+
+                $('#ExpensesJson').val(JSON.stringify(orgJson));
+
+                var tigst = 0;
+                var tcgst = 0;
+                var tsgst = 0;
+                var igstamt = 0;
+                var cgstamt = 0;
+                var sgstamt = 0;
+                var gtotal = 0;
+                for (var i = 1; i <= index; i++) {
+                    tigst += Number($('#igst' + i).val());
+                    tcgst += Number($('#cgst' + i).val());
+                    tsgst += Number($('#sgst' + i).val());
+                    igstamt += Number($('#igstamt' + i).val());
+                    cgstamt += Number($('#cgstamt' + i).val());
+                    sgstamt += Number($('#sgstamt' + i).val());
+                    gtotal += Number($('#amount' + i).val());
+                }
+
+                $('#tigst').val(igstamt.toFixed(2));
+                $('#tcgst').val(cgstamt.toFixed(2));
+                $('#tsgst').val(sgstamt.toFixed(2));
+                $('#TotalAmount').val(gtotal.toFixed(2));
+            }
+            else {
+                $('#igstamt' + index).val(0);
+                $('#igst' + index).val(0);
+                alert('Can not excess amount payment');
+                //return false;
+
+            }
+
+        }
+        else {
+            $('#igstamt' + index).val(0);
+            $('#igst' + index).val(0);
+            alert('Payment Amount should be greater than 0');
+            //return false;
+        }
+
+
+    }
+    function BindCgstJSON(index) {
+        debugger;
+
+        var varbalanceInHand = Number($('#balance' + index).val());
+        var varAmt = Number($('#amt' + index).val());
+        if (varAmt > 0) {
+            var val = Number($('#amt' + index).val());
+            var pigst = Number($('#igst' + index).val() == '' ? 0 : $('#igst' + index).val());
+            var pcgst = Number($('#cgst' + index).val() == '' ? 0 : $('#cgst' + index).val());
+            var psgst = Number($('#sgst' + index).val() == '' ? 0 : $('#sgst' + index).val());            
+            var fcgstamt = 0;
+           
+            if (pcgst > 0) {
+                fcgstamt = (val * (pcgst / 100)).toFixed(2);
+                $('#cgst' + index).val(pcgst);
+                $('#cgstamt' + index).val(fcgstamt)
+                var cgstamt = Number(fcgstamt);
+            }            
+            else {
+                var cgstamt = 0;
+            }
+            var igstamt = Number($('#igstamt' + index).val() == '' ? 0 : $('#igstamt' + index).val());
+            var sgstamt = Number($('#sgstamt' + index).val() == '' ? 0 : $('#sgstamt' + index).val());
+
+            var total = val + igstamt + cgstamt + sgstamt;
+            if (total <= varbalanceInHand) {
+                $('#amount' + index).val(total.toFixed(2));
+
+
+                var orgJson = $('#ExpensesJson').val() == '' ? [] : JSON.parse($('#ExpensesJson').val());
+
+                if (orgJson.length > 0) {
+                    orgJson[index - 1].ExpId = Number($('#exp' + index).val());
+                    orgJson[index - 1].HsnId = Number($('#hsn' + index).val());
+                    orgJson[index - 1].ReceiptId = Number($('#voucher' + index).val());
+                    orgJson[index - 1].Amount = Number($('#amt' + index).val());
+                    orgJson[index - 1].IGST = Number($('#igst' + index).val());
+                    orgJson[index - 1].CGST = Number($('#cgst' + index).val());
+                    orgJson[index - 1].SGST = Number($('#sgst' + index).val());
+                    orgJson[index - 1].IGSTAmt = Number($('#igstamt' + index).val());
+                    orgJson[index - 1].CGSTAmt = Number($('#cgstamt' + index).val());
+                    orgJson[index - 1].SGSTAmt = Number($('#sgstamt' + index).val());
+                }
+
+
+                $('#ExpensesJson').val(JSON.stringify(orgJson));
+
+                var tigst = 0;
+                var tcgst = 0;
+                var tsgst = 0;
+                var igstamt = 0;
+                var cgstamt = 0;
+                var sgstamt = 0;
+                var gtotal = 0;
+                for (var i = 1; i <= index; i++) {
+                    tigst += Number($('#igst' + i).val());
+                    tcgst += Number($('#cgst' + i).val());
+                    tsgst += Number($('#sgst' + i).val());
+                    igstamt += Number($('#igstamt' + i).val());
+                    cgstamt += Number($('#cgstamt' + i).val());
+                    sgstamt += Number($('#sgstamt' + i).val());
+                    gtotal += Number($('#amount' + i).val());
+                }
+
+                $('#tigst').val(igstamt.toFixed(2));
+                $('#tcgst').val(cgstamt.toFixed(2));
+                $('#tsgst').val(sgstamt.toFixed(2));
+                $('#TotalAmount').val(gtotal.toFixed(2));
+            }
+            else {
+                $('#cgstamt' + index).val(0);
+                $('#cgst' + index).val(0);
+                alert('Can not excess amount payment');
+                //return false;
+
+            }
+
+        }
+        else {
+            $('#cgstamt' + index).val(0);
+            $('#cgst' + index).val(0);
+            alert('Payment Amount should be greater than 0');
+            //return false;
+        }
+
+
+    }
+    function BindCgstAmtJSON(index) {
+        debugger;
+
+        var varbalanceInHand = Number($('#balance' + index).val());
+        var varAmt = Number($('#amt' + index).val());
+        if (varAmt > 0) {
+            var val = Number($('#amt' + index).val());
+
+            var pigst = Number($('#igst' + index).val() == '' ? 0 : $('#igst' + index).val());
+            var psgst = Number($('#sgst' + index).val() == '' ? 0 : $('#sgst' + index).val());
+            var gstamt = 0;
+
+            gstamt = Number($('#cgstamt' + index).val() == '' ? 0 : $('#cgstamt' + index).val());
+
+            if (gstamt > 0) {
+                var cgstamt = gstamt;
+               // $('#cgst' + index).val(0);
+            }
+            else {
+                var cgstamt = 0;
+            }
+            var igstamt = Number($('#igstamt' + index).val() == '' ? 0 : $('#igstamt' + index).val());
+            var sgstamt = Number($('#sgstamt' + index).val() == '' ? 0 : $('#sgstamt' + index).val());
+
+            var total = val + igstamt + cgstamt + sgstamt;
+            if (total <= varbalanceInHand) {
+                $('#amount' + index).val(total.toFixed(2));
+
+
+                var orgJson = $('#ExpensesJson').val() == '' ? [] : JSON.parse($('#ExpensesJson').val());
+
+                if (orgJson.length > 0) {
+                    orgJson[index - 1].ExpId = Number($('#exp' + index).val());
+                    orgJson[index - 1].HsnId = Number($('#hsn' + index).val());
+                    orgJson[index - 1].ReceiptId = Number($('#voucher' + index).val());
+                    orgJson[index - 1].Amount = Number($('#amt' + index).val());
+                    orgJson[index - 1].IGST = Number($('#igst' + index).val());
+                    orgJson[index - 1].CGST = Number($('#cgst' + index).val());
+                    orgJson[index - 1].SGST = Number($('#sgst' + index).val());
+                    orgJson[index - 1].IGSTAmt = Number($('#igstamt' + index).val());
+                    orgJson[index - 1].CGSTAmt = Number($('#cgstamt' + index).val());
+                    orgJson[index - 1].SGSTAmt = Number($('#sgstamt' + index).val());
+                }
+
+
+                $('#ExpensesJson').val(JSON.stringify(orgJson));
+
+                var tigst = 0;
+                var tcgst = 0;
+                var tsgst = 0;
+                var igstamt = 0;
+                var cgstamt = 0;
+                var sgstamt = 0;
+                var gtotal = 0;
+                for (var i = 1; i <= index; i++) {
+                    tigst += Number($('#igst' + i).val());
+                    tcgst += Number($('#cgst' + i).val());
+                    tsgst += Number($('#sgst' + i).val());
+                    igstamt += Number($('#igstamt' + i).val());
+                    cgstamt += Number($('#cgstamt' + i).val());
+                    sgstamt += Number($('#sgstamt' + i).val());
+                    gtotal += Number($('#amount' + i).val());
+                }
+
+                $('#tigst').val(igstamt.toFixed(2));
+                $('#tcgst').val(cgstamt.toFixed(2));
+                $('#tsgst').val(sgstamt.toFixed(2));
+                $('#TotalAmount').val(gtotal.toFixed(2));
+            }
+            else {
+                $('#cgstamt' + index).val(0);
+                $('#cgst' + index).val(0);
+                alert('Can not excess amount payment');
+                //return false;
+
+            }
+
+        }
+        else {
+            $('#cgstamt' + index).val(0);
+            $('#cgst' + index).val(0);
+            alert('Payment Amount should be greater than 0');
+            //return false;
+        }
+
+
+    }
+    function BindSgstJSON(index) {
+        debugger;
+
+        var varbalanceInHand = Number($('#balance' + index).val());
+        var varAmt = Number($('#amt' + index).val());
+        if (varAmt > 0) {
+            var val = Number($('#amt' + index).val());
+            var pigst = Number($('#igst' + index).val() == '' ? 0 : $('#igst' + index).val());
+            var pcgst = Number($('#cgst' + index).val() == '' ? 0 : $('#cgst' + index).val());
+            var psgst = Number($('#sgst' + index).val() == '' ? 0 : $('#sgst' + index).val());
+            
+            var fsgstamt = 0;           
+            if (psgst > 0) {
+                fsgstamt = (val * (psgst / 100)).toFixed(2);
+                $('#sgst' + index).val(psgst);
+                $('#sgstamt' + index).val(fsgstamt)
+                var sgstamt = Number(fsgstamt);
+            }            
+            else {
+                var sgstamt = 0;
+            }
+            var cgstamt = Number($('#cgstamt' + index).val() == '' ? 0 : $('#cgstamt' + index).val());
+            var igstamt = Number($('#igstamt' + index).val() == '' ? 0 : $('#igstamt' + index).val());
+
+            var total = val + igstamt + cgstamt + sgstamt;
+            if (total <= varbalanceInHand) {
+                $('#amount' + index).val(total.toFixed(2));
+
+
+                var orgJson = $('#ExpensesJson').val() == '' ? [] : JSON.parse($('#ExpensesJson').val());
+
+                if (orgJson.length > 0) {
+                    orgJson[index - 1].ExpId = Number($('#exp' + index).val());
+                    orgJson[index - 1].HsnId = Number($('#hsn' + index).val());
+                    orgJson[index - 1].ReceiptId = Number($('#voucher' + index).val());
+                    orgJson[index - 1].Amount = Number($('#amt' + index).val());
+                    orgJson[index - 1].IGST = Number($('#igst' + index).val());
+                    orgJson[index - 1].CGST = Number($('#cgst' + index).val());
+                    orgJson[index - 1].SGST = Number($('#sgst' + index).val());
+                    orgJson[index - 1].IGSTAmt = Number($('#igstamt' + index).val());
+                    orgJson[index - 1].CGSTAmt = Number($('#cgstamt' + index).val());
+                    orgJson[index - 1].SGSTAmt = Number($('#sgstamt' + index).val());
+                }
+
+
+                $('#ExpensesJson').val(JSON.stringify(orgJson));
+
+                var tigst = 0;
+                var tcgst = 0;
+                var tsgst = 0;
+                var igstamt = 0;
+                var cgstamt = 0;
+                var sgstamt = 0;
+                var gtotal = 0;
+                for (var i = 1; i <= index; i++) {
+                    tigst += Number($('#igst' + i).val());
+                    tcgst += Number($('#cgst' + i).val());
+                    tsgst += Number($('#sgst' + i).val());
+                    igstamt += Number($('#igstamt' + i).val());
+                    cgstamt += Number($('#cgstamt' + i).val());
+                    sgstamt += Number($('#sgstamt' + i).val());
+                    gtotal += Number($('#amount' + i).val());
+                }
+
+                $('#tigst').val(igstamt.toFixed(2));
+                $('#tcgst').val(cgstamt.toFixed(2));
+                $('#tsgst').val(sgstamt.toFixed(2));
+                $('#TotalAmount').val(gtotal.toFixed(2));
+            }
+            else {
+                $('#sgstamt' + index).val(0);
+                $('#sgst' + index).val(0);
+                alert('Can not excess amount payment');
+                //return false;
+
+            }
+
+        }
+        else {
+            $('#sgstamt' + index).val(0);
+            $('#sgst' + index).val(0);
+            alert('Payment Amount should be greater than 0');
+            //return false;
+        }
+
+
+    }
+    function BindSgstAmtJSON(index) {
+        debugger;
+
+        var varbalanceInHand = Number($('#balance' + index).val());
+        var varAmt = Number($('#amt' + index).val());
+        if (varAmt > 0) {
+            var val = Number($('#amt' + index).val());
+
+            var pcgst = Number($('#cgst' + index).val() == '' ? 0 : $('#cgst' + index).val());
+            var pigst = Number($('#igst' + index).val() == '' ? 0 : $('#igst' + index).val());
+            var gstamt = 0;
+
+            gstamt = Number($('#sgstamt' + index).val() == '' ? 0 : $('#sgstamt' + index).val());
+
+            if (gstamt > 0) {
+                var sgstamt = gstamt;
+                //$('#sgst' + index).val(0);
+            }
+            else {
+                var sgstamt = 0;
+            }
+            var cgstamt = Number($('#cgstamt' + index).val() == '' ? 0 : $('#cgstamt' + index).val());
+            var igstamt = Number($('#igstamt' + index).val() == '' ? 0 : $('#igstamt' + index).val());
+
+            var total = val + igstamt + cgstamt + sgstamt;
+            if (total <= varbalanceInHand) {
+                $('#amount' + index).val(total.toFixed(2));
+
+
+                var orgJson = $('#ExpensesJson').val() == '' ? [] : JSON.parse($('#ExpensesJson').val());
+
+                if (orgJson.length > 0) {
+                    orgJson[index - 1].ExpId = Number($('#exp' + index).val());
+                    orgJson[index - 1].HsnId = Number($('#hsn' + index).val());
+                    orgJson[index - 1].ReceiptId = Number($('#voucher' + index).val());
+                    orgJson[index - 1].Amount = Number($('#amt' + index).val());
+                    orgJson[index - 1].IGST = Number($('#igst' + index).val());
+                    orgJson[index - 1].CGST = Number($('#cgst' + index).val());
+                    orgJson[index - 1].SGST = Number($('#sgst' + index).val());
+                    orgJson[index - 1].IGSTAmt = Number($('#igstamt' + index).val());
+                    orgJson[index - 1].CGSTAmt = Number($('#cgstamt' + index).val());
+                    orgJson[index - 1].SGSTAmt = Number($('#sgstamt' + index).val());
+                }
+
+
+                $('#ExpensesJson').val(JSON.stringify(orgJson));
+
+                var tigst = 0;
+                var tcgst = 0;
+                var tsgst = 0;
+                var igstamt = 0;
+                var cgstamt = 0;
+                var sgstamt = 0;
+                var gtotal = 0;
+                for (var i = 1; i <= index; i++) {
+                    tigst += Number($('#igst' + i).val());
+                    tcgst += Number($('#cgst' + i).val());
+                    tsgst += Number($('#sgst' + i).val());
+                    igstamt += Number($('#igstamt' + i).val());
+                    cgstamt += Number($('#cgstamt' + i).val());
+                    sgstamt += Number($('#sgstamt' + i).val());
+                    gtotal += Number($('#amount' + i).val());
+                }
+
+                $('#tigst').val(igstamt.toFixed(2));
+                $('#tcgst').val(cgstamt.toFixed(2));
+                $('#tsgst').val(sgstamt.toFixed(2));
+                $('#TotalAmount').val(gtotal.toFixed(2));
+            }
+            else {
+                $('#sgstamt' + index).val(0);
+                $('#sgst' + index).val(0);
+                alert('Can not excess amount payment');
+                //return false;
+
+            }
+
+        }
+        else {
+            $('#sgstamt' + index).val(0);
+            $('#sgst' + index).val(0);
+            alert('Payment Amount should be greater than 0');
+            //return false;
+        }
+
+
+    }
+
+
+
+    //function BindCgstJSON(index) {
+
+
+    //    debugger;
+    //    var val = Number($('#amt' + index).val());
+    //    var igst = Number($('#igst' + index).val());
+    //    var cgst = Number($('#cgst' + index).val());
+    //    var sgst = Number($('#sgst' + index).val());
+        
+    //    var cgstamt = Number($('#cgstamt' + index).val(val * cgst / 100));
+       
+    //    var total = val + Number($('#igstamt' + index).val()) + Number($('#cgstamt' + index).val()) + Number($('#sgstamt' + index).val());
+    //    $('#amount' + index).val(total.toFixed(2));
+
+    //    var orgJson = $('#ExpensesJson').val() == '' ? [] : JSON.parse($('#ExpensesJson').val());
+
+    //    if (orgJson.length > 0) {
+    //        orgJson[index - 1].ExpId = Number($('#exp' + index).val());
+    //        orgJson[index - 1].HsnId = Number($('#hsn' + index).val());
+    //        orgJson[index - 1].ReceiptId = Number($('#voucher' + index).val());
+    //        orgJson[index - 1].Amount = Number($('#amt' + index).val());
+    //        orgJson[index - 1].IGST = Number($('#igst' + index).val());
+    //        orgJson[index - 1].CGST = Number($('#cgst' + index).val());
+    //        orgJson[index - 1].SGST = Number($('#sgst' + index).val());
+    //        orgJson[index - 1].IGSTAmt = Number($('#igstamt' + index).val());
+    //        orgJson[index - 1].CGSTAmt = Number($('#cgstamt' + index).val());
+    //        orgJson[index - 1].SGSTAmt = Number($('#sgstamt' + index).val());
+    //    }
+
+
+    //    $('#ExpensesJson').val(JSON.stringify(orgJson));
+
+    //    var tigst = 0;
+    //    var tcgst = 0;
+    //    var tsgst = 0;
+    //    var igstamt = 0;
+    //    var cgstamt = 0;
+    //    var sgstamt = 0;
+    //    var gtotal = 0;
+    //    for (var i = 1; i <= index; i++) {
+    //        tigst += Number($('#igst' + i).val());
+    //        tcgst += Number($('#cgst' + i).val());
+    //        tsgst += Number($('#sgst' + i).val());
+    //        igstamt += Number($('#igstamt' + i).val());
+    //        cgstamt += Number($('#cgstamt' + i).val());
+    //        sgstamt += Number($('#sgstamt' + i).val());
+    //        gtotal += Number($('#amount' + i).val());
+    //    }
+       
+    //    $('#tigst').val(igstamt.toFixed(2));
+    //    $('#tcgst').val(cgstamt.toFixed(2));
+    //    $('#tsgst').val(sgstamt.toFixed(2));
+    //    $('#TotalAmount').val(gtotal.toFixed(2));
+    //}
+
+    //function BindSgstJSON(index) {
+
+
+    //    debugger;
+    //    var val = Number($('#amt' + index).val());
+    //    var igst = Number($('#igst' + index).val());
+    //    var cgst = Number($('#cgst' + index).val());
+    //    var sgst = Number($('#sgst' + index).val());
+    //    //var igstamt = Number($('#igstamt' + index).val(val * igst / 100));
+    //    // var cgstamt = Number($('#cgstamt' + index).val(val * cgst / 100));
+    //    var sgstamt = Number($('#sgstamt' + index).val(val * sgst / 100));
+    //    var total = val + Number($('#igstamt' + index).val()) + Number($('#cgstamt' + index).val()) + Number($('#sgstamt' + index).val());
+    //    $('#amount' + index).val(total.toFixed(2));
+
+    //    var orgJson = $('#ExpensesJson').val() == '' ? [] : JSON.parse($('#ExpensesJson').val());
+
+    //    if (orgJson.length > 0) {
+    //        orgJson[index - 1].ExpId = Number($('#exp' + index).val());
+    //        orgJson[index - 1].HsnId = Number($('#hsn' + index).val());
+    //        orgJson[index - 1].ReceiptId = Number($('#voucher' + index).val());
+    //        orgJson[index - 1].Amount = Number($('#amt' + index).val());
+    //        orgJson[index - 1].IGST = Number($('#igst' + index).val());
+    //        orgJson[index - 1].CGST = Number($('#cgst' + index).val());
+    //        orgJson[index - 1].SGST = Number($('#sgst' + index).val());
+    //        orgJson[index - 1].IGSTAmt = Number($('#igstamt' + index).val());
+    //        orgJson[index - 1].CGSTAmt = Number($('#cgstamt' + index).val());
+    //        orgJson[index - 1].SGSTAmt = Number($('#sgstamt' + index).val());
+    //    }
+
+
+    //    $('#ExpensesJson').val(JSON.stringify(orgJson));
+
+    //    var tigst = 0;
+    //    var tcgst = 0;
+    //    var tsgst = 0;
+    //    var igstamt = 0;
+    //    var cgstamt = 0;
+    //    var sgstamt = 0;
+    //    var gtotal = 0;
+    //    for (var i = 1; i <= index; i++) {
+    //        tigst += Number($('#igst' + i).val());
+    //        tcgst += Number($('#cgst' + i).val());
+    //        tsgst += Number($('#sgst' + i).val());
+    //        igstamt += Number($('#igstamt' + i).val());
+    //        cgstamt += Number($('#cgstamt' + i).val());
+    //        sgstamt += Number($('#sgstamt' + i).val());
+    //        gtotal += Number($('#amount' + i).val());
+    //    }
+    //    //$('#tigst').val(tigst.toFixed(2));
+    //    //$('#tcgst').val(tcgst.toFixed(2));
+    //    //$('#tsgst').val(tsgst.toFixed(2));
+    //    //$('#igstamt').val(igstamt.toFixed(2));
+    //    //$('#cgstamt').val(cgstamt.toFixed(2));
+    //    //$('#sgstamt').val(sgstamt.toFixed(2));
+    //    //$('#TotalAmount').val(gtotal.toFixed(2));
+    //    $('#tigst').val(igstamt.toFixed(2));
+    //    $('#tcgst').val(cgstamt.toFixed(2));
+    //    $('#tsgst').val(sgstamt.toFixed(2));
+    //    $('#TotalAmount').val(gtotal.toFixed(2));
+    //}
+
+
+    function BindTotalJSON(index) {
+
+
+        debugger;
+
+        var varbalanceInHand = Number($('#balance' + index).val());
+        var varAmt = Number($('#amt' + index).val());
+
+
+        var val = Number($('#amt' + index).val());
+        var igst = Number($('#igst' + index).val());
+        var cgst = Number($('#cgst' + index).val());
+        var sgst = Number($('#sgst' + index).val());
+        //var igstamt = Number($('#igstamt' + index).val(val * igst / 100));
+        // var cgstamt = Number($('#cgstamt' + index).val(val * cgst / 100));
+        // var sgstamt = Number($('#sgstamt' + index).val(val * sgst / 100));
+        var total = val + Number($('#igstamt' + index).val()) + Number($('#cgstamt' + index).val()) + Number($('#sgstamt' + index).val());
+        $('#amount' + index).val(total.toFixed(2));
+
+        var orgJson = $('#ExpensesJson').val() == '' ? [] : JSON.parse($('#ExpensesJson').val());
+
+        if (orgJson.length > 0) {
+            orgJson[index - 1].ExpId = Number($('#exp' + index).val());
+            orgJson[index - 1].HsnId = Number($('#hsn' + index).val());
+            orgJson[index - 1].ReceiptId = Number($('#voucher' + index).val());
+            orgJson[index - 1].Amount = Number($('#amt' + index).val());
+            orgJson[index - 1].IGST = Number($('#igst' + index).val());
+            orgJson[index - 1].CGST = Number($('#cgst' + index).val());
+            orgJson[index - 1].SGST = Number($('#sgst' + index).val());
+            orgJson[index - 1].IGSTAmt = Number($('#igstamt' + index).val());
+            orgJson[index - 1].CGSTAmt = Number($('#cgstamt' + index).val());
+            orgJson[index - 1].SGSTAmt = Number($('#sgstamt' + index).val());
+        }
+
+
+        $('#ExpensesJson').val(JSON.stringify(orgJson));
+
+        var tigst = 0;
+        var tcgst = 0;
+        var tsgst = 0;
+        var igstamt = 0;
+        var cgstamt = 0;
+        var sgstamt = 0;
+        var gtotal = 0;
+        for (var i = 1; i <= index; i++) {
+            tigst += Number($('#igst' + i).val());
+            tcgst += Number($('#cgst' + i).val());
+            tsgst += Number($('#sgst' + i).val());
+            igstamt += Number($('#igstamt' + i).val());
+            cgstamt += Number($('#cgstamt' + i).val());
+            sgstamt += Number($('#sgstamt' + i).val());
+            gtotal += Number($('#amount' + i).val());
+        }
+       
+        $('#tigst').val(igstamt.toFixed(2));
+        $('#tcgst').val(cgstamt.toFixed(2));
+        $('#tsgst').val(sgstamt.toFixed(2));
+        $('#TotalAmount').val(gtotal.toFixed(2));
+    }
+
+
+    function SelectParty(PartyId, PartyName, Address, State, StateCode, City, Pin, GSTNo) {
+        debugger;
+        $('#Party').val(PartyName);
+        $('#PartyId').val(PartyId);
+        $('#Address').val(Address);
+        $('#State').val(State);
+        $('#StateCode').val(StateCode);
+        $('#City').val(City);
+        $('#Pin').val(Pin);
+        $('#GSTNo').val(GSTNo);
+
+        $("#PartyModal").modal("hide");
+        $('#Address').focus();
+    }
+    $('#CHAbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstCHA > li').show();
+        else {
+            $('#lstCHA > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    function OnSuccess(data) {
+        debugger;
+        alert(data.Message);
+        if (data.Status == 1) {
+            $('#DivBody').load('/CashManagement/VLDA_CashManagement/PaymentVoucher');
+            $('#PVHeadId').val(data.Id);
+            $('#VoucherNo').val(data.Data.VoucherNo);
+            //  $('#BtnPrint').prop('disabled', false);
+            //  PrintVoucher();
+
+            $('#Party').val('');
+            $('#Address').val('');
+            $('#City').val('');
+            $('#State').val('');
+            $('#StateCode').val('');
+            $('#Pin').val('');
+            $('#GSTNo').val('');
+            $('#Narration').val('');
+            $('#ExpTable tbody tr').remove();
+            // $('#isunregister').unchecked();
+            $('#btnnew').attr('disabled', true);
+            $('#TotalAmount').val('');
+            $('#cgstamt').val(0);
+            $('#igstamt').val(0);
+            $('#sgstamt').val(0);
+            $('#Amt').val('');
+            $('#IsUnregister').attr('checked', false);
+            $('#submit').attr('disabled', true);
+
+            GetPVList();
+        }
+    }
+   
+
+    function ResetForm() {
+        $('#DivBody').load('@Url.Action("PaymentVoucher", "VLDA_CashManagement", new { area = "CashManagement" })');
+    }
+
+    function PrintVoucher() {
+        var printTable = "<table style='width:100%; border-style:none;text-align:center;'><tr><td><span style='font-size:10pt;'>CENTRAL WAREHOUSING CORPORATION                      (FORMAT-X)</span><br/><span style='font-size:8pt;'>Principal Place of Business:___________________</span><br/><span style='font-size:10pt;'>Payment Voucher</span></td></tr><tr><td style='text-align:right;font-size:9pt;'><u>ORIGINAL FOR RECIPIENT</u></td></tr></table>";
+        printTable += "<table style='border-collapse:collapse;width:100%;' border='1'><tr><td style='width:50%;'>Details of Service Provider</td><td style='width:50%;'>Details of Service Receiver</td></tr>";
+        printTable += "<tr><td stye='text-align:center;'>Name : Central Warehouse</td><td stye='text-align:center;'>Name : " + $('#Party').val() + "</td></tr>";
+        printTable += "<tr><td>Warehouse Address : </td><td>Address : " + $('#Address').val() + "</td></tr>";
+        printTable += "<tr><td>City : </td><td>City : " + $('#City').val() + "</td></tr>";
+        printTable += "<tr><td>State : </td><td>State : " + $('#State').val() + "</td></tr>";
+        printTable += "<tr><td>State Code : </td><td>State Code : " + $('#StateCode').val() + "</td></tr>";
+        printTable += "<tr><td>GSTIN : " + $('#ComGST').val() + "</td><td>GSTIN (if registered) : " + $('#GSTNo').val() + "</td></tr>";
+        printTable += "<tr><td>PAN : " + $('#ComGST').val() + "</td><td></td></tr>";
+        printTable += "</table>";
+        printTable += "<u>Serial No: " + $('#VoucherNo').val() + "</u><br/>";
+        printTable += "<u>Date: " + $('#PaymentDate').val() + "</u><br/>";
+        printTable += "<strong>For Payment under Reverse Charge</strong>";
+        printTable += "<table style='border-collapse:collapse;width:100%;font-size:9pt;' border='1'><tr><th style='text-align:center'>Sl.No.</th><th style='text-align:center'>Description of Services</th><th style='text-align:center'>Service Accounting Code</th><th style='text-align:center'>Amount Paid</th></tr>";
+
+        var countRow = $('#ExpTable tbody tr').length;
+        var tAmt = 0;
+        var taxObj = [];
+        for (var i = 1; i <= countRow; i++) {
+            printTable += "<tr><td>" + i + "</td><td style='padding:2px;'>" + $('#exp' + i + ' option:selected').text() + "</td><td style='padding:2px;'>" + $('#hsn' + i + ' option:selected').text() + "</td><td style='text-align:right;padding:2px;'>" + $('#amount' + i).val() + "</td></tr>";
+            tAmt += Number($('#amt' + i).val());
+            if (taxObj.length === 0) {
+                if ($('#igst' + i).val() == '0') {
+                    taxObj.push({ 'Cast': 'CGST' + $('#cgst' + i).val(), 'Type': 'CGST', 'Rate': Number($('#cgst' + i).val()), 'Amount': Number($('#cgstamt' + i).val()) });
+                    taxObj.push({ 'Cast': 'SGST' + $('#cgst' + i).val(), 'Type': 'SGST', 'Rate': Number($('#sgst' + i).val()), 'Amount': Number($('#sgstamt' + i).val()) });
+                }
+                else {
+                    taxObj.push({ 'Cast': 'IGST' + $('#cgst' + i).val(), 'Type': 'IGST', 'Rate': Number($('#igst' + i).val()), 'Amount': Number($('#igstamt' + i).val()) });
+                }
+            }
+            else {
+                if ($('#igst' + i).val() == '0') {
+                    var extCGST = $.grep(taxObj, function (e) { return e.Cast == ('CGST' + $('#cgst' + i).val()); });
+                    if (extCGST.length == 0) {
+                        taxObj.push({ 'Cast': 'CGST' + $('#cgst' + i).val(), 'Type': 'CGST', 'Rate': Number($('#cgst' + i).val()), 'Amount': Number($('#cgstamt' + i).val()) });
+                    }
+                    else if (extCGST.length == 1) {
+                        var index = taxObj.indexOf(extCGST[0]);
+                        taxObj[index].Amount += Number($('#cgstamt' + i).val());
+                    }
+                    var extSGST = $.grep(taxObj, function (e) { return e.Cast == ('SGST' + $('#sgst' + i).val()); });
+                    if (extSGST.length == 0) {
+                        taxObj.push({ 'Cast': 'SGST' + $('#sgst' + i).val(), 'Type': 'SGST', 'Rate': Number($('#sgst' + i).val()), 'Amount': Number($('#sgstamt' + i).val()) });
+                    }
+                    else if (extSGST.length == 1) {
+                        var index = taxObj.indexOf(extSGST[0]);
+                        taxObj[index].Amount += Number($('#sgstamt' + i).val());
+                    }
+                }
+                else {
+                    var extIGST = $.grep(taxObj, function (e) { return e.Cast == ('IGST' + $('#igst' + i).val()); });
+                    if (extIGST.length == 0) {
+                        taxObj.push({ 'Cast': 'IGST' + $('#igst' + i).val(), 'Type': 'IGST', 'Rate': Number($('#igst' + i).val()), 'Amount': Number($('#igstamt' + i).val()) });
+                    }
+                    else if (extIGST.length == 1) {
+                        var index = taxObj.indexOf(extIGST[0]);
+                        taxObj[index].Amount += Number($('#igstamt' + i).val());
+                    }
+                }
+            }
+        }
+        printTable += "</table>";
+
+        printTable += "<table style='border-collapse:collapse;width:100%;font-size:9pt;' border='1'><tr><td style='width:50%;'><u>Total Invoice Value (in figure) " + $('#TotalAmount').val() + "<br/>Total Invoice Value (in words) " + CurrentcyToWord(Number($('#TotalAmount').val())) + "</u></td><td style='width:50%;' cellpadding='0' cellspacing='0'>";
+        var dynamicTax = "<table style='border-collapse:collapse;width:100%;font-size:9pt;' border='1'><tr><th colspan='2'>Total Taxable Value</th><th style='text-align:right;'>" + tAmt.toFixed(2) + "</th></tr>";
+        $.each(taxObj, function (i, item) {
+            dynamicTax += "<tr><td>" + item.Type + "</td><td>" + item.Rate + " %</td><td style='text-align:right;'>" + item.Amount + "</td></tr>";
+        });
+        dynamicTax += "<tr><td style='font-weight:bold;' colspan='2'>Total Invoice Amount</td><td style='font-weight:bold;text-align:right;'>" + $('#TotalAmount').val() + "</td></tr></table>";
+        printTable += dynamicTax + "</td></tr></table>";
+        printTable += "<br/><br/><table style='border-collapse:collapse;width:100%;font-size:10pt;' border='0'><tr><td style='width:50%;'></td><td style='width:50%;'><u>Signature:  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;<br/>Name of the Signatory:  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;</u><br/>Designation/Status:</td></tr><tr><td style='width:50%;'>To,<br/><u>  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;<br/>  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;<br/>  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;  &nbsp;</u></td><td style='width:50%;'></td></tr></table>";
+
+        var PostData = new FormData();
+        PostData.append("PVHeadId", $('#PVHeadId').val());
+        PostData.append("page", printTable);
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GeneratePDF", "Kol_CashManagement", new { area = "CashManagement" })',
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                window.open(data.Message + '?t=' + (new Date().getTime()), "_blank", "fullscreen=yes");//"/Docs/PaymentVoucher/" +
+            }
+        });
+    }
+
+    function CurrentcyToWord(s) {
+        var th = ['', 'thousand', 'million', 'billion', 'trillion'];
+        var dg = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+        var tn = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+        var tw = ['twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+        s = s.toString();
+        s = s.replace(/[\, ]/g, '');
+        if (s != parseFloat(s)) return 'not a number';
+        var x = s.indexOf('.');
+        if (x == -1) x = s.length;
+        if (x > 15) return 'too big';
+        var n = s.split('');
+        var str = '';
+        var sk = 0;
+        for (var i = 0; i < x; i++) {
+            if ((x - i) % 3 == 2) {
+                if (n[i] == '1') {
+                    str += tn[Number(n[i + 1])] + ' ';
+                    i++;
+                    sk = 1;
+                } else if (n[i] != 0) {
+                    str += tw[n[i] - 2] + ' ';
+                    sk = 1;
+                }
+            } else if (n[i] != 0) {
+                str += dg[n[i]] + ' ';
+                if ((x - i) % 3 == 0) str += 'hundred ';
+                sk = 1;
+            }
+            if ((x - i) % 3 == 1) {
+                if (sk) str += th[(x - i - 1) / 3] + ' ';
+                sk = 0;
+            }
+        }
+        if (x != s.length) {
+            var y = s.length;
+            str += 'point ';
+            for (var i = x + 1; i < y; i++) str += dg[n[i]] + ' ';
+        }
+        return str.replace(/\s+/g, ' ');
+    }
+
+    function ValidateGrid() {
+        debugger;
+        $('#submit').attr('enabled', 'enabled');
+        var EValue = JSON.parse($('#ExpensesJson').val());
+        if (Number($('#TotalAmount').val()) <=0) {
+            alert('Payment Voucher Details Must Have Data.');
+            return false;
+        }
+        else if (EValue.length>0) {
+            var EValue = JSON.parse($('#ExpensesJson').val());
+            for (var j = 0; j < EValue.length; j++) {
+                if (Number(EValue[j].Amount) == 0) {
+                    alert('Voucher Amount should be greater than 0');
+                    return false;
+                }
+            }
+        }
+        else {
+            return true;
+        }
+    }
+
+    function SaveEnabled() {       
+        $('#submit').prop("disabled", false);
+    };
+    function SaveDisabled() {
+        $('#submit').attr('disabled', 'disabled');
+
+    }
+
+</script>
+<input type="hidden" id="ComGST" value="@ViewData["COMGST"].ToString()" />
+<input type="hidden" id="Expenses" value="@ViewBag.Expenses.ToString()" />
+<input type="hidden" id="ExpHSN" value="@ViewBag.ExpHSN.ToString()" />
+<input type="hidden" id="HSN" value="@ViewBag.HSN.ToString()" />
+<input type="hidden" id="ReceiptValue" />
+
+@using (Ajax.BeginForm("PaymentVoucher", "VLDA_CashManagement", new AjaxOptions { HttpMethod = "POST", OnSuccess = "OnSuccess", LoadingElementDuration = 1000, LoadingElementId = "divProgress", OnBegin = "ValidateGrid", OnComplete = "SaveDisabled", Confirm = "Are you sure you want to Save?"}))
+{
+    @Html.AntiForgeryToken()
+
+    @Html.HiddenFor(m => m.PartyId, new { Value = "0000000000" })
+    @Html.TextBoxFor(m => m.ExpensesJson, new { @style = "position:fixed;top:-999px;" })
+
+    @Html.HiddenFor(m => m.PVHeadId, new { @Value = 0 })
+
+    @Html.Hidden("VoucherHead")
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-offset-0-5 col-md-11">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Payment Voucher</h4>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.VoucherNo)
+                            </div>
+                            <div class="col-md-2-5 Error_Msg">
+                                @Html.TextBoxFor(m => m.VoucherNo, new { @readonly = true })
+                                @Html.ValidationMessageFor(m => m.VoucherNo)
+                            </div>
+                            <div class="col-md-1-5 col_cus_2 col-md-offset-4-5">
+                                @Html.LabelFor(m => m.PaymentDate)
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBoxFor(m => m.PaymentDate, new { Value = DateTime.Today.ToString("dd/MM/yyyy"), @onkeyup = "checks()", @onblur = "checkdat()", @maxlength = "10" })
+                                @Html.ValidationMessageFor(m => m.PaymentDate)
+                                <div class="field-validation-error" id="Msges" style="background-color:transparent"></div>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.InvoiceNo)
+                            </div>
+                            <div class="col-md-2-5 Error_Msg">
+                                @Html.TextBoxFor(m => m.InvoiceNo)
+                                @Html.ValidationMessageFor(m => m.InvoiceNo)
+                            </div>
+                            <div class="col-md-1-5 col_cus_2 col-md-offset-4-5">
+                                @Html.LabelFor(m => m.InvoiceDate)
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBoxFor(m => m.InvoiceDate, new { Value = DateTime.Today.ToString("dd/MM/yyyy"), @onkeyup = "checks()", @onblur = "checkdat()", @maxlength = "10" })
+                                @Html.ValidationMessageFor(m => m.InvoiceDate)
+                                <div class="field-validation-error" id="Msges" style="background-color:transparent"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.Party)
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                @Html.TextBoxFor(m => m.Party, new { @onkeydown = "PopupActivate('PartyModal');", @onchange = "$('#PartyId').val('0000000000')" })
+                                <span class="search" id="PartySerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.Party)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.Address)
+                            </div>
+                            <div class="col-md-10-5 col_cus_10 Error_Msg">
+                                @Html.TextAreaFor(m => m.Address, new { @style = "height:75px;" })
+                                @Html.ValidationMessageFor(m => m.Address)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.City)
+                            </div>
+                            <div class="col-md-4 Error_Msg">
+                                @Html.TextBoxFor(m => m.City)
+                                @Html.ValidationMessageFor(m => m.City)
+                            </div>
+
+                            <div class="col-md-1-5 col_cus_2 col-md-offset-3">
+                                @Html.LabelFor(m => m.IsUnregister)
+                            </div>
+                            <div class="col-md-1">
+                                <div class="boolean-container">
+                                    @Html.CheckBoxFor(m => m.IsUnregister)
+                                    <label for="IsUnregister"><i class="square"></i></label>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.State)
+                            </div>
+                            <div class="col-md-4 Error_Msg">
+                                @Html.TextBoxFor(m => m.State)
+                                @Html.ValidationMessageFor(m => m.State)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.StateCode)
+                            </div>
+                            <div class="col-md-4 Error_Msg">
+                                @Html.TextBoxFor(m => m.StateCode)
+                                @Html.ValidationMessageFor(m => m.StateCode)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.Pin)
+                            </div>
+                            <div class="col-md-2-5 Error_Msg">
+                                @Html.TextBoxFor(m => m.Pin)
+                                @Html.ValidationMessageFor(m => m.Pin)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.GSTNo)
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.GSTNo)
+                                @Html.ValidationMessageFor(m => m.GSTNo)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.Purpose)
+                            </div>
+                            <div class="col-md-2-5 Error_Msg">
+                                @Html.HiddenFor(m=>m.txtPurpose)
+                                @Html.DropDownListFor(m => m.Purpose, new List<SelectListItem>
+                                                    {
+                                                     new SelectListItem {Text="Imprest",Value="Imprest" },
+                                                      new SelectListItem {Text="Temporary Advance",Value="Temporary Advance" },
+                                                    }, "----Select----", new { @class = "form-control input_sm dropdown" })<SelectListItem>
+                                    @Html.ValidationMessageFor(m => m.Purpose, "", new { @class = "Error_Msg" })
+
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        @*@Html.LabelFor(m => m.Amt)*@
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @*@Html.TextBoxFor(m => m.Amt,new { @readonly="true"})*@
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4">
+
+                            </div>
+                            <div class="col-md-2 Date_Img Error_Msg">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_top SignUp_space_bottom2"></div>
+                    </div>
+                    <div class="row SignUp_space_bottom2">
+                        <div class="col-md-offset-4-5 col_cus_offset_4 col_cus_4 col-md-3">
+                            <button type="button" id="btnnew" onclick="AddNewRow()" class="btn log_Btn_sm">Add New Row</button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 text-center">
+                            @Html.ValidationMessageFor(m => m.ExpensesJson)
+                        </div>
+                    </div>
+                    <div class="Head_h5 hidden_border">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h5>Payment Voucher Details</h5>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div id="payment-grid" class="col-md-12">
+                                <table id="ExpTable" class="table table-striped table-bordered dataTable Table_center">
+                                    <thead>
+                                        <tr>
+                                            <th rowspan="2" style="width:25%;">Expenses Head</th>
+                                            <th rowspan="2" style="width:15%;">HSN Code</th>
+                                            <th rowspan="2" style="width:15%;">Receipt Voucher</th>
+                                            <th rowspan="2" style="width:15%;">Balance in Hand</th>
+                                            <th rowspan="2" style="width:10%;">Amount</th>
+                                            <th colspan="2">IGST</th>
+                                            <th colspan="2">CGST</th>
+                                            <th colspan="2">SGST</th>
+                                            <th rowspan="2" style="width:10%;">TOTAL</th>
+                                            <th rowspan="2" style="width:2%;">X</th>
+                                        </tr>
+                                        <tr>
+                                            <th style="width:5%;">%</th>
+                                            <th>Amt</th>
+                                            <th style="width:5%;">%</th>
+                                            <th>Amt</th>
+                                            <th style="width:5%;">%</th>
+                                            <th style="border-right:1px solid #ddd;">Amt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td style="width:150px;"><input type="text" class="text-right" id="tigst" value="0" disabled /></td>
+                                            <td></td>
+                                            <td style="width:150px;"><input type="text" class="text-right" id="tcgst" value="0" disabled /></td>
+                                            <td></td>
+                                            <td style="width:150px;"><input type="text" class="text-right" id="tsgst" value="0" disabled /></td>
+                                            <td>@Html.TextBoxFor(m => m.TotalAmount, new { @readonly = true, @class = "text-right" })</td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5">
+                                @Html.LabelFor(m => m.Narration)
+                            </div>
+                            <div class="col-md-10-5 Error_Msg">
+                                @Html.TextAreaFor(m => m.Narration, new { @style = "height:75px;" })
+                                @Html.ValidationMessageFor(m => m.Narration)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="stoke SignUp_space_top2 SignUp_space_bottom2">
+                        </div>
+                    </div>
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-offset-4 col-md-2">
+                            <button type="submit" id="submit" class="btn log_Btn_sm">Save</button>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="reset" class="btn log_Btn_sm" onclick="ResetForm()">Reset</button>
+                        </div>
+                        <div class="col-md-2" style="display:none">
+                            <button id="BtnPrint" type="button" class="btn log_Btn_sm" onclick="PrintVoucher()"></button>
+                        </div>
+                    </div>
+
+                    <div class="row">                       
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-2">
+                                <input type="button" value="Show List" onclick="ShowList()" class="btn log_Btn_sm" />
+                            </div>
+                            <div class="col-md-offset-5 col-md-3">
+                                <input type="text" placeholder="Search by Voucher No" id="SearchVoucherNo" />
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <input type="button" value="Search" onclick="SearchVoucher()" class="btn log_Btn_sm" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_top2 SignUp_space_bottom2">
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top" id="divVoucherList">
+                        <div id="DivPaymentVoucherList" class="col-md-12 ClearFix SignUp_space_bottom">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="modal fade mTabindex" id="PartyModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="PartyModalClose()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Party Names</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="CHAbox" type="text" tabindex="401"/>
+                <ul class="navList" id="lstCHA">
+                    @{
+                        var tabvalue = 401;
+                        var tab = 0;
+                        var u = "_";
+                        foreach (var item in ViewBag.Parties)
+                        {
+                            <li tabindex="@tabvalue@u@tab" onkeypress="SelectParty('@item.PartyId','@item.PartyName','@item.Address','@item.State','@item.StateCode','@item.City','@item.Pin','@item.GSTNo')" onclick="SelectParty('@item.PartyId','@item.PartyName','@item.Address','@item.State','@item.StateCode','@item.City','@item.Pin','@item.GSTNo')">@item.PartyName-@item.Address</li>
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="PartyModalClose()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+
+<script>
+    function PopupActivate(Id) {
+        debugger;
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+
+        if (CharCode == 32) {
+
+           /// $('#' + Id).modal('show');
+
+            if (Id == "PartyModal") {
+                $('#CHAbox').focus();
+            }
+            
+        }
+    }
+    $('#PartyModal').on('shown.bs.modal', function () {
+        $('#CHAbox').focus();
+    });
+    
+    function PartyModalClose() {
+        $('#CHAbox').val('');
+        $("#PartyModal").modal("hide");      
+        $('#Party').focus(); 
+    }
+
+    $('.mTabindex').keydown(function (e) {
+        //debugger;
+        var $focusable = $(this).find("[tabindex]:not([tabindex='-1'])");
+        if ($focusable.last().is(":focus") && !e.shiftKey && e.key == "Tab") {
+            e.preventDefault();
+            $focusable.first().focus();
+        }
+        else
+            if ($focusable.first().is(":focus") && e.shiftKey && e.key == "Tab") {
+                e.preventDefault();
+                $focusable.last().focus();
+            }
+    });
+    function checks() {
+        debugger;
+
+        $('#PaymentDate').val($('#PaymentDate').val().replace(/^(\d\d)(\d)$/g, '$1/$2').replace(/^(\d\d\/\d\d)(\d+)$/g, '$1/$2').replace(/[^\d\/]/g, ''));
+
+    }
+    function checkdat() {
+        debugger;
+        var today = new Date();
+        var dd = today.getDate();
+        var mm = today.getMonth() + 1; //January is 0!
+        var yyyy = today.getFullYear();
+
+        if (dd < 10) {
+            dd = '0' + dd;
+        }
+        if (mm < 10) {
+            mm = '0' + mm;
+        }
+
+        var date = dd + '/' + mm + '/' + yyyy;
+        var dateTime = date;
+        if ($('#PaymentDate').val() != '') {
+            var result = moment($('#PaymentDate').val(), "DD/MM/YYYY", true).isValid();
+            if (!result) {
+                $('#Msges').html('Incorrect Date');
+                setTimeout(function () { $('#Msges').html(''); }, 3000);
+                $('#PaymentDate').val(dateTime);
+            }
+        }
+
+    }
+</script>

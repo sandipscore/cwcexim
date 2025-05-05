@@ -1,0 +1,161 @@
+﻿@model IEnumerable<CwcExim.Areas.GateOperation.Models.DSRGateExitFactoryStuffing>
+<table class="table table-bordered table-striped" id="tblGateExitList">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("SL No")</th>
+            <th>@Html.DisplayNameFor(m => m.GateExitNo)</th>
+            <th>@Html.DisplayNameFor(m => m.GateExitDateTime)</th>
+            <th>@Html.DisplayNameFor(m=>m.FSRequestNo)</th>       
+            <th>@Html.DisplayNameFor(m => m.ContainerNo)</th>      
+            <th class="text-center">@Html.DisplayName("Edit")</th>
+            <th class="text-center">@Html.DisplayName("View")</th>
+            <th class="text-center">@Html.DisplayName("Delete")</th>
+        </tr>
+    </thead>
+    <tbody>
+       @{
+           var SerialNo = 1;
+           foreach (var elem in Model)
+           {
+            <tr>
+                <td class="text-center">@SerialNo.ToString()</td>
+                <td>@elem.GateExitNo</td>
+                <td>@elem.GateExitDateTime</td>
+                <td>@elem.FSRequestNo</td>
+                <td>@elem.ContainerNo</td>
+              
+                <td class="text-center"><a href="#" onclick="EditGateExit(@elem.ExitIdHeader)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                <td class="text-center"><a href="#" onclick="ViewGateExitDet(@elem.ExitIdHeader)"><i class="fa fa-search-plus Edit"></i></a></td>
+                <td class="text-center"><a href="#" onclick="DeleteGateExitDet(@elem.ExitIdHeader)"><i class="fa fa-window-close-o Delete"></i></a></td>
+               
+            </tr>
+               SerialNo = SerialNo + 1;
+           }
+           }
+    </tbody>
+</table>
+
+<script>
+    var Page = 0;
+    $(document).ready(function(){
+        var tblGateExit= $('#tblGateExitList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns": [
+                { "sName": "SL No", "width": "8%" },
+                { "sName": "Gate Exit No" },
+                { "sName": "Gate Exit Date Time", "width": "15%" },
+                { "sName": "Factory Stuffing Request No" },
+                 { "sName": "Container No" },
+                { "sName": "View", "bSortable": false, "width": "10%" },
+                { "sName": "Edit", "bSortable": false, "width": "10%" },
+                { "sName": "Delete", "bSortable": false, "width": "10%" }
+            ],
+
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0)', nRow).addClass("text-center");
+                $('td:eq(4),td:eq(5),td:eq(6)', nRow).addClass("text-center");
+                $('td:eq(0)', nRow).css("width", "8%");
+                $('td:eq(1)', nRow).css("width", "10%");
+                $('td:eq(2)', nRow).css("width", "15%");
+                $('td:eq(3)', nRow).css("width", "10%");
+                $('td:eq(4)', nRow).css("width", "10%");
+                $('td:eq(5)', nRow).css("width", "10%");
+                $('td:eq(6)', nRow).css("width", "10%");
+               
+            }
+        });
+        new $.fn.dataTable.FixedHeader(tblGateExit);
+    });
+
+
+
+
+    
+    function EditGateExit(ExitId) {
+        debugger;
+        $('#DivBody').load('/GateOperation/CHN_GateOperation/EditGateExitFactoryStuffing?ExitIdHdr=' + ExitId);
+    }
+    function ViewGateExitDet(ExitId) {
+        // alert("View");
+        debugger;
+        $('#DivBody').load('/GateOperation/CHN_GateOperation/ViewGateExitFactoryStuffing?ExitIdHdr=' + ExitId);
+    }
+    function DeleteGateExitDet(ExitId) {
+        
+        var Confirm = confirm("Are you sure you want to delete?")
+        debugger;
+        if (Confirm == true) {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({                
+                url: '@Url.Action("DeleteGateExitFactoryStuffing", "CHN_GateOperation", new { Area = "GateOperation" }) ',
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                type: 'POST',
+                data: { ExitId: ExitId },
+                success: function (data) {
+                    if (data.Status == 1) {
+
+                        debugger;
+                       
+                        if(data.Status==1)
+                        {
+                            GateExitOnSuccess(data);
+                         
+                        }                       
+                        else {
+                            alert(data.Message);
+                        }
+
+                    }
+                }
+            });
+        }
+    }
+    function GetExitThroughGateList() {
+        debugger;        
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/GateOperation/CHN_GateOperation/getGateExitFactoryStuffingList',
+            type: 'GET',
+            headers: { '__RequestVerificationToken': Token },
+            dataType: 'text',
+            async: false,
+            success: function (data) {
+                // alert(data);
+                if (data != null && data != "" && data != undefined) {
+                    $("#DivGateExitList").html('');
+                    $("#DivGateExitList").html(data);
+                }
+                else {
+                    $("#DivGateExitList").html('');
+
+                }
+            }
+        });
+    }
+    function GateExitOnSuccess(data) {
+
+        debugger;
+        if (data.Status == 1) {
+            GetExitThroughGateList();
+            if ($('#DivExitThroughGateMsg').hasClass('logErrMsg'))
+                $('#DivExitThroughGateMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivExitThroughGateMsg').html(data.Message);
+            setTimeout(LoadGateExitView, TimeInSeconds);
+         
+        }
+            
+        else {
+            if ($('#DivExitThroughGateMsg').hasClass('logSuccMsg'))
+                $('#DivExitThroughGateMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivExitThroughGateMsg').html(data.Message);
+            setTimeout(LoadGateExitView, TimeInSeconds);
+        }
+    }
+
+    function LoadGateExitView() {
+        $('#DivBody').load('/GateOperation/CHN_GateOperation/CreateGateExitFactoryStuffing');
+    }
+</script>

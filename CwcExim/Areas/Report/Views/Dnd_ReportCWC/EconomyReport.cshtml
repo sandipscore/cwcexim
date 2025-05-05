@@ -1,0 +1,181 @@
+﻿<script src="~/Areas/Report/Scripts/App/Services/DndEconomyReportSvc.js"></script>
+<script src="~/Areas/Report/Scripts/App/Controllers/DndEconomyReportCtrl.js"></script>
+<script>
+    angular.bootstrap(document.getElementById('EcoRptDiv'), ['CWCApp']);
+
+    function PrintReport() {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("EconomyReportPrint", "Dnd_ReportCWC", new { Area = "Report" }) ',
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                Month: $('#drpMonth').val().split(":")[1],
+                Year: $('#drpYear').val().split(":")[1]
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+    }
+
+</script>
+<div id="EcoRptDiv">
+    <div ng-controller="DndEconomyReportCtrl" id="ctrldiv">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-offset-0-5 col-md-11">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Economy Report</h4>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1">
+                                    <label>Month:</label>
+                                </div>
+                                <div class="col-md-2">
+                                    <select ng-model="Month" id="drpMonth" ng-options="g.Value as g.Text for g in months">
+                                        @*<option ng-repeat="m in MonthArray">{m}}</option>*@
+                                    </select>
+                                </div>
+                                <div class="col-md-1">
+                                    <label>Year:</label>
+                                </div>
+                                <div class="col-md-2">
+                                    <select ng-model="Year" id="drpYear" ng-options="g.Value as g.Text for g in years">
+                                        @*<option ng-repeat="m in YearArray">{m}}</option>*@
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button class="btn log_Btn_sm" ng-disabled="Month==0 || Year==0" ng-click="GetEconomyReport()">Populate</button>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <div class="row SignUp_space_bottom2 SignUp_space_top2">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-12">
+                                    <div class="logSuccMsg" style="background-color:transparent">{{Msg}}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div ng-hide="Msg==''" class="row SignUp_space_bottom2 SignUp_space_top2">
+                            <div class="stoke"></div>
+                        </div>
+
+                        <div class="row clearfix">
+                            <div class="panel with-nav-tabs panel-primary cwc_panel SignUp_space_bottom2" style="border:none;">
+                                <div class="panel-heading cwc_panel_heading">
+                                    <ul class="nav nav-tabs" id="DivTabs">
+                                        <li class="active"><a href="#IncomeTab" data-toggle="tab">Income</a></li>
+                                        <li><a href="#ExpensesTab" data-toggle="tab">Expense</a></li>
+                                    </ul>
+                                </div>
+                                <div class="panel-body">
+                                    <div class="tab-content">
+                                        @*Income tab*@
+                                        <div class="tab-pane fade in active" id="IncomeTab">
+                                            <table class="table table-bordered table-responsive dataTable Income_exp">
+                                                <thead>
+                                                    <tr>
+                                                        <th rowspan="2" style="width:85%;" class="text-center">Head of Income</th>
+                                                        <th class="text-center" style="width:15%;">Amount</th>
+
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="text-center">Rs.</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tbody_Income">
+                                                    <tr ng-repeat="x in EcoRptData | filter:{ItemType:'I'}">
+                                                        <td>{{x.ItemHead}}</td>
+                                                        <td>
+                                                            <div ng-if="x.IsTextBox==1">
+                                                                <input type="text" ng-model="x.Amount" ng-blur="CalculateSum()" numbers-only />
+                                                            </div>
+                                                            <div ng-if="x.IsTextBox==0">
+                                                                {{x.Amount}}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        @*Expense tab*@
+                                        <div class="tab-pane fade" id="ExpensesTab">
+                                            <table class="table table-bordered table-responsive dataTable Income_exp">
+                                                <thead>
+                                                    <tr>
+                                                        <th rowspan="2" style="width:85%;" class="text-center">Head of Income</th>
+                                                        <th class="text-center" style="width:15%;">Amount</th>
+
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="text-center">Rs.</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tbody_Income">
+                                                    <tr ng-repeat="x in EcoRptData | filter:{ItemType:'E'}">
+                                                        <td>{{x.ItemHead}}</td>
+                                                        <td>
+                                                            <div ng-if="x.IsTextBox==1">
+                                                                <input type="text" ng-model="x.Amount" ng-blur="CalculateSum()" numbers-only />
+                                                            </div>
+                                                            <div ng-if="x.IsTextBox==0">
+                                                                {{x.Amount}}
+                                                            </div>
+                                                        </td>
+
+
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row SignUp_space_bottom SignUp_space_top">
+                                    <div class="col-md-12">
+                                        <div class="stoke"></div>
+                                    </div>
+                                </div>
+                                <div class="logSuccMsg Form_Space_bottom" id="msgDiv" style="background-color:transparent"></div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input type="submit" ng-disabled="EcoRptData.length<=0" value="Save" class="btn log_Btn_sm" id="btnSave" ng-click="SaveEcoRpt()" />
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input type="button" ng-disabled="EcoRptData.length<=0" value="Print" onclick="PrintReport()" class="btn log_Btn_sm" id="btnPrint" />
+                                            </div>
+                                            <div class="col-md-3">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

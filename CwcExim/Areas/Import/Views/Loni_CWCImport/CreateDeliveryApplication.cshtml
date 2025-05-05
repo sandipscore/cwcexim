@@ -1,0 +1,1605 @@
+﻿@model CwcExim.Areas.Import.Models.PPG_DeliverApplication
+<style>
+    #tbleCha.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .slimScrollDiv {
+        height: 300px;
+    }
+
+    .table.tblhd {
+        border-bottom: 0;
+    }
+
+    .slim_tble {
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .txt_wrp {
+        overflow: hidden;
+        word-wrap: break-word;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="col-md-offset-0-5 col-md-11">
+        <div class="Head_h4">
+            @using (Ajax.BeginForm("AddEditDeliveryApplication", "Loni_CWCImport", new AjaxOptions { Confirm = "Are you sure you want to Save?", HttpMethod = "POST", OnSuccess = "DeliveryOnSuccess", OnFailure = "DeliveryOnFailure" }))
+            {
+                if (ViewBag.RightsList != null)
+                {
+                    <input type="hidden" id="hdnRights" value="@ViewBag.RightsList" />
+                }
+                else
+                {
+                    <input type="hidden" id="hdnRights" value="" />
+                }
+
+
+                <div id="DivCreateDeliveryApp">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Delivery Application</h4>
+                        </div>
+                    </div>
+                    @Html.Hidden("LineNo")
+                    @Html.Hidden("BOENo")
+                    @Html.Hidden("CommodityId")
+                    @Html.Hidden("DestuffingEntryDtlId")
+
+                    @Html.HiddenFor(m => m.DeliveryAppDtlXml)
+                    @Html.HiddenFor(m => m.DeliveryOrdDtlXml)
+                    @Html.HiddenFor(m => m.DestuffingId)
+                    @Html.AntiForgeryToken()
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Delivery Application No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.DeliveryNo, new { @class = "form-control input-sm", @readonly = true })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                <label>Destuffing Entry No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.DestuffingEntryNo, new { @class = "form-control input-sm", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.DestuffingEntryNo, "", new { @class = "Error_Msg" })
+                                <span class="search" id="DestuffingEntryNoSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#DestuffingEntryNoModal"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>CHA:</label>
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                @Html.TextBoxFor(m => m.CHA, new { @class = "form-control input-sm", @readonly = true })
+                                <span class="search" id="CHADtlSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CHADtlModal"></i></span>
+                                @Html.HiddenFor(m => m.CHAId)
+                                @Html.ValidationMessageFor(m => m.CHA, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    @*<div class="row Form_Space_top SignUp_space_bottom2">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Importer:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextBoxFor(m => m.Importer, new { @class = "form-control input-sm", @readonly = true })
+                                    <span class="search" id="ImporterSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ImporterModal"></i></span>
+                                    @Html.HiddenFor(m => m.ImporterId)
+                                    @Html.ValidationMessageFor(m => m.Importer, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>*@
+                    <div id="DivDeliveryAppDetails" class="Head_h5">
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>OBL/HBL - Line No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("BOELineNo", "", new { @class = "form-control input-sm", @readonly = true })
+                                    <span class="search" id="SearchBOELineNo"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#BOELineNoModal"></i></span>
+                                    @Html.ValidationMessage("BOELineNo", "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5">
+                                    <label>BOE No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("OOC_BOENo", "", new { @class = "form-control input-sm", @onblur = "return GetCfcValue();" })
+                                    @Html.ValidationMessage("OOC_BOENo", "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5">
+                                    <label>BOE Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @*@Html.TextBoxFor(m => m.InvoiceDate, new { @readonly = true, Value = DateTime.Today.ToString("dd/MM/yyyy") })*@
+                                    @Html.TextBox("OOC_BOEDATE", "", new { @readonly = true, Value = DateTime.Now.ToString("dd/MM/yyyy") })
+                                    @Html.ValidationMessage("OOC_BOEDATE", "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Cargo Description</label>
+                                </div>
+                                <div class="col-md-10-5">
+                                    @Html.TextArea("CargoDescription", "", new { @style = "height:100px;width:100%", @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top SignUp_space_bottom2">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Importer:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextBoxFor(m => m.Importer, new { @class = "form-control input-sm", @readonly = true })
+                                    <span class="search" id="ImporterSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ImporterModal"></i></span>
+                                    @Html.HiddenFor(m => m.ImporterId)
+                                    @Html.ValidationMessageFor(m => m.Importer, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        @*<div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col_cus_2 col-md-1-5">
+                                        <label>Commodity:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_2_5 ">
+                                        @Html.TextBox("Commodity", "", new { @class = "form-control input-sm", @readonly = true })
+                                    </div>
+                                </div>
+                            </div>*@
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col_cus_2 col-md-1-5">
+                                    <label>Destuff No Of Packages:</label>
+                                </div>
+                                <div class="col-md-2-5 col_cus_2_5 Date_Img">
+                                    @Html.TextBox("NoOfPackages", "", new { @class = "form-control input-sm", @readonly = true })
+                                </div>
+                                <div class="col-md-1-5 col_cus_2 col-md-offset-4 col_cus_offset_3 padding_rt">
+                                    <label>No Of Packages:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("DelNoOfPackages", "", new { @class = "form-control input-sm", @onchange = "FillBalancedUnits()", @onkeypress = "return AllowOnlyInteger(event)" })
+                                    @Html.ValidationMessage("DelNoOfPackages", "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Destuff Weight(Kg):</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("GrossWt", "", new { @class = "form-control input-sm", @readonly = true })
+                                    @Html.ValidationMessage("GrossWt", "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col_cus_2 col-md-offset-4 col_cus_offset_3 padding_rt">
+                                    <label>Weight(Kg):</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("DelGrossWt", "", new { @class = "form-control input-sm", @onchange = "FillBalancedWeights()", @onkeypress = "return AllowOnlyDecimal(event)", maxlength = "11" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Destuff SQM:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("SQM", "", new { @class = "form-control input-sm", @readonly = true })
+                                </div>
+                                <div class="col-md-1-5 col_cus_2 col-md-offset-4 col_cus_offset_3 padding_rt">
+                                    <label>SQM:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("DelSQM", "", new { @class = "form-control input-sm", maxlength = "11", @onkeypress = "return AllowOnlyDecimal(event)" })
+                                    @Html.ValidationMessage("DelSQM", "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Destuff CUM:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("CUM", "", new { @class = "form-control input-sm", @readonly = true })
+                                </div>
+                                <div class="col-md-1-5 col_cus_2 col-md-offset-4 col_cus_offset_3 padding_rt">
+                                    <label>CUM:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("DelCUM", "", new { @class = "form-control input-sm", maxlength = "11", @onkeypress = "return AllowOnlyDecimal(event)" })
+                                    @Html.ValidationMessage("DelCUM", "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Destuff CIF:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("CIF", "", new { @class = "form-control input-sm", @readonly = true })
+                                </div>
+                                <div class="col-md-1-5 col_cus_2 col-md-offset-4 col_cus_offset_3 padding_rt">
+                                    <label>CIF:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("DelCIF", "", new { @class = "form-control input-sm", maxlength = "11", @onkeypress = "return AllowOnlyDecimal(event)" })
+                                    @Html.ValidationMessage("DelCIF", "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Destuff Duty:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("Duty", "", new { @class = "form-control input-sm", @readonly = true })
+                                </div>
+                                <div class="col-md-1-5 col_cus_2 col-md-offset-4 col_cus_offset_3 padding_rt">
+                                    <label>Duty:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("DelDuty", "", new { @class = "form-control input-sm", maxlength = "11", @onkeypress = "return AllowOnlyDecimal(event)" })
+                                    @Html.ValidationMessage("DelDuty", "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="stoke SignUp_space_top SignUp_space_bottom"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-offset-4 col-md-2">
+                                <input type="button" id="BtnAddDeliveryApp" class="btn log_Btn_sm" value="Add" onclick="SaveDeliveryAppDtl()" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" class="btn log_Btn_sm" value="Reset" onclick="ResetDeliveryAppDet()" />
+                            </div>
+                        </div>
+                        <div id="DivDeliveryAppTblErrMsg" class="logErrMsg Form_Space_top Form_Space_bottom" style="background-color:transparent"></div>
+                        <table class="table table-striped table-bordered dataTable" id="TblDeliveryAppDtl" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">@Html.DisplayName("SL No")</th>
+                                    <th>@Html.DisplayName("OBL/HBL-Line No")</th>
+                                    <th>@Html.DisplayName("Weight(Kg)")</th>
+                                    <th>@Html.DisplayName("Edit")</th>
+                                    <th class="text-center">@Html.DisplayName("View")</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+
+                    @*Delivery Order details*@
+
+                    <div id="DivDeliveryOrderDetails" class="Head_h5">
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_1_5 padding_rt">
+                                    <label>Do Issued By:</label>
+                                </div>
+                                <div class="col-md-3-5">
+                                    @Html.TextBox("IssuedBy", "", new { @class = "form-control input-sm", @readonly = true })
+                                    <span class="search" id="IssuePartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#IssuePartyModal"></i></span>
+                                    @Html.ValidationMessage("IssuedBy", "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-offset-3 col-md-1-5">
+                                    <label>Cargs. Delivered To:</label>
+                                </div>
+                                <div class="col-md-2-5 col_cus_2_5">
+                                    @Html.TextBox("CargsDelivered", "", new { @class = "form-control input-sm", @readonly = true })
+                                    <span class="search" id="CargoPartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CargoPartyModal"></i></span>
+                                    @Html.ValidationMessage("CargsDelivered", "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Valid Type</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.DropDownList("ddlValidType", new List<SelectListItem>
+                                        {
+                                        new SelectListItem { Text="Open",Value="Open"},
+                                        new SelectListItem { Text="Closed",Value="Closed"},
+
+                                        }, "----Select----", new { @class = "form-control input-sm", @onchange = "ValidDt(this);" })
+                                    <span class="field-validation-error" id="ErrddlValidType"></span>
+                                </div>
+                                <div class="col-md-offset-4 col-md-1-5">
+                                    <label>DO Valid Date:</label>
+                                </div>
+                                <div class="col-md-2-5 col_cus_2_5 Date_Img">
+                                    @*@Html.TextBoxFor(m => m.InvoiceDate, new { @readonly = true, Value = DateTime.Today.ToString("dd/MM/yyyy") })*@
+                                    @Html.TextBox("ValidDate", "", new { @readonly = true, Value = DateTime.Now.ToString("dd/MM/yyyy") })
+
+                                </div>
+
+                            </div>
+                        </div>
+                        @*<div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col_cus_2 col-md-1-5">
+                                        <label>Commodity:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_2_5 ">
+                                        @Html.TextBox("Commodity", "", new { @class = "form-control input-sm", @readonly = true })
+                                    </div>
+                                </div>
+                            </div>*@
+
+                        <div class="row">
+                            <div class="stoke SignUp_space_top SignUp_space_bottom"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-offset-4 col-md-2">
+                                <input type="button" id="BtnAddDeliveryOrd" class="btn log_Btn_sm" value="Add" onclick="SaveDeliveryOrdDtl()" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" class="btn log_Btn_sm" value="Reset" onclick="ResetDeliveryOrdDet()" />
+                            </div>
+                        </div>
+                        <div id="DivDeliveryOrdTblErrMsg" class="logErrMsg Form_Space_top Form_Space_bottom" style="background-color:transparent"></div>
+                        <table class="table table-striped table-bordered dataTable" id="TblDeliveryAppOrd" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">@Html.DisplayName("SL No")</th>
+                                    <th>@Html.DisplayName("Issued By")</th>
+                                    <th>@Html.DisplayName("Cargo. Delivered")</th>
+                                    <th>@Html.DisplayName("Edit")</th>
+
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-offset-4 col-md-2">
+                            <input type="submit" class="btn log_Btn_sm" value="Save" id="BtnSaveDelvApp" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Reset" onclick="ResetAll()" />
+                        </div>
+                    </div>
+                    <div id="DivDeliveryMsg" class="logSuccMsg" style="background-color:transparent"></div>
+                    <div id="DivDeliveryErrMsg" class="logErrMsg" style="background-color:transparent"></div>
+                </div>
+            }
+            <div class="row">
+                <div class="col-md-2 SignUp_space_bottom">
+                    <input type="button" id="BtnCommodityLoad" value="Show List" class="btn log_Btn_sm" onclick="LoadDeliveryAppList()" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="tblEntryDet"></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="DivDeliveryAppList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="DestuffingEntryNoModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Destuffing Entry No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="DestuffingEntrybox" type="text" />
+                <ul class="navList" id="DestuffingEntryNoList">
+                    @{
+                        if (ViewBag.DestuffingEntryNoList != null)
+                        {
+                            foreach (var item in ViewBag.DestuffingEntryNoList)
+                            {
+                                <li id="@item.DestuffingId">@item.DestuffingEntryNo</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="BOELineNoModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of OBL/HBL-Line No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="BOELineNobox" type="text" />
+                <ul class="navList" id="BOELineNoList"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="CHADtlModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseCHA()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List Of CHA</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By CHA Name Or Party Code" id="Chabox" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchChaByPartyCode()"></i></span>
+
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Shipping Line Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tbleCha">
+                        @{
+                            if (ViewBag.lstCHA != null)
+                            {
+                                foreach (var item in ViewBag.lstCHA)
+                                {
+                                    <tr onclick="SelectCHA(@item.CHAId,'@item.CHAName')">
+                                        <td colspan="8" width="80%" class="txt_wrp">@item.CHAName</td>
+                                        <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                    </tr>
+                                }
+                            }
+                        }
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.CHAState != null && Convert.ToBoolean(ViewBag.CHAState) == true)
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreCHA()" class="btn log_Btn_sm" id="btnLoadCHA">Load More Data</button>
+                        }
+                        else
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreCHA()" class="btn log_Btn_sm" id="btnLoadCHA" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseCHA()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="IssuePartyModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of issued by</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Issuebox" type="text" />
+                <ul class="navList" id="lstIssue">
+                    @*@{
+                        foreach (var item in Model.lstGodownList)
+                        {
+                        <li id="@item.GodownId">@item.GodownName</li>
+                        }
+                        }*@
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="CargoPartyModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of cargo delivered to</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Cargobox" type="text" />
+                <ul class="navList" id="lstCargo">
+                    @*@{
+                        foreach (var item in Model.lstGodownList)
+                        {
+                        <li id="@item.GodownId">@item.GodownName</li>
+                        }
+                        }*@
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ImporterModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Importer</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Impbox" type="text" />
+                <ul class="navList" id="lstImp">
+                    @{
+                        if (ViewBag.ImporterList != null)
+                        {
+                            foreach (var data in ViewBag.ImporterList)
+                            {
+                                <li id="@data.Value">@data.Text</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+</script>
+
+<script>
+    $('#OOC_BOEDATE').datepicker({
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        dateFormat: "dd/mm/yy",
+        altField: "#slider_example_4andHalf_alt",
+        altFieldTimeOnly: false,
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+
+    $('#ValidDate').datepicker({
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        dateFormat: "dd/mm/yy",
+        altField: "#slider_example_4andHalf_alt",
+        altFieldTimeOnly: false,
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+    var ArrayOfDeliveryApp = [];
+    var ArrayOfDeliveryOrd = [];
+    $(function () {
+        GenerateBlankTable();
+        $('#SearchBOELineNo').css("display", "none");
+        $('#TblDeliveryAppDtl').hide();
+        $('#TblDeliveryAppOrd').hide();
+        $('#BtnSaveDelvApp').attr("disabled",false);
+        //LoadDeliveryAppList();
+    });
+    function LoadDeliveryAppList() {
+        $('#tblEntryDet').html('');
+        $('#DivDeliveryAppList').load('/Import/Loni_CWCImport/ListOfDeliveryApplication');
+    }
+    function ResetAll() {
+        $('[data-valmsg-for]').html('<span><span>');
+        $('#DivCreateDeliveryApp').find('input:text,textarea').val('');
+        $('#DivCreateDeliveryApp').find('input:hidden').val('');
+        //$('#DeliveryOrderNo,#Value,#Duty,#CHAId,#Importer,#WorkOrderNo,#WorkOrderDate,#BondBOENo,#BondBOEDate,#WRNo,#WRDate,#GodownName,#CargoDescription,#SacNo,#SacDate,#Units,#Weight,#GodownId,#SpaceAppId,#ClosingUnits,#ClosingWeight,#Remarks').val('');
+        $('#DivDeliveryMsg,#DivDeliveryErrMsg').html('');
+    }
+
+
+
+    var PartyDet = "";
+    $('#IssuePartySearch').on("click", function () {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("ListOfIssueParty", "Loni_CWCImport", new { Area = "Import" })',
+            dataType: 'JSON',
+            type: 'GET',
+            success: function (data) {
+                debugger;
+                PartyDet = data;
+                var html = '';
+                $.each(data, function (i, item) {
+                    html += '<li id="' + item.IssueBy + '" " onclick="GetIssue(this)">' + item.IssueBy + '</li>';
+                });
+                $('#lstIssue').html(html);
+            }
+        });
+
+    });
+    function GetIssue(elem) {
+        debugger;
+        $('#IssuedBy').val($(elem).text());
+
+
+
+
+        $("#IssuePartyModal").modal("hide");
+    }
+
+    $('#Issuebox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstIssue > li').show();
+        else {
+            $('#lstIssue > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    $('#BOELineNobox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#BOELineNoList > li').show();
+        else {
+            $('#BOELineNoList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    $('#CargoPartySearch').on("click", function () {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("ListOfCargoParty", "Loni_CWCImport", new { Area = "Import" })',
+            dataType: 'JSON',
+            type: 'GET',
+            success: function (data) {
+                debugger;
+                PartyDet = data;
+                var html = '';
+                $.each(data, function (i, item) {
+                    html += '<li id="' + item.IssueBy + '" " onclick="GetCargo(this)">' + item.IssueBy + '</li>';
+                });
+                $('#lstCargo').html(html);
+            }
+        });
+
+    });
+    function GetCargo(elem) {
+        debugger;
+        $('#CargsDelivered').val($(elem).text());
+
+
+
+
+        $("#CargoPartyModal").modal("hide");
+    }
+
+    $('#Cargobox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstCargo > li').show();
+        else {
+            $('#lstCargo > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function ValidDt(vtype)
+    {
+        debugger;
+        if(vtype.value=="Open")
+        {
+            $("#ValidDate").datepicker("option", "disabled", true);
+            $("#ValidDate").val("");
+
+
+
+
+        }
+        else
+        {
+
+            $("#ValidDate").datepicker("option", "disabled", false);
+        }
+    }
+    function GetCfcValue()
+    {
+        debugger;
+        var BOE = $('#OOC_BOENo').val();
+        var BOEDT = $('#OOC_BOEDATE').val();
+        //if ($('#OOC_BOEDATE').val() == "") {
+        //alert("Select BOE Date");
+        //}
+        //else {
+        var DT = BOEDT.split(",");
+        var BOED = DT[0];
+
+        $.ajax({
+            url: '/Import/Loni_CWCImport/GetCIFFromOOC',
+            type: 'GET',
+            data: {
+                BOE: BOE,
+                BOEDT: BOED
+
+            },
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+
+                if (data.Status == 1) {
+
+                    var cif = data.Data.CIF;
+                    var duty = data.Data.Duty;
+                    var ExistCif = $('#CIF').val();
+                    var ExistDuty = $('#Duty').val();
+                    $('#OOC_BOEDATE').val(data.Data.BOE_DATE);
+                    if (ExistCif == '0') {
+                        $('#CIF').val(cif);
+                        $('#Duty').val(duty);
+                        $('#DelCIF').val(cif);
+                        $('#DelDuty').val(duty);
+                        //$('#OOC_BOEDATE').val(data.Data.BOE_DATE);
+                    }
+
+                }
+            }
+        });
+
+        //}
+
+    }
+
+
+    $('#Impbox').keyup(function () {
+        debugger;
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstImp > li').show();
+        else {
+            $('#lstImp > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    $('#lstImp > li').on("click", function () {
+        debugger;
+        $('#Importer').val($(this).text());
+        $('#ImporterId').val($(this).attr('id'));
+        $("#ImporterModal").modal("hide");
+    });
+
+    $('#DestuffingEntrybox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#DestuffingEntryNoList > li').show();
+        } else {
+            $('#DestuffingEntryNoList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('#DestuffingEntryNoList li').on("click", function () {
+        debugger;
+        ResetDeliveryAppDet();
+        ArrayOfDeliveryApp = [];
+        ArrayOfDeliveryOrd = [];
+        $('#TblDeliveryAppDtl').hide();
+        $('#TblDeliveryAppOrd').hide();
+        $('#TblDeliveryAppDtl>tbody').html('');
+        $('#TblDeliveryAppOrd>tbody').html('');
+        $('#DestuffingEntryNo').val($(this).text().split('(')[0]);
+        $('#DestuffingId').val($(this).attr('id'));
+        var DestuffingId = $(this).attr('id')
+        // var hdnDestuffingEntryNoList = $('#hdnDestuffingEntryNoList').val();
+        var model = @Html.Raw(Json.Encode(ViewBag.DestuffingEntryNoList));
+        var Destuffing = $.grep(model, function (item) { return item.DestuffingId == DestuffingId;})[0];
+        //$('#ImporterId').val(Destuffing.ImporterId);
+        //$('#Importer').val(Destuffing.ImporterName);
+
+        $("#DestuffingEntryNoModal").modal("hide");
+        GetBOELineNo(DestuffingId);
+    });
+
+    //function FillDetails() {
+    //    var DestuffingId = $('#DestuffingId').val();
+    //    if (SpaceAppId > 0) {
+    //        $.ajax({
+    //            url: '/Import/Kol_CWCImport/GetBOENoForDeliveryApp',
+    //            type: 'GET',
+    //            data: { SpaceAppId: SpaceAppId },
+    //            dataType: 'JSON',
+    //            success: function (data) {
+    //                debugger;
+    //                if (data.Status == 1) {
+    //                    $('#BondBOENo').val(data.Data.BondBOENo);
+    //                    $('#BondBOEDate').val(data.Data.BondBOEDate);
+    //                    $('#SacDate').val(data.Data.SacDate);
+    //                    $('#CHAId').val(data.Data.CHAId);
+    //                    $('#Importer').val(data.Data.Importer);
+    //                    GetDepositNo(SpaceAppId);
+    //                }
+    //            }
+    //        });
+    //    }
+    //}
+    function GenerateBlankTable() {
+        tablehtml = '';
+        var tablehtml = '<table id="tblEntryDet" class="table table-striped table-bordered dataTable" style="width:100%;"><thead><tr><th class="text-center">SL No</th><th>Delivery No</th><th>Destuffing Entry No</th><th>Delivery Date</th><th class="text-center">Edit</th><th class="text-center">View</th></tr></thead><tbody>';
+        tablehtml += '</tbody></table>';
+        $('#tblEntryDet').html(tablehtml);
+    }
+
+    function GetBOELineNo(DestuffingId) {
+        var Dt = new Date();
+
+        debugger;
+        if (DestuffingId > 0) {
+            $.ajax({
+                url: '/Import/Loni_CWCImport/GetBOENoForDeliveryApp',
+                type: 'GET',
+                data: { DestuffingId: DestuffingId },
+                dataType: 'JSON',
+                success: function (data) {
+                    debugger;
+                    $('#SearchBOELineNo').css("display", "block");
+                    if (data.Status == 1) {
+                        var Html = '';
+                        $.each(data.Data, function (i, item) {
+                            debugger;
+                            Html += '<li id=' + item.DestuffingEntryDtlId + ' onclick="FillBOELineNoTxtBox(' + item.DestuffingEntryDtlId + ',&quot;' + item.BOELineNo + '&quot;)">' + item.BOELineNo + '</li>';
+                        });
+                        $('#BOELineNoList').html(Html);
+
+                        var dd = Dt.getDate(); var mm = Dt.getMonth() + 1;
+                        var yyyy = Dt.getFullYear();
+                        if (dd < 10) { dd = '0' + dd };
+                        if (mm < 10) { mm = '0' + mm };
+                        var today = dd + '/' + mm + '/' + yyyy;
+                        debugger;
+                        $('#OOC_BOEDATE').val(today);
+                        $('#CHA').val(data.Data[0].CHA);
+                        $('#CHAId').val(data.Data[0].CHAId);
+                    }
+                }
+            });
+        }
+    }
+
+    function FillBOELineNoTxtBox(DestuffingEntryDtlId, BOELineNo) {
+        debugger;
+        $('#BtnAddDeliveryApp').prop("disabled", false);
+        $('#BOELineNo').val(BOELineNo);
+        var BOELineNoSplit = BOELineNo.split('-');
+        $('#BOENo').val(BOELineNoSplit[0]);
+        $('#LineNo').val(BOELineNoSplit[1]);
+        $('#DestuffingEntryDtlId').val(DestuffingEntryDtlId);
+        $("#BOELineNoModal").modal("hide");
+        $('[data-valmsg-for="DelNoOfPackages"]').html('<span></span>');
+        $('[data-valmsg-for="DelGrossWt"]').html('<span></span>');
+        GetBOELineNoDet(DestuffingEntryDtlId);
+    }
+
+    function GetBOELineNoDet(DestuffingEntryDtlId) {
+        if (DestuffingEntryDtlId > 0) {
+            $.ajax({
+                url: '/Import/Loni_CWCImport/GetBOEDetForDeliveryApp',
+                type: 'GET',
+                data: { DestuffingEntryDtlId: DestuffingEntryDtlId },
+                dataType: 'JSON',
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        //  $('#Commodity').val(data.Data.Commodity);
+                        //  $('#CommodityId').val(data.Data.CommodityId);
+                        $('#Importer').val(data.Data.Importer);
+                        $('#ImporterId').val(data.Data.ImporterId);
+                        $('#GrossWt').val(data.Data.GrossWt);
+                        $('#NoOfPackages').val(data.Data.NoOfPackages);
+                        $('#SQM').val(data.Data.SQM);
+                        //  $('#CUM').val(data.Data.CUM);
+                        $('#CIF').val(data.Data.CIF);
+                        $('#Duty').val(data.Data.Duty);
+                        $('#CargoDescription').val(data.Data.CargoDescription);
+                        $('#DelGrossWt').val(data.Data.GrossWt);
+                        $('#DelNoOfPackages').val(data.Data.NoOfPackages);
+                        $('#DelSQM').val(data.Data.SQM);
+                        // $('#DelCUM').val(data.Data.CUM);
+
+                        $('#DelCIF').val(data.Data.CIF);
+                        $('#DelDuty').val(data.Data.Duty);
+                        $('#OOC_BOENo').val(data.Data.OOC_BOENo);
+                        $('#OOC_BOEDATE').val(data.Data.OOC_BOEDATE);
+                        $('#IssuedBy').val(data.Data.ShippingLine);
+
+
+                        if (data.Data.OOC_BOENo == "") {
+
+                        }
+                        else {
+
+                            GetCfcValue();
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    function SaveDeliveryAppDtl() {
+        debugger;
+        if ($('#DelNoOfPackages').val() == '') {
+            $('[data-valmsg-for="DelNoOfPackages"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        if ($('#DelNoOfPackages').val() <1) {
+            $('[data-valmsg-for="DelNoOfPackages"]').html('<span>Enter No Of Package More Than 0</span>');
+            return false;
+        }
+        if ($('#OOC_BOENo').val() == '') {
+            $('[data-valmsg-for="OOC_BOENo"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        if ($('#OOC_BOEDATE').val() == '') {
+            $('[data-valmsg-for="OOC_BOEDATE"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+
+        if ($('#DelNoOfPackages').val() == '' ||$('#DelNoOfPackages').val() == '0') {
+            $('[data-valmsg-for="DelNoOfPackages "]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        if ($('#DelGrossWt').val() == ''||$('#DelGrossWt').val() == '0') {
+            $('[data-valmsg-for="DelGrossWt"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        if ($('#DelSQM').val() == '' ||$('#DelSQM').val() == '0') {
+            $('[data-valmsg-for="DelSQM"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+
+        if ($('#DelCIF').val() == '' ||$('#DelCIF').val() == '0') {
+            $('[data-valmsg-for="DelCIF"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        if ($('#DelDuty').val() == '' ||$('#DelDuty').val() == '0') {
+            $('[data-valmsg-for="DelDuty"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        if ( Number($('#DelNoOfPackages').val()) > Number($('#NoOfPackages').val()) ) {
+            alert('No Of Packages Should Be Less Than Destuff No Of Packages');
+            return false;
+        }
+        if (Number($('#DelGrossWt').val()) > Number($('#GrossWt').val())) {
+            alert('Gross Wt Should Be Less Than Destuff Gross Wt');
+            return false;
+        }
+        //if (Number($('#DelSQM').val()) > Number($('#SQM').val())) {
+        //    alert('SQM Should Be Less Than Destuff SQM');
+        //    return false;
+        //}
+        //if (Number($('#DelCUM').val()) > Number($('#CUM').val())) {
+        //    alert('CUM Should Be Less Than Destuff CUM');
+        //    return false;
+        //}
+        //if (Number($('#DelCIF').val()) > Number($('#CIF').val())) {
+        //    alert('CIF Should Be Less Than Destuff CIF');
+        //    return false;
+        //}
+        //if (Number($('#DelDuty').val()) > Number($('#Duty').val())) {
+        //    alert('Duty Should Be Less Than Destuff Duty');
+        //    return false;
+        //}
+        if ($('#ImporterId').val() ==0) {
+            alert('Please Select Importer');
+            return false;
+        }
+        $('#DivDeliveryAppTblErrMsg').html('');
+        if ($('#BOELineNo').val() != "") {
+            var DeliveryAppDtl = {
+                "BOELineNo": $('#BOELineNo').val(),
+                "DestuffingEntryDtlId": $('#DestuffingEntryDtlId').val(),
+                "LineNo": $('#LineNo').val(),
+                "BOENo": $('#BOENo').val(),
+                "OOC_BOENo": $('#OOC_BOENo').val(),
+                "OOC_BOEDATE":$('#OOC_BOEDATE').val(),
+                "CargoDescription": $('#CargoDescription').val(),
+                "ImporterId": $('#ImporterId').val(),
+                "ImporterName": $('#Importer').val(),
+                "Commodity": $('#Commodity').val(),
+                "NoOfPackages": $('#NoOfPackages').val() == "" ? 0 : $('#NoOfPackages').val(),
+                "GrossWt": $('#GrossWt').val() == "" ? 0 : $('#GrossWt').val(),
+                "SQM": $('#SQM').val() == "" ? 0 : $('#SQM').val(),
+                "CUM": $('#CUM').val() == "" ? 0 : $('#CUM').val(),
+                "CIF": $('#CIF').val() == "" ? 0 : $('#CIF').val(),
+                "Duty": $('#Duty').val() == "" ? 0 : $('#Duty').val(),
+                "DelNoOfPackages": $('#DelNoOfPackages').val() == "" ? 0 : $('#DelNoOfPackages').val(),
+                "DelGrossWt": $('#DelGrossWt').val() == "" ? 0 : $('#DelGrossWt').val(),
+                "DelSQM": $('#DelSQM').val() == "" ? 0 : $('#DelSQM').val(),
+                "DelCUM": $('#DelCUM').val() == "" ? 0 : $('#DelCUM').val(),
+                "DelCIF": $('#DelCIF').val() == "" ? 0 : $('#DelCIF').val(),
+                "DelDuty": $('#DelDuty').val() == "" ? 0 : $('#DelDuty').val()
+                // "CommodityId": $('#CommodityId').val(),
+            }
+            var flg=0;
+            $.each(ArrayOfDeliveryApp, function (i, item) {
+                debugger;
+                if(item.BOELineNo==$('#BOELineNo').val()){
+                    flg=1;
+                }
+            });
+            if(flg==1){
+                alert('BOE Line No. is already added');
+                return false;
+            }
+            ArrayOfDeliveryApp.push(DeliveryAppDtl);
+            debugger;
+            // $('#BOELineNoList #' + $('#DestuffingEntryDtlId').val()).remove();
+            ResetDeliveryAppDet();
+            GenerateDeliveryAppTable();
+            $('#BtnAddDeliveryApp').prop("disabled", true);
+        }
+        else {
+            $('#DivDeliveryAppTblErrMsg').html('Please Select A Deposit No In Order To Add Details');
+        }
+    }
+
+
+    function SaveDeliveryOrdDtl() {
+        debugger;
+        if ($('#IssuedBy').val() == '') {
+            $('[data-valmsg-for="IssuedBy"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+
+
+        if ($('#CargsDelivered').val() == '') {
+            $('[data-valmsg-for="CargsDelivered"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        //if ($('#DelGrossWt').val() == '') {
+        //    $('[data-valmsg-for="DelGrossWt"]').html('<span>Fill Out This Field</span>');
+        //    return false;
+        //}
+        //if ($('#DelSQM').val() == '') {
+        //    $('[data-valmsg-for="DelSQM"]').html('<span>Fill Out This Field</span>');
+        //    return false;
+        //}
+        //if ($('#DelCUM').val() == '') {
+        //    $('[data-valmsg-for="DelCUM"]').html('<span>Fill Out This Field</span>');
+        //    return false;
+        //}
+        if ($('#ddlValidType').val() == '') {
+            $('#ErrddlValidType').html('Fill Out This Field');
+
+            return false;
+        }
+        $('#DivDeliveryOrdTblErrMsg').html('');
+        var dtvalue = "";
+        if ($('#ddlValidType').val() == "Open")
+        {
+            dtvalue = "";
+        }
+        else
+        {
+            dtvalue = $('#ValidDate').val();
+        }
+
+
+
+        var DeliveryAppDtl = {
+            "OrderId": 0,
+            "DeliveryNo": 0,
+            "IssuedBy": $('#IssuedBy').val(),
+            "DeliveredTo": $('#CargsDelivered').val(),
+            "ValidType": $('#ddlValidType').val(),
+            "ValidDate": dtvalue
+            // "CommodityId": $('#CommodityId').val(),
+        }
+        ArrayOfDeliveryOrd.push(DeliveryAppDtl);
+        debugger;
+        // $('#BOELineNoList #' + $('#DestuffingEntryDtlId').val()).remove();
+        ResetDeliveryOrdDet();
+        GenerateDeliveryOrdTable();
+        //$('#BtnAddDeliveryOrd').prop("disabled", true);
+
+
+    }
+
+
+    function ResetDeliveryAppDet() {
+        debugger;
+        $('#DivDeliveryAppDetails').find('input:text,textarea').val('');
+        $('#CommodityId').val('');
+        $('#DestuffingEntryDtlId').val('');
+        $('#SearchBOELineNo').css("display", "block");
+    }
+
+    function ResetDeliveryOrdDet() {
+        debugger;
+        $('[data-valmsg-for="IssuedBy"]').html('');
+        $('[data-valmsg-for="CargsDelivered"]').html('');
+        $('#ErrddlValidType').html('');
+        $('#DivDeliveryOrderDetails').find('input:text,textarea').val('');
+
+        $('#ValidType').val('--Select--');
+
+    }
+
+
+    function GenerateDeliveryAppTable() {
+        debugger;
+        $('#TblDeliveryAppDtl').hide();
+        var Html = '';
+        if (ArrayOfDeliveryApp.length != 0) {
+            $.each(ArrayOfDeliveryApp, function (i, item) {
+                debugger;
+                Html += '<tr><td class="text-center">' + (i + 1) + '</td><td>' + item.BOELineNo + '</td><td>' + item.DelGrossWt + '</td><td class="text-center"><a href="#" onclick="EditDeliveryAppDtl(' + i + ')"><i class="fa fa fa-pencil-square Edit" aria-hidden="true"></i></a></td><td class="text-center"><a href="#" onclick="ViewDeliveryAppDtl(' + i + ')"><i class="fa fa-search-plus" aria-hidden="true"></i></a></td></tr>';
+            });
+            $('#TblDeliveryAppDtl>tbody').html(Html);
+            $('#TblDeliveryAppDtl').show();
+        }
+    }
+
+
+    function GenerateDeliveryOrdTable() {
+        debugger;
+        $('#TblDeliveryAppOrd').hide();
+        var Html = '';
+        if (ArrayOfDeliveryOrd.length != 0) {
+            $.each(ArrayOfDeliveryOrd, function (i, item) {
+                debugger;
+                Html += '<tr><td class="text-center">' + (i + 1) + '</td><td>' + item.IssuedBy + '</td><td>' + item.DeliveredTo + '</td><td class="text-center"><a href="#" onclick="EditDeliveryOrdDtl(' + i + ')"><i class="fa fa fa-pencil-square Edit" aria-hidden="true"></i></a></td></tr>';
+            });
+            $('#TblDeliveryAppOrd>tbody').html(Html);
+            $('#TblDeliveryAppOrd').show();
+        }
+    }
+    function EditDeliveryAppDtl(Index) {
+        debugger;
+        $('#DivDeliveryAppTblErrMsg').html('');
+        if ($('#BtnAddDeliveryApp').prop("disabled") == true) {
+            $('#SearchBOELineNo').css("display", "block");
+            $('#BtnAddDeliveryApp').prop("disabled", false);
+            $('#DestuffingEntryDtlId').val(ArrayOfDeliveryApp[Index].DestuffingEntryDtlId);
+            $('#BOELineNo').val(ArrayOfDeliveryApp[Index].BOELineNo);
+            $('#OOC_BOENo').val(ArrayOfDeliveryApp[Index].OOC_BOENo);
+            $('#OOC_BOEDATE').val(ArrayOfDeliveryApp[Index].OOC_BOEDATE);
+            $('#LineNo').val(ArrayOfDeliveryApp[Index].LineNo);
+            $('#BOENo').val(ArrayOfDeliveryApp[Index].BOENo);
+            $('#CargoDescription').val(ArrayOfDeliveryApp[Index].CargoDescription);
+
+            $('#ImporterId').val(ArrayOfDeliveryApp[Index].ImporterId);
+            $('#Importer').val(ArrayOfDeliveryApp[Index].ImporterName);
+
+            $('#Commodity').val(ArrayOfDeliveryApp[Index].Commodity);
+            $('#CommodityId').val(ArrayOfDeliveryApp[Index].CommodityId);
+            $('#NoOfPackages').val(ArrayOfDeliveryApp[Index].NoOfPackages);
+            $('#GrossWt').val(ArrayOfDeliveryApp[Index].GrossWt);
+            $('#SQM').val(ArrayOfDeliveryApp[Index].SQM);
+            $('#CUM').val(ArrayOfDeliveryApp[Index].CUM);
+            $('#CIF').val(ArrayOfDeliveryApp[Index].CIF);
+            $('#Duty').val(ArrayOfDeliveryApp[Index].Duty);
+            $('#DelNoOfPackages').val(ArrayOfDeliveryApp[Index].DelNoOfPackages);
+            $('#DelGrossWt').val(ArrayOfDeliveryApp[Index].DelGrossWt);
+            $('#DelSQM').val(ArrayOfDeliveryApp[Index].DelSQM);
+            $('#DelCUM').val(ArrayOfDeliveryApp[Index].DelCUM);
+            $('#DelCIF').val(ArrayOfDeliveryApp[Index].DelCIF);
+            $('#DelDuty').val(ArrayOfDeliveryApp[Index].DelDuty);
+            ArrayOfDeliveryApp.splice(Index, 1);
+            GenerateDeliveryAppTable();
+        }
+        else {
+            $('#DivDeliveryAppTblErrMsg').html('Please Add The Above Records');
+        }
+    }
+
+    function ViewDeliveryAppDtl(Index) {
+        debugger;
+        if ($('#BtnAddDeliveryApp').prop("disabled") == true) {
+            $('#BtnAddDeliveryApp').prop("disabled", true);
+            $('#SearchBOELineNo').css("display", "none");
+            $('#DestuffingEntryDtlId').val(ArrayOfDeliveryApp[Index].DestuffingEntryDtlId);
+            $('#BOELineNo').val(ArrayOfDeliveryApp[Index].BOELineNo);
+            $('#LineNo').val(ArrayOfDeliveryApp[Index].LineNo);
+            $('#BOENo').val(ArrayOfDeliveryApp[Index].BOENo);
+            $('#OOC_BOENo').val(ArrayOfDeliveryApp[Index].OOC_BOENo);
+            $('#OOC_BOEDATE').val(ArrayOfDeliveryApp[Index].OOC_BOEDATE);
+            $('#CargoDescription').val(ArrayOfDeliveryApp[Index].CargoDescription);
+            $('#ImporterId').val(ArrayOfDeliveryApp[Index].ImporterId);
+            $('#Importer').val(ArrayOfDeliveryApp[Index].ImporterName);
+            $('#Commodity').val(ArrayOfDeliveryApp[Index].Commodity);
+            $('#CommodityId').val(ArrayOfDeliveryApp[Index].CommodityId);
+            $('#NoOfPackages').val(ArrayOfDeliveryApp[Index].NoOfPackages);
+            $('#GrossWt').val(ArrayOfDeliveryApp[Index].GrossWt);
+            $('#SQM').val(ArrayOfDeliveryApp[Index].SQM);
+            $('#CUM').val(ArrayOfDeliveryApp[Index].CUM);
+            $('#CIF').val(ArrayOfDeliveryApp[Index].CIF);
+            $('#Duty').val(ArrayOfDeliveryApp[Index].Duty);
+            $('#DelNoOfPackages').val(ArrayOfDeliveryApp[Index].DelNoOfPackages);
+            $('#DelGrossWt').val(ArrayOfDeliveryApp[Index].DelGrossWt);
+            $('#DelSQM').val(ArrayOfDeliveryApp[Index].DelSQM);
+            $('#DelCUM').val(ArrayOfDeliveryApp[Index].DelCUM);
+            $('#DelCIF').val(ArrayOfDeliveryApp[Index].DelCIF);
+            $('#DelDuty').val(ArrayOfDeliveryApp[Index].DelDuty);
+        }
+        else {
+            $('#DivDeliveryAppTblErrMsg').html('Please Add The Above Records');
+        }
+
+    }
+
+
+
+
+    function EditDeliveryOrdDtl(Index) {
+        debugger;
+        $('#DivDeliveryOrdTblErrMsg').html('');
+        // if ($('#BtnAddDeliveryOrd').prop("disabled") == true) {
+
+        $('#IssuedBy').val(ArrayOfDeliveryOrd[Index].IssuedBy);
+        $('#CargsDelivered').val(ArrayOfDeliveryOrd[Index].DeliveredTo);
+        $('#ddlValidType').val(ArrayOfDeliveryOrd[Index].ValidType);
+        $('#ValidDate').val(ArrayOfDeliveryOrd[Index].ValidDate);
+        $('#BtnAddDeliveryOrd').prop("disabled", false);
+        ArrayOfDeliveryOrd.splice(Index, 1);
+        GenerateDeliveryOrdTable();
+        //   }
+        //  else {
+        //      $('#DivDeliveryOrdTblErrMsg').html('Please Add The Above Records');
+        // }
+    }
+
+    function ViewDeliveryOrdDtl(Index) {
+        debugger;
+        $('#DivDeliveryOrdTblErrMsg').html('');
+        //  if ($('#BtnAddDeliveryOrd').prop("disabled") == true) {
+
+        $('#IssuedBy').val(ArrayOfDeliveryOrd[Index].IssuedBy);
+        $('#CargsDelivered').val(ArrayOfDeliveryOrd[Index].DeliveredTo);
+        $('#ddlValidType').val(ArrayOfDeliveryOrd[Index].ValidType);
+        $('#ValidDate').val(ArrayOfDeliveryOrd[Index].ValidDate);
+        $('#BtnAddDeliveryOrd').attr("disabled");
+        //   ArrayOfDeliveryOrd.splice(Index, 1);
+        // GenerateDeliveryOrdTable();
+        //}
+        // else {
+        $('#DivDeliveryOrdTblErrMsg').html('Please Add The Above Records');
+        //  }
+
+    }
+
+    function DeliveryOnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            $('#DivDeliveryMsg').html(data.Message);
+            setTimeout(function () {
+                $('#DivBody').load('/Import/Loni_CWCImport/CreateDeliveryApplication');
+            },5000)
+            $('#BtnSaveDelvApp').attr("disabled",true);
+        }
+        else {
+            $('#DivDeliveryErrMsg').html(data.Message);
+        }
+    }
+
+    function DeliveryOnFailure() {
+
+    }
+
+    function FillBalancedUnits() {
+        debugger;
+        $('[data-valmsg-for="DelNoOfPackages"]').html('<span></span>');
+        if (Number($('#DelNoOfPackages').val()) > Number($('#NoOfPackages').val())) {
+            alert('No Of Packages Should Be Less Than Destuff  No Of Packages');
+            return false;
+        }
+        else {
+            var DelNoOfPackages = Number($('#DelNoOfPackages').val());
+
+            var GrossWt = Number($('#GrossWt').val());
+            var SQM = Number($('#SQM').val());
+            var CUM = Number($('#CUM').val());
+            var CIF = Number($('#CIF').val());
+            var NoOfPackages = Number($('#NoOfPackages').val());
+            var Duty = Number($('#Duty').val());
+            if (NoOfPackages != 0) {
+                $('#DelGrossWt').val(((GrossWt / NoOfPackages) * DelNoOfPackages).toFixed(2));
+                $('#DelSQM').val(((SQM / NoOfPackages) * DelNoOfPackages).toFixed(2));
+                $('#DelCUM').val(((CUM / NoOfPackages) * DelNoOfPackages).toFixed(2));
+                $('#DelCIF').val(((CIF / NoOfPackages) * DelNoOfPackages).toFixed(2));
+                $('#DelDuty').val(((Duty / NoOfPackages) * DelNoOfPackages).toFixed(2));
+                return true;
+            }
+
+        }
+
+    }
+
+    function FillBalancedWeights() {
+        debugger;
+        $('[data-valmsg-for="Weight"]').html('<span></span>');
+        if (Number($('#DelGrossWt').val()) > Number($('#GrossWt').val())) {
+            alert('Weight Should Be Less Than Closing Weight');
+        }
+        else {
+            $('#ClosingWeight').val((ClosingWeight - Number(parseFloat(Number($('#Weight').val())))).toFixed(3));
+        }
+
+    }
+
+    $('#BtnSaveDelvApp').on("click", function () {
+        debugger;
+
+        $('#DivDeliveryAppTblErrMsg').html('');
+        if ($('#BOELineNo').val() == "" && $('#TblDeliveryAppDtl >tbody').html() != "" && $('#TblDeliveryAppOrd >tbody').html() != "" ) {
+            if (ArrayOfDeliveryApp.length != 0) {
+                $('#DeliveryAppDtlXml').val(JSON.stringify(ArrayOfDeliveryApp));
+            }
+            else {
+                $('#DivDeliveryAppTblErrMsg').html('Please Add The Above Records');
+
+                return false;
+            }
+
+            if (ArrayOfDeliveryOrd.length != 0) {
+                $('#DeliveryOrdDtlXml').val(JSON.stringify(ArrayOfDeliveryOrd));
+            }
+            else
+            {
+                $('#DivDeliveryOrdTblErrMsg').html('Please Add The Above Records');
+
+                return false;
+            }
+        }
+        else if ($('#BOELineNo').val() != "" && $('#BtnAddDeliveryApp').prop("disabled") == true && $('#BtnAddDeliveryOrd').prop("disabled") == true) {
+            if (ArrayOfDeliveryApp.length != 0) {
+                $('#DeliveryAppDtlXml').val(JSON.stringify(ArrayOfDeliveryApp));
+            }
+            if (ArrayOfDeliveryOrd.length != 0) {
+                $('#DeliveryOrdDtlXml').val(JSON.stringify(ArrayOfDeliveryOrd));
+            }
+        }
+        else {
+
+            if (ArrayOfDeliveryApp.length == 0) {
+                $('#DivDeliveryAppTblErrMsg').html('Please Add The Above Records');
+            }
+            else
+            {
+                $('#DivDeliveryOrdTblErrMsg').html('Please Add The Above Records');
+            }
+            return false;
+        }
+    });
+
+    function AllowOnlyDecimal(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || (CharCode == 46) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+    function AllowOnlyInteger(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+
+
+    function LoadMoreCHA() {
+        debugger;
+        $.ajax({
+            url: '/Import/Loni_CWCImport/LoadCHAList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstCHA, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectCHA(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleCha tbody').html(html);
+                    else
+                        $('#tbleCha tbody').append(html);
+                    Page++;
+
+                    debugger;
+                    if (data.Data.State == true)
+                        $('#btnLoadCHA').prop('disabled', false);
+                    else $('#btnLoadCHA').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    var Page=0;
+    function LoadCHA() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/Import/Loni_CWCImport/LoadCHAList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstCHA, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectCHA(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+
+                    $('#tbleCha tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadCHA').prop('disabled', false);
+                    else $('#btnLoadCHA').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SelectCHA(CHAId, CHAName) {
+        debugger;
+        $('#CHA').val(CHAName);
+        $('#CHAId').val(CHAId);
+        $("#CHADtlModal").modal("hide");
+        $('#Chabox').val('');
+        LoadCHA();
+    }
+
+    function SearchChaByPartyCode() {
+        if ($('#Chabox').val() != '') {
+            $.ajax({
+                url: '/Import/Loni_CWCImport/CHASearchByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#Chabox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstCHA, function (item, elem) {
+                            html += '<tr onclick="SelectCHA(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleCha tbody').html('');
+                        $('#tbleCha tbody').html(html);
+                        $('#btnLoadCHA').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleCha tbody').html('');
+                        Page = -1;
+                        $('#btnLoadCHA').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadCHA();
+    }
+
+    function CloseCHA() {
+        $('#Chabox').val('');
+        $("#CHADtlModal").modal("hide");
+        LoadCHA();
+    }
+
+</script>
+
+
+<div>
+</div>

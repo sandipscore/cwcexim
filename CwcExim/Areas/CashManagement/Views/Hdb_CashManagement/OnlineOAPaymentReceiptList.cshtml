@@ -1,0 +1,158 @@
+﻿@model IEnumerable<CwcExim.Areas.CashManagement.Models.OnlinePaymentReceipt>
+
+<table id="tblCashReceiptList" class="table table-bordered table-striped" style="width:100%">
+    <thead>
+        <tr>
+            <th class="text-center">Print</th>
+            <th class="text-center">SL. No.</th>
+            <th>Receipt No</th>
+            <th>Receipt Date</th>
+            <th>Party Name.</th>
+            <th>Amount Paid</th>           
+        </tr>
+    </thead>
+    <tbody>
+        @{ var Serial = 1;
+            if (Model != null)
+            {
+                foreach (var data in Model)
+                {
+                    <tr>
+                        <td class="text-center"><div class="table_icon"><a href="#" onclick="PreviewReceipt('@data.ReceiptNo')"><i class="fa fa-file-pdf-o Edit"></i></a></div></td>
+                        <td class="text-center">@Serial.ToString()</td>
+                        <td>@data.ReceiptNo</td>
+                        <td>@data.ReceiptDate</td>
+                        <td>@data.PayerName</td>                       
+                        <td>@data.AmountPaid</td>                        
+                    </tr>
+                    Serial++;
+                }
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="btn btn-primary mr-1 btn-100px" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+<script>
+    $(document).ready(function () {
+        var tblCashReceiptList = $('#tblCashReceiptList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                       { "sName": "Print", "bSortable": false, "width": "10%" },
+                       { "sName": "SL. No.", "width": "8%" },
+                       { "sName": "Receipt No", "bSortable": false },
+                       { "sName": "Receipt Date", "bSortable": false },
+                       { "sName": "Party Name", "bSortable": false, },
+                       { "sName": "Amount", "bSortable": false, },
+
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0),td:eq(5)', nRow).addClass("text-center");
+                $('td:eq(4)', nRow).addClass("text-right");
+                $('td:eq(0)', nRow).css("width", "10%");
+            }
+        });
+        new $.fn.dataTable.FixedHeader(tblCashReceiptList);
+    });
+
+    var Pages = 0;
+    function LoadMoreListData() {
+        debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/CashManagement/Hdb_CashManagement/LoadOnlineOAPaymentReceiptList',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Pages: Pages + 1 },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Pages++;
+                    var html = '';
+                    var dt = $('#tblCashReceiptList').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.ReceiptNo],
+        [item.ReceiptDate],
+        [item.PayerName],
+        [item.AmountPaid],
+        ['<a href="#" onclick=PreviewReceipt(' + [item.ReceiptNo] + ')><i class="fa fa-file-pdf-o Edit"></i></a>'],
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+
+    @*function PreviewReceipt(ReceiptNumber) {
+        debugger;
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetBulkReceiptReport", "Hdb_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                ReceiptNumber:ReceiptNumber
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }*@
+
+    @*function PreviewReceipt(ReceiptNumber) {
+        debugger;
+        var printTable = "<table style='width:100%; border-style:none;text-align:center;'><tr><td>CENTRAL WAREHOUSING CORPORATION<br/><small>Cash Deposit to PD Account Voucher</small></td></tr></table>";
+        printTable += "<table style='width:100%; border-style:none;margin-top:50px;'><tr><td style='text-align:left;'>Receipt No. : " + $('#ReceiptNo').val() + "</td><td style='text-align:right;'>Dated : " + $('#TransDate').val() + "</td></tr><tr><td colspan='2' style='text-align:left;'>Payee Name : " + $('#PartyName').val() + "<br/>Address : <span style='font-size:pt;'>" + $('#Address').val().replace(/\,/g, "<br/>") + "</span></td></tr><tr><td colspan='2' style='text-align:left;'>Folio No. : " + $('#FolioNo').val() + "</td></tr></table><br/><br/>";
+        printTable += "<table style='width:100%;border-collapse:collapse;font-size:10pt;' border='1'><thead><tr><th style='text-align:center;'>Sl#</th><th style='text-align:center;'>Mode</th><th style='text-align:center;'>Bank</th><th style='text-align:center;'>Ins. No</th><th style='text-align:center;'>Date</th><th style='text-align:center;'>Amount</th></tr></thead><tbody>";
+        for (var i = 0; i < 1; i++) {
+            printTable += "<tr><td>" + (i + 1) + "</td><td>" + $('#Details_' + i + '__Type').val() + "</td><td>" + $('#Details_' + i + '__Bank').val() + "</td><td>" + $('#Details_' + i + '__InstrumentNo').val() + "</td><td>" + $('#Details_' + i + '__Date').val() + "</td><td style='text-align:right;'>" + Number($('#Details_' + i + '__Amount').val()).toFixed(2) + "</td></tr>";
+        }
+        printTable += "</tbody><tfoot><tr><td colspan='5' style='text-align:right;'>Total Diposited : </td><td style='text-align:right;'>" + Number($('#txtTotal').val()).toFixed(2) + "</td></tr></tfoot></table><table style='margin-top:50px;'><tr><td>Received By :</td></tr></table>";
+        var PostData = new FormData();
+        PostData.append("page", printTable);
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GeneratePDF1", "Hdb_CashManagement", new { area = "CashManagement" })',
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                window.open("/Docs/AddMoneyReceipt/" + data.Data + '?t=' + (new Date().getTime()), "_blank", "fullscreen=yes");
+            }
+        });
+    }*@
+
+     function PreviewReceipt(ReceiptNumber) {
+        debugger;
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetPDAReceiptReportNew", "Hdb_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                ReceiptNumber:ReceiptNumber
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }
+</script>

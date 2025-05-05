@@ -1,0 +1,217 @@
+﻿ <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-4">
+                    <div class="row">
+                        <div class="col-md-2 col_cus_3 col-md-offset-1 padding_rt">
+                            <div class="boolean-container">
+                                @Html.RadioButton("Status", "1", new { @id = "RbNew", @onchange = "LoadData(false)", @checked = true })
+                                <label for="RbNew"><i class="circle"></i><span>New</span></label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="boolean-container">
+                                @Html.RadioButton("Status", "2", new { @id = "RbAppRej", @onchange = "LoadData(false)" })
+                                <label for="RbAppRej"><i class="circle"></i><span>Approved / Rejected</span></label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="boolean-container">
+                                @Html.RadioButton("Status", "3", new { @id = "RdIssued", @onchange = "LoadData(false)" })
+                                <label for="RdIssued"><i class="circle"></i><span>Issued</span></label>
+                            </div>
+                        </div>
+                    </div>
+                <div class="row">
+                    <div class="col-md-8">
+                        <input type="text" class="form-control input-sm" placeholder="Search By AWB No. or Application No" id="txtSearch" style="width:100%;" />
+                    </div>
+                    <div class="col-md-4">
+                        <button id="btnSearch" class="btn Log_Btn" onclick="SearchAWBNo()">Search</button>
+                    </div>
+                </div>
+                    <div class="row Form_Space_top">
+                        <div class="col-md-12">
+                            <div class="panel table_bk">
+                                <table class="table1 table-condensed Table_Text_Align" style="border:none;">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center" style="width:10%;">Sl No</th>
+                                            <th style="width:30%;">Application No</th>
+                                            <th style="width:25%;">CHA</th>
+                                            <th>Importer</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                                <div class="Left_list">
+                                    <div class="div-table-content Left_List_con">
+                                        <table id="TblSpaceAvail" class="table table-condensed Table_Text_Align Table_Hover Bond_SAC" style="border:none;">
+                                            <tbody>
+                                                @{var Srl = 1;
+                                                        if (ViewBag.SpaceAvailList != null)
+                                                        {
+                                                            foreach (var item in ViewBag.SpaceAvailList)
+                                                            {
+                                                                <tr onclick="LoadSpaceAvailCert(@item.SpaceappId)">
+                                                                    <td>@Srl.ToString()</td>
+                                                                    <td>@item.ApplicationNo</td>
+                                                                    <td>@item.CHAName</td>
+                                                                    <td>@item.ImporterName</td>                                                                    
+                                                                </tr>
+                                                            Srl = Srl + 1;
+                                                        }
+                                                    }
+                                                    }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <table style="border:none;width:100%;">
+                                    <tfoot>
+                                        <tr>
+                                            <td><button id="btnLoadMore" class="tfoot_load" style="padding:4px;" onclick="LoadMoreData()">Load More</button></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+            <div class="col-sm-12 col-md-8">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="Head_h4">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h4>Space Availability Certificate</h4>
+                                </div>
+                            </div>
+                            <div class="row" id="DivSpaceAvailCert"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        var Skip = 1;
+        function SearchAWBNo()
+        {
+            var State = ($('#RbNew').is(':checked') == true ? 1 : ($('#RbAppRej').is(':checked')==true?2:3));
+            if ($('#txtSearch').val() != '')
+            {
+                //$('#RbNew,#RbAppRej,#RdIssued').prop('checked', false);
+                $.ajax({
+                    url: '/Bond/HdbBond/SearchUsingAppNoorAWBNo',
+                    type: 'GET',
+                    data: { "AWBNo": $('#txtSearch').val(), "State": State },
+                    dataType: 'JSON',
+                    success: function (data) {
+                        var html = '';
+                        if (data.Status == 1) {
+                            $.each(data.Data.List, function (i, item) {
+                                html += '<tr onclick="LoadSpaceAvailCert(' + item.SpaceappId + ')"><td>' + (i + 1) + '</td><td>' + item.ApplicationNo + '</td><td>' + item.CHAName + '</td><td>' + item.ImporterName + '</td></tr>'
+                            });
+                            $('#btnLoadMore').css("display", "none");
+                        }
+                        $('#TblSpaceAvail tbody').html(html);
+                        $('#DivSpaceAvailCert').html('');
+                        Skip = 0;
+                    }
+                });
+            }
+            else
+                LoadData(true);
+        }
+        function LoadData(clear) {
+            $('#txtSearch').val('');
+            var Approval;
+            if ($('#RbNew').is(":checked"))
+                Approval = 1;
+            else if ($('#RbAppRej').is(":checked"))
+                Approval = 2;
+            else
+                Approval = 3;
+            if (clear == true)
+                $('#DivSpaceAvailCert').html('');
+            Skip = 0;
+            $.ajax({
+                url: '/Bond/HdbBond/LoadMoredata',
+                type: 'GET',
+                data: { Status: Approval, Skip: 0 },
+                dataType: 'JSON',
+                success: function (data) {
+                    debugger;
+                    var html = '';
+                    if (data.Status == 1) {
+                        $.each(data.Data.List, function (i, item) {
+                            html += '<tr onclick="LoadSpaceAvailCert(' + item.SpaceappId + ')"><td>' + (i + 1) + '</td><td>' + item.ApplicationNo + '</td><td>' + item.CHAName + '</td><td>' + item.ImporterName + '</td></tr>'
+                        });
+                        if (data.Data.State == false)
+                            $('#btnLoadMore').css("display", "none");
+                        else
+                            $('#btnLoadMore').css("display", "block");
+                    }
+                    else
+                    {
+                        $('#btnLoadMore').css("display", "none");
+                    }
+                    $('#TblSpaceAvail tbody').html(html);
+                }
+            });
+        }
+        function LoadMoreData() {
+            debugger;
+            if ($.trim($('#TblSpaceAvail>tbody').html()) == '') {
+                $('#btnLoadMore').css("display", "none");
+                return false;
+            }
+            var Approval;
+            if ($('#rbNew').is(":checked"))
+                Approval = "N";
+            else if ($('#RbAppRej').is(":checked"))
+                Approval = 2;
+            else
+                Approval = 3;
+            Skip = Skip + 1;
+            $.ajax({
+                url: '/Bond/HdbBond/LoadMoredata',
+                type: 'GET',
+                data: { Status: Approval,Skip : Skip},
+                dataType: 'JSON',
+                success: function (data) {
+                    debugger;
+                    var html = '';
+                    if (data.Status == 1) {
+                        var length = $('#TblSpaceAvail tbody tr').length;
+                        $.each(data.Data.List, function (i, item) {
+                            length++;
+                            html += '<tr onclick="LoadSpaceAvailCert(' + item.SpaceappId + ')"><td>' + (length) + '</td><td>' + item.ApplicationNo + '</td><td>' + item.CHAName + '</td><td>' + item.ImporterName + '</td></tr>'
+                        });
+                        if (data.Data.State == false)
+                            $('#btnLoadMore').css("display", "none");
+                        else
+                            $('#btnLoadMore').css("display", "block");
+                        $('#TblSpaceAvail tbody').append(html);
+                    }
+                    else
+                    {
+                        $('#btnLoadMore').css("display", "none");
+                    }
+                }
+            });
+        }
+        function LoadSpaceAvailCert(SpaceappId) {
+            var stats=0;
+            if($('#RbNew').is(":checked")==true)
+                stats=1;
+            else if($('#RbAppRej').is(":checked")==true)
+                stats=2;
+            else
+                stats=3;
+            $('#DivSpaceAvailCert').load('/Bond/HdbBond/LoadSpaceAvailCert?SpaceappId=' + SpaceappId+'&Status='+stats);
+        }
+
+        $(function () {
+            LoadData();
+        });
+    </script>

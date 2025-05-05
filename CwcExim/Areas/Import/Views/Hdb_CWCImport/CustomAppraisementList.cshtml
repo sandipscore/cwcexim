@@ -1,0 +1,163 @@
+﻿@model IEnumerable<CwcExim.Areas.Import.Models.Hdb_CustomAppraisement>
+
+<script>
+    var SubDomain;
+    var Page = 0;
+    $(function(){
+        SubDomain = '@System.Configuration.ConfigurationManager.AppSettings["SubDomain"]';
+        var TblCustomAppraisement = $('#TblCustomAppraisement').DataTable({
+            "bFilter":false,
+            "bInfo":false,
+            "aoColumns":[
+                       {"sName":"SL No","width":"8%"},
+                       { "sName": "Stuffing No", "bSortable": false },
+                       { "sName": "Stuffing Date", "bSortable": false },
+                        { "sName": "ContainerNo", "bSortable": false },
+                         { "sName": "Size", "bSortable": false },
+                          { "sName": "FormOneNo", "bSortable": false },
+                           { "sName": "BL", "bSortable": false },
+                       {"sName":"Edit","bSortable":false,"width":"10%"},
+                       {"sName":"View","bSortable":false,"width":"10%"},
+                       { "sName": "Delete", "bSortable": false, "width": "10%" },
+                        { "sName": "Print", "bSortable": false, "width": "10%" }
+
+                      ]
+        });
+        new $.fn.dataTable.FixedHeader(TblCustomAppraisement);
+    });
+    function LoadCustomAppraisement() {
+        $('#DivBody').load( '/Import/Hdb_CWCImport/CreateCustomAppraisement');
+    }
+    function EditCustomAppraisement(CustomAppraisementId) {
+        debugger;
+        $('#DivBody').load( '/Import/Hdb_CWCImport/EditCustomAppraisement?CustomAppraisementId=' + CustomAppraisementId);
+    }
+    function ViewCustomAppraisement(CustomAppraisementId) {
+        debugger;
+        $('#DivBody').load( '/Import/Hdb_CWCImport/ViewCustomAppraisement?CustomAppraisementId=' + CustomAppraisementId);
+    }
+    function DeleteCustomAppraisement(CustomAppraisementId) {
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        var Confirm=confirm("Are You Sure You Want To Delete?");
+        if(Confirm==true){
+            $.ajax({
+                url:  '/Import/Hdb_CWCImport/DeleteCustomAppraisement',
+                type:'POST',
+                headers:{'__RequestVerificationToken':Token},
+                data: { CustomAppraisementId: CustomAppraisementId },
+                dataType:'JSON',
+                async:false,
+                success:function(data){
+                    debugger;
+                    if(data.Status==1){
+                        LoadCustomAppraisement();
+                    }
+                    else if (data.Status == 2) {
+                        alert(data.Message);
+                    }
+                }
+            });
+        }
+    }
+    function PrintAppraisementDet(CustomAppraisementId) {
+        debugger;
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url:"/Report/Hdb_ReportCWC/PrintAppraismentDet",
+            type: "POST",
+            data: { CustomAppraisementId: CustomAppraisementId },
+            headers: { "__RequestVerificationToken": Token },
+            dataType: "JSON",
+            async: false,
+            success: function (data) {
+                debugger;
+                if (data.Status = 1) {
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                }
+                else {
+                    alert(data.Message);
+                }
+            }
+        });
+    }
+    function LoadMoreListData() {
+        debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Import/Hdb_CWCImport/LoadListMoreDataforCustomApprisement',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#TblCustomAppraisement').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.AppraisementNo],
+        [item.AppraisementDate],
+        [item.ContainerNo],
+        [item.Size],
+        [item.FormOneNo],
+         [item.BL],
+        ['<a href="#" class="view" onclick=EditCustomAppraisement(' + [item.CustomAppraisementId] + ')><i class="fa fa-search-plus Edit"></i></a>'],
+        ['<a href="#" class="edit" onclick=ViewCustomAppraisement(' + [item.CustomAppraisementId] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+          ['<a href="#" class="delete" onclick=DeleteCustomAppraisement(' + [item.CustomAppraisementId] + ')><i class="fa fa-window-close-o Delete"></i></a>'],
+            ['<a href="#"  onclick=PrintAppraisementDet(' + [item.CustomAppraisementId] + ')><i class="fa fa-print Edit"></i></a>'],
+
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+</script>
+
+<table id="TblCustomAppraisement" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("SL No")</th>
+            <th>Appraisement No</th>
+            <th>Appraisement Date</th>
+            <th>Container Number</th>
+            <th>Size</th>
+            <th>Form- 1 No.</th>
+            <th>BL Number</th>
+            <th class="text-center">@Html.DisplayName("Edit")</th>
+            <th class="text-center">@Html.DisplayName("View")</th>
+            <th class="text-center">@Html.DisplayName("Delete")</th>
+            <th class="text-center">@Html.DisplayName("Print")</th>
+
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center">@SerialNo</td>
+                    <td>@Html.DisplayFor(m => item.AppraisementNo)</td>
+                    <td>@Html.DisplayFor(m => item.AppraisementDate)</td>
+                    <td>@Html.DisplayFor(m => item.ContainerNo)</td>
+                    <td>@Html.DisplayFor(m => item.Size)</td>
+                    <td>@Html.DisplayFor(m => item.FormOneNo)</td>
+                    <td>@Html.DisplayFor(m => item.BL)</td>
+                    <td class="text-center"><a href="#" onclick="EditCustomAppraisement(@item.CustomAppraisementId)"><i class="fa fa-pencil-square Edit" aria-hidden="true"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="ViewCustomAppraisement(@item.CustomAppraisementId)"><i class="fa fa-search-plus Edit" aria-hidden="true"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="DeleteCustomAppraisement(@item.CustomAppraisementId)"><i class="fa fa-window-close-o Delete" aria-hidden="true"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="PrintAppraisementDet(@item.CustomAppraisementId)"><i class="fa fa-file-pdf-o Edit" aria-hidden="true"></i></a></td>
+                </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>

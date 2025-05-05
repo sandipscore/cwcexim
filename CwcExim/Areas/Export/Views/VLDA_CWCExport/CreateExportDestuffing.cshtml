@@ -1,0 +1,481 @@
+﻿@if (ViewBag.ContainersList != null)
+{
+    <input type="hidden" id="hdnContainersList" value="@ViewBag.ContainersList" />
+}
+else
+{
+    <input type="hidden" id="hdnContainersList" value="" />
+}
+
+@if (ViewBag.ShippingLineList != null)
+{
+    <input type="hidden" id="hdnShippingLineList" value="@ViewBag.ShippingLineList" />
+}
+else
+{
+    <input type="hidden" id="hdnShippingLineList" value="" />
+}
+
+@if (ViewBag.CHAList != null)
+{
+    <input type="hidden" id="hdnCHAList" value="@ViewBag.CHAList" />
+}
+else
+{
+    <input type="hidden" id="hdnCHAList" value="" />
+}
+
+
+@if (ViewBag.PaymentParty != null)
+{
+    <input type="hidden" id="hdnPaymentParty" value="@ViewBag.PaymentParty" />
+}
+else
+{
+    <input type="hidden" id="hdnPaymentParty" value="" />
+}
+
+@if (ViewBag.RightsList != null)
+{
+    <input type="hidden" id="hdnRights" value="@ViewBag.RightsList" />
+}
+else
+{
+    <input type="hidden" id="hdnRights" value="" />
+}
+
+<script src="~/Areas/Export/Scripts/App/Models/WFLDExportDestuffingContainer.js"></script>
+<script src="~/Areas/Export/Scripts/App/Services/WFLDExportDestuffingService.js"></script>
+<script src="~/Areas/Export/Scripts/App/Controllers/WFLDExportDestuffingCtrl.js"></script>
+<script>
+    angular.bootstrap(document.getElementById('ExpDestufAppDiv'), ['CWCApp']);
+
+    $('#InvoiceDate').datetimepicker({
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        dateFormat: "dd/mm/yy",
+        altField: "#slider_example_4andHalf_alt",
+        altFieldTimeOnly: false,
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+
+
+    function PaymentOnSuccess(data) {
+        debugger;
+        if (data.Status == 1 || data.Status == 2) {
+            if ($('#DivPaySheetCargoMsg').hasClass('logErrMsg'))
+                $('#DivPaySheetCargoMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#InvoiceNo').val(data.Data.InvoiceNo);
+            $('#PaymentSheetModelJson').val(JSON.stringify(data.Data));
+            $('#DivPaySheetCargoMsg').html(data.Message);
+            $('#btnPrint').removeAttr('disabled');
+            //setTimeout(ResetField, TimeInSeconds);
+        }
+        else {
+            if ($('#DivPaySheetCargoMsg').hasClass('logSuccMsg')) {
+                $('#DivPaySheetCargoMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+                $('#btnSave').removeAttr('disabled');
+            }
+            $('#DivPaySheetCargoMsg').html(data.Message);
+        }
+    }
+    function PaymentOnFailure() {
+        alert("Error");
+    }
+    function ResetField() {
+        debugger;
+        $('#DivBody').load('/Export/VLDA_CWCExport/CreateExportDestuffing');
+    }
+
+    var TaxType = '@ViewData["InvType"].ToString()';
+    function IVType(Type) {
+        debugger;
+        TaxType = Type;
+        $('#DivBody').load('/Export/VLDA_CWCExport/CreateExportDestuffing?type=' + Type);
+    }
+    if (TaxType == 'Tax')
+        $('#Tax').prop('checked', true);
+    else
+        $('#Bill').prop('checked', true);
+
+
+    function PrintInvoice() {
+        debugger;
+        var invoiceno = $('#InvoiceNo').val();
+
+        //if (invoiceno == '')
+        //{
+        //    alert('No Invoice No');
+        //    return;
+        //}
+
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            /*url: 'Url.Action("YardInvoicePrint", "WFLD_CWCImport", new { Area = "Import" }) ',*/
+            url: '@Url.Action("GetBulkInvoiceReport", "VLDA_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                InvoiceNumber: invoiceno,
+                InvoiceModule: 'EXPDestuf',
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                InvoiceModuleName: 'Export Destuffing',
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }
+
+
+    /*
+    $('#ShipBillDate').datetimepicker({
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        dateFormat: "dd/mm/yy",
+        altField: "#slider_example_4andHalf_alt",
+        altFieldTimeOnly: false,
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });*/
+</script>
+
+    @Html.AntiForgeryToken()
+    @Html.Hidden("ContainerJson")
+
+    <div id="ExpDestufAppDiv">
+        <div ng-controller="ExportDestuffingCtrl">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-offset-0-5 col-md-11">
+                        <div class="Head_h4">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h4>Export Destuffing</h4>
+                                </div>
+                            </div>
+
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Container No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        <input name="ContainerNo" id="ContainerNo" type="text" ng-model="SelectedContainer.ContainerNo" readonly />
+                                        <span class="search" id="ContainerNoSearch" ><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#Containerdtl"></i></span>
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Destuffing No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        <input name="DestufNo" id="DestufNo" type="text" ng-model="DestufNo" readonly />
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                        <label>Destuffing Date:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBox("InvoiceDate", "", new { @readonly = true, Value = DateTime.Now.ToString("dd/MM/yyyy HH:mm") })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Shipping Line:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        <input type="text" id="ShippingLineName" ng-model="SelectedContainer.ShippingLineName" readonly />
+                                        <span class="search" id="ShippingLineSearch" ><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ShippingLineModal"></i></span>                                       
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>CHA:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        <input type="text" id="CHAName" ng-model="SelectedContainer.CHAName" readonly />
+                                        @*<span class="search" id="CHASearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CHAModal"></i></span>*@
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Ship Bill No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        <input name="ShipBillNo" id="ShipBillNo" type="text" readonly ng-model="SelectedContainer.ShippingBillNo" />
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                        <label>Ship Bill Date:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        <input name="ShipBillDate" id="ShipBillDate" type="text" ng-model="SelectedContainer.ShippingDate" readonly />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Party:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        <input type="text" id="PartyName" ng-model="SelectedContainer.PartyName" readonly />
+                                        @*<span class="search" id="PartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>*@
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Invoice No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        <input name="InvoiceNo" id="InvoiceNo" type="text" ng-model="InvoiceNo" readonly />                                        
+                                    </div>
+
+                                </div>
+                            </div>
+                            <div class="Head_h5">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h5>Charges</h5>
+                                    </div>
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="col-md-12">
+                                        <table id="tblCWCCharges" class="table table-bordered table-striped dataTable Table_center">
+                                            <thead>
+                                                <tr>
+                                                    <th rowspan="2">Charges</th>
+                                                    <th rowspan="2">Value</th>
+                                                    <th colspan="2" class="text-center">IGST</th>
+                                                    <th colspan="2" class="text-center">CGST</th>
+                                                    <th colspan="2" class="text-center">SGST</th>
+                                                    <th rowspan="2" style="width:15%;">Total</th>
+                                                </tr>
+                                                <tr>
+                                                    <th>%</th>
+                                                    <th>Amt</th>
+                                                    <th>%</th>
+                                                    <th>Amt</th>
+                                                    <th>%</th>
+                                                    <th style="border-right:1px solid #ddd;">Amt</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr ng-repeat="c in InvoiceObj.lstPostPaymentChrg">
+                                                    <td>{{c.ChargeName}} [{{c.Clause}}]</td>
+                                                    <td style="text-align:right;">{{c.Taxable | number : 2}}</td>
+                                                    <td style="text-align:right;">{{c.IGSTPer | number : 2}}</td>
+                                                    <td style="text-align:right;">{{c.IGSTAmt | number : 2}}</td>
+                                                    <td style="text-align:right;">{{c.CGSTPer | number : 2}}</td>
+                                                    <td style="text-align:right;">{{c.CGSTAmt | number : 2}}</td>
+                                                    <td style="text-align:right;">{{c.SGSTPer | number : 2}}</td>
+                                                    <td style="text-align:right;">{{c.SGSTAmt | number : 2}}</td>
+                                                    <td style="text-align:right;">{{c.Total | number : 2}}</td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot>
+                                                @*<tr>
+                                                    <td colspan="8" class="text-right">Total:</td>
+                                                    <td style="font-weight:bold;color:#ff0000;text-align:right;">
+                                                        {InvoiceObj.AllTotal | number : 2}}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="8" class="text-right">Round Up:</td>
+                                                    <td style="font-weight:bold;color:#ff0000;text-align:right;">
+                                                        {InvoiceObj.RoundUp | number : 2}}
+                                                    </td>
+                                                </tr>*@
+                                                <tr>
+                                                    <td colspan="8" class="text-right">Total Invoice Amount:</td>
+                                                    <td style="font-weight:bold;color:#ff0000;text-align:right;">
+                                                        {{InvoiceObj.InvoiceAmt | number : 2}}
+                                                    </td>
+                                                </tr>
+
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5">
+                                        <label>Remarks:</label>
+                                    </div>
+                                    <div class="col-md-10-5">
+                                        <textarea id="Remarks" ng-model="Remarks" style="height:75px;" maxlength="500"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row SignUp_space_bottom SignUp_space_top">
+                                <div class="stoke"></div>
+                            </div>
+                            <div class="logSuccMsg Form_Space_bottom" id="DivPaySheetCargoMsg" style="background-color:transparent">{{Message}}</div>
+                            <div class="row SignUp_space_bottom2">
+                                <div class="col-md-offset-3 col-md-2">
+                                    <input type="button" id="btnSave" value="Save" class="btn log_Btn_sm" ng-click="SubmitInvoice()"  disabled />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="button" value="Reset" class="btn log_Btn_sm"  onclick="ResetField()" />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="button" value="Print" class="btn log_Btn_sm"  onclick="PrintInvoice()" id="btnPrint" disabled />
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+
+            <div id="Containerdtl" class="modal fade" role="dialog">
+                <div class="modal-dialog modal-lg">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true" ></i></button>
+                            <h4 class="modal-title">List of Container</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <input placeholder="Search Me" id="Containerbox" type="text" ng-model="searchContainer" />
+                            <div style="overflow-y:auto;height:300px; margin: 8px 0;">
+                                <table id="lstcfsCode" class="table table-bordered" style="border: 1px solid #ddd;">
+                                    <thead>
+                                        <tr>
+                                            <th>CFS Code</th>
+                                            <th>Container</th>
+                                            <th>ShippingLine</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="item in ContainersList | filter : {ContainerNo:searchContainer}">
+                                            <td>{{item.CFSCode}} </td>
+                                            <td>{{item.ContainerNo}}</td>
+                                            <td>{{item.ShippingLineName}}</td>
+                                            <td><button class="btn log_Btn_sm" ng-click="selectContainer(item)">Select</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal" >Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div id="ShippingLineModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of Shipping Line</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <input placeholder="Search Me" id="ShippingLinebox" type="text" ng-model="searchShippingLine" />
+                            <ul class="navList" id="lstParty">                   
+                                <li ng-repeat="p in ShippingLineList | filter: {ShippingLine : searchShippingLine }" ng-click="selectShippingLine(p)">{{p.ShippingLine}}</li>
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div id="CHAModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of CHA</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <input placeholder="Search Me" id="CHAbox" type="text" ng-model="searchCHA" />
+                            <ul class="navList" id="lstParty">
+                                <li ng-repeat="p in CHAList | filter: {CHAName : searchCHA }" ng-click="selectCHA(p)">{{p.CHAName}}</li>
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="PartyModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of Party</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <input placeholder="Search Me" id="Partybox" type="text" ng-model="searchParty" />
+                            <ul class="navList" id="lstParty">
+                                <li ng-repeat="p in PartyList | filter: {PartyName : searchParty }"  ng-click="selectParty(p)">{{p.PartyName}}</li>
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            </div>
+        </div>
+
+
+
+

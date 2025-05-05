@@ -1,0 +1,129 @@
+﻿@model IEnumerable<CwcExim.Areas.GateOperation.Models.VRN_ListOfGP>
+<table class="table table-bordered table-striped" id="tblGP" style="width:100%; table-layout: fixed; overflow: hidden; word-break: break-word;">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("Sl No")</th>
+            <th>@Html.DisplayName("Gate Pass No")</th>
+            <th>@Html.DisplayName("Gate Pass Date")</th>
+            <th>@Html.DisplayName("Invoice No")</th>
+            <th>@Html.DisplayName("Container No")</th>
+            <th>@Html.DisplayName("Vehicle No")</th>
+            <th>@Html.DisplayName("Is Cancelled")</th>
+            <th class="text-center">@Html.DisplayName("Edit")</th>
+            <th class="text-center">@Html.DisplayName("View")</th>
+            <th class="text-center">@Html.DisplayName("Delete")</th>
+            <th class="text-center">@Html.DisplayName("Preview")</th>
+            <th class="text-center">@Html.DisplayName("Cancel")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{ var Serial = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center">@Serial.ToString()</td>
+                    <td>@item.GatePassNo</td>
+                    <td>@item.GatePassDate</td>
+                    <td>@item.InvoiceNo</td>
+                    <td>@item.ContainerNo</td>
+                    <td>@item.VehicleNo</td>
+                    <td>@item.IsCancelled</td>
+                    <td class="text-center"><a href="#" onclick="EditGatePass(@item.GatePassId)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="ViewGatePass(@item.GatePassId)"><i class="fa fa-search-plus Edit"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="DeleteGatePass(@item.GatePassId)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="PreviewGatePass(@item.GatePassId)"><i class="fa fa-file-pdf-o Edit"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="CancelGatePass(@item.GatePassId)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                </tr>
+                Serial++;
+            }
+        }
+    </tbody>
+</table>
+<script>
+    $(document).ready(function () {
+        var tblGP = $('#tblGP').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns": [
+                       { "sName": "Sl No", "width": "8%" },
+                       { "sName": "Gate Pass No","width": "8%", "bSortable": false },
+                       { "sName": "Gate Pass Date & Time","width": "8%", "bSortable": false },
+                       { "sName": "Invoice No","width": "8%", "bSortable": false },
+                       { "sName": "Container No", "width": "18%", "bSortable": false },
+                       { "sName": "Vehicle No", "width": "8%","bSortable": false },
+                       { "sName": "Is Cancelled","width": "8%", "bSortable": false },
+                       { "sName": "Edit","width": "5%", "bSortable": false, "width": "10%" },
+                       { "sName": "View","width": "5%", "bSortable": false, "width": "10%" },
+                       { "sName": "Delete","width": "5%", "bSortable": false, "width": "10%" },
+                       { "sName": "Preview","width": "5%", "bSortable": false, "width": "10%" },
+                       { "sName": "Cancel","width": "5%", "bSortable": false, "width": "10%" },
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(tblGP);
+    });
+    function EditGatePass(GatePassId) {
+        $('#DivBody').load('/GateOperation/VRN_GatePass/EditGatePass?GatePassId=' + GatePassId);
+    }
+    function ViewGatePass(GatePassId) {
+        $('#DivBody').load('/GateOperation/VRN_GatePass/ViewGatePass?GatePassId=' + GatePassId);
+    }
+    function DeleteGatePass(GatePassId) {
+        var Confirm = confirm("Are you sure you want to Delete?");
+        if (Confirm == true) {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/GateOperation/VRN_GatePass/DeleteGatePass',
+                type: 'POST',
+                data: { GatePassId: GatePassId },
+                dataType: 'JSON',
+                headers: { '__RequestVerificationToken': Token },
+                success: function (data) {
+                    if (data.Status == 1)
+                    {
+                        alert(data.Message);
+                        $('#DivBody').load('/GateOperation/VRN_GatePass/CreateGatePass');
+                    }
+                    else
+                        alert(data.Message);
+                }
+            });
+        }
+    }
+
+    function PreviewGatePass(GatePassId) {
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+
+        $.ajax({
+            url: '/GateOperation/VRN_GatePass/GatePassPrint',
+            type: 'POST',
+            data: { GatePassId: GatePassId },
+            dataType: 'JSON',
+            headers: { '__RequestVerificationToken': Token },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+    }
+    function CancelGatePass(GatePassId) {
+        var Confirm = confirm("Are you sure you want to cancel?");
+        if (Confirm == true) {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/GateOperation/VRN_GatePass/CancelGatePass',
+                type: 'POST',
+                data: { GatePassId: GatePassId },
+                dataType: 'JSON',
+                headers: { '__RequestVerificationToken': Token },
+                success: function (data)
+                {
+                    alert(data.Message);
+                    $('#DivBody').load('/GateOperation/VRN_GatePass/CreateGatePass');
+                }
+            });
+        }
+    }
+</script>

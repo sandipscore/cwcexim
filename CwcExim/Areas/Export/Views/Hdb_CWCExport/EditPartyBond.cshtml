@@ -1,0 +1,217 @@
+﻿
+@model CwcExim.Areas.Export.Models.PartyBond
+<script>
+    var TimeInSeconds;
+    $(document).ready(function () {
+        debugger;
+        TimeInSeconds = 5000;
+    });
+
+
+    function LoadPartyBond() {
+        debugger;
+        $('#DivPartyBond').load('/Export/Hdb_CWCExport/CreatePartyBond');
+    }
+    function PartyBondOnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            $('#DivPartyBondMsg').html(data.Message);
+            setTimeout(LoadPartyBond, TimeInSeconds);
+        }
+        else {
+            $('#DivPartyBondErrMsg').html(data.Message);
+        }
+    }
+    function PartyBondOnFailure() {
+
+    }
+
+    $('#PartyBox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('.navList > li').show();
+        } else {
+            $('.navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+    $('.navList li').on("click", function () {
+        debugger;
+        var PartyName = $(this).text();
+        var PartyId = $(this).attr('id');
+        $('#PartyName').val(PartyName);
+        $('#PartyId').val(PartyId);
+        $("#PartyModal").modal("hide");
+    });
+
+    $('#TrDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='TrDate']").html('');
+        }
+    });
+    $('#ValidUpto').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='ValidUpto']").html('');
+        }
+    });
+    function FillExporterTxtBox(PartyId, PartyName) {
+        debugger;
+        $('#PartyName').val(PartyName);
+        $('#PartyId').val(PartyId);
+        $("#PartyModal").modal("hide");
+    }
+    $('#PartySearch').on("click", function () {
+        $.ajax({
+            url: "/Export/Hdb_CWCExport/GetExporterList",
+            type: "GET",
+            dataType: "JSON",
+            success: function (data) {
+                if (data.Status == 1) {
+                    var Html = '';
+                    $.each(data.Data, function (i, item) {
+                        Html += '<li id=' + item.EXPEximTraderId + ' onclick="FillExporterTxtBox(' + item.EXPEximTraderId + ',&quot;' + item.ExporterName.replace(/\r?\n|\r/g, "") + '&quot;)">' + item.ExporterName + '</li>';
+                    });
+                    $('#LstParty').html(Html);
+                }
+            }
+        });
+    });
+
+</script>
+
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "PartyBondOnSuccess";
+    options.OnFailure = "PartyBondOnFailure";
+}
+<div id="DivPartyBond" class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("AddEditPartyBond", "Hdb_CWCExport", options))
+                {
+                    @Html.AntiForgeryToken()
+                    <div id="DivPartyBond">
+                        @Html.HiddenFor(m => m.PartyBondId)
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-12">
+                                <h4>Party Bond</h4>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5">
+                                    @Html.LabelFor(m => m.TrNo, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.TrNo, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.TrNo, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-offset-4-5 col-md-1-5">
+                                    @Html.LabelFor(m => m.TrDate, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.TrDate, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.TrDate, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5">
+                                    @Html.LabelFor(m => m.PartyName, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-10-5">
+                                    @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control input-sm", @readonly = "readonly" })
+                                    <span class="search" id="PartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>
+                                    @Html.ValidationMessageFor(m => m.PartyName, "", new { @class = "Error_Msg" })
+                                    @Html.HiddenFor(m => m.PartyId)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5">
+                                    @Html.LabelFor(m => m.Value, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.Value, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.Value, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-offset-4-5 col-md-1-5">
+                                    @Html.LabelFor(m => m.ValidUpto, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.ValidUpto, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.ValidUpto, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-4 col-md-2" style="text-align:center">
+                                <input type="submit" class="btn log_Btn_sm" value="Save" id="BtnPartyBond" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" value="Cancel" class="btn log_Btn_sm" onclick="LoadPartyBond()" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg" style="background-color:transparent">
+                            <div id="DivPartyBondMsg"></div>
+                        </div>
+                        <div id="DivPartyBondErrMsg" class="logErrMsg" style="background-color:transparent"></div>
+                    </div>
+                }
+            
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="PartyModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Importer</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="PartyBox" type="text" />
+                <ul class="navList" id="LstParty"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")

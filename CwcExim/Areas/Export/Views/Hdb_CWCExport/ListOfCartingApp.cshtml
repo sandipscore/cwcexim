@@ -1,0 +1,138 @@
+﻿@model IEnumerable<CwcExim.Areas.Export.Models.Hdb_CartingList>
+<table id="tblCartingList" class="table table-bordered table-striped" style="width:100%">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("SL No")</th>
+            <th>@Html.DisplayNameFor(m => m.CartingNo)</th>           
+            <th>@Html.DisplayNameFor(m => m.ApplicationDate)</th>
+            <th>@Html.DisplayNameFor(m => m.SBNo)</th>
+            <th>@Html.DisplayNameFor(m => m.SBDate)</th>
+            <th>@Html.DisplayNameFor(m => m.CHAName)</th>
+            <th class="text-center">@Html.DisplayName("Edit")</th>
+            <th class="text-center">@Html.DisplayName("View")</th>
+            <th class="text-center">@Html.DisplayName("Delete")</th>
+            <th class="text-center">@Html.DisplayName("Print Preview")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{ var Serial = 1;
+            foreach (var data in Model)
+            {
+                <tr>
+                    <td class="text-center">@Serial.ToString()</td>
+                    <td>@data.CartingNo</td>                    
+                    <td>@data.ApplicationDate</td>
+                    <td>@data.SBNo</td>
+                    <td>@data.SBDate</td>
+                    <td>@data.CHAName</td>
+                    <td class="text-center"><a href="#" onclick="EditCartingApp(@data.CartingAppId)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="ViewCartingApp(@data.CartingAppId)"><i class="fa fa-search-plus Edit"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="DeleteCartingApp(@data.CartingAppId)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="PrintPreviewCartingApp(@data.CartingAppId)"><i class="fa fa-file-pdf-o Edit"></i></a></td>
+                </tr>
+                Serial++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+<script>
+    var Page = 0;
+    $(document).ready(function () {
+        var tblCartingList = $('#tblCartingList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                       { "sName": "SL No" },
+                       { "sName": "Carting No", "bSortable": false },
+                       { "sName": "Carting Date", "bSortable": false },                      
+                       { "sName": "SBNo" },
+                       { "sName": "SBDate" },
+                       { "sName": "CHA" },
+                       { "sName": "Edit", "bSortable": false, "width": "10%" },
+                       { "sName": "View", "bSortable": false, "width": "10%" },
+                       { "sName": "Delete", "bSortable": false, "width": "10%" },
+                       { "sName": "Print Preview", "bSortable": false, "width": "10%" },
+
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(tblCartingList);
+    });
+    function ViewCartingApp(CartingAppId) {
+        $('#DivBody').load('/Export/Hdb_CWCExport/ViewCartingApp?CartingAppId=' + CartingAppId);
+    }
+    function EditCartingApp(CartingAppId) {
+        $('#DivBody').load('/Export/Hdb_CWCExport/EditCartingApp?CartingAppId=' + CartingAppId);
+    }
+    function DeleteCartingApp(CartingAppId) {
+        var Confirm = confirm("Are you sure you want to Delete?");
+        if (Confirm == true) {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("DeleteCartingApp", "Hdb_CWCExport", new { areas="Export"}) ',
+                type: 'POST',
+                data: { CartingAppId: CartingAppId },
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                success: function (data) {
+                    alert(data.Message);
+                    if (data.Status == 1) LoadCartingAppList();
+                }
+            });
+        }
+    }
+    function PrintPreviewCartingApp(CartingAppId) {
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: "/Report/Hdb_ReportCWC/PrintCartingApp", @*'@Url.Action("PrintCartingApp", "Hdb_ReportCWC", new { areas="Report"}) ',*@
+            type: 'POST',
+            data: { CartingAppId: CartingAppId },
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+            }
+        });
+    }
+
+    function LoadMoreListData() {
+        debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Export/Hdb_CWCExport/LoadListMoreDataCartingApp',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblCartingList').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.CartingNo],
+        [item.ApplicationDate],
+        [item.CartingNo],
+        [item.SBNo],
+        [item.SBDate],
+        [item.CHAName],       
+        ['<a href="#"  class="text-center" onclick=EditCartingApp(' + [item.CartingAppId] + ')><i class="fa fa-pencil-square Edit" aria-hidden="true"></i></a>'],
+        ['<a href="#" class="text-center" onclick=ViewCartingApp(' + [item.CartingAppId] + ')><i class="fa fa-search-plus Edit" aria-hidden="true"></i></a>'],
+          ['<a href="#" class="text-center" onclick=DeleteCartingApp(' + [item.CartingAppId] + ')><i class="fa fa-window-close-o Delete" aria-hidden="true"></i></a>'],
+            ['<a href="#" class="text-center"  onclick=PrintPreviewCartingApp(' + [item.CartingAppId] + ')><i class="fa fa-file-pdf-o" aria-hidden="true"></i></a>'],
+
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+</script>
+

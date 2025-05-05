@@ -1,0 +1,596 @@
+﻿@model CwcExim.Areas.Master.Models.WFLDPartyWiseReservation
+<script>
+
+    var TimeInSeconds;
+    $(document).ready(function () {
+        TimeInSeconds = 5000;
+        GetPartyReservationList();
+    });
+    function GetPartyReservationList() {
+        $('#DivPartyReservationList').load('/Master/VLDAMaster/GetPartyWiseReservationList');
+    }
+    function ResetValidation() {
+        $('.field-validation-error').each(function () {
+            $(this).html("");
+        })
+    }
+    function PartyReservationReset() {
+        ResetValidation();
+        $('#DivPartyReservationMsg').html("");
+        $('[data-valmsg-for="PartyName"]').html('<span></span>');
+        $('[data-valmsg-for="ReservationFrom"]').html('<span></span>');
+        $('[data-valmsg-for="ReservationTo"]').html('<span></span>');
+        $('#PartyName').val('');
+        $('#ReservationFrom').val('');
+        $('#ReservationTo').val('');
+        $('#OperationType').val('');
+        $('#GodownName').val('');
+        $('#GodownId').val('');
+        $('#GodownSearch').val('');
+        $('#GF').val('');
+        $('#MF').val('');
+        $('#TotalSpace').val('');
+        $('#ResType').val('');
+        $('#AreaType').val('');
+    }
+    function SavePartyReservation() {
+        debugger;
+        var Tsp = parseFloat($('#TotalSpace').val());
+        
+       
+
+        $('#AreaType').val('Gross');
+
+
+        
+        if ($('#OperationType').val() == 'Bond') {
+            if (Tsp < 25) {
+                alert("Total Space should be>=25 when Operation Type Bond");
+                return false;
+            }
+            else
+            {
+                $('#btnSave').submit();
+            }
+        }
+
+       else if ($('#OperationType').val() == 'Export') {
+            if (Tsp < 50) {
+                alert("Total Space should be>=50 when Operation Type Export");
+                return false;
+            }
+            else
+            {
+                $('#btnSave').submit();
+            }
+        }
+
+      
+
+
+    }
+    function PartyReservationOnSuccess(data) {
+        if (data.Status == 1) {
+            $('#DivPartyReservationMsg').html(data.Message);
+            $('#AreaType').prop('disabled', true);
+            setTimeout(PartyReservationReset, TimeInSeconds);
+            GetPartyReservationList();
+        }
+        else if (data.Status == 2) {
+            $('#DivPartyReservationMsg').html(data.Message);
+            //$('[data-valmsg-for="PartyName"]').html('<span>' + data.Message + '</span>');
+        }
+            //else if (data.Status == 3) {
+            //    $('[data-valmsg-for="PortAlias"]').html('<span>' + data.Message + '</span>');
+            //}
+        else {
+            $('#DivPartyReservationMsg').html(data.Message);
+        }
+    }
+    function PartyReservationOnFailure() {
+    }
+
+
+    $("#ReservationTo").datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            // $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="ReservationTo"]').html('');
+        }
+    });
+    $("#ReservationFrom").datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            // $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="ReservationFrom"]').html('');
+        }
+    });
+
+
+    var Page = 0;
+    function LoadPartyList() {
+        $.ajax({
+            url: '/Master/VLDAMaster/LoadPartyWiseReservationList',
+            type: 'GET',
+            data: { PartyId: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.lstImporter, function (item, elem) {
+                        html += '<tr onclick="SelectShippingLine(' + elem.PartyId + ',&quot;' + elem.PartyName + ',&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyId + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleSline tbody').html(html);
+                    else
+                        $('#tbleSline tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadEximTrader() {
+        Page = 0;
+        $.ajax({
+            url: '/Master/VLDAMaster/LoadPartyWiseReservationList',
+            type: 'GET',
+            data: { PartyId: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.lstImporter, function (item, elem) {
+                        html += '<tr onclick="SelectShippingLine(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyId + '</td></tr>';
+                    });
+                    $('#tbleSline tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SearchByPartyCode() {
+        if ($('#ShpngLinebox').val() != '') {
+            $.ajax({
+                url: '/Master/VLDAMaster/SearchByPartyReservationCode',
+                type: 'GET',
+                data: { PartyId: $('#ShpngLinebox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstImporter, function (item, elem) {
+                            html += '<tr onclick="SelectShippingLine(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyId + '</td></tr>';
+                        });
+                        $('#tbleSline tbody').html('');
+                        $('#tbleSline tbody').html(html);
+                        $('#btnLoadMore').prop('disabled', true);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleSline tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadEximTrader();
+    }
+
+
+
+    function SelectShippingLine(PartyId, PartyName) {
+        $('#PartyName').val(PartyName);
+        $('#PartyId').val(PartyId);
+        $("#PartyModal").modal("hide");
+        $("#PartyWiseReservationModal").modal("hide");
+        $('#ShpngLinebox').val('');
+
+        LoadEximTrader();
+    }
+
+    function CloseEximTrader() {
+        $('#ShpngLinebox').val('');
+        $("#PartyModal").modal("hide");
+        $("#PartyWiseReservationModal").modal("hide");
+        LoadEximTrader();
+    }
+
+</script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "PartyReservationOnSuccess";
+    options.OnFailure = "PartyReservationOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+@using (Ajax.BeginForm("AddEditPartyWiseReservation", "VLDAMaster", options))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-offset-0-5 col-md-11">
+                <div class="Head_h4">
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-12">
+                            <h4>Party Wise Reservation</h4>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group Form_Input">
+
+
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Party Name:</label>
+                            </div>
+                            <div class="col-md-5">
+                                @Html.HiddenFor(m => m.PartyId)
+                                @Html.HiddenFor(m => m.PartyCode)
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control input_sm", @readonly = true })
+                                <span class="search" id="ShippingLineSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Operation Type:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                <span class="ReQSimbol">*</span>
+                                @Html.DropDownListFor(m => m.OperationType, new List<SelectListItem>{
+                                   //new SelectListItem {Text="Import" },
+                                   new SelectListItem {Text="Export" },
+                                   new SelectListItem {Text="Bond" },
+                               }, "--Select--", new { @class = "form-control input-sm", onchange = "OperationChange()" })
+                            </div>
+
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Godown Name:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.GodownName, new { @class = "form-control input-sm", @readonly = true })
+                                <span class="search" id="GodownSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#GodownModal"></i></span>
+                                @Html.HiddenFor(m => m.GodownId)
+                                @Html.HiddenFor(m => m.GodownName)
+                                @Html.ValidationMessageFor(m => m.GodownName, "", new { @class = "Error_Msg" })
+                            </div>
+
+                            <div class="col-md-1-5 col_cus_2 padding_rt" style="display:none;">
+                                <label>Area Type:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5" style="display:none;">
+                                @Html.DropDownListFor(m => m.AreaType, new List<SelectListItem>{
+                                   new SelectListItem {Text="Gross" },
+                                   new SelectListItem {Text="Net" }
+                               }, "--Select--", new { @class = "form-control input-sm", @disabled = "disabled" })
+                                @Html.ValidationMessageFor(m => m.AreaType, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Period From:</label>
+                                @Html.HiddenFor(m => m.PartyReservationId, new { Value = "0" })
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.ReservationFrom, new { @class = "form-control input-sm", @readonly = "readonly", onchange = "DateDifference()" })
+                                @Html.ValidationMessageFor(m => m.ReservationFrom, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Period To: </label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.ReservationTo, new { @class = "form-control input-sm", @readonly = "readonly", onchange = "DateDifference()" })
+                                @Html.ValidationMessageFor(m => m.ReservationTo, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col_cus_2 padding_rt" hidden>
+                                <label>Type:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5" hidden>
+                                @Html.TextBoxFor(m => m.ResType, new { @class = "form-control input-sm", @readonly = true })
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>GF:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                @Html.TextBoxFor(m => m.GF, new { @class = "form-control input-sm", onkeypress = "return AllowOnlyDecimal(event)", onchange = "CalculateSpace()" })
+                                @Html.ValidationMessageFor(m => m.GF, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>MF:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                @Html.TextBoxFor(m => m.MF, new { @class = "form-control input-sm", onkeypress = "return AllowOnlyDecimal(event)", onchange = "CalculateSpace()" })
+                                @Html.ValidationMessageFor(m => m.MF, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Total Space:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                @Html.TextBoxFor(m => m.TotalSpace, new { @class = "form-control input-sm", @readonly = true })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-offset-4 col-md-2" style="text-align:center">
+                            <input type="button" id="btnSave" class="btn log_Btn_sm" value="Save" onclick="SavePartyReservation()" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" value="Reset" class="btn log_Btn_sm" onclick="PartyReservationReset()" />
+                        </div>
+                    </div>
+                    <div class="logSuccMsg Form_Space_top SignUp_space_bottom2" style="background-color:transparent">
+                        <div id="DivPartyReservationMsg"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 SignUp_space_bottom">
+                            <div id="DivPartyReservationList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--  Party Modal 1  -->
+    <div class="modal fade" id="PartyModal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" onclick="CloseEximTrader()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Party Names</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search By Party Name Or Party Code" id="ShpngLinebox" type="text" />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByPartyCode()"></i></span>
+
+                    <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="8" width="80%">Party Name</th>
+                                <th colspan="4" width="20%">Party Code</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div id="slim_scroll">
+                        <table class="table dataTable table-bordered table-striped slim_tble" id="tbleSline">
+                            @{
+                                if (ViewBag.lstImporter != null)
+                                {
+                                    foreach (var item in ViewBag.lstImporter)
+                                    {
+                                        <tr onclick="SelectShippingLine(@item.PartyId,'@item.PartyName')">
+                                            <td colspan="8" width="80%" class="txt_wrp">@item.PartyName</td>
+                                            <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadPartyList()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+                            }
+                            else
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadPartyList()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" onclick="CloseEximTrader()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Party Wise Reservation Modal -->
+
+                                <div class="modal fade" id="GodownModal" role="dialog">
+                                    <div class="modal-dialog">
+                                        <!-- Modal content-->
+                                        <div class="modal-content popup_modal">
+                                            <div class="modal-header popup_header">
+                                                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                                                <h4 class="modal-title">List of Godown</h4>
+                                            </div>
+                                            <div class="modal-body popup_body">
+                                                <input placeholder="Search Me" id="Godownbox" type="text" />
+                                                <ul class="navList" id="lstGodown">
+                                                    @if (ViewBag.GodownList != null)
+                                                    {
+                                                        foreach (var item in ViewBag.GodownList)
+                                                        {
+                                                            <li id="@item.GodownId">@item.GodownName</li>
+                                                        }
+                                                    }
+                                                </ul>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <div class="row">
+                                                    <div class="col-md-offset-6 col-md-6">
+                                                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                }
+@Scripts.Render("~/bundles/jqueryval")
+
+<script>
+    function AllowOnlyDecimal(evt) {
+        //alert('dd');
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || (CharCode == 46) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+
+    function CalculateSpace() {
+        //alert('kk');
+        var GF = 0;
+        var MF = 0;
+        var TS = 0;
+        GF = $('#GF').val();
+        MF = $('#MF').val();
+        TS = Number(GF) + Number(MF);
+        $('#TotalSpace').val(Number(TS));
+    }
+
+    function DateDifference() {
+        //debugger;
+        //var AreaType = $('#AreaType').val();
+        //if ($('#OperationType').val() == 'Bond') {
+        //    if (AreaType == '') {
+        //        alert('Please select Area Type');
+        //        $('#ReservationFrom').val('');
+        //        return false;
+        //    }
+        //}
+        var date = $('#ReservationFrom').val();
+        var date1 = $('#ReservationTo').val();
+        if (date != '' && date1 != '') {
+            var datearray = date.split("/");
+            var newdate = datearray[1] + '/' + datearray[0] + '/' + datearray[2];
+            var datearray1 = date1.split("/");
+            var newdate1 = datearray1[1] + '/' + datearray1[0] + '/' + datearray1[2];
+            var d1 = new Date(newdate);
+            var d2 = new Date(newdate1);
+            if (d2 > d1) {
+                var timeDiff = d2.getTime() - d1.getTime();
+                var DaysDiff = timeDiff / (1000 * 3600 * 24);
+                var MonthsDiff = Math.ceil(DaysDiff / 30);
+                if (MonthsDiff <= 6) {
+                    var ResType = 'Short Term Reservation';
+                    $('#ResType').val(ResType);
+                }
+                else {
+                    var ResType = 'Long Term Reservation';
+                    $('#ResType').val(ResType);
+                }
+
+            }
+            else {
+                alert('From date will be less then To date');
+                $('#ReservationFrom').val('');
+                $('#ReservationTo').val('');
+                $('#ResType').val('');
+                return false;
+            }
+
+        }
+
+
+    }
+
+    function OperationChange() {
+        debugger;
+        var selectedText = $('#OperationType').find('option:selected').text();
+        if (selectedText == 'Bond') {
+            $('#AreaType').prop('disabled', false);
+        }
+        else
+        {
+            $('#AreaType').prop('disabled', true);
+            $('#AreaType').val('');
+        }
+        $('#GodownName').val('');
+        $('#GodownId').val(0);
+        BindGodown(selectedText);
+    }
+
+    function BindGodown(Text) {
+
+        $.ajax({
+            url: '@Url.Action("ListOfGodownData", "VLDAMaster")',
+            dataType: 'JSON',
+            type: 'GET',
+            data: { OperationType: Text },
+            success: function (data) {
+                var html = '';
+                $.each(data, function (i, item) {
+                    html += '<li id="' + item.GodownId + '" " onclick="GodownHide(' + item.GodownId + ',&quot;' + item.GodownName + '&quot;)">' + item.GodownName + '</li>';
+                });
+                $('#lstGodown').html(html);
+            }
+        });
+    }
+
+    $('#Godownbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstGodown > li').show();
+        else {
+            $('#lstGodown > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    function GodownHide(GodownId, GodownName) {
+        debugger;
+        $('#GodownName').val(GodownName);
+        $('#GodownId').val(GodownId)
+
+        $("#GodownModal").modal("hide");
+    }
+</script>

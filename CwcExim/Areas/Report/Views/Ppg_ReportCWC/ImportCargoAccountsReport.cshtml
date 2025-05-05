@@ -1,0 +1,151 @@
+﻿@model CwcExim.Areas.Report.Models.Ppg_PV
+@using (Ajax.BeginForm("GetImpCargo", "Ppg_ReportCWC", new AjaxOptions
+{
+    HttpMethod = "POST",
+    OnSuccess = "PVSuccess",
+    OnFailure = "PVFailure"
+}))
+{
+    @Html.AntiForgeryToken()
+
+        <div class="row">
+            <div class="col-md-12">
+               
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Accounts Report for Import Cargo</h4>
+                        </div>
+                    </div>
+                    <div class="content_wrp">
+                        <div class="row Form_Space_top">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label class="Radiocontainer">
+                                        Import
+                                        @Html.RadioButtonFor(m => m.Module, "Import", new { @class = "", @id = "Import", @checked = true })
+                                        <span class="checkmark"></span>
+                                    </label>
+
+                                </div>
+                                @*<div class="col-md-1-5 col_cus_2">
+                                    <div class="boolean-container">
+                                        @Html.RadioButtonFor(m => m.Module, "Import", new { @class = "", @id = "Import", @checked = true })
+                                        <label for="Import"><i class="circle"></i><span>Import</span></label>
+                                    </div>
+                                </div>*@
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>As On:</label>
+                                </div>
+                                <div class="position-relative Date_Img">
+                                    @Html.TextBoxFor(m => m.AsOnDate, new { placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.AsOnDate, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-md-offset-3">
+                                <div class="form-group">
+                                    <label>Godown:</label>
+                                </div>
+                                <div class="position-relative">
+                                    @Html.HiddenFor(m => m.GodownId)
+                                    <span class="input_icon" id="ShippingLineSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#InvoiceModal"></i></span>
+                                    @Html.TextBoxFor(m => m.GodownName, new { @placeholder = "Select Godown Name", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.GodownName, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="SignUp_space_bottom">
+                            <div class="d-flex justify-content-left">
+                                <input type="submit" value="Print" name="Command" class="btn btn-primary mr-1 btn-100px" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logErrMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
+}
+<div id="InvoiceModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">Godown List</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="InvoiceListBox" type="text" />
+                <ul class="navList" id="lstInvoiceList">
+                    @{
+                        if (ViewBag.ListOfGodown != null)
+                        {
+                            foreach (var item in ViewBag.ListOfGodown)
+                            {
+                                <li id="@item.GodownId">@item.GodownName</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $(function () {
+        $("#AsOnDate").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+    $('#InvoiceListBox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstInvoiceList > li').show();
+        else {
+            $('#lstInvoiceList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    $('#lstInvoiceList li').on('click', function () {
+        $('#GodownName').val($(this).text());
+        $('#GodownId').val($(this).prop('id'));
+        $('#InvoiceModal').modal('hide');
+    });
+    function PVSuccess(data) {
+        $('#DivDwnldWavMsg').html('');
+        if (data.Data != '') {
+            window.open(data.Data + "?_t=" + new Date().getTime(), "_blank");
+        }
+        else $('#DivDwnldWavMsg').html('No Data');
+    }
+    function PVFailure() { }
+</script>

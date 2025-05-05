@@ -1,0 +1,215 @@
+﻿@model CwcExim.Areas.Report.Models.Hdb_IssueSlipReport
+
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "RptInvoiceReportDetails";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+
+}
+<script>
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+</script>
+@using (Ajax.BeginForm("GetIssueSlipReport", "Hdb_ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Issue Slip Report</h4>
+                            </div>
+                        </div>
+                        <div class="Form_Space_top" style="padding:5px;">
+                            <div class="row">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Period From:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col_cus_2 col_cus_offset_3 col-md-offset-4 padding_rt">
+                                        <label for="FromDate" class="InputLabel">Period To:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $('#BtnPreview').on("click", function () {
+        //alert("in");
+        //ValidateExitDet();
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        return true;
+    });
+    function RptConsumerListDtlOnFailure() { }
+    function RptInvoiceReportDetails(data) {
+        $('#DivDwnldWavMsg').html('')
+        //alert(data);
+        debugger;
+        if (data.Status == 1) {
+
+            debugger;
+            SaveReportPdf(data);
+
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+
+
+    function ValidateExitDet() {
+        var Status = true;
+
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="txtGrossWeight"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+
+        return Status;
+    }
+    function SaveReportPdf(data)
+    {
+        debugger;
+        var FormDate = $("#PeriodFrom").val();
+        var ToDate = $("#PeriodTo").val();
+        var PostData = new FormData();
+        var Html = '<div style="text-align: center;border: 1px solid #000;">Issue Slip Report From ' + FormDate + ' To ' + ToDate + '</div>'
+        Html += "<table style='width:100%;font-family:Verdana,Arial,San-serif;border:1px solid #000;border-collapse:collapse;'><thead><tr><th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>Container</th>";
+       // Html += "<th style='border:1px solid #000;text-align:center;'>PNR No</th><th style='border:1px solid #000;text-align:center;'>VIA No</th>";
+        Html += "<th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>Container Size</th><th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>Vessel Name</th>";
+        Html += "<th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>BOE No</th><th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>BOE Date</th>";
+        Html += "<th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>Shipping Agent</th><th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>Importer / Exporter</th>";
+        Html += "<th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>Cargo Description</th><th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>Marks & No</th>";
+        Html += "<th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>No. of Units</th><th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>Weight</th>";
+        Html += "<th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>Invoice No</th><th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>OBL No</th>";
+        Html += "<th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>Package No</th><th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>CFS Code</th>";
+        Html += "<th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>Rotation No</th><th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>Delivery No</th>";
+        Html += "<th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>Date of Receipt of Cont</th><th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>De-Stuffing Date</th>";
+        Html += "<th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>Grid No</th><th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>Total CWC Dues</th>";
+        Html += "<th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>CR No</th><th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>CR Date</th>";
+        Html += "<th style='border:1px solid #000;text-align:center; width:150px; font-size:9px;'>Valid Till Date</th></tr></thead><tbody>";
+
+       // Html += "</tr></thead><tbody>";
+        for (i = 0; i < data.Data.length;i++)
+        {
+            //Html += "<tr><td style='border:1px solid #000;text-align:left;'>" + data.Data[i].GatePassNo + "</td><td style='border:1px solid #000;text-align:center;'>" + data.Data[i].GatePassDate + "</td><td style='border:1px solid #000;text-align:left;'>";
+
+            Html += "<tr><td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].ContainerNo + "</td><td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].ContainerSize + "</td>";
+           // Html += "<tr><td style='border:1px solid #000;text-align:left;'>" + data.Data[i].VesselName + "</td><td style='border:1px solid #000;text-align:center;'>" + data.Data[i].BOENo + "</td>";
+            Html += "<td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].VesselName + "</td><td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].BOENo + "</td>";
+            Html += "<td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].BoeDate + "</td><td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].ShippingLine + "</td>";
+            Html += "<td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].ImporterExporter + "</td><td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].CargoDescription + "</td>";
+            Html += "<td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].MarksAndNo + "</td><td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].NoOfUnits + "</td>";
+            Html += "<td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].Weight + "</td><td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].InvoiceNo + "</td>";
+            Html += "<td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].OBLNo + "</td><td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].PackageNo + "</td>";
+            Html += "<td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].CFSCode + "</td><td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].RotationNo + "</td>";
+            Html += "<td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].DeliveryNo + "</td><td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].DateOfReceiptOfCont + "</td>";
+            Html += "<td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].DestuffingDate + "</td><td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].GridNo + "</td>";
+            Html += "<td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].TotalCWCDues + "</td><td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].CRNo + "</td>";
+            Html += "<td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].CRDate + "</td><td style='border:1px solid #000;text-align:center; font-size:9px;'>" + data.Data[i].ValidTillDate + "</td></tr>";
+          
+        }
+        Html += "</tbody></table>"
+        PostData.append("Page", Html);
+       // alert("PostData=" + PostData);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GenerateIssueSlipReportPDF", "Hdb_ReportCWC", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+
+            }
+        });
+    }
+
+</script>
+
+
+
+

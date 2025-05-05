@@ -1,0 +1,232 @@
+﻿@model CwcExim.Areas.Master.Models.HDBChemical
+<script>
+    var TimeInSeconds;
+    var LocationDetailArray = [];
+    $(document).ready(function () {
+        TimeInSeconds = 5000;
+        $('#DivTblLocation').css("display", "none");
+        GetChemicalList();
+    });
+    function GetChemicalList() {
+        $('#DivYardList').load('/Master/HDBMaster/GetChemicalList');
+    }
+    function ClearValidationMessage() {
+        $('.field-validation-error').each(function () {
+            $(this).html('');
+        });
+        $('.field-validation-valid').each(function () {
+            $(this).html('');
+        });
+    }
+    function ChemicalReset() {
+        LocationDetailArray = [];
+        ClearValidationMessage();
+        $('#ChemicalName').val('');
+        $('#DivYardMsg').html('');
+        $('#DivYardErrMsg').html('');
+    }
+
+    function ValidateLocationName(evt) {
+        $('[data-valmsg-for="LocationName"]').html('<span></span>');
+        var charCode;
+        if (window.event)
+            charCode = window.event.keyCode;  //for IE
+        else
+            charCode = evt.which;  //for firefox
+        if (charCode == 32) //for &lt;space&gt; symbol
+            return true;
+        if ((charCode > 31 && charCode < 48) || (charCode > 57 && charCode < 65)) {
+            evt.preventDefault();
+            return false;
+        }
+        if (charCode > 90 && charCode < 97) //for characters between 'Z' and 'a' in ASCII Table
+        {
+            evt.preventDefault();
+            return false;
+        }
+        if (charCode > 122) //for characters beyond 'z' in ASCII Table
+        {
+            evt.preventDefault();
+            return false;
+        }
+        return true;
+
+    }
+
+    function ValidateRow(evt) {
+        debugger;
+        $('[data-valmsg-for="Row"]').html('<span></span>');
+        var charCode;
+        if (window.event)
+            charCode = window.event.keyCode;  //for IE
+        else
+            charCode = evt.which;  //for firefox
+        if (charCode == 32) //for &lt;space&gt; symbol
+            return true;
+        if ((charCode > 31 && charCode < 48) || (charCode > 57 && charCode < 65)) {
+            evt.preventDefault();
+            return false;
+        }
+        if (charCode > 90 && charCode < 97) //for characters between 'Z' and 'a' in ASCII Table
+        {
+            evt.preventDefault();
+            return false;
+        }
+        if (charCode > 122) //for characters beyond 'z' in ASCII Table
+        {
+            evt.preventDefault();
+            return false;
+        }
+        return true;
+    }
+
+    function ValidateColumn(evt) {
+        $('[data-valmsg-for="Column"]').html('<span></span>');
+        var charCode;
+        if (window.event)
+            charCode = window.event.keyCode;  //for IE
+        else
+            charCode = evt.which;  //for firefox
+        if (charCode == 32) //for &lt;space&gt; symbol
+            return true;
+        if ((charCode > 31 && charCode < 48) || (charCode > 57 && charCode < 65)) {
+            evt.preventDefault();
+            return false;
+        }
+        if (charCode > 90 && charCode < 97) //for characters between 'Z' and 'a' in ASCII Table
+        {
+            evt.preventDefault();
+            return false;
+        }
+        if (charCode > 122) //for characters beyond 'z' in ASCII Table
+        {
+            evt.preventDefault();
+            return false;
+        }
+        return true;
+
+    }
+   
+    function GenerateTable() {
+        var TableRow = '';
+        $.each(LocationDetailArray,function (i, item) {
+            TableRow += '<tr><td style="text-align:center">' + item.LocationName + '</td><td style="text-align:center">' + item.Row + '</td><td style="text-align:center">' + item.Column + '</td><td style="text-align:center"><a href="#" onclick="EditLocationDetail(' + i + ')"><i class="fa fa-pencil-square Edit" aria-hidden="true"></i></a></td><td style="text-align:center"><a href="#" onclick="DeleteLocationDetail(' + i + ')"><i class="fa fa-window-close-o Delete" aria-hidden="true"></i></a></td></tr>'
+        });
+        $('#DivTblLocation table tbody').html(TableRow);
+        $('#LocationDetail').val(JSON.stringify(LocationDetailArray));
+        if (LocationDetailArray.length > 0) {
+            $('#DivTblLocation').css("display", "");
+        }
+        else {
+            $('#DivTblLocation').css("display", "none");
+            $('#LocationDetail').val('');
+        }
+    }
+   
+    $('#BtnYardSubmit').click(function (data) {
+        debugger;
+        if (data.Status == 1) {
+            if ($('#DivYardMsg').hasClass('logErrMsg'))
+                $('#DivYardMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivYardMsg').html(data.Message);
+           setTimeout(ChemicalReset, TimeInSeconds);
+            GetChemicalList();
+        }
+        else if (data.Status == 2) {
+            $('[data-valmsg-for="ChemicalName"]').html('<span>' + data.Message + '</span>');
+           
+        }
+       
+        else {
+            if ($('#DivYardMsg').hasClass('logSuccMsg'))
+                $('#DivYardMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivYardMsg').html(data.Message);
+        }
+     
+    });
+    function ChemicalOnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            $('#DivYardMsg').html(data.Message);
+            setTimeout(ChemicalReset, 5000);
+            GetChemicalList();
+        }
+        else if (data.Status == 2) {
+           // $('[data-valmsg-for="YardName"]').html('<span>' + data.Message + '</span>');
+            $('#DivYardMsg').html(data.Message);
+            setTimeout(ChemicalReset, 5000);
+        }
+        else {
+            $('#DivYardErrMsg').html(data.Message);
+        }
+    }
+    function ChemicalOnFailure() {
+
+    }
+</script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "ChemicalOnSuccess";
+    options.OnFailure = "ChemicalOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("AddEditChemicalDetail", "HDBMaster", options))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-12">
+                            <h4>Chemical Master</h4>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Chemical Name:</label>
+                            </div>
+                            <div class="col-md-5">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.ChemicalName, new { @class = "form-control input-sm" })
+                                @Html.ValidationMessageFor(m => m.ChemicalName, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                       
+                        <div class="row">
+                            <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-offset-4 col-md-2" style="text-align:center">
+                                <input type="submit" id="BtnYardSubmit" value="Save" class="btn log_Btn_sm" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" value="Reset" class="btn log_Btn_sm" onclick="ChemicalReset()" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_top SignUp_space_bottom2" style="background-color:transparent">
+                            <div id="DivYardMsg"></div>
+                        </div>
+                        
+                }
+                <div class="row">
+                    <div class="col-md-12 SignUp_space_bottom">
+                        <div id="DivYardList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@Scripts.Render("~/bundles/jqueryval")
+
+

@@ -1,0 +1,130 @@
+﻿@model IEnumerable<CwcExim.Areas.CashManagement.Models.LNSM_SDRefundList>
+<table id="TblSDRefundList" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("SL No")</th>
+            <th>Closure Date</th>
+            <th>Receipt No</th>
+            <th>Party</th>
+            <th>Amount</th>
+            @*<th class="text-center">@Html.DisplayName("View")</th>*@
+            <th class="text-center">@Html.DisplayName("Print")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var SerialNo = 1;
+            if (Model != null)
+            {
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="text-center">@SerialNo</td>
+                        <td>@Html.DisplayFor(m => item.ClosureDate)</td>
+                        <td>@Html.DisplayFor(m => item.RecieptNo)</td>
+                        <td>@Html.DisplayFor(m => item.PartyName)</td>
+                        <td>@Html.DisplayFor(m => item.RefundAmt)</td>
+                        @*<td class="text-center"><a href="#" onclick="ViewSDRefund(@item.PDAACId)"><i class="fa fa-search-plus Edit" aria-hidden="true"></i></a></td>*@
+                        <td class="text-center"><a href="#" onclick="PrintSDRefund('@item.RecieptNo')"><i class="fa fa-file-pdf-o Edit" aria-hidden="true"></i></a></td>
+                    </tr>
+                    SerialNo++;
+                }
+            }
+
+        }
+
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+<script>
+    $(function () {
+        var TblSDRefundList = $('#TblSDRefundList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                       { "sName": "SL No", "width": "8%" },
+                       { "sName": "Closure Date" },
+                       { "sName": "Receipt No" },
+                       { "sName": "Party" },
+                       { "sName": "Amount" },
+                       //{ "sName": "View", "bSortable": false, "width": "10%" },
+                       { "sName": "Print", "bSortable": false, "width": "10%" }
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0)', nRow).addClass("text-center");
+                $('td:eq(5)', nRow).addClass("text-center");
+                //$('td:eq(6)', nRow).addClass("text-center");
+
+            }
+        });
+        new $.fn.dataTable.FixedHeader(TblSDRefundList);
+    });
+
+    //function ViewSDRefund(PDAACId) {
+    //    debugger;
+    //    $('#DivBody').load('/CashManagement/LNSM_CashManagement/ViewSDRefund?PdaAcId=' + PDAACId);
+    //}
+
+    var Page = 0;
+
+    function LoadMoreListData() {
+        //debugger;
+
+        var ReceiptNo = $('#SearchReceiptNo').val().trim();
+
+        var URL = '/CashManagement/LNSM_CashManagement/GetLoadMoreSDRefundList?ReceiptNo=' + ReceiptNo;
+
+        $.ajax({
+            url: URL,
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1, ReceiptNo: ReceiptNo },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#TblSDRefundList').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+                        len,
+                        [item.ClosureDate],
+                        [item.RecieptNo],
+                        [item.PartyName],
+                        [item.RefundAmt],
+                        //['<a href="#" onclick=ViewSDRefund("' + [item.PDAACId] + '")><i class="fa fa-search-plus Edit"></i></a>'],
+                        ['<a href="#" onclick=PrintSDRefund("' + [item.RecieptNo] + '")><i class="fa fa-file-pdf-o Edit"></i></a>'],
+
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+
+    }
+
+    function PrintSDRefund(ReceiptNo) {
+        //debugger;
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetRefundSDReport", "LNSM_CashManagement", new { Area = "CashManagement" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                ReceiptNo: ReceiptNo
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }
+</script>
+

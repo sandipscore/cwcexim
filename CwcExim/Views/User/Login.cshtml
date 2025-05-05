@@ -1,0 +1,300 @@
+﻿@model CwcExim.Models.Login
+
+@{
+
+    var ErrLoginWithId = ViewBag.ErrLoginWithId;
+}
+<div id="divLoginResponse" class="container-fluid form-horizontal">
+    @{
+
+        AjaxOptions options = new AjaxOptions();
+        options.HttpMethod = "POST";
+        //options.Confirm = "Do you wish to submit this form?";
+        options.OnBegin = "OnBegin";
+        options.OnComplete = "OnComplete";
+        options.OnFailure = "OnFailure";
+        options.OnSuccess = "OnSuccess";
+        options.LoadingElementDuration = 1000;
+        options.LoadingElementId = "divProgress";
+        options.UpdateTargetId = "divLoginResponse";
+        options.InsertionMode = InsertionMode.InsertAfter;
+
+
+    }
+    @using (Ajax.BeginForm("Login", "User", options))
+    {
+        @Html.AntiForgeryToken()
+        <div class="row">
+            <div class="col-md-12 SignUp_head">
+                <h4>User Login</h4>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12 singup_body" style="padding-bottom:0px;">
+                <div class="row SignUp_space_top SignUp">
+                    <div class="col-md-3">
+                        @Html.LabelFor(m => m.LoginId)<span class="LabelColon">:</span>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-user fa" aria-hidden="true"></i></span>
+                            @Html.TextBoxFor(m => m.LoginId, new { @id = "TxtLoginId" })
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 col-md-12 col-lg-12 col-xs-12">
+                        @Html.ValidationMessageFor(m => m.LoginId, "", new { @class = "Error_Msg" })
+
+                    </div>
+                </div>
+                <div class="row SignUp_space_top SignUp">
+                    <div class="col-sm-3 col-md-3">
+                        @Html.LabelFor(m => m.Password)<span class="LabelColon">:</span>
+                    </div>
+                    <div class="col-sm-9 col-md-9">
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-lock fa-lg" aria-hidden="true"></i></span>
+                            @Html.TextBoxFor(m => m.Password, new { @autocomplete = "off",id="LoginPassword" })
+                            @Html.HiddenFor(m => m.HdnLoginPassword, new { id = "HdnLoginPassword" })
+                        </div>
+                        <a class="forgot_password" href="#" onclick="ForgotPassword()">Forgot ?</a>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 col-md-12 col-lg-12 col-xs-12">
+                        @Html.ValidationMessageFor(m => m.Password, "", new { @class = "Error_Msg" })
+                    </div>
+                </div>
+                @*---------------------------Start Audit Captcha*@
+                <div class="row SignUp_space_top SignUp">
+                    <div class="col-sm-3 col-md-3"></div>
+                    <div class="col-sm-9 col-md-9">
+                        <div class="captcha_wrap">
+                            <div id="captcha"></div>
+                            <a class="" href="#" onclick="return RefreshCaptcha();"><i class="fa fa-refresh" aria-hidden="true"></i></a>
+                        </div>
+                        <input type="text" placeholder="Captcha" id="cpatchaTextBox" />
+                    </div>
+                </div>
+                @*---------------------------End Audit Captcha*@
+                <div class="row">
+                    <div id="DivLoginErr" class="col-sm-12 col-md-12 col-xs-12 logErrMsg">
+                    </div>
+                </div>
+                <div class="row Form_Space_top SignUp_space_bottom">
+                    <div class="col-md-offset-4 col-md-4">
+                        <input style="width:100%;" type="submit" onclick="return EncryptPwd();" value="Login" class="btn log_Btn_sm" />
+                    </div>
+                    <div class="col-md-4">
+                        @*<a class="forgot_password" href="#" onclick="ForgotPassword()">Forgot ?</a>*@
+                    </div>
+                </div>
+                <div class="row Form_Space_top log_modal_footer" style="height:5px;">
+                    @*<div class="col-sm-6 col-md-6 Form_Space_top">
+                        <a style="color:#fff;" href="#" onclick="LoginWithoutId()" ,id="ancrLoginWithoutId">New user</a>
+                    </div>
+                    <div class="col-sm-6 col-md-6 Form_Space_top">
+                        <a style="float:right;color:#fff;" href="#" onclick="LoginWithId()" ,id="ancrLoginWithId">Signup with user id</a>
+                    </div>*@
+                </div>
+            </div>
+        </div>
+    }
+    @Scripts.Render("~/bundles/jqueryval")
+    <script type="text/javascript">
+       
+       
+
+    </script>
+
+</div>
+<script src="~/Scripts/Extended.Jquery.Plugins.js"></script>
+<script type="text/javascript">
+    $(function () {
+        //Extends JQuery Methods to get current cursor postion in input text.
+        //GET CURSOR POSITION
+       
+        $('#TxtLoginId').focus();
+       
+        jQuery.fn.getCursorPosition = function () {
+            if (this.lengh == 0) return -1;
+            return $(this).getSelectionStart();
+        }
+
+        jQuery.fn.getSelectionStart = function () {
+            if (this.lengh == 0) return -1;
+            input = this[0];
+
+            var pos = input.value.length;
+
+            //if (input.createTextRange) {
+            //    //var r = document.selection.createRange().duplicate();
+            //    var r = document.getSelection.duplicate();
+            //    r.moveEnd('character', input.value.length);
+            //    if (r.text == '') pos = input.value.length;
+            //    pos = input.value.lastIndexOf(r.text);
+            //} else if (typeof (input.selectionStart) != "undefined") pos = input.selectionStart;
+
+            return pos;
+        }
+
+        $("#LoginPassword").keypress(function (e) {
+           
+            setTimeout(function () {
+                MaskPassword(e)
+            }, 1);
+        });
+        $('#LoginPassword').keydown(function (e) {
+            //console.log(window.event.keyCode);
+            if (e.keyCode == 8 || e.keyCode == 46) {
+
+                //$('#HdnPassword').val('');
+                //$('#Password').val('');
+                setTimeout(function () {
+                    MaskPassword(e)
+                }, 1);
+
+            }
+
+        });
+
+      
+    });
+
+    function GenerateStars(n) {
+        var stars = '';
+        for (var i = 0; i < n; i++) {
+            stars += '*';
+        }
+        return stars;
+    }
+
+    function MaskPassword(e) {
+
+        var text = $('#HdnLoginPassword').val().trim();
+        var stars = $('#HdnLoginPassword').val().trim().length;
+        var unicode = e.keyCode ? e.keyCode : e.charCode;
+        //$("#keycode").html(unicode);
+
+        //Get Current Cursor Position on Password Textbox
+        var curPos = $("#LoginPassword").getCursorPosition();
+        var PwdLength = $("#LoginPassword").val().trim().length;
+
+        if (unicode != 9 && unicode != 13 && unicode != 37 && unicode != 40 && unicode != 37 && unicode != 39) {
+            //If NOT <Back Space> OR <DEL> Then...
+            if (unicode != 8 && unicode != 46) {
+                text = text + String.fromCharCode(unicode);
+                stars += 1;
+            }
+                //If Press <Back Space> Or <DEL> Then...
+            else if ((unicode == 8 || unicode == 46) && stars != PwdLength) {
+                stars -= 1;
+                text = text.replace(text.charAt(curPos), "");
+            }
+            //Set New String on both input fields
+            $('#HdnLoginPassword').val(text);
+            $('#LoginPassword').val(GenerateStars(stars));
+        }
+    }
+    $(document).ready(function () {
+        //Bind Key Press event with password field    
+       
+        document.getElementById('LoginPassword').setAttribute('autocomplete', 'off');
+        $('#TxtLoginId').DisableControlKey();
+        $('#LoginPassword').DisableControlKey();
+        
+    })
+    
+    function OnBegin() {
+        
+    }
+    function OnComplete() {
+        // $("#divMsg").append("<h3>Completing Ajax request.</h3>");
+    }
+    function OnSuccess(data) {
+        //field-validation-valid
+        // $('#DivErrMenuName').html(data);
+        //alert(data);
+        // $("#divMsg").append("<h3>Ajax request successful.</h3>");
+        //if (data.Status == 0)
+        //{
+        //    $('#DivLoginErr').html(data.Msg);
+        //}
+        //else
+        //{
+        //    if (data.RoleId == 1 || data.RoleId == 2)
+        //    {
+        //        window.location = '/Admin/Index';
+        //    }
+        //    else
+        //    {
+        //        window.location = '/UserDashBoard/Index';
+        //    }
+        //}
+
+
+        $('#DivLoginErr').html("");
+        if (data.Status == 1) {
+           
+            //if (data.RoleId == 1 || data.RoleId == 2) {
+            //    window.location = '/Admin/Index';
+            //}
+           // else {
+            // window.location = '/UserDashBoard/Index';
+            var SubDomain = '@System.Configuration.ConfigurationManager.AppSettings["SubDomain"]';
+            window.location = '/UserDashBoard/Index';
+
+
+            //  }
+        }
+        else {
+            CreateCaptcha();
+            // document.getElementById("cpatchaTextBox").innerHTML = '';
+            $('#cpatchaTextBox').val('');
+            $('#DivLoginErr').html(data.Msg);
+            $("#LoginPassword").val("");
+            $("#HdnLoginPassword").val("");
+            if (data.Status == -2) {
+                //$('#btnLogin').hide();
+                //LoadCaptchaView();
+            }
+        }
+    }
+
+    function EncryptPwd() {
+        //if($('#HdnLoginPassword').val()!='')
+        //    $('#HdnLoginPassword').val(md5($('#HdnLoginPassword').val()));
+        if (document.getElementById("cpatchaTextBox").value == code) {
+            if ($('#HdnLoginPassword').val() != '') {
+                // $('#HdnLoginPassword').val(sha256_digest(sessionValue + sha256_digest($('#HdnLoginPassword').val())));
+                $('#HdnLoginPassword').val(md5($('#HdnLoginPassword').val()));
+                return true;
+            }
+            else {
+                return false;
+            }
+            return true;
+        }
+        else {
+            alert("Invalid Captcha. try Again");
+            CreateCaptcha();
+            $('#cpatchaTextBox').val('');
+            return false;
+        }
+        //$('#HdnLoginPassword').val(md5($('#HdnLoginPassword').val()));
+
+        //return true;
+    }
+
+</script>
+<script src="~/Scripts/Captcha.js"></script>
+<script type="text/javascript">
+    CreateCaptcha();
+    function RefreshCaptcha() {
+        debugger;
+        CreateCaptcha();
+       // document.getElementById("cpatchaTextBox").innerHTML = '';
+        $('#cpatchaTextBox').val('');
+    }
+</script>

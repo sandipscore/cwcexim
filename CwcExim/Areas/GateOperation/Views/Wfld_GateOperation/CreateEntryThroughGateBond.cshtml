@@ -1,0 +1,720 @@
+﻿@model CwcExim.Areas.GateOperation.Models.Wfld_EntryThroughGateBond
+<script type="text/javascript">
+    var TimeInSeconds;
+    $(document).ready(function () {
+        // GetEntryThroughGateList();
+        
+        TimeInSeconds = 5000;
+        var time = new Date();
+        time = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+        document.getElementById("SysTime").value = time;
+        var t = setTimeout(StartSysTime, 500);
+        $('#DivCBT').css("display", "none");
+        
+    });
+
+    function GetEntryThroughGateList() {
+        $('#tblEntryDet').html('');
+        $('#DivGateEntryList').load("/GateOperation/Wfld_GateOperation/EntryThroughGateList?OperationType=Bond");
+    }
+
+    function StartSysTime() {
+        try {
+            var time = new Date();
+            time = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+            document.getElementById("SysTime").value = time;
+            var t = setTimeout(StartSysTime, 500);
+        } catch (e) {
+
+        }
+    }
+
+</script>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4 postn_rel">
+                @using (Ajax.BeginForm("AddEditEntryThroughGateBond", "Wfld_GateOperation", new AjaxOptions
+                {
+                    Confirm = "Are You Sure You Want To Save?",
+                    HttpMethod = "POST",
+                    OnSuccess = "GateEntryOnSuccess",
+                    OnFailure = "GateEntryOnFailure"
+                }))
+                {
+                    @Html.AntiForgeryToken()
+
+
+                    if (@ViewBag.lstReferenceNumberList != null && @ViewBag.lstReferenceNumberList != "")
+                    {
+                        <input type="hidden" id="lstReferenceNumberList" name="lstReferenceNumberList" value="@ViewBag.lstReferenceNumberList" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="lstReferenceNumberList" name="lstReferenceNumberList" value="" />
+                    }
+
+
+
+                    <input type="hidden" id="hdnOprationType" value="Bond" />
+                    @Html.HiddenFor(m => m.EntryId)
+                    @Html.HiddenFor(m=>m.ContainerType,new { @value="Loaded"})
+                    @Html.ValidationMessageFor(m => m.EntryId)
+                    <div class="time_sec" onload="startTime()"><span id="Time"></span></div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Entry Through Gate Bond</h4>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-offset-2 col-md-1-5">
+                                <div class="boolean-container">
+                                    <input type="hidden" id="hdnNoOfPackages" value="0" />
+                                    <input type="hidden" id="hdnGrossWeight" value="0" />
+                                    @Html.HiddenFor(m => m.IsVehicle)
+                                    @Html.ValidationMessageFor(m => m.IsVehicle)
+                                    @Html.RadioButton("Container", "Container", new { @class = "", @id = "idContainer", @checked = true, @onclick = "ChangeVehicle(this.id)" })
+                                    <label for="idContainer"><i class="circle"></i><span>Container</span></label>
+                                </div>
+                            </div>
+                            <div class="col-md-1-5">
+                                <div class="boolean-container">
+                                    @Html.RadioButton("CBT", "CBT", new { @class = "", @id = "idCBT", @onclick = "ChangeVehicle(this.id)" })
+                                    <label for="idCBT"><i class="circle"></i><span>CBT</span></label>
+                                </div>
+                            </div>
+                            <div class="col-md-1-5">
+                                <div class="boolean-container">
+                                    @Html.RadioButton("Vehicle", "Vehicle", new { @class = "", @id = "idVehicle", @onclick = "ChangeVehicle(this.id)" })
+                                    <label for="idVehicle"><i class="circle"></i><span>Vehicle</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-offset-2 col-md-1-5">
+                                <div class="boolean-container">
+                                    @Html.RadioButton("Loaded", "Loaded", new { @class = "", @id = "Loaded", @checked = true, @onclick = "ChangeContainerType(this.id)" })
+                                    <label for="Loaded"><i class="circle"></i><span>Loaded</span></label>
+                                </div>
+                            </div>
+                            <div class="col-md-1-5">
+                                <div class="boolean-container">
+                                    @Html.RadioButton("Empty", "Empty", new { @class = "", @id = "Empty", @onclick = "ChangeContainerType(this.id)" })
+                                    <label for="Empty"><i class="circle"></i><span>Empty</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 col-md-offset-6-5 col_cus_offset_0_5 padding_rt">
+                                <label>System Date & Time:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                @Html.TextBoxFor(m => m.SystemDateTime, new { @class = "form-control", placeholder = "dd/mm/yyyy", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.SystemDateTime, "", new { @class = "Error_Msg", Value = DateTime.Today.ToString("dd/MM/yyyy") })
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                <div id="DivSysTime">
+                                    <input type="text" id="SysTime" name="SysTime" class="form-control" readonly="readonly" style="background-color:#fff;z-index:0;" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.GateInNo, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.GateInNo, new { @class = "form-control input-sm", @readonly = "true" })
+                                @Html.ValidationMessageFor(m => m.GateInNo, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col_cus_2 col-md-offset-2-5 col_cus_offset_0_5 padding_rt">
+                                <label>Entry Date & Time:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBoxFor(m => m.EntryDateTime, new { @class = "form-control", placeholder = "dd/mm/yyyy", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.EntryDateTime, "", new { @class = "Error_Msg", Value = DateTime.Today.ToString("dd/MM/yyyy") })
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                <div class="input-group clockpicker" data-placement="left" data-align="top">
+                                    <input type="text" id="time" name="time" class="form-control" value="00:00" readonly="readonly" style="background-color:#fff;z-index:0;" />
+                                    <input type="hidden" id="EditTime" name="EditTime" value="@ViewBag.strTime" />
+                                    <span class="input-group-addon" style="padding:2px 10px;">
+                                        <span class="glyphicon glyphicon-time"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.ReferenceNo, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.HiddenFor(m => m.ReferenceNoId, new { @value = "0" })
+                                @Html.TextBoxFor(m => m.ReferenceNo, new { @class = "form-control input-sm", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.ReferenceNo, "", new { @class = "Error_Msg" })
+                                <span class="search" id="ReferenceSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="loadBondInfo();" data-target="#ReferenceModal"></i></span>
+                            </div>
+                            <div class="col-md-1-5 col_cus_2 col-md-offset-4-5 col_cus_offset_3 padding_rt">
+                                @Html.LabelFor(m => m.ReferenceDate, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBoxFor(m => m.ReferenceDate, new { @class = "form-control", placeholder = "dd/mm/yyyy", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.ReferenceDate, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.CHAName, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                @Html.TextBoxFor(m => m.CHAName, new { @class = "form-control input-sm", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.CHAName, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input ">
+                            <div class="col-md-1-5 col_cus_2 padding_rt DivContainerNo">
+                                <label>Container No:</label>
+                            </div>
+                            <div class="col-md-2-5 DivContainerNo" id="ContainerNo1Div">
+                                @Html.TextBoxFor(m => m.ContainerNo, new { @class = "form-control input-sm" })
+                                @Html.ValidationMessageFor(m => m.ContainerNo, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-offset-4 col-md-1-5 padding_rt divSize">
+                                @Html.LabelFor(m => m.Size, new { @class = "InputLabel", @id="lblsize" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 divSize">
+                                @Html.DropDownListFor(m => m.Size, new List<SelectListItem>
+                               {
+                                new SelectListItem { Text="20",Value="20"},
+                                new SelectListItem { Text="40",Value="40"}
+                                //new SelectListItem { Text="ODC",Value="ODC"},
+                                }, "----Select----", new { @class = "form-control input-sm", @onblur = "ClearValidationMsg(this)" })
+                                @Html.ValidationMessageFor(m => m.Size, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5" style="display:none;">
+                                <div class="boolean-container">
+                                    @Html.HiddenFor(m => m.IsCBT)
+                                    <label for="CBT"><span style="margin: 0 5px 0 0;">CBT:</span><i class="square"></i></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top" id="DivCBT">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>CBT No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.CBTNo, new { @onkeyup = "SetVehicleNo()" })
+                                @Html.ValidationMessageFor(m => m.CBTNo, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Custom Seal No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.CustomSealNo, new { @class = "form-cotrol input-sm" })
+                                @Html.ValidationMessageFor(m => m.CustomSealNo, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.VehicleNo, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.VehicleNo, new { @class = "form-cotrol input-sm" })
+                                @Html.ValidationMessageFor(m => m.VehicleNo, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_2 col_cus_offset_3">
+                                <label>Godown No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.HiddenFor(m => m.GodownId)
+                                @Html.TextBoxFor(m => m.GodownName, new { @class = "form-cotrol input-sm", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.GodownName, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.CargoType, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.DropDownListFor(m => m.CargoType, new List<SelectListItem>
+                                {
+                                    new SelectListItem { Text="HAZ",Value="1"},
+                                    new SelectListItem { Text="NON-HAZ",Value="2"},
+                                    new SelectListItem { Text="Extra Haz",Value="3"},
+                                    new SelectListItem { Text="ODC",Value="4"},
+                                }, "----Select----", new { @class = "form-control input-sm dropdown" })
+                                @Html.ValidationMessageFor(m => m.CargoType, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-offset-4 col-md-1-5 col_cus_offset_3 col_cus_2">
+                                @Html.LabelFor(m => m.GrossWeight, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.GrossWeight, new { @class = "form-control input-sm" })
+                                @Html.ValidationMessageFor(m => m.GrossWeight, "", new { @class = "Error_Msg" })
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>No of Packages:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.NoOfPackages, new { @class = "form-control intpu-sm" })
+                                @Html.ValidationMessageFor(m => m.NoOfPackages, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-offset-4 col-md-1-5 col_cus_offset_3 col_cus_2">
+                                <label>Type of Package:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.TypeofPackage, new { @class = "form-control intpu-sm", @readonly = true })
+                                @Html.TextBoxFor(m => m.Others, new { @class = "form-control intpu-sm", @readonly = true, @style = "display:none;" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Importer Name:</label>
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                @Html.TextBoxFor(m => m.DepositorName, new { @class = "form-control intpu-sm", @readonly = true })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.Remarks, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                @Html.TextAreaFor(m => m.Remarks, new { @class = "form-control intpu-sm", @style = "width:100%;height:100px;" })
+                                @Html.ValidationMessageFor(m => m.Remarks, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Cargo Description:</label>
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                @Html.TextAreaFor(m => m.CargoDescription, new { @class = "form-cotrol input-sm", @style = "width:100%;height:100px;", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.CargoDescription, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="row">
+                        <div class="stoke SignUp_space_top SignUp_space_bottom"></div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="col-md-12 SignUp_space_bottom">
+                            <div class="col-md-offset-4 col-md-2">
+                                <input type="submit" value="Save" class="btn log_Btn_sm" id="BtnGateEntry" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" value="Reset" id="btnReset" class="btn log_Btn_sm" onclick="ResetGateEntry()" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg SignUp_space_bottom2" style="background-color:transparent">
+                            <div id="DivEntryThroughGateMsg"></div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-2 SignUp_space_bottom">
+                                <input type="button" id="BtnGateEntryListLoad" value="Show List" class="btn log_Btn_sm" onclick="GetEntryThroughGateList()" />
+                            </div>
+                            @*<div class="col-md-offset-5 col-md-2" style="text-align:right;">
+                                <label>Container No:</label>
+                            </div>*@
+                            <div class="col-md-4 col-md-offset-6">
+                                @Html.TextBox("ContainerNoSearch", "", new { @class = "col-xs-12", placeholder = "Search By Reference No / Container No / Vehicle No" })
+                                <span class="search"><i class="fa fa-search" aria-hidden="true" onclick="SearchByContainerNo()"></i></span>
+                            </div>
+                        </div>
+                        <div class="ClearFix"></div>
+                    </div>
+
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div id="tblEntryDet"></div>
+                                            </div>
+                                        </div>
+
+                    <div id="ReferenceModal" class="modal fade" role="dialog">
+                        <div class="modal-dialog">
+                            <!-- Modal content-->
+                            <div class="modal-content popup_modal">
+                                <div class="modal-header popup_header">
+                                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                                    <h4 class="modal-title">Reference Number</h4>
+                                </div>
+                                <div class="modal-body popup_body">
+                                    <input placeholder="Search Me" id="ReferenceNobox" type="text" />
+                                    <ul class="navList" id="lstReferenceNo"></ul>
+                                </div>
+                                <div class="modal-footer">
+                                    <div class="row">
+                                        <div class="col-md-offset-6 col-md-6">
+                                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                }
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="DivGateEntryList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $('#ContainerType').val("Loaded");
+    function LoadGateEntryView() {
+        $('#DivBody').load('/GateOperation/Wfld_GateOperation/CreateEntryThroughGateBond');
+    }
+
+    function ClearValidationMsg(TxtBoxId) {
+        var TxtBoxId = TxtBoxId.id;
+        $('[data-valmsg-for=' + TxtBoxId + ']').html("<span></span>");
+    }
+
+    $('#ReferenceNobox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstReferenceNo > li').show();
+        else {
+            $('#lstReferenceNo > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+
+    function ResetGateEntry() {
+        $('#DivBody').load('/GateOperation/Wfld_GateOperation/CreateEntryThroughGateBond');
+    }
+
+    function GateEntryOnSuccess(data) {
+        if (data.Status == 1 || data.Status == 2) {
+            if ($('#DivEntryThroughGateMsg').hasClass('logErrMsg'))
+                $('#DivEntryThroughGateMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivEntryThroughGateMsg').html(data.Message);
+            setTimeout(ResetGateEntry, 5000);
+        }
+        else {
+            if ($('#DivEntryThroughGateMsg').hasClass('logSuccMsg'))
+                $('#DivEntryThroughGateMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivEntryThroughGateMsg').html(data.Message);
+        }
+    }
+    function GateEntryOnFailure() {
+        alert("Error");
+    }
+
+    $("#EntryDateTime").datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+    $("#ReferenceDate").datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+    $('.clockpicker').clockpicker({
+        donetext: 'Done',
+        twelvehour: true
+    });
+    $(document).ready(function () {
+
+        var editTime = $("#EditTime").val();
+        //alert(editTime);
+        if (editTime != null && editTime != "") {
+            $("#time").val(editTime);
+        }
+    });
+</script>
+
+<script>
+  //  GenerateLstReferenceNumber();
+    function GenerateLstReferenceNumber() {
+        var parties = JSON.parse($('#lstReferenceNumberList').val());
+        var html = '';
+        $.each(parties, function (i, item) {
+            html += '<li id="' + item.SpaceappId + '" onclick="GetPayByDetails(this)">' + item.ApplicationNo + '</li>';
+        });
+        $('#lstReferenceNo').html(html);
+    }
+
+    function GetPayByDetails(elem) {
+        debugger;
+        $('#ReferenceNo').val($(elem).text());
+        $('#ReferenceNoId').val($(elem).attr('id'));
+        var selectedReference = $('#ReferenceNo').val();
+        $.ajax({
+            url: '/GateOperation/Wfld_GateOperation/GetSACDetails',
+            type: 'GET',
+            async: false,
+            datatype: JSON,
+            data: { "Id": $('#ReferenceNoId').val() },
+            success: function (data) {
+                if (data != undefined || data != null) {
+                    //console.log(data.Data);
+                    data.Data = data.Data[0];
+                    $('#ReferenceNo').val(data.Data.ApplicationNo);
+                    $('#ReferenceDate').val(data.Data.ApplicationDate);
+                    $('#CHAName').val(data.Data.CHAName);
+                    $('#CargoDescription').val(data.Data.CargoDescription);
+                    $('#GodownId').val(data.Data.GodownId);
+                    $('#GodownName').val(data.Data.GodownName);
+                    
+                    $('#CargoType').val(data.Data.CargoType);
+                    $('#DepositorName').val(data.Data.ImporterName);
+                    $('#TypeofPackage').val(data.Data.NatureOfPackages);
+                    $('#Others').val(data.Data.Others);
+                    (data.Data.NatureOfPackages == "Others") ? $('#Others').css("display", "block") : $('#Others').css("display", "none");
+
+                    if ($('#Loaded').is(":checked") == true) {
+                        $('#NoOfPackages').val(data.Data.NoOfUnits);
+                        $('#GrossWeight').val(data.Data.Weight);
+                        $('#hdnNoOfPackages').val(data.Data.NoOfUnits);
+                        $('#hdnGrossWeight').val(data.Data.Weight);
+                    }
+                    else {
+                        $('#NoOfPackages').val(0);
+                        $('#GrossWeight').val(0);
+                        $('#hdnNoOfPackages').val('0');
+                        $('#hdnGrossWeight').val('0');
+                    }
+                    $('#CustomSealNo').val(data.Data.CustomSealNo);
+
+                }
+                else {
+                    alert("fail");
+                }
+
+            }
+        });
+        $("#ReferenceModal").modal("hide");
+    }
+    function ChangeVehicle(id) {
+        debugger;
+
+        $('#ContainerNo,#Size,#CBTNo').val('');
+        var data = ["idCBT", "idContainer", "idVehicle"];
+        $.each(data, function (i, item) {
+            if (item == id)
+                $('#' + item).prop("checked", true);
+            else $('#' + item).prop("checked", false);
+        });
+        if (id == "idVehicle") {
+            $('#IsVehicle').val('1');
+            $('.divSize').addClass('hidden');
+        }
+        else {
+            $('#IsVehicle').val('0');
+            $('.divSize').removeClass('hidden');
+        }
+        if (id == "idCBT") {
+            $('#IsCBT').val('1');
+            $('#DivCBT').css("display", "block");
+        }
+        else {
+            $('#IsCBT').val('0');
+            $('#DivCBT').css("display", "none");
+        }
+        if(id == "idContainer") 
+        {
+            $('.DivContainerNo').css("display", "block");
+            $('#lblsize').parent().addClass('col-md-offset-4');
+            $('#Size').val('');
+        }
+        else{
+            $('.DivContainerNo').css("display", "none");
+            $('#lblsize').parent().removeClass('col-md-offset-4');
+            $('#Size').val('20');
+        }
+            
+         
+    }
+    $('#BtnGateEntry').on("click", function (e) {
+        var conf = true;//confirm("Are you sure you want to Save?");
+        if (conf == true) {
+            $('[data-valmsg-for]').html('');
+            var data = true;
+            if ($('#ReferenceNoId').val() == "0") {
+                $('[data-valmsg-for="ReferenceNo"]').html('<span>Fill Out This Field</span>');
+                data = false;
+            }
+            if ($('#idContainer').is(":checked") == true) {
+                if ($('#ContainerNo').val() == "") {
+                    $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+                    data = false;
+                }
+                if ($('#Size').val() == "") {
+                    $('[data-valmsg-for="Size"]').html('<span>Fill Out This Field</span>');
+                    data = false;
+                }
+            }
+            else if ($('#idCBT').is(":checked") == true) {
+                if ($('#CBTNo').val() == "") {
+                    $('[data-valmsg-for="CBTNo"]').html('<span>Fill Out This Field</span>');
+                    data = false;
+                }
+            }
+            debugger;
+            if (($('#NoOfPackages').val() == '' || Number($('#NoOfPackages').val()) <= 0) && $('#Loaded').is(":checked")== true) {
+                $('[data-valmsg-for="NoOfPackages"]').html('<span>Fill Out This Field</span>');
+                data = false;
+            }
+            //if (($('#GrossWeight').val() == '' || Number($('#GrossWeight').val()) <=0) && $('#Loaded').is(":checked")== true) {
+            //    $('[data-valmsg-for="GrossWeight"]').html('<span>Fill Out This Field</span>');
+            //    data = false;
+            //}
+            if (data == true)
+            {
+                return true;
+            }
+            else return false;
+        }
+    });
+    function SetVehicleNo() {
+        $('#VehicleNo').val($('#CBTNo').val());
+    }
+    function ChangeContainerType(id)
+    {
+        if (id == "Loaded")
+        {
+            $('#Empty').prop("checked", false);
+            $('#Loaded').prop("checked", true);
+            $('#ContainerType').val("Loaded");
+            var NoOfUnits = 0;
+            var Weight = 0;
+            if ($('#hdnNoOfPackages').val() != null && $('#hdnNoOfPackages').val() != '')
+            {
+                NoOfUnits= $('#hdnNoOfPackages').val();
+            }
+            if ($('#hdnGrossWeight').val() != null && $('#hdnGrossWeight').val() != '') {
+                Weight = $('#hdnGrossWeight').val();
+            }
+
+            $('#NoOfPackages').val(NoOfUnits);
+            $('#GrossWeight').val(Weight);
+        }
+        else if (id == "Empty") {
+            $('#Empty').prop("checked", true);
+            $('#Loaded').prop("checked", false);
+            $('#NoOfPackages,#GrossWeight').val(0);
+            $('#ContainerType').val("Empty");
+        }
+    }
+
+    //function GetGateEntryList() {
+    //   // debugger;
+
+    //    $('#tblEntryDet').html('');
+    //    //$('#DivGateEntryList').load('/GateOperation/Wfld_GateOperation/EntryThroughGateList');
+    //    $('#DivGateEntryList').load("/GateOperation/Wfld_GateOperation/EntryThroughGateList?OperationType=Bond");
+    //}
+    function GenerateTable() {
+        tablehtml = '';
+        var tablehtml = '<table id="tblEntryDet" class="table table-striped table-bordered dataTable" style="width:100%;"><thead><tr><th class="text-center">SL No</th><th>CFS Code</th><th>Gate In No</th><th>Gate In Date & Time</th><th>Reference No</th><th>Vehicle No</th><th>Container No</th><th class="text-center">Edit</th><th class="text-center">View</th><th class="text-center">Delete</th><th class="text-center">Print</th></tr></thead><tbody>';
+        tablehtml += '</tbody></table>';
+        $('#tblEntryDet').html(tablehtml);
+    } GenerateTable();
+    function SearchByContainerNo() {
+        //debugger;
+        $('#tblEntryDet').hide();
+        $('#DivGateEntryList').load('/GateOperation/Wfld_GateOperation/EntryThroughGateSearchList?ContainerNo=' + $('#ContainerNoSearch').val().trimLeft() + '&OperationType=' + "Bond");
+    }
+
+
+
+    function loadBondInfo() {
+        debugger;
+        $.ajax({
+            url: '/GateOperation/WFLD_GateOperation/GetBondNoforBondEntry',
+            type: 'GET',
+            dataType: 'JSON',
+
+            success: function (data) {
+                debugger;
+                if (data != '') {
+
+                    var html = '';
+                    var tabvalue = 420;
+                    var tab = 0;
+                    var u = "_";
+                    debugger;
+                    // var parties = $('#lstReferenceNumberList').val();
+                 
+                        $.each(data.Data, function (i, item) {
+                            html += '<li id="' + item.SpaceappId + '" onclick="GetPayByDetails(this)">' + item.ApplicationNo + '</li>';
+                        });
+                        $('#lstReferenceNo').html(html);
+                   
+
+
+                  //  $('#lstCBT').html(html);
+                }
+            }
+        });
+    }
+</script>

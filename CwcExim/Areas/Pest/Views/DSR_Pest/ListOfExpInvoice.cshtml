@@ -1,0 +1,148 @@
+﻿@model IEnumerable<CwcExim.Areas.Export.Models.DSRListOfExpInvoice>
+<table class="table table-bordered table-striped" id="tblExpInvoice" style="width:100%">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("Sl No")</th>
+            <th>Invoice No</th>
+            <th>Invoice Date</th>
+            <th>Party Name</th>
+            <th class="text-center">@Html.DisplayName("Invoice Print")</th>
+            <th class="text-center">@Html.DisplayName("Certificate Print")</th>
+
+          </tr>
+    </thead>
+    <tbody>
+        @{var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center">@SerialNo</td>
+                    <td>@item.InvoiceNo</td>
+                    <td>@item.InvoiceDate</td>
+                    <td>@item.PartyName</td>
+                    <td class="text-center"><a href="#" onclick="PrintInv('@item.InvoiceNo','@item.Module','@item.ModuleName')"><i class="fa fa-file-pdf-o Edit"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="PrintCertificate('@item.InvoiceNo')"><i class="fa fa-file-pdf-o Edit"></i></a></td>
+
+                      </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+<script>
+    var Page = 0;
+    $(document).ready(function () {
+        var tblCCINEntry = $('#tblExpInvoice').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns": [
+                       { "sName": "SL No","width": "10%" },
+                       { "sName": "Invoice No", "bSortable": false },
+                       { "sName": "Invoice Date", "bSortable": false },
+                       { "sName": "Party Name", "bSortable": false },
+                       { "sName": "Print", "bSortable": false, "width": "10%" },
+                        { "sName": "PrintCertificate", "bSortable": false, "width": "10%" },
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0),td:eq(4),td:eq(5)', nRow).addClass("text-center");
+            }
+        });
+        new $.fn.dataTable.FixedHeader(tblCCINEntry);
+    });
+    function PrintInv(invoiceno, Module, ModuleName)
+    {
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetBulkInvoiceReport", "DSR_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                InvoiceNumber: invoiceno,
+                InvoiceModule: Module,
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                InvoiceModuleName: ModuleName,
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }
+    function LoadMoreListData() {
+        debugger;
+        var Module = $('#hdnModule').val();
+        var InvoiceNo = $('#SearchInvoiceNo').val().trim();
+        var InvoiceDate = $('#SearchInvoiceDate').val().trim();
+        if (InvoiceNo != '' && InvoiceNo != null && InvoiceDate != '' && InvoiceDate != null) {
+            var URL = '/Export/DSR_CWCExport/ListLoadMoreExpInvoice?InvoiceNo=' + InvoiceNo + '&InvoiceDate' + InvoiceDate;
+        }
+        else if (InvoiceNo != '' && InvoiceNo != null) {
+            var URL = '/Export/DSR_CWCExport/ListLoadMoreExpInvoice?InvoiceNo=' + InvoiceNo + '&InvoiceDate' + null;
+        }
+        else if (InvoiceDate != '' && InvoiceDate != null) {
+            var URL = '/Export/DSR_CWCExport/ListLoadMoreExpInvoice?InvoiceNo=' + "" + '&InvoiceDate' + InvoiceDate;
+        }
+        else {
+            var URL = '/Export/DSR_CWCExport/ListLoadMoreExpInvoice?InvoiceNo=' + "" + '&InvoiceDate' + null;
+        }
+
+        $.ajax({
+            url: URL,
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1, Module: Module, InvoiceNo: InvoiceNo, InvoiceDate: InvoiceDate },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblExpInvoice').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.InvoiceNo],
+        [item.InvoiceDate],
+        [item.PartyName],
+        ['<a href="#" onclick="PrintInv(' + '\'' + [item.InvoiceNo] + '\'' + ',' + '\'' + [item.Module] + '\'' + ',' + '\'' + [item.ModuleName] + '\'' + ')"' + '>' + '<i class=\'fa fa-file-pdf-o Edit\'></i></a>'],
+        ['<a href="#" onclick="PrintCertificate( ' + '\''+[item.InvoiceNo] +'\''+ ' )"><i class="fa fa-file-pdf-o Edit"></i></a>'],
+
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+
+    function PrintCertificate(Inv) {
+        debugger;
+        //  var IssueSlipId = $('#IssueNoPrint').val();
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/Report/DSR_ReportCWC/PrintCertificate',
+            type: 'POST',
+            data: {
+                InvoiceNumber: Inv
+
+            },
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            success: function (data) {
+                  if (data.Status == 1)
+                window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                 else
+                alert("No Data");
+            }
+        });
+
+    }
+</script>

@@ -1,0 +1,669 @@
+﻿
+@model CwcExim.Areas.Report.Models.VIZ_BulkInvoiceReport
+
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "BulkInvoiceReportSuccess";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+
+}
+<script>
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+                $('#InvoiceNumber').val('');
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+                $('#InvoiceNumber').val('');
+            }
+        });
+    });
+
+</script>
+@if (ViewBag.PaymentParty != null)
+{
+    <input type="hidden" id="hdnPartyPayee" value="@ViewBag.PaymentParty" />
+}
+else
+{
+    <input type="hidden" id="hdnPartyPayee" value="" />
+}
+@if (ViewBag.PayeeList != null)
+{
+    <input type="hidden" id="hdnPayee" value="@ViewBag.PayeeList" />
+}
+else
+{
+    <input type="hidden" id="hdnPayee" value="" />
+}
+@using (Ajax.BeginForm("GetBulkInvoiceReport", "VIZ_ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.InvoiceModuleName)
+    <input type="hidden" id="JsonInvoiceLilst" name="JsonInvoiceLilst" />
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Bulk Invoice Report</h4>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>Period From:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-0-5">
+                                    <label>Period To:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-3 col_cus_4">
+                                    <a href="#" id="LoadInvoice" class="btn log_Btn_sm">Load Invoice List</a>
+                                    @*<button id="LoadInvoice" class="btn log_Btn_sm" >Load Invoice List</button>*@
+                                    @*onclick="loadInvoiceLIst();"*@
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>Invoice Type:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.DropDownListFor(m => m.InvoiceModule, new List<SelectListItem>
+                                {
+                                   new SelectListItem { Text="All",Value="All"},
+                                   //new SelectListItem { Text="GATE ENTRY",Value="GE"}, inv does not exists
+                                   //new SelectListItem { Text="SEAL CUTTING",Value="IMPSC"},               inv does not exists
+                                @*new SelectListItem { Text="Import Cargo Delivery",Value="IMPCD"},
+                                    new SelectListItem { Text="Export",Value="EXP"},*@
+                                 new SelectListItem { Text="ASSESSMENT SHEET FCL",Value="IMPYard"},
+                                 new SelectListItem { Text="ASSESSMENT SHEET LCL",Value="IMPDeli"},
+                                 new SelectListItem { Text="CCIN PAYMENT SHEET",Value="CCIN"},
+                                 //new SelectListItem { Text="FCL To LCL CONVERSION",Value="IMPFCLLCL"}, inv does not exists
+                                 new SelectListItem { Text="MISCELLANEOUS",Value="MiscInv"},
+                                 //new SelectListItem { Text="EXPORT CONTAINER STUFFING",Value="EXPCS"},
+                                  new SelectListItem { Text="LOADED CONTAINER PAYMENT SHEET",Value="EXPLod"},
+                                   new SelectListItem { Text="CONTAINER MOVEMENT",Value="EXP"},
+
+                                 new SelectListItem { Text="BTT",Value="BTT"},
+                                 new SelectListItem { Text="BTT Container",Value="BTTCon"},
+                                 new SelectListItem { Text="RENT",Value="Rent"},
+                                 new SelectListItem { Text="RESERVATION",Value="RESERV"},
+                                  new SelectListItem { Text="RESERVATION INVOICE (INDIVIDUAL)",Value="RESINDIV"},
+                                 //new SelectListItem { Text="IRR",Value="IRR"},
+                                 new SelectListItem { Text="EMPTY CONTAINER PAYMENT SHEET",Value="EC"},
+                                 //new SelectListItem { Text="EMPTY CONTAINER TRANSFER",Value="ECTrns"},
+                                 //new SelectListItem { Text="FUMIGATION",Value="Fumigation"},
+                                  new SelectListItem { Text="CONTAINER DEBIT INVOICE",Value="INVDEBT"},
+
+                                 //new SelectListItem { Text="EXPORT RR CREDIT DEBIT",Value="EXPRRCD"},
+                                 new SelectListItem { Text="REEFER PAYMENT SHEET",Value="EXPREF"},
+                                @*    new SelectListItem { Text="Import Godown Destuffing",Value="IMPDest"},
+                                    new SelectListItem { Text="Godown Cargo Delivery",Value="IMPDeli"},
+                                    new SelectListItem { Text="Empty Container Delivery",Value="ECDelv"},
+                                    new SelectListItem { Text="Back To Town",Value="BTT"},*@
+                                   new SelectListItem { Text="BOND ADVANCED PAYMENT SHEET",Value="BNDadv"},
+                                   new SelectListItem { Text="BOND UNLOADING PAYMENT SHEET",Value="BNDUnloading"},
+                                    new SelectListItem { Text="BOND DELIVERY PAYMENT SHEET",Value="BND"},
+                                    new SelectListItem { Text="PALLATISATION",Value="Pallatisation"},
+                                    new SelectListItem { Text="CONTAINER STUFFING PAYMENT SHEET",Value="EXPCSI"},
+                                }, new { @class = "form-control input-sm dropdown" })
+                                    @Html.ValidationMessageFor(m => m.InvoiceModule, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>Invoice No.:</label>
+                                </div>
+                                <div class="col-md-2-5 col_cus_2_5">
+                                    <span class="search" id="ShippingLineSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#InvoiceModal"></i></span>
+                                    @Html.TextBoxFor(m => m.InvoiceNumber, new { @class = "form-control" })
+                                    @Html.ValidationMessageFor(m => m.InvoiceNumber, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>Party Name:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_1_5">
+                                    @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control", @readonly = true })
+                                    <span class="search" id="PartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>
+                                    @Html.HiddenFor(m => m.PartyId)
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>Payer Name:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_1_5">
+                                    @Html.TextBoxFor(m => m.PayeeName, new { @class = "form-control", @readonly = true })
+                                    <span class="search" id="PayeeSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PayeeModal"></i></span>
+                                    @Html.HiddenFor(m => m.PayeeId)
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-10-5 padding_rt">
+                                    <label>Note: If Select Invoice Type as 'All', need to be select Party Name or Payer Name otherwise do not need to select Party Name or Payer Name</label>
+                                </div>
+
+
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="InvoiceModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">Invoice List</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="InvoiceListBox" type="text" />
+                    <ul class="navList" id="lstInvoiceList"></ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="PartyModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Party</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="Partybox" type="text" />
+                    <ul class="navList" id="lstParty">
+                        @*@{
+                            foreach (var item in Model.lstGodownList)
+                            {
+                            <li id="@item.GodownId">@item.GodownName</li>
+                            }
+                            }*@
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="PayeeModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Payer</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="Payeebox" type="text" />
+                    <ul class="navList" id="lstPayee"></ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    var singleinv = 0;
+    $(document).ready(function () {
+        PartyBinding();
+        PayeeBinding();
+    });
+    $('#BtnPreview').on("click", function () {
+        debugger;
+        if ($('#InvoiceModule option:selected').text() == "All" && $('#InvoiceNumber').val() != "") {
+            singleinv = 1;
+            $.ajax({
+                'url': '/Report/VIZ_ReportCWC/GetSingleInvoiceDtl',
+                type: 'GET',
+                data: { 'InvoiceNo': $('#InvoiceNumber').val() },
+                async: false,
+                success: function (data) {
+                    if (data.Status == 1) {
+                        $('#InvoiceModule').val(data.Data.Module);
+                        $('#PeriodFrom,#PeriodTo').val(data.Data.InvoiceDate);
+                        $('#InvoiceModuleName').val($('#InvoiceModule :selected').text());
+                        return true;
+                    }
+                    else {
+                        $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('Please enter correct InvoiceNo.');
+                        event.preventDefault();
+                        return false;
+                    }
+                }
+            });
+        }
+        else {
+            singleinv = 0;
+            if ($('#PeriodFrom').val() == '' || $('#PeriodFrom').val() == null) {
+                $('[data-valmsg-for="PeriodFrom"]').html('<span>Fill Out This Field</span>');
+                return false;
+            }
+            if ($('#PeriodTo').val() == '' || $('#PeriodTo').val() == null) {
+                $('[data-valmsg-for="PeriodTo"]').html('<span>Fill Out This Field</span>');
+                return false;
+            }
+            $('#DivDwnldWavMsg').html('');
+            var From = $('#PeriodFrom').val();
+            var To = $('#PeriodTo').val();
+            var SF = From.split('/');
+            var ST = To.split('/');
+            var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+            var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+
+            debugger;
+            //CONDITION FOR ALL CONDITION IN MODULE SELECTION
+
+            if (FromDate > ToDate) {
+                $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+                return false;
+            }
+            $('#InvoiceModuleName').val($('#InvoiceModule option:selected').text());
+            if ($('#InvoiceModuleName').val() == 'All') {
+                if ($('#PartyName').val() == '' && $('#PayeeName').val() == '') {
+                    $('#DivDwnldWavMsg').html("Please Select Party or Payer").removeClass('logSuccMsg').addClass('logErrMsg');
+                    return false;
+                }
+                else {
+                    $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('');
+                }
+            }
+            return true;
+        }
+        //return false;
+    });
+
+    function PartyBinding() {
+        debugger;
+        var PartyJson = JSON.parse($('#hdnPartyPayee').val());
+        var html = '';
+        $.each(PartyJson, function (i, item) {
+            html += '<li id="' + item.PartyId + '" onclick="selectParty(' + item.PartyId + ');">' + item.PartyName + '</li>';
+        });
+        $('#lstParty').html(html);
+    }
+    $('#Partybox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstParty > li').show();
+        else {
+            $('#lstParty > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    function selectParty(id) {
+        debugger;
+        var PartyJson = JSON.parse($('#hdnPartyPayee').val());
+        var Party = $.grep(PartyJson, function (item) { return item.PartyId == id; })[0];
+        $('#PartyId').val(Party.PartyId);
+        $('#PartyName').val(Party.PartyName);
+        $("#PartyModal").modal("hide");
+    }
+
+    function PayeeBinding() {
+        debugger;
+        var PayeeJson = JSON.parse($('#hdnPayee').val());
+        var html = '';
+        $.each(PayeeJson, function (i, item) {
+            html += '<li id="' + item.PartyId + '" onclick="selectPayee(' + item.PartyId + ');">' + item.PartyName + '</li>';
+        });
+        $('#lstPayee').html(html);
+    }
+    $('#Payeebox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstPayee > li').show();
+        else {
+            $('#lstPayee > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    function selectPayee(id) {
+        debugger;
+        var PartyJson = JSON.parse($('#hdnPartyPayee').val());
+        var Party = $.grep(PartyJson, function (item) { return item.PartyId == id; })[0];
+        $('#PayeeId').val(Party.PartyId);
+        $('#PayeeName').val(Party.PartyName);
+        $("#PayeeModal").modal("hide");
+    }
+
+    $('#DebtorBox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstEximTraderWithInvoice > li').show();
+        else {
+            $('#lstEximTraderWithInvoice > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    var SacName = "";
+
+    $('#lstEximTraderWithInvoice > li').on("click", function () {
+        $('#PartyName').val($(this).text());
+        $('#partyNameId').val($(this).attr('id'));
+        $("#ContainerModal").modal("hide");
+        SacName = $('#partyNameId').val();
+        // alert(SacName);
+
+    });
+
+    function RptConsumerListDtlOnFailure() { }
+    function BulkInvoiceReportSuccess(data) {
+        $('#DivDwnldWavMsg').html('')
+        //alert(data);
+        debugger;
+        if (singleinv == 1) {
+            $('#InvoiceModule').val('All');
+            $('#PeriodFrom,#PeriodTo,#InvoiceModuleName').val('');
+        }
+        if (data.Status == 1) {
+            if ($('#InvoiceModuleName').val() == 'All') {
+                //code to call to download all files
+                $.post("/Ppg_ReportCWC/Download", function (data, status) {
+                    debugger;
+                    var fName = new Array();
+                    fName = data.Message.split(",");
+                    for (var i = 0; i < fName.length - 1; i++) {
+                        window.open(fName[i], '_blank', 'fullscreen=yes,modal=yes')
+                    }
+                });
+            }
+            else {
+
+                window.open(data.Data + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                //for (var i = 0; i < data.Data.length; i++) {
+                //    window.open(data.Data[i] + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                //}
+            }
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+
+
+    function ValidateExitDet() {
+        var Status = true;
+
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="txtGrossWeight"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+
+        return Status;
+    }
+    function SaveReportPdf(data) {
+        var FormDate = $("#PeriodFrom").val();
+        var ToDate = $("#PeriodTo").val();
+        var PostData = new FormData();
+        var Html = '<div style="text-align: center;border: 1px solid #000;">Bulk Invoice Report' + FormDate + ' To ' + ToDate + '</div>'
+        Html += "<table style='width:100%;font-size:9pt;font-family:Verdana,Arial,San-serif;border: 1px solid #000;border-collapse: collapse;margin-top:10px;'><thead><tr><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Invoice No.</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Date</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>values</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Closing Values</th></tr></thead><tbody>";
+        for (i = 0; i < data.Data.length; i++) {
+            Html += '<tr><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].InvoiceNumber + '</td><td style="text-align: center;border: 1px solid #000;">' + data.Data[i].Date + '</td><td  style="text-align: right;border: 1px solid #000;">' + data.Data[i].Values + '</td><td  style="text-align: right;border: 1px solid #000;">' + data.Data[i].ClosingBalance + '</td></tr>'
+        }
+        Html += "</tbody></table>"
+        PostData.append("Page", Html);
+        // alert("PostData=" + PostData);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GenerateBulkInvoiceReportPDF", "VIZ_ReportCWC", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+
+            }
+        });
+    }
+
+    $("#LoadInvoice").click(function () {
+        debugger;
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        if (From == "") {
+            $('[data-valmsg-for="PeriodFrom"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        if (To == "") {
+            $('[data-valmsg-for="PeriodTo"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        $('#DivDwnldWavMsg').html('');
+        loadInvoiceLIst();
+    });
+    function loadInvoiceLIst() {
+        var fromDt = $("#PeriodFrom").val();
+        var toDt = $("#PeriodTo").val();
+        var InvoiceModule = $('#InvoiceModule :selected').val();
+        $('#InvoiceNumber').val('');
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/Report/VIZ_ReportCWC/ListOfInvoiceDateWise',
+            type: 'GET',
+            headers: { '__RequestVerificationToken': Token },
+            dataType: 'JSON',
+            data: { FromDate: fromDt, ToDate: toDt, invoiceType: InvoiceModule },
+            async: false,
+            success: function (data) {
+                // alert(data);
+                debugger;
+                if (data != null && data != "" && data != undefined) {
+                    $("#JsonInvoiceLilst").val('');
+                    $("#JsonInvoiceLilst").val(data.Data);
+                    populateList();
+                }
+                else {
+                    debugger;
+                    $("#JsonInvoiceLilst").val('');
+                }
+            }
+        });
+    }
+    function populateList() {
+        if ($('#JsonInvoiceLilst').val() != '') {
+            var jsonval = JSON.parse($('#JsonInvoiceLilst').val());
+            var html = '';
+            $.each(jsonval, function (i, item) {
+                html += '<li id="' + item.InvoiceNumber + '" " onclick="GetInv(this)">' + item.InvoiceNumber + '</li>';
+            });
+            $('#lstInvoiceList').html(html);
+        }
+        else
+        {
+            $('#lstInvoiceList').html('');
+        }
+    }
+
+    function GetInv(elem) {
+
+        $('#InvoiceNumber').val($(elem).text());
+        //$('#ReferenceNoId').val($(elem).attr('id'));
+        var selectedReference = $('#InvoiceNumber').val();
+        // alert(selectedReference);
+        $("#InvoiceModal").modal("hide");
+        debugger;
+
+    }
+
+
+    //InvoiceListBox
+    $('#InvoiceModule').on("change", function () {
+        $('#InvoiceNumber').val('');
+        $('#lstInvoiceList').html('');
+        $('#LoadInvoice').click();
+    });
+
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    }
+    document.getElementById('InvoiceListBox').addEventListener('keyup', debounce(function () {
+        if ($("#PeriodFrom").val() == '' && $("#PeriodTo").val() == '' && $("#InvoiceModule").val() == 'All')
+            GetInvNoSearch();
+        else {
+            PageSearch();
+        }
+    }, 800));
+
+    function GetInvNoSearch() {
+        $.ajax({
+            url: '/Report/VIZ_ReportCWC/GetInvoiceBySearch',
+            type: 'GET',
+            data: { 'InvoiceNo': $('#InvoiceListBox').val() },
+            async: false,
+            success: function (data) {
+                if (data.Status == 1) {
+                    var elem = $('#lstInvoiceList');
+                    elem.html('');
+                    $.each(data.Data, function (i, item) {
+                        elem.append('<li id="' + item + '" onclick="GetInv(this)">' + item + '</li>');
+                    });
+                }
+                else {
+                    $('#lstInvoiceList').html('');
+                }
+            }
+        });
+    }
+
+    function PageSearch() {
+        /*if ($("#PeriodFrom").val() == '' && $("#PeriodTo").val() == '' && $("#InvoiceModule").val() == 'All') {
+            GetInvNoSearch();
+        }
+        else {*/
+        var val = $('#InvoiceListBox').val().toLowerCase();
+            if (val == "")
+                $('#lstInvoiceList > li').show();
+            else {
+                $('#lstInvoiceList > li').each(function () {
+                    var text = $(this).text().toLowerCase();
+                    (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+                });
+            }
+        //}
+    }
+</script>
+

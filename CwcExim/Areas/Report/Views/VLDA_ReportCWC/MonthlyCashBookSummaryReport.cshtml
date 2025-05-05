@@ -1,0 +1,385 @@
+﻿
+@model CwcExim.Areas.Report.Models.DailyCashBookWFLD
+
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "RptInvoiceReportDetails";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+}
+
+@using (Ajax.BeginForm("GetMonthlyCashBooksummaryReport", "VLDA_ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Cash Book Summary Monthly</h4>
+                            </div>
+                        </div>
+                        <div class="Form_Space_top" style="padding:5px;">
+                            <div class="row">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Period From:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col_cus_2 col_cus_offset_3 col-md-offset-4">
+                                        <label>Period To:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $('#BtnPreview').on("click", function () {
+        //alert("in");
+        //ValidateExitDet();
+        debugger;
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        return true;
+    });
+    function RptConsumerListDtlOnFailure() { }
+    function RptInvoiceReportDetails(data) {
+        $('#DivDwnldWavMsg').html('')
+        //alert(data);
+        debugger;
+        if (data.Status == 1) {
+
+            debugger;
+            SaveReportPdf(data);
+
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+
+
+    function ValidateExitDet() {
+        var Status = true;
+
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="txtGrossWeight"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+
+        return Status;
+    }
+    function SaveReportPdf(data)
+    {
+        debugger;
+
+
+         var FormDate = $("#PeriodFrom").val();
+         var ToDate = $("#PeriodTo").val();
+         var PostData = new FormData();
+
+        //var Html = '<div style="float:left; width:20%;"><img align="right" src="IMGSRC" wFromDateidth="90"/></div>'
+         //Html += "<div style='text-align:center; width:70%; float:left;'><h1 style='font-size: 22px; margin: 0; padding: 0;'>CENTRAL WAREHOUSING CORPORATION</h1><label style='font-size: 12px;'>(A Govt. of India Undertaking)</label><br/><span style='font-size:12px;'>107-109, EPIP Zone, KIADB Industrial Area, Whitefield, Banglore- 560 066.</span><br/><label style='font-size: 14px; font-weight:bold;'>Monthly cash Book From " + FormDate + " To " + ToDate + "</label></div>";
+         //Html += "<div style='float:right; width:20%;'><img align='right' src='ISO' width='90'/></div>"
+
+         var Html = '<table cellspacing="0" cellpadding="5" style="width:100%; font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 5px;"><thead>';
+         Html += "<tr><td valign='top'><img align='right' src='IMGSRC' width='90'/></td>";
+         Html += "<td width='150%' valign='top' align='center'><h1 style='font-size: 20px; margin: 0; padding: 0;'>CENTRAL WAREHOUSING CORPORATION</h1>";
+         Html += "<label style='font-size: 8pt;'>(A Govt. of India Undertaking) </label><br />";
+         Html += "<span style='font-size: 8pt; padding-bottom: 10px;'> Village-Valvada,NH-8,Taluka Umbargaon,Distt,Valsad-396105</span>";
+         Html += "<br /><label style='font-size: 8pt; font-weight:bold;'>Monthly cash Book Summary Report From " + FormDate + " To " + ToDate + "</label>";
+         Html += "</td>";
+         Html += "<td valign='top'><img align='right' src='ISO' width='100'/></td>";
+         Html += "</tr>";
+         Html += "</thead></table>";
+
+         Html += "<table cellpadding='5' style='width:100%; font-size:7pt; font-family:Verdana,Arial,San-serif; margin-top:20px; border:1px solid #000; text-align:center; border-collapse:collapse;'><thead>";
+
+         Html += "<tr><th colspan='1' style='border-right:1px solid #000; border-bottom:1px solid #000;'></th>";
+         Html += "<th colspan='3' style='border-right:1px solid #000; border-bottom:1px solid #000;'>Opening Balance</th>";
+         Html += "<th colspan='5' style='border-right:1px solid #000; border-bottom:1px solid #000;'>Receipts</th>";
+         Html += "<th colspan='5' style='border-right:1px solid #000; border-bottom:1px solid #000;'>Deposited</th>";
+         Html += "<th colspan='3' style='border-bottom:1px solid #000;'>Balance</th></tr>";
+
+         Html += "<tr><th style='border-right:1px solid #000;'>Date</th>";
+
+         Html += "<th style='border-right:1px solid #000; text-align:right;'>Cash</th>";
+         Html += "<th style='border-right:1px solid #000; text-align:right;'>Cheque</th>";
+         Html += "<th style='border-right:1px solid #000; text-align:right;'>Total</th>";
+
+         Html += "<th style='border-right:1px solid #000; text-align:right;'>Cash</th>";
+         Html += "<th style='border-right:1px solid #000; text-align:right;'>Cheque</th>";
+         Html += "<th style='border-right:1px solid #000; text-align:right;'>Other Receipt</th>";
+         Html += "<th style='border-right:1px solid #000; text-align:right;'>POS</th>";
+         Html += "<th style='border-right:1px solid #000; text-align:right;'>Total</th>";
+
+         Html += "<th style='border-right:1px solid #000; text-align:right;'>Cash</th>";
+         Html += "<th style='border-right:1px solid #000; text-align:right;'>Cheque</th>";
+         Html += "<th style='border-right:1px solid #000; text-align:right;'>RTGS</th>";
+         Html += "<th style='border-right:1px solid #000; text-align:right;'>POS</th>";
+         Html += "<th style='border-right:1px solid #000; text-align:right;'>Total</th>";
+
+         Html += "<th style='border-right:1px solid #000; text-align:right;'>Cash</th>";
+         Html += "<th style='border-right:1px solid #000; text-align:right;'>Cheque</th>";
+         Html += "<th style='text-align:right;'>Total</th></tr>";
+         Html += "</thead>";
+
+         Html += "<tbody>";
+         optotal = 0.00;
+         opreceipt = 0.00;
+         opdeposit = 0.00;
+         cashb = 0.00;
+         chqb = 0.00;
+         totalb = 0.00;
+
+         trcash = 0.00;
+         trchq = 0.00;
+         troth = 0.00;
+         trtotal = 0.00;
+
+         tdcash = 0.00;
+         tdchq = 0.00;
+         tdoth = 0.00;
+         tdtotal = 0.00;
+         tbcash = 0.00;
+         tbchq = 0.00;
+         tbtotal = 0.00;
+
+         trpos = 0.00;
+         tdpos = 0.00;
+
+         for (i = 0; i < data.Data.MonthDetails.length; i++) {
+
+             if (i == 0) {
+                 cashb = (data.Data.OpeningCash + data.Data.MonthDetails[i].TotalCash) - data.Data.MonthDetails[i].CashDeposit;
+                 chqb = (data.Data.OpeningChq + data.Data.MonthDetails[i].TotalCheque) - data.Data.MonthDetails[i].ChqDeposit;
+                 totalb = cashb + chqb;
+                 optotal = data.Data.OpeningCash + data.Data.OpeningChq;
+                 opreceipt = data.Data.MonthDetails[i].TotalCash + data.Data.MonthDetails[i].TotalCheque + data.Data.MonthDetails[i].Bank + data.Data.MonthDetails[i].TotalPOS;
+                 opdeposit = data.Data.MonthDetails[i].CashDeposit + data.Data.MonthDetails[i].ChqDeposit + data.Data.MonthDetails[i].BankDeposit + data.Data.MonthDetails[i].POSDeposit;
+                 trcash = trcash + data.Data.MonthDetails[i].TotalCash;
+                 trchq = trchq + data.Data.MonthDetails[i].TotalCheque;
+                 troth = troth + data.Data.MonthDetails[i].Bank;
+
+                 trpos = trpos + data.Data.MonthDetails[i].TotalPOS;
+
+                 tdcash = tdcash + data.Data.MonthDetails[i].CashDeposit;
+                 tdchq = tdchq + data.Data.MonthDetails[i].ChqDeposit;
+                 tdoth = tdoth + data.Data.MonthDetails[i].BankDeposit;
+                 tdpos = tdpos + data.Data.MonthDetails[i].POSDeposit;
+
+                 tbcash = tbcash + cashb;
+                 tbchq = tbchq + chqb;
+                 Html += "<tr>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data.MonthDetails[i].ReceiptDate + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.OpeningCash.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.OpeningChq.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + optotal.toFixed(2) + "</td>";
+
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.MonthDetails[i].TotalCash.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.MonthDetails[i].TotalCheque.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.MonthDetails[i].Bank.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.MonthDetails[i].TotalPOS.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + opreceipt.toFixed(2) + "</td>";
+
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.MonthDetails[i].CashDeposit.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.MonthDetails[i].ChqDeposit.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.MonthDetails[i].BankDeposit.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.MonthDetails[i].POSDeposit.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + opdeposit.toFixed(2) + "</td>";
+
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + cashb.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + chqb.toFixed(2) + "</td>";
+                 Html += "<td style='border-top:1px solid #000; text-align:right;'>" + totalb.toFixed(2) + "</td>";
+                 Html += "</tr>";
+             }
+             else
+             {
+                 trcash = trcash + data.Data.MonthDetails[i].TotalCash;
+                 trchq = trchq + data.Data.MonthDetails[i].TotalCheque;
+                 troth = troth + data.Data.MonthDetails[i].Bank;
+
+                 trpos = trpos + data.Data.MonthDetails[i].TotalPOS;
+
+                 tdcash = tdcash + data.Data.MonthDetails[i].CashDeposit;
+                 tdchq = tdchq + data.Data.MonthDetails[i].ChqDeposit;
+                 tdoth = tdoth + data.Data.MonthDetails[i].BankDeposit;
+
+                 tdpos = tdpos + data.Data.MonthDetails[i].POSDeposit;
+
+                 Html += "<tr>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data.MonthDetails[i].ReceiptDate + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + cashb.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + chqb.toFixed(2) + "</td>";
+                 optotal = cashb + chqb;
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + optotal.toFixed(2) + "</td>";
+                 cashb = (cashb + data.Data.MonthDetails[i].TotalCash) - data.Data.MonthDetails[i].CashDeposit;
+                 chqb = (chqb + data.Data.MonthDetails[i].TotalCheque) - data.Data.MonthDetails[i].ChqDeposit;
+                 totalb = cashb + chqb;
+                
+                 opreceipt = data.Data.MonthDetails[i].TotalCash + data.Data.MonthDetails[i].TotalCheque + data.Data.MonthDetails[i].Bank + data.Data.MonthDetails[i].TotalPOS;
+                 opdeposit = data.Data.MonthDetails[i].CashDeposit + data.Data.MonthDetails[i].ChqDeposit + data.Data.MonthDetails[i].BankDeposit + data.Data.MonthDetails[i].POSDeposit;
+                 tbcash = tbcash + cashb;
+                 tbchq = tbchq + chqb;
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.MonthDetails[i].TotalCash.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.MonthDetails[i].TotalCheque.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.MonthDetails[i].Bank.toFixed(2) + "</td>";
+
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.MonthDetails[i].TotalPOS.toFixed(2) + "</td>";
+
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + opreceipt.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.MonthDetails[i].CashDeposit.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.MonthDetails[i].ChqDeposit.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.MonthDetails[i].BankDeposit.toFixed(2) + "</td>";
+
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data.MonthDetails[i].POSDeposit.toFixed(2) + "</td>";
+
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + opdeposit.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + cashb.toFixed(2) + "</td>";
+                 Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + chqb.toFixed(2) + "</td>";
+                 Html += "<td style='border-top:1px solid #000; text-align:right;'>" + totalb.toFixed(2) + "</td>";
+                 Html += "</tr>";
+             }
+         }
+         trtotal = trcash + trchq + troth + trpos;
+         tdtotal = tdcash + tdchq + tdoth + tdpos;
+         tbtotal = tbcash + tbchq;
+        //TOTAL//
+         Html += "<tr>";
+         Html += "<th colspan='4' style='border-right:1px solid #000; border-top:1px solid #000; text-align:left;'>Total</th>";
+         Html += "<th style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + trcash.toFixed(2) + "</th>";
+         Html += "<th style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + trchq.toFixed(2) + "</th>";
+         Html += "<th style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + troth.toFixed(2) + "</th>";
+         Html += "<th style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + trpos.toFixed(2) + "</th>";
+         Html += "<th style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + trtotal.toFixed(2) + "</th>";
+         Html += "<th style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + tdcash.toFixed(2) + "</th>";
+         Html += "<th style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + tdchq.toFixed(2) + "</th>";
+         Html += "<th style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + tdoth.toFixed(2) + "</th>";
+         Html += "<th style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + tdpos.toFixed(2) + "</th>";
+         Html += "<th style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + tdtotal.toFixed(2) + "</th>";
+         Html += "<th style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + tbcash.toFixed(2) + "</th>";
+         Html += "<th style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + tbchq.toFixed(2) + "</th>";
+         Html += "<th style='border-top:1px solid #000; text-align:right;'>" + tbtotal.toFixed(2) +"</th>";
+         Html += "</tr>";         
+
+         Html += "</tbody></table>";
+
+         Html += "<table cellpadding='5' style='width:100%; font-size:7pt; font-family:Verdana,Arial,San-serif; border-collapse:collapse;'><tbody>";
+         Html += "<tr><td><span><br/><br/></span></td></tr>";
+
+         Html += "<tr><th colspan='6' width='50%'>Submitted to : <br/> The Regional Manager, <br/> Central Warehousing Corporation, <br/> Regional Office, <br/> Bangalore</th>";
+         Html += "<th colspan='6' width='50%' align='right'>MANAGER, CFS</th></tr>";
+
+         Html += "</tbody></table>";
+
+
+        PostData.append("Page", Html);
+       // alert("PostData=" + PostData);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GenerateMonthlyCashBookSummaryReportPDF", "VLDA_ReportCWC", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+
+            }
+        });
+    }
+
+
+
+
+
+
+
+
+
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+</script>
+
+
+
+
+
+

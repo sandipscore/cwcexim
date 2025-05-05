@@ -1,0 +1,364 @@
+﻿@model CwcExim.Areas.Report.Models.Dnd_StockRegisterReportViewModel
+@using (Ajax.BeginForm("GetStockRegisterReportSLAWise", "Dnd_ReportCWC", new AjaxOptions
+{
+    HttpMethod = "POST",
+    OnSuccess = "StockRegisterReportSuccess",
+    OnFailure = "StockRegisterReportFailure",
+
+},new {@id="StockRegisterReportSlaWase" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>STOCK REGISTER REPORT SLA WISE</h4>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>As On:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.AsOnDate, new { @class = "form-control", placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.AsOnDate, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>Godown:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_2_5">
+                                    @Html.HiddenFor(m => m.GodownId)
+                                    <span class="search" id="GodownNameSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#InvoiceModal"></i></span>
+                                    @Html.TextBoxFor(m => m.GodownName, new { @class = "form-control", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.GodownName, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>Shipping Line:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_2_5">
+                                    @Html.HiddenFor(m => m.Shippingid)
+                                    <span class="search" id="ShippingLineSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ShippingLineModal"></i></span>
+                                    @Html.TextBoxFor(m => m.ShippingName, new { @class = "form-control", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.ShippingName, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="button" value="Print" name="BtnPreview" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logErrMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div id="InvoiceModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">Godown List</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="InvoiceListBox" type="text" />
+                <ul class="navList" id="lstInvoiceList">
+                    @{
+                        if (ViewBag.ListOfGodown != null)
+                        {
+                            foreach (var item in ViewBag.ListOfGodown)
+                            {
+                                <li id="@item.GodownId">@item.GodownName</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ShippingLineModal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseEximTrader()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Shipping Line Names</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search By Shipping Line Name Or Party Code" id="ShpngLinebox" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByPartyCode()"></i></span>
+
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Shipping Line Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tbleSline">
+                        @{
+                            if (ViewBag.lstShippingLine != null)
+                            {
+                                foreach (var item in ViewBag.lstShippingLine)
+                                {
+                                    <tr onclick="SelectShippingLine(@item.ShippingLineId,'@item.ShippingLineName')">
+                                        <td colspan="8" width="80%" class="txt_wrp">@item.ShippingLineName</td>
+                                        <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                    </tr>
+                                }
+                            }
+                        }
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+                        }
+                        else
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseEximTrader()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@Scripts.Render("~/bundles/jqueryval")
+
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script>
+    $(function () {
+        $("#AsOnDate").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+
+        $("#AsOnDate").datepicker('setDate', new Date());
+
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+    $('#InvoiceListBox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstInvoiceList > li').show();
+        else {
+            $('#lstInvoiceList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    $('#lstInvoiceList li').on('click', function () {
+        $('#GodownName').val($(this).text());
+        $('#GodownId').val($(this).prop('id'));
+        $('#InvoiceModal').modal('hide');
+    });
+    function StockRegisterReportSuccess(data)
+    {
+        debugger;
+        $('#DivDwnldWavMsg').html('');
+        if (data.Status ==1) {
+            window.open(data.Data + "?_t=" + new Date().getTime(), "_blank");
+        }
+        else $('#DivDwnldWavMsg').html('No Data');
+    }
+    function StockRegisterReportFailure() { }
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+
+    document.getElementById('ShpngLinebox').addEventListener('keyup', debounce(function () {
+        if (document.getElementById('ShpngLinebox').value != "")
+            SearchByPartyCode();
+        else {
+           
+            LoadEximTrader();
+        }
+    }, 800));
+
+    $('#BtnPreview').on('click', function () {
+        var flag = 0;
+        if ($('#ShippingName').val()=='')
+        {
+            $('[data-valmsg-for="ShippingName"]').html('<span>Fill Out This Field</span>');
+            flag = 1;
+        }
+        else
+        {
+            $('[data-valmsg-for="ShippingName"]').html('<span></span>');
+        }
+        if ($('#GodownName').val() == '') {
+            $('[data-valmsg-for="GodownName"]').html('<span>Fill Out This Field</span>');
+            flag = 1;
+        }
+        else {
+            $('[data-valmsg-for="GodownName"]').html('<span></span>');
+        }
+        debugger;
+        if (flag == 0)
+        {
+            $('#StockRegisterReportSlaWase').submit();
+        }
+        
+    });
+
+
+    var Page = 0;
+    function LoadMoreEximTrader() {
+        debugger;
+        $.ajax({
+            url: '/Report/Dnd_ReportCWC/LoadEximtradeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + ',&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleSline tbody').html(html);
+                    else
+                        $('#tbleSline tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadEximTrader() {
+        Page = 0;
+        $.ajax({
+            url: '/Report/Dnd_ReportCWC/LoadEximtradeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    $('#tbleSline tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SearchByPartyCode() {
+        debugger;
+        if ($('#ShpngLinebox').val() != '') {
+            $.ajax({
+                url: '/Report/Dnd_ReportCWC/SearchByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#ShpngLinebox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstShippingLine, function (item, elem) {
+                            html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleSline tbody').html('');
+                        $('#tbleSline tbody').html(html);
+                        $('#btnLoadMore').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleSline tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadEximTrader();
+    }
+
+    function SelectShippingLine(ShippingLineId, ShippingLineName) {
+        $('#ShippingName').val(ShippingLineName);
+        $('#Shippingid').val(ShippingLineId);
+        $("#ShippingLineModal").modal("hide");
+        $('#ShpngLinebox').val('');
+        LoadEximTrader();
+    }
+
+    function CloseEximTrader() {
+        debugger;
+        $('#ShpngLinebox').val('');
+        $("#ShippingLineModal").modal("hide");
+        LoadEximTrader();
+    }
+</script>

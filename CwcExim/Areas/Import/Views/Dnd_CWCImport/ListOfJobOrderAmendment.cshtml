@@ -1,0 +1,145 @@
+﻿
+@model IEnumerable<CwcExim.Areas.Import.Models.Dnd_ImportJobOrderByRoadList>
+
+<table class="table dataTable table-bordered table-striped" id="tblImpAMList" style="width:100%;">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("SL No")</th>
+            <th>Job Order No</th>
+            <th>Job Order Date</th>
+            @*<th>Shipping Line Name</th>*@
+            <th>Container/CBT</th>
+            <th class="text-center">@Html.DisplayName("Edit")</th>
+            <th class="text-center">@Html.DisplayName("View")</th>
+            <th class="text-center">@Html.DisplayName("Preview")</th>
+
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var Serial = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center">@Serial</td>
+                    <td>@item.FormOneNo</td>
+                    <td>@item.FormOneDate</td>
+                    @*<td>@item.ShippingLineName</td>*@
+                    <td>@item.CONTCBT</td>
+                    <td class="text-center"><a href="#" class="edit" onclick="EditImpJODet(@item.FormOneId)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td class="text-center"><a href="#" class="view" onclick="ViewImpJODet(@item.FormOneId)"><i class="fa fa-search-plus Edit"></i></a></td>
+                    <td class="text-center"><a href="#" class="view" onclick="PrintImpJODet(@item.FormOneId)"><i class="fa fa-file-pdf-o Edit"></i></a></td>
+                </tr>
+                Serial++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+<script>
+    var Page=0;
+$(document).ready(function () {
+        var tblImpAMList = $('#tblImpAMList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns": [
+                       { "sName": "Sl No","width": "8%" },
+                       { "sName": "Job Order No", "bSortable": false },
+                       { "sName": "Job Order Date", "bSortable": false },
+                       //{ "sName": "Shipping Line Name", "bSortable": false },
+                       { "sName": "Container/CBT", "bSortable": false },
+                       { "sName": "Edit", "bSortable": false, "width": "10%" },
+                       { "sName": "View", "bSortable": false, "width": "10%" },
+                      { "sName": "Print", "bSortable": false, "width": "10%" },
+                     
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(tblImpAMList);
+    });
+    function EditImpJODet(FormOneId)
+    {
+        $('#DivBody').load('/Import/Dnd_CWCImport/EditAmendment?FormOneId=' + FormOneId);
+    }
+    function ViewImpJODet(FormOneId)
+    {
+        $('#DivBody').load('/Import/Dnd_CWCImport/ViewJobOrderAmendment?FormOneId=' + FormOneId);
+    }
+    function DeleteImpJODet(ImpJobOrderId)
+    {
+        var Confirm = confirm("Are you sure you want to delete?");
+        if(Confirm==true)
+        {
+            var Token=$('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Import/Dnd_CWCImport/DeleteJobOrderByRoad',
+                type:'POST',
+                data:{ImpJobOrderId:ImpJobOrderId},
+                headers:{"__RequestVerificationToken":Token},
+                dataType:'JSON',
+                success:function(data)
+                {
+                    if(data.Status==1)
+                    {
+                        alert("Job Order By Road has been deleted successfully");
+                        $('#DivBody').load('/Import/Dnd_CWCImport/CreateJobOrderByRoad');
+                    }
+                    else
+                        alert(data.Message);
+                }
+            });
+        }
+    }
+    function PrintImpJODet(FormOneId)
+    {
+        var Token=$('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/Report/Dnd_ReportCWC/JobOrderAmendmentPrint',
+            type:'POST',
+            data:{JobOrderId:FormOneId},
+            headers:{"__RequestVerificationToken":Token},
+            dataType:'JSON',
+            success:function(data)
+            {
+                if(data.Status==1)
+                    window.open(data.Data+"?_t="+(new Date().getTime()),"_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+
+    }
+    function LoadMoreListData() {
+        debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Import/Dnd_CWCImport/LoadListOfJobOrderAmendment',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblOblEntry').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.FormOneNo],
+        [item.FormOneDate],
+        [item.CONTCBT],
+        ['<a href="#" onclick=EditImpJODet(' + [item.FormOneId] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#" onclick=ViewImpJODet(' + [item.FormOneId] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#" onclick=PrintImpJODet(' + [item.FormOneId] + ')><i class="fa fa-file-pdf-o Edit"></i></a>'],
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+</script>

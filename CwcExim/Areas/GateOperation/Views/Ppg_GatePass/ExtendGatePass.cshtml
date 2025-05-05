@@ -1,0 +1,254 @@
+﻿@model CwcExim.Areas.GateOperation.Models.Ppg_RevalidateGatePass
+
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnComplete = "SaveDisabled";
+    options.OnBegin = "SaveEnabled";
+    options.OnSuccess = "UpdateGpOnSuccess";
+    options.OnFailure = "UpdateGpOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<div id="divExtendGP">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("SaveRevalidateGatePass", "Ppg_GatePass", options))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Revalidate Gate Pass</h4>
+                        </div>
+                    </div>
+                    if (ViewBag.GpLstJson != null)
+                    {
+                        <input type="hidden" id="LstGatePassJson" value="@ViewBag.GpLstJson.ToString()" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="LstGatePassJson" value="" />
+                    }
+                    <div class="content_wrp">
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    @Html.HiddenFor(m => m.GatePassId)
+                                    @Html.LabelFor(m => m.GatePassNo, new { @class = "InputLabel" })<label class="LabelColon">:</label>
+                                </div>
+                                <div class="position-relative">
+                                    @Html.TextBoxFor(m => m.GatePassNo, "", new { @placeholder = "Gate Pass No.",@readonly = true })
+                                    <span class="input_icon" id="SearchGP"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#GatePassModal"></i></span>
+                                    @Html.ValidationMessageFor(m => m.GatePassNo, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-md-offset-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.DeliveryDate, new { @class = "InputLabel" })<label class="LabelColon">:</label>
+                                </div>
+                                @Html.TextBoxFor(m => m.DeliveryDate, "", new { @readonly = true })
+                                @Html.ValidationMessageFor(m => m.DeliveryDate, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="InputLabel">Old Valid Date :</label>
+                                </div>
+                                @Html.TextBoxFor(m => m.ExpiryDT, "", new { @readonly = true })
+                                @Html.ValidationMessageFor(m => m.ExpiryDT, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-3 col-md-offset-6">
+                                <div class="form-group">
+                                    <label class="InputLabel">Extend Valid Date :</label>
+                                </div>
+                                @Html.TextBoxFor(m => m.ExtendDT, "", new { @readonly = true })
+                                @Html.ValidationMessageFor(m => m.ExtendDT, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                        </div>
+                            <div class="d-flex justify-content-leftr">
+                                <input type="submit" id="btnExtendGPSave" value="Save" class="btn btn-primary mr-1 btn-100px" />
+                            </div>
+                        <div class="logErrMsg" style="background-color:transparent" id="divExtendGPErrMsg"></div>
+                        <div class="logSuccMsg SignUp_space_bottom2" style="background-color:transparent">
+                            <div id="divExtendGPMsg"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-2 SignUp_space_bottom">
+                                <input type="button" id="btnLoadGPExtend" value="Show List" class="btn btn-primary mr-1 btn-100px" onclick="LoadGPExtendList()" />
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top Form_Space_bottom">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-offset-5 col-md-4" style="text-align:right;">
+                                    <label>Gate Pass No:</label>
+                                </div>
+                                <div class="col-md-3">
+                                    @Html.TextBox("SearchGatePassNo", "", new { @placeholder = "Gate Pass No" })
+                                    <span class="search"><i class="fa fa-search" aria-hidden="true" onclick="GetListOfGatePassNo()"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div id="tblEntryDet"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div id="divExtendGPList">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                }
+            </div>
+         </div>
+    </div>
+</div>
+
+<div class="modal fade" id="GatePassModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h5 class="modal-title">List of Gate Pass</h5>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="GatePassBox" type="text" />
+                <ul class="navList" id="GatePassList"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn btn-primary-border mr-1 btn-100px" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+
+<script>
+    $(function () { GenerateBlankTable(); });
+    function SaveEnabled() {
+        //$('#btnSave').attr('enabled', 'enabled');
+        $('#btnExtendGPSave').prop("disabled", false);
+    };
+    function SaveDisabled() {
+        $('#btnExtendGPSave').attr('disabled', 'disabled');
+    }
+
+    $('#GatePassBox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#GatePassModal .navList > li').show();
+        } else {
+            $('#GatePassModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    //$('#GatePassList li').on("click", function () {
+    //    debugger;
+    //    $('#ContainerNo').val($(this).text());
+    //    $('#CFSCode').val($(this).attr('id'));
+
+    //    $("#GatePassModal").modal("hide");
+    //});
+
+    $('#SearchGP').on("click", function () {
+        GenerateLstGatePass();
+    });
+
+    function GenerateLstGatePass() {
+
+        if ($('#LstGatePassJson').val() != null && $('#LstGatePassJson').val() != "") {
+            var parties = JSON.parse($('#LstGatePassJson').val());
+            debugger;
+            if (parties != null) {
+                var html = '';
+                $.each(parties, function (i, item) {
+                    html += '<li id="' + item.GatePassId + '" " onclick="GetPayByDetails(this)">' + item.GatePassNo + '</li>';
+                });
+                $('#GatePassList').html(html);
+            }
+            else {
+                alert("No Data Found Against This Gate Pass Or All Container Exited");
+
+
+            }
+        }
+    }
+
+    function GetPayByDetails(elem) {
+
+        $('#GatePassNo').val($(elem).text());
+        $('#GatePassId').val($(elem).attr('id'));
+
+        $("#GatePassModal").modal("hide");
+        debugger;
+        var lstGP = JSON.parse($('#LstGatePassJson').val());
+        var dtlGP = $.grep(lstGP, function (item) { return item.GatePassId == $(elem).attr('id'); })[0];
+
+        $('#DeliveryDate').val(dtlGP.DeliveryDate);
+        $('#ExpiryDT').val(dtlGP.ExpiryDT);
+        $('#ExtendDT').val(dtlGP.ExtendDT);
+
+    }
+
+    function UpdateGpOnSuccess(data) {
+        debugger;
+        //if (ValidateExpDate()) {
+            if (data.Status == 1) {
+                debugger;
+                $('#divExtendGPMsg').html(data.Message);
+                setTimeout(LoadExtendGPPage, 5000);
+            }
+            else {
+                $('#divExtendGPErrMsg').html(data.Message);
+            }
+        }
+
+   // }
+
+    function UpdateGpOnFailure() { }
+
+    function LoadExtendGPPage() {
+        $('#DivBody').load('/GateOperation/Ppg_GatePass/ExtendGatePass');       
+    }
+    function GenerateBlankTable() {
+        tablehtml = '';
+        var tablehtml = '<table class="table table-bordered table-striped dataTable" id="tblEntryDet"><thead><tr><th class="text-center" style="width:10%;">SL No</th><th>Gate Pass No</th><th>Gate Pass Date</th><th>New Validaty Date</th><th>New Validaty Date</th></tr></thead><tbody>';
+        $('#tblEntryDet').html(tablehtml);
+    }
+    function LoadGPExtendList() {
+        $('#tblEntryDet').html('');
+        $('#SearchGatePassNo').val('');
+        var GatePassNo = "";
+        $('#divExtendGPList').load('/GateOperation/Ppg_GatePass/ListOfGatePassExtend?GatepassNo=' + GatePassNo);
+    }
+
+    function GetListOfGatePassNo() {
+        debugger;
+        $('#tblEntryDet').hide();
+
+        if ($('#SearchGatePassNo').val().trim() == '') {
+            alert('Enter Gate Pass Number for searching');
+            return;
+        }
+        var GatePassNo = encodeURI($('#SearchGatePassNo').val().trim());
+        $('#divExtendGPList').load('/GateOperation/Ppg_GatePass/ListOfGatePassExtend?GatepassNo=' + GatePassNo);
+    }
+</script>
+

@@ -1,0 +1,127 @@
+﻿@model IEnumerable<CwcExim.Areas.Bond.Models.ListOfDeliveryOrder>
+
+<script>
+    $(function(){
+        var TblDeliveryOrder = $('#TblDeliveryOrder').DataTable({
+            "bFilter":false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns":[
+                       {"sName":"SL No","width":"5%"},
+                       { "sName": "Delivery Order No", "width": "20%" },
+                       { "sName": "Delivery Order Date", "width": "15%" },
+                       { "sName": "SAC No","bSortable":false, "width": "15%" },
+                       { "sName": "SAC Date", "bSortable": false, "width": "15%" },
+                       { "sName": "Bond No", "bSortable": false, "width": "15%" },
+                       {"sName":"Edit","bSortable":false,"width":"5%"},
+                       {"sName":"View","bSortable":false,"width":"5%"},
+                        { "sName": "Print", "bSortable": false, "width": "5%" }
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0),td:eq(6),td:eq(7),td:eq(8)', nRow).addClass("text-center");
+                $('td:eq(0),td:eq(6),td:eq(7),td:eq(8)', nRow).css("width", "5%");
+                $('td:eq(1)', nRow).css("width", "20%");
+                $('td:eq(2),td:eq(3),td:eq(4),td:eq(5)', nRow).css("width", "15%");
+            }
+        });
+        new $.fn.dataTable.FixedHeader(TblDeliveryOrder);
+    });
+
+    function EditDeliveryOrder(DeliveryOrderId) {
+        
+        $('#DivBody').load( '/Bond/VLDABond/EditDeliveryOrder?DeliveryOrderId=' + DeliveryOrderId);
+    }
+    function ViewDeliveryOrder(DeliveryOrderId) {
+        
+        $('#DivBody').load( '/Bond/VLDABond/ViewDeliveryOrder?DeliveryOrderId=' + DeliveryOrderId);
+    }
+
+    function PreviewDeliveryApp(DeliveryAppId) {
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/Bond/VLDABond/PrintDeliveryApp',
+            type: 'POST',
+            data: { DeliveryAppId: DeliveryAppId },
+            dataType: 'JSON',
+            headers: { "__RequestVerificationToken": Token },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+            }
+        });
+    }
+    var Page = 0;
+    function LoadMoreListData() {
+        //debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Bond/VLDABond/LoadMoreListOfDeliveryOrder',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                //debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#TblDeliveryOrder').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        //debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.DeliveryOrderNo],
+        [item.DeliveryOrderDate],
+        [item.SACNo],
+        [item.SACDate],
+        [item.BondNo],
+         ['<a href="#" onclick=ViewDeliveryOrder(' + [item.DeliveryOrderId] + ')><i class="fa fa-search-plus Edit"></i></a>'],
+        ['<a href="#" onclick=EditDeliveryOrder(' + [item.DeliveryOrderId] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#" onclick=PreviewDeliveryApp(' + [item.DeliveryOrderId] + ')><i class="fa fa-file-pdf-o Edit"></i></a>'],
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+</script>
+
+<table id="TblDeliveryOrder" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+    <thead>
+        <tr>
+            <th style="width:5%" class="text-center">@Html.DisplayName("SL No")</th>
+            <th style="width:20%">Delivery Order No</th>
+            <th style="width:15%">Delivery Order Date</th>
+            <th style="width:15%">SAC No</th>
+            <th style="width:15%">SAC Date</th>
+            <th style="width:15%">Bond No</th>
+            <th style="width:5%" class="text-center">@Html.DisplayName("View")</th>
+            <th style="width:5%" class="text-center">@Html.DisplayName("Edit")</th>
+            <th style="width:5%" class="text-center">@Html.DisplayName("Print")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td style="width:5%"  class="text-center">@SerialNo</td>
+                    <td style="width:20%">@Html.DisplayFor(m => item.DeliveryOrderNo)</td>
+                    <td style="width:15%">@Html.DisplayFor(m => item.DeliveryOrderDate)</td>
+                    <td style="width:15%">@Html.DisplayFor(m=>item.SACNo)</td>
+                    <td style="width:15%">@Html.DisplayFor(m => item.SACDate)</td>
+                    <td style="width:15%">@Html.DisplayFor(m => item.BondNo)</td>
+                    <td style="width:5%"  class="text-center"><a href="#" onclick="ViewDeliveryOrder(@item.DeliveryOrderId)"><i class="fa fa-search-plus Edit" aria-hidden="true"></i></a></td>
+                    <td style="width:5%"  class="text-center"><a href="#" onclick="EditDeliveryOrder(@item.DeliveryOrderId)"><i class="fa fa-pencil-square Edit" aria-hidden="true"></i></a></td>
+                    <td style="width:5%"  class="text-center"><a href="#" onclick="PreviewDeliveryApp(@item.DeliveryOrderId)"><i class="fa fa-file-pdf-o Edit" aria-hidden="true"></i></a></td>
+
+                </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>

@@ -1,0 +1,243 @@
+﻿@model CwcExim.Areas.Report.Models.Hdb_InvoiceReportDetails
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "RptInvoiceReportDetails";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+
+}
+<script>
+    //"/" + SubDomain +
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+</script>
+@using (Ajax.BeginForm("GetInvoiceReportList", "Hdb_ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Invoice Report (Details)</h4>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Period From:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col_cus_2 col_cus_offset_3 col-md-offset-4">
+                                    <label>Period To:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("Registered", "1", new { @class = "", @id = "Registered", @onclick = "radio();" })
+                                        <label for="Registered"><i class="circle"></i><span>Registered</span></label>
+                                    </div>
+                                </div>
+                                <div class="col-md-1-5 col_cus_2_5">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("Registered", "2", new { @class = "", @id = "UnRegistered", @onclick = "radio();" })
+                                        <label for="UnRegistered"><i class="circle"></i><span>Unregistered</span></label>
+                                    </div>
+                                </div>
+                                <div class="col-md-1-5 col_cus_2_5">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("Registered", "0", new { @class = "", @id = "ALL", @checked = true, @onclick = "radio();" })
+                                        <label for="ALL"><i class="circle"></i><span>ALL</span></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    var selectedRadio = "";
+    $(document).ready(function () {
+         selectedRadio = $("input[name='Registered']:checked").val();
+
+       // alert(selectedRadio);
+
+    });
+    function radio() {
+        //$("input[type='button']").click(function () {
+            selectedRadio = $("input[name='Registered']:checked").val();
+        //});
+       // alert(selectedRadio);
+    }
+    $('#BtnPreview').on("click", function () {
+        //alert("in");
+        //ValidateExitDet();
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        return true;
+    });
+    function RptConsumerListDtlOnFailure() { }
+    function RptInvoiceReportDetails(data) {
+        $('#DivDwnldWavMsg').html('')
+        //alert(data);
+        debugger;
+        if (data.Status == 1) {
+
+            debugger;
+            SaveReportPdf(data);
+
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+
+
+    function ValidateExitDet() {
+        var Status = true;
+
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="txtGrossWeight"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+
+        return Status;
+    }
+    function SaveReportPdf(data)
+    {
+        debugger;
+        var heading = "" ;
+        // alert(selectedRadio);
+        if (selectedRadio == 1)
+        {
+            //heading = "Tax Invoice Report";
+            heading = "Registered Invoice Report (Details)"
+
+        }
+        else if (selectedRadio == 2) {
+            //heading = "Bill Of Supply Report";
+            heading = "Unregistered Invoice Report (Details)"
+        }
+        else {
+            heading = "Invoice Report (Details)";
+        }
+        var FormDate = $("#PeriodFrom").val();
+        var ToDate = $("#PeriodTo").val();
+        var PostData = new FormData();
+        var Html = '<div style="text-align: center;border: 1px solid #000;">' + heading + ' From ' + FormDate + ' To ' + ToDate + '</div>'
+        debugger;
+        if (selectedRadio == 1 || selectedRadio == 0) {
+            Html += "<table style='width:100%;font-size:7.5pt;font-family:Verdana,Arial,San-serif;border: 1px solid #000;border-collapse: collapse;margin-top:10px;'><thead><tr><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Invoice No.</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;width:10%;'>Date</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Party Name</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>GST No.</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>SAC</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>values</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>CGST</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>SGST</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>IGST</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Total Value</th></tr></thead><tbody>";
+            for (i = 0; i < data.Data.length; i++) {
+                Html += '<tr><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].InvoiceNumber + '</td><td style="text-align: center;border: 1px solid #000;">' + data.Data[i].Date + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].PartyName + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].GSTNo + '</td><td  style="text-align: center;border: 1px solid #000;">' + data.Data[i].SAC + '</td><td  style="text-align: right;border: 1px solid #000;">' + data.Data[i].Values + '</td><td  style="text-align: right;border: 1px solid #000;">' + data.Data[i].CGST + '</td><td  style="text-align: right;border: 1px solid #000;">' + data.Data[i].SGST + '</td><td  style="text-align: right;border: 1px solid #000;">' + data.Data[i].IGST + '</td><td  style="text-align: right;border: 1px solid #000;">' + data.Data[i].TotalValue + '</td></tr>'
+            }
+        }
+
+        if (selectedRadio == 2)
+        {
+            Html += "<table style='width:100%;font-size:7.5pt;font-family:Verdana,Arial,San-serif;border: 1px solid #000;border-collapse: collapse;margin-top:10px;'><thead><tr><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Invoice No.</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;width:10%;'>Date</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Party Name</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>GST No.</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>SAC</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Total Value</th></tr></thead><tbody>";
+            //<th style='text-align: center;border: 1px solid #000;font-weight: 600;'>values</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>CGST</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>SGST</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>IGST</th>
+            //<td  style="text-align: right;border: 1px solid #000;">' + data.Data[i].Values + '</td><td  style="text-align: right;border: 1px solid #000;">' + data.Data[i].CGST + '</td><td  style="text-align: right;border: 1px solid #000;">' + data.Data[i].SGST + '</td><td  style="text-align: right;border: 1px solid #000;">' + data.Data[i].IGST + '</td>
+            for (i = 0; i < data.Data.length; i++) {
+                Html += '<tr><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].InvoiceNumber + '</td><td style="text-align: center;border: 1px solid #000;">' + data.Data[i].Date + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].PartyName + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].GSTNo + '</td><td  style="text-align: center;border: 1px solid #000;">' + data.Data[i].SAC + '</td><td  style="text-align: right;border: 1px solid #000;">' + data.Data[i].TotalValue + '</td></tr>'
+            }
+        }
+        Html += "</tbody></table>"
+        PostData.append("Page", Html);
+       // alert("PostData=" + PostData);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GenerateInvoiceReportDetailsPDF", "Hdb_ReportCWC", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+
+            }
+        });
+    }
+
+</script>
+
+

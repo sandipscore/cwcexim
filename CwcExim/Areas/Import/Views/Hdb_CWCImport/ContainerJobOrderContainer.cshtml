@@ -1,0 +1,153 @@
+﻿@model IEnumerable<CwcExim.Areas.Import.Models.Hdb_ImportJobOrderList>
+<table class="table table-bordered table-striped" id="tblImpJOList">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("SL No")</th>
+            <th>Job Order No</th>
+            <th>Job Order Date</th>
+            <th>Form 1 No</th>
+            <th>ContainerNo</th>
+            <th>ContainerSize</th>
+            <th class="text-center">@Html.DisplayName("Edit")</th>
+            <th class="text-center">@Html.DisplayName("View")</th>
+            <th class="text-center">@Html.DisplayName("Delete")</th>
+            <th class="text-center">@Html.DisplayName("Preview")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var Serial = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center">@Serial</td>
+                    <td>@item.JobOrderNo</td>
+                    <td>@item.JobOrderDate</td>
+                    <td>@item.FormOneNo</td>
+                    <td>@item.ContainerNo</td>
+                    <td>@item.ContainerSize</td>
+                    <td class="text-center"><a href="#" onclick="EditImpJODet(@item.JobOrderId)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td class="text-center"><a href="#" style="color: #00305A;" onclick="ViewImpJODet(@item.JobOrderId)"><i class="fa fa-search-plus view"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="DeleteImpJODet(@item.JobOrderId)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="PrintImpJODet(@item.JobOrderId,'@item.JobOrderNo',@item.JobOrderFor,'@item.Purpose')"><i class="fa fa-file-pdf-o Edit"></i></a></td>
+                </tr>
+                Serial++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+
+<script>
+    var Page = 0;
+    $(document).ready(function () {
+        var tblImpJOList = $('#tblImpJOList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                       { "sName": "Sl No","width": "8%" },
+                       { "sName": "Job Order No", "bSortable": false },
+                       { "sName": "Job Order Date", "bSortable": false },
+                       { "sName": "Form1 No", "bSortable": false, },
+                        { "sName": "ContainerNo", "bSortable": false, },
+                         { "sName": "ContainerSize", "bSortable": false, },
+                       { "sName": "Edit", "bSortable": false, "width": "10%" },
+                       { "sName": "View", "bSortable": false, "width": "10%" },
+                       { "sName": "Delete", "bSortable": false, "width": "10%" },
+                       { "sName": "Preview", "bSortable": false, "width": "10%" }
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(tblImpJOList);
+    });
+    function EditImpJODet(JobOrderId)
+    {
+        $('#DivBody').load('/Import/Hdb_CWCImport/EditJobOrder?JobOrderId='+JobOrderId);
+    }
+    function ViewImpJODet(JobOrderId)
+    {
+        $('#DivBody').load('/Import/Hdb_CWCImport/ViewJobOrder?JobOrderId='+JobOrderId);
+    }
+    function DeleteImpJODet(ImpJobOrderId)
+    {
+        var Confirm = confirm("Are you sure you want to delete?");
+        if(Confirm==true)
+        {
+            var Token=$('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Import/Hdb_CWCImport/DeleteJobOrder',
+                type:'POST',
+                data:{ImpJobOrderId:ImpJobOrderId},
+                headers:{"__RequestVerificationToken":Token},
+                dataType:'JSON',
+                success:function(data)
+                {
+                    alert(data.Message);
+                    if(data.Status==1){
+                        $('#DivBody').load('/Import/Hdb_CWCImport/CreateJobOrder');
+                        // else
+                        //  alert(data.Message);
+                    }
+                }
+            });
+        }
+    }
+    function PrintImpJODet(ImpJobOrderId,JobOrderNo,JobOrderFor,Purpose)
+    {
+        var Token=$('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/Report/Hdb_ReportCWC/PrintJO',
+            type:'POST',
+            data:{ImpJobOrderId:ImpJobOrderId,JobOrderNo:JobOrderNo,JobOrderFor:JobOrderFor,Purpose:Purpose},
+            headers:{"__RequestVerificationToken":Token},
+            dataType:'JSON',
+            success:function(data)
+            {
+                if(data.Status==1)
+                    window.open(data.Message+"?_t="+(new Date().getTime()),"_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+
+    }
+
+    function LoadMoreListData() {
+        debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Import/Hdb_CWCImport/LoadListMoreDataForJobOrder',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblImpJOList').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.JobOrderNo],
+        [item.JobOrderDate],
+        [item.FormOneNo],
+       
+        [item.ContainerNo],
+         [item.ContainerSize],
+        ['<a href="#"  onclick=EditImpJODet(' + [item.JobOrderId] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#"  onclick=ViewImpJODet(' + [item.JobOrderId] + ')><i class="fa fa-search-plus Edit"></i></a>'],
+          ['<a href="#"  onclick=DeleteImpJODet(' + [item.JobOrderId] + ')><i class="fa fa-window-close-o Delete"></i></a>'],
+            ['<a href="#"  onclick=PrintImpJODet(' + [item.JobOrderId] + ')><i class="fa fa-print Edit"></i></a>'],
+
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+</script>
+

@@ -1,0 +1,285 @@
+﻿@model CwcExim.Areas.Report.Models.Ppg_ContainerPaymentInfo
+
+<style>
+    #DivFormOneDet {
+        height: 584px;
+        overflow-x: hidden;
+    }
+
+    .slimScrollDiv {
+        height: 300px;
+    }
+
+    #tbleCommodity.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    #tbleImp.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .table.tblhd {
+        border-bottom: 0;
+    }
+</style>
+
+@using (Ajax.BeginForm("ContainerPaymentDetail", "Ppg_ReportCWC", new AjaxOptions
+{
+    HttpMethod = "POST",
+    OnSuccess = "CargoSuccess",
+
+}))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Container Payment Details</h4>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>ICD Code:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    @Html.TextBoxFor(m => m.CFSCode, new { @class = "form-control", @readonly = true })
+                                    <span class="search" id="ContainerNoSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#blNomodal"></i></span>
+                                    @Html.ValidationMessageFor(m => m.CFSCode, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logErrMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="modal fade" id="blNomodal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseContainer()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Container</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search By ContainerNo Or ICDCode" id="Containerbox" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByCFSCode()"></i></span>
+
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="7" width="70%">ContainerNo</th>
+                            <th colspan="5" width="30%">ICDCode</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tbleSline">
+                        @{
+                            if (ViewBag.lstContainer != null)
+                            {
+                                foreach (var item in ViewBag.lstContainer)
+                                {
+                                    <tr onclick="SelectContainer('@item.ContainerNo','@item.CFSCode')">
+                                        <td colspan="7" width="70%" class="txt_wrp">@item.ContainerNo</td>
+                                        <td colspan="5" width="30%" class="txt_wrp">@item.CFSCode</td>
+                                    </tr>
+                                }
+                            }
+                        }
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreContainer()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+                        }
+                        else
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreContainer()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseContainer()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+</script>
+<script>
+    $(function () {
+
+    });
+    function CargoSuccess(data) {
+        $('#DivDwnldWavMsg').html('');
+        if (data.Data != '') {
+            window.open(data.Data + "?_t=" + new Date().getTime(), "_blank");
+        }
+        else $('#DivDwnldWavMsg').html('No Data');
+    }
+    function PVFailure() { }
+
+    $('#Containerbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstContainer > li').show();
+        else {
+            $('#lstContainer > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    function SelectContainer(ContainerNo,CFSCode) {
+        //$('#ContainerNo').val(CFSCode);
+        $('#CFSCode').val(CFSCode);
+        $("#blNomodal").modal("hide");
+        $('#Containerbox').val('');
+        LoadContainer();
+    }
+    function CloseContainer() {
+        debugger;
+        $('#Containerbox').val('');
+        $("#blNomodal").modal("hide");
+        LoadContainer();
+    }
+    var Page = 0;
+    function LoadMoreContainer() {
+        debugger;
+        $.ajax({
+            url: '/Report/Ppg_ReportCWC/LoadContainerList',
+            type: 'GET',
+            data: { CFSCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstContainer, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectContainer(&quot;' + elem.ContainerNo + '&quot;,&quot;' + elem.CFSCode + '&quot;)"><td colspan="7" width="70%" class="txt_wrp">' + elem.ContainerNo + '</td><td colspan="5" width="30%" class="txt_wrp">' + elem.CFSCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleSline tbody').html(html);
+                    else
+                        $('#tbleSline tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function LoadContainer() {
+        Page = 0;
+        $.ajax({
+            url: '/Report/Ppg_ReportCWC/LoadContainerList',
+            type: 'GET',
+            data: { CFSCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstContainer, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectContainer(&quot;' + elem.ContainerNo + '&quot;,&quot;' + elem.CFSCode + '&quot;)"><td colspan="7" width="70%" class="txt_wrp">' + elem.ContainerNo + '</td><td colspan="5" width="30%" class="txt_wrp">' + elem.CFSCode + '</td></tr>';
+                    });
+                    $('#tbleSline tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SearchByCFSCode() {
+        if ($('#Containerbox').val() != '') {
+            $.ajax({
+                url: '/Report/Ppg_ReportCWC/SearchByCFSCode',
+                type: 'GET',
+                data: { CFSCode: $('#Containerbox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstContainer, function (item, elem) {
+                            html += '<tr onclick="SelectContainer(&quot;' + elem.ContainerNo + '&quot;,&quot;' + elem.CFSCode + '&quot;)"><td colspan="7" width="70%" class="txt_wrp">' + elem.ContainerNo + '</td><td colspan="5" width="30%" class="txt_wrp">' + elem.CFSCode + '</td></tr>';
+                        });
+                        $('#tbleSline tbody').html('');
+                        $('#tbleSline tbody').html(html);
+                        $('#btnLoadMore').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleSline tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadContainer();
+    }
+
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+    document.getElementById('Containerbox').addEventListener('keyup', debounce(function () {
+        SearchByCFSCode();
+    }, 800));
+</script>
+
+
+

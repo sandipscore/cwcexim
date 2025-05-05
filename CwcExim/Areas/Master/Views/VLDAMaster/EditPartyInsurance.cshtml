@@ -1,0 +1,307 @@
+﻿
+@model CwcExim.Areas.Master.Models.WFLDPartyInsurance
+<script>
+
+   var TimeInSeconds;
+  $(document).ready(function () {
+            debugger;
+            TimeInSeconds = 5000;
+            LoadPartyList();      
+        });
+    function LoadPartyInsurancePage() {
+            debugger;
+            $('#DivBody').load('/Master/VLDAMaster/CreatePartyInsurance');
+        }
+
+    function PartyInsuranceOnSuccess(data) {
+            debugger;
+            if (data.Status == 1) {
+                $('#DivPartyInsuranceMsg').html(data.Message);
+                setTimeout(LoadPartyInsurancePage, TimeInSeconds);
+            }
+            else if (data.Status == 2) {
+                $('[data-valmsg-for="PortName"]').html('<span>' + data.Message + '</span>');
+            }
+            else if (data.Status == 3) {
+                $('[data-valmsg-for="PortAlias"]').html('<span>'+data.Message+'</span>');
+            }
+            else {
+                $('#DivPartyInsuranceMsg').html(data.Message);
+            }
+        }
+    function PartyInsuranceOnFailure() {
+    }
+
+    var Page = 0;
+    function LoadPartyList() {
+        debugger;
+        $.ajax({
+            url: '/Master/VLDAMaster/LoadPartyList',
+            type: 'GET',
+            data: { PartyId: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstImporter, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectShippingLine(' + elem.PartyId + ',&quot;' + elem.PartyName + ',&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyId + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleSline tbody').html(html);
+                    else
+                        $('#tbleSline tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadEximTrader() {
+        Page = 0;
+        $.ajax({
+            url: '/Master/VLDAMaster/LoadPartyList',
+            type: 'GET',
+            data: { PartyId: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstImporter, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectShippingLine(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyId + '</td></tr>';
+                    });
+                    $('#tbleSline tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SearchByPartyCode() {
+        if ($('#ShpngLinebox').val() != '') {
+            $.ajax({
+                url: '/Master/VLDAMaster/SearchByPartyCode',
+                type: 'GET',
+                data: { PartyId: $('#ShpngLinebox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstImporter, function (item, elem) {
+                            html += '<tr onclick="SelectShippingLine(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyId + '</td></tr>';
+                        });
+                        $('#tbleSline tbody').html('');
+                        $('#tbleSline tbody').html(html);
+                        $('#btnLoadMore').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleSline tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadEximTrader();
+    }
+
+    function SelectShippingLine(PartyId, PartyName) {
+        $('#PartyName').val(PartyName);
+        $('#PartyId').val(PartyId);
+        $("#PartyModal").modal("hide");
+       
+        LoadEximTrader();
+    }
+   
+
+    function ClosePartyList() {
+        debugger;
+        $('#ShpngLinebox').val('');
+        $("#PartyModal").modal("hide");
+       
+        LoadEximTrader();
+    }
+
+    $("#InsuranceTo").datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            // $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="InsuranceTo"]').html('');
+        }
+    });
+    $("#InsuranceFrom").datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            // $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="InsuranceFrom"]').html('');
+        }
+    });
+
+</script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "PartyInsuranceOnSuccess";
+    options.OnFailure = "PartyInsuranceOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+@using (Ajax.BeginForm("AddEditPartyInsuranceDetail", "VLDAMaster", options))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.PartyInsuranceId)
+    @*@Html.Hidden("StateList", ViewData["State"].ToString())*@
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-offset-0-5 col-md-11">
+                <div class="Head_h4">
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-12">
+                            <h4>Party Insurance Master</h4>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group Form_Input">
+
+
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Party Name:</label>
+                            </div>
+                            <div class="col-md-5">
+                                @Html.HiddenFor(m => m.PartyId)
+                                @Html.HiddenFor(m => m.PartyCode)
+                                @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control input_sm", @readonly = true })
+                                <span class="search" id="ShippingLineSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div>&nbsp;</div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Period:</label>
+                               
+                                @*@Html.HiddenFor(m => m.PartyInsuranceId)*@
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.InsuranceFrom, new { @class = "form-control input-sm", @readonly = "readonly" })
+                                @Html.ValidationMessageFor(m => m.InsuranceFrom, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label> - </label>
+                               
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.InsuranceTo, new { @class = "form-control input-sm", @readonly = "readonly" })
+                                @Html.ValidationMessageFor(m => m.InsuranceTo, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                 
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-offset-4 col-md-2" style="text-align:center">
+                            <input type="submit" class="btn log_Btn_sm" value="Save" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" value="Cancel" class="btn log_Btn_sm" onclick="LoadPartyInsurancePage()" />
+                        </div>
+                    </div>
+                    <div class="logSuccMsg Form_Space_top SignUp_space_bottom2" style="background-color:transparent">
+                        <div id="DivPartyInsuranceMsg"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="PartyModal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" onclick="ClosePartyList()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Party Names</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search By Party Name Or Party Code" id="ShpngLinebox" type="text" />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick='SearchByPartyCode()'></i></span>
+
+                    <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="8" width="80%">Party Name</th>
+                                <th colspan="4" width="20%">Party Code</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div id="slim_scroll">
+                        <table class="table dataTable table-bordered table-striped slim_tble" id="tbleSline">
+                            @{
+                                if (ViewBag.lstImporter != null)
+                                {
+                                    foreach (var item in ViewBag.lstImporter)
+                                    {
+                                        <tr onclick="SelectShippingLine(@item.PartyId,'@item.PartyName')">
+                                            <td colspan="8" width="80%" class="txt_wrp">@item.PartyName</td>
+                                            <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadPartyList()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+                            }
+                            else
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadPartyList()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" onclick="ClosePartyList()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@Scripts.Render("~/bundles/jqueryval")
+
+

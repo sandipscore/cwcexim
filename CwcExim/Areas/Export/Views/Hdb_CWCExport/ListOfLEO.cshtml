@@ -1,0 +1,178 @@
+﻿@model IEnumerable<CwcExim.Areas.Export.Models.LEOPage>
+<table class="table table-bordered table-striped" id="tblCCINEntry" style="width:100%">
+    <thead>
+        <tr>
+            <th class="text-center" width="10%">Sl No</th>
+           
+            <th width="15%">SB No</th>
+            <th width="15%">SB Date</th>
+            <th width="15%">MCIN</th>
+            <th class="text-center" width="15%">@Html.DisplayName("Edit")</th>
+            <th class="text-center" width="15%">@Html.DisplayName("View")</th>
+           
+
+            @*<th class="text-center">@Html.DisplayName("Print")</th>*@
+        </tr>
+    </thead>
+    <tbody>
+        @{var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center" width="10%">@SerialNo</td>
+                   
+                    <td width="20%">@item.ShipBillNo</td>
+                    <td width="20%">@item.ShipBillDate</td>
+                    <td width="20%">@item.MCIN</td>
+                    <td class="text-center" width="15%"><a href="#" onclick="EditLEO(@item.Id)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td class="text-center" width="15%"><a href="#" onclick="ViewLEO(@item.Id)"><i class="fa fa-search-plus Edit"></i></a></td>
+
+                   
+
+                    @*<td class="text-center"><a href="#" onclick="PrintCCINEntry('@item.InvoiceNo')"><i class="fa fa-file-pdf-o Edit"></i></a></td>*@
+                </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+@*<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>*@
+<script>
+    $(document).ready(function () {
+        var tblCCINEntry = $('#tblCCINEntry').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns": [
+                       { "sName": "SL No", "class": "text-center", "width": "10%" },
+                      
+                       { "sName": "SB No", "width": "20%" },
+                       { "sName": "SB Date", "bSortable": false, "width": "20%" },
+                       { "sName": "MCIN", "width": "20%" },
+                       { "sName": "Edit", "bSortable": false,"class":"text-center", "width": "10%" },
+                       { "sName": "View", "bSortable": false, "class": "text-center", "width": "10%" },
+                      
+                       //{ "sName": "Print", "bSortable": false, "width": "9%" },
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(tblCCINEntry);
+    });
+    function EditLEO(Id, PartyId)
+    {
+        $('#DivBody').load('/Export/Hdb_CWCExport/EditLEO?Id=' + Id);
+    }
+    function ViewLEO(Id, PartyId) {
+        $('#DivBody').load('/Export/Hdb_CWCExport/ViewLEO?Id=' + Id);
+    }
+
+    function DeleteCCINEntry(Id)
+    {
+        var Confirm = confirm("Are you sure you want to delete?");
+        if(Confirm==true)
+        {
+            var Token=$('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Export/Hdb_CWCExport/DeleteCCINEntry',
+                type: 'POST',
+                dataType: 'JSON',
+                data: { CCINEntryId: Id },
+                headers:{"__RequestVerificationToken":Token},
+                success: function (data) {
+                    if(data.Status==1)
+                    {
+                        alert(data.Message);
+                        LoadCCINEntryList();
+                        ResetAllField();
+                    }
+                    else
+                    {
+                        alert(data.Message);
+                    }
+                }
+            });
+        }
+    }
+
+   
+    var Page = 0;
+    function LoadMoreListData() {
+        debugger;
+        //Page = Page + 1;
+        var SearchValue = $('#hdnSearchValue').val();
+        $.ajax({
+            url: '/Export/Hdb_CWCExport/LoadMoreCCINEntryList',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1, SearchValue: SearchValue },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblCCINEntry').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.CCINNo],
+        [item.CCINDate],
+        [item.SBNo],
+        [item.SBDate],
+        ['<a href="#" onclick=EditCCINEntry(' + [item.Id,item.PartyId] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#" onclick=DeleteCCINEntry(' + [item.Id] + ')><i class="fa fa-window-close-o Delete"></i></a>'],
+        ['<a href="#" onclick=PrintCCINSLIP(' + [item.Id] + ')><i class="fa fa-file-pdf-o Edit"></i></a>'],
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+
+
+    @*function PrintCCINSLIP(Id) {
+        debugger;
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetCCINSlipReport", "WFLD_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: { Id: Id },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+    }*@
+    function PrintCCINSLIP(CCINNo) {
+        //$('#CCINNo').val(data.Data);
+        var ccinno = CCINNo;
+        debugger;
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetCCINEntrySlipReport", "WFLD_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: { Ccinno: ccinno },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+
+                    setTimeout(ResetAllField, 1000);
+                }
+                else
+                    alert(data.Message);
+            }
+        });
+    }
+</script>
+
+

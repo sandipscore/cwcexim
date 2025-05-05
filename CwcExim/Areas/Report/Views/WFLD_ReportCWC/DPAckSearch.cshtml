@@ -1,0 +1,398 @@
+﻿
+@model CwcExim.Areas.Report.Models.WFLD_DPAckSearch
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+}
+
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-11 col-md-offset-0-5">
+            <div class="container-fluid">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>DP Acknowledgement Search</h4>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top SignUp_space_bottom">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 padding_rt">
+                                <label>GatePass No.:</label>
+                            </div>
+                            <div class="col-md-3 col_cus_2_5">
+                                @Html.HiddenFor(m => m.GatePassId)
+                                @Html.TextBoxFor(m => m.GatePassNo, new { @class = "form-control input-sm", @readonly = "true" })
+                                <span class="search" id="GatePassModalSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#GatePassModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.GatePassNo, "", new { @class = "Error_Msg" })
+
+
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-0-5">
+                                <label>Container No.:</label>
+                            </div>
+                            <div class="col-md-3 col_cus_2_5">
+                                @*@Html.HiddenFor(m => m.CFSCode)*@
+                                @Html.HiddenFor(m => m.GatePassdtlId)
+                                @Html.TextBoxFor(m => m.ContainerNo, new { @class = "form-control", @readonly = "true" })
+                                <span class="search" id="ContainerNoSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.ContainerNo, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-2 col_cus_4">
+                                <button id="SearchDPStatus" class="btn log_Btn_sm">Search</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <table id="tblDPAppraisement" class="table table-striped table-bordered nowrap dataTable" cellspacing="0" width="100%">
+                        <thead>
+                            <tr>
+                                <th width="100px">ContainerNo</th>
+                                @*
+                                    <th width="100px">Path</th>*@
+                                <th width="100px">Status</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <br /><br />
+                <div class="row SignUp_space_bottom2">
+
+                    <div class="col-md-2 col-md-offset-4">
+                        <input type="button" id="btnReset" class="btn log_Btn_sm" value="Reset" onclick="ResetAll()" />
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="GatePassModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title"> Gate Pass No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="GatePassbox" type="text" />
+                <ul class="navList" id="lstGatePass"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade mTabindex" id="ContainerModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseContainer()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Container</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="ContainerNo search" id="Containerbox" type="text" tabindex="401" />
+                @*<span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchContainer()"></i></span>*@
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="6" width="50%">ContainerNo</th>
+                            <th colspan="6" width="50%">CFSCode</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tblDPContainer">
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    @*<div class="col-md-6">
+                            @if (ViewBag.StateCont != null && Convert.ToBoolean(ViewBag.StateCont) == true)
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreParty()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+                            }
+                            else
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreParty()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                            }
+                        </div>*@
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseContainer()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+     
+    function BindGatePass() {
+        debugger;
+        Page = 0;
+        var GatePassNo = $('#GatePassbox').val().trim();
+        $.ajax({
+            url: '/Report/WFLD_ReportCWC/GetGatePassNoDPForAckSearch',
+            type: 'GET',
+            data: { GatePassNo: GatePassNo, Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tab = 401;
+                    $.each(data.Data.lstDPGPAck, function (item, elem) {
+                        debugger;
+                        html += '<li id="' + elem.GatePassId + '" " onclick="SelectGatePass(' + elem.GatePassId + ',&quot;' + elem.GatePassNo + '&quot;)">' + elem.GatePassNo + '</li>';
+                    });
+                    $('#lstGatePass').html('');
+                    $('#lstGatePass').html(html);
+                }
+            }
+        });
+    }
+
+
+    $('#GatePassModalSearch').on("click", function () {
+        debugger;
+        BindGatePass();
+    });
+
+    function SelectGatePass(GatePassId, GatePassNo)
+    {
+        $('#GatePassId').val(GatePassId);
+        $('#GatePassNo').val(GatePassNo);
+        $("#GatePassModal").modal("hide");
+        //$('#ContainerNo').val('');
+        //$('#CFSCode').val('');
+    }
+
+    function SelectContainer(GatePassdtlId,ContainerNo, CFSCode) {
+        debugger;
+        $('#GatePassdtlId').val(GatePassdtlId);
+        $('#ContainerNo').val(ContainerNo);
+        $('#CFSCode').val(CFSCode);
+        $("#ContainerModal").modal("hide");
+        $('#tblDPAppraisement tbody').html('');
+        //$('#GatePassId').val(0);
+        //$('#GatePassNo').val('');
+    }
+
+    //
+    $('#ContainerNoSearch').on("click", function () {
+        debugger;
+        BindContainer();
+    });
+
+    var Page = 0;
+
+    function BindContainer() {
+        debugger;
+        Page = 0;
+        var ContainerNo = $('#Containerbox').val().trim();
+        $.ajax({
+            url: '/Report/WFLD_ReportCWC/GetContainerNoForDPAckSearch',
+            type: 'GET',
+            data: { ContainerNo: ContainerNo, Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tab = 401;
+                    $.each(data.Data.lstDPContACK, function (item, elem) {
+                        debugger;
+                        html += '<tr tabindex=' + tab + '_' + item + ' onkeypress="SelectContainer(' + elem.GatePassdtlId + ',&quot;' + elem.ContainerNo + '&quot;,&quot;' + elem.CFSCode + '&quot;)" onclick="SelectContainer(' + elem.GatePassdtlId + ',&quot;' + elem.ContainerNo + '&quot;,&quot;' + elem.CFSCode + '&quot;)"><td colspan="6" width="50%" class="txt_wrp">' + elem.ContainerNo + '</td><td colspan="6" width="50%" class="txt_wrp">' + elem.CFSCode + '</td></tr>';
+                    });
+                    $('#tblDPContainer tbody').html('');
+                    $('#tblDPContainer tbody').html(html);
+
+                    //if (data.Data.State == true)
+                    //    $('#btnLoadMore').prop('disabled', false);
+                    //else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    //function LoadMoreParty() {
+    //    debugger;
+    //    var ContainerNo = $('#Containerbox').val().trim();
+    //    $.ajax({
+    //        url: '/Report/WFLD_ReportCWC/GetContainerNoForDTAckSearch',
+    //        type: 'GET',
+    //        data: { ContainerNo: ContainerNo, Page: Page + 1 },
+    //        success: function (data) {
+    //            if (data.Status == 1) {
+    //                debugger;
+    //                var html = '';
+    //                var tab = 401;
+    //                $.each(data.Data.lstDTContACK, function (item, elem) {
+    //                    debugger;
+    //                    html += '<tr tabindex=' + tab + '_' + item + ' onkeypress="SelectContainer(&quot;' + elem.ContainerNo + '&quot;,&quot;' + elem.CFSCode + '&quot;)" onclick="SelectContainer(&quot;' + elem.ContainerNo + '&quot;,&quot;' + elem.CFSCode + '&quot;)"><td colspan="6" width="50%" class="txt_wrp">' + elem.ContainerNo + '</td><td colspan="6" width="50%" class="txt_wrp">' + elem.CFSCode + '</td></tr>';
+    //                });
+    //                if (Page == -1)
+    //                    $('#tblDTContainer tbody').html(html);
+    //                else
+    //                    $('#tblDTContainer tbody').append(html);
+    //                Page++;
+
+    //                debugger;
+    //                if (data.Data.State == true)
+    //                    $('#btnLoadMore').prop('disabled', false);
+    //                else $('#btnLoadMore').prop('disabled', true);
+    //            }
+    //        }
+    //    });
+    //}
+
+
+    //function SearchContainer() {
+    //    debugger;
+    //    if ($('#Containerbox').val() != '') {
+    //        $.ajax({
+    //            url: '/Report/WFLD_ReportCWC/GetContainerNoForDTAckSearch',
+    //            type: 'GET',
+    //            data: { ContainerNo: $('#Containerbox').val() },
+    //            success: function (data) {
+    //                if (data.Status == 1) {
+    //                    var html = '';
+    //                    var tab = 401;
+    //                    $.each(data.Data.lstDTContACK, function (item, elem) {
+    //                        html += '<tr tabindex=' + tab + '_' + item + ' onkeypress="SelectContainer(&quot;' + elem.ContainerNo + '&quot;,&quot;' + elem.CFSCode + '&quot;)" onclick="SelectContainer(&quot;' + elem.ContainerNo + '&quot;,&quot;' + elem.CFSCode + '&quot;)"><td colspan="6" width="50%" class="txt_wrp">' + elem.ContainerNo + '</td><td colspan="6" width="50%" class="txt_wrp">' + elem.CFSCode + '</td></tr>';
+    //                    });
+    //                    $('#tblDTContainer tbody').html('');
+    //                    $('#tblDTContainer tbody').html(html);
+    //                    $('#btnLoadMore').prop('disabled', true);
+    //                    Page = -1;
+    //                }
+    //                else {
+    //                    $('#tblDTContainer tbody').html('');
+    //                    Page = -1;
+    //                    $('#btnLoadMore').prop('disabled', false);
+    //                }
+
+    //            }
+    //        });
+    //    }
+
+    //}
+
+    function CloseContainer() {
+        $('#Containerbox').val('');
+        $("#ContainerModal").modal("hide");
+    }
+
+
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+    document.getElementById('Containerbox').addEventListener('keyup', debounce(function () {
+        BindContainer();
+    }, 800));
+    document.getElementById('GatePassbox').addEventListener('keyup', debounce(function () {
+        BindGatePass();
+    }, 800));
+
+    $('#SearchDPStatus').on("click", function () {
+        debugger;
+
+        var GatePassNo = $('#GatePassNo').val();
+        var ContainerNo = $("#ContainerNo").val();
+        //var GatePassNo = $("#GatePassNo").val();
+
+        var GatePassdtlId = $("#GatePassdtlId").val();
+        var GatePassId = $("#GatePassId").val();
+
+        if (ContainerNo != "" || GatePassNo != "") {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Report/WFLD_ReportCWC/GetDPAckSearch',
+                type: 'GET',
+                headers: { '__RequestVerificationToken': Token },
+                dataType: 'JSON',
+                data: { GatePassId: GatePassId, ContainerNo: ContainerNo, GatePassdtlId: GatePassdtlId},
+                async: false,
+                success: function (data) {
+                    //alert(data);
+                    debugger;
+                    var html = '';
+                    // PartyJson = JSON.parse(data);
+                    if (data.Status == 1) {
+                        $.each(data.Data, function (i, item) {
+                            //html += '<tr><td class="txt_wrp">' + data.Data[i].ContainerNo + '</td><td class="txt_wrp">' + data.Data[i].Path + '</td><td class="txt_wrp">' + data.Data[i].Status + '</td><td class="txt_wrp">' + data.Data[i].Reason + '</td></tr>';
+                            html += '<tr><td class="txt_wrp">' + data.Data[i].ContainerNo + '</td><td class="txt_wrp">' + data.Data[i].Status + '</td><td class="txt_wrp">' + data.Data[i].Reason + '</td></tr>';
+
+                        });
+                        $('#tblDPAppraisement tbody').html(html);
+                    }
+                    else
+                        alert("Acknowledgment Not Received");
+                }
+            });
+        }
+        else {
+            alert("Please select either GatePass No or Container No");
+        }
+    });
+    function ResetAll() {
+        $("#GatePassNo").val('');
+        $("#ContainerNo").val('');
+        $("#GatePassbox").val('');
+        $('#GatePassdtlId').val(0);
+        $('#CFSCode').val('');
+        $('#GatePassId').val(0);
+        $('#GatePassNo').val('');
+        $('#tblDPAppraisement tbody').html('');
+    }
+</script>
+

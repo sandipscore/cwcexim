@@ -1,0 +1,254 @@
+﻿@model CwcExim.Areas.Master.Models.PPGBank
+@if (ViewBag.LdgNM != null)
+{
+    <input type="hidden" id="hdnLedgnm" value="@ViewBag.LdgNM" />
+}
+<script>
+    var TimeInSeconds;
+    $(document).ready(function () {
+        TimeInSeconds = 5000;
+        GetBankList();
+        LedgerBinding();
+    });
+
+
+    function LedgerBinding() {
+        var LedgerJson = JSON.parse($('#hdnLedgnm').val());
+        var html = '';
+        $.each(LedgerJson, function (i, item) {
+            html += '<li id="' + item.LedgerId + '" onclick="selectLedger(' + item.LedgerId + ');">' + item.LedgerNm + '</li>';
+        });
+        $('#lstLedger').html(html);
+    }
+    $('#Ledgerbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstLedger > li').show();
+        else {
+            $('#lstLedger > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    function selectLedger(id) {
+        debugger;
+        var LedgerJson = JSON.parse($('#hdnLedgnm').val());
+        var Ledger = $.grep(LedgerJson, function (item) { return item.LedgerId == id; })[0];
+        //$('#LedgerNo').val(Ledger.LedgerId);
+        $('#AccountNo').val(Ledger.AccountNo);
+        $('#LedgerName').val(Ledger.LedgerNm);
+        $('#Address').val(Ledger.Address);
+        $('#IFSC').val(Ledger.Ifsc);
+        $('#Branch').val(Ledger.Branch);
+        $('#MobileNo').val(Ledger.Mobile);
+        $('#FaxNo').val(Ledger.Fax);
+        $('#Email').val(Ledger.Email);
+        
+        $("#LedgerModal").modal("hide");
+    }
+    function GetBankList() {
+        $('#DivBankList').load('/Master/PPGBank/GetBankList');
+    }
+    function ClearValidationMessage() {
+        $('.field-validation-error').each(function () {
+            $(this).html('');
+        });
+    }
+    function ResetBank() {
+        ClearValidationMessage();
+        $('#DivBankMsg').html('');
+        $('#DivBankErrMsg').html('');
+        $('#DivCreateBank #AccountNo').val('');
+        $('#DivCreateBank #LedgerName').val('');
+        $('#DivCreateBank #Address').val('');
+        $('#DivCreateBank #IFSC').val('');
+        $('#DivCreateBank #MobileNo').val('');
+        $('#DivCreateBank #Branch').val('');
+        $('#DivCreateBank #FaxNo').val('');
+        $('#DivCreateBank #Email').val('');
+    }
+    function BankOnSuccess(data) {
+        if (data.Status == 1) {
+            $('#DivBankMsg').html(data.Message);
+            setTimeout(ResetBank, 5000);
+            GetBankList();
+        }
+        else if (data.Status == 2) {
+            $('[data-valmsg-for="BankName"]').html('<span>' + data.Message + '</span>');
+        }
+        else {
+            $('#DivBankErrMsg').html(data.Message);
+        }
+    }
+    function BankOnFailure(){}
+</script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "BankOnSuccess";
+    options.OnFailure = "BankOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+<div id="DivCreateBank" class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("AddBankDetail", "PPGBank", options))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-12">
+                            <h4>Bank/Cash Master</h4>
+                        </div>
+                    </div>
+                        <div class="row">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5">
+                                    @Html.LabelFor(m => m.AccountNo, new { @class = "InputLabel" })<span class="InputLabel">:</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <span class="ReQSimbol">*</span>
+                                    @Html.TextBoxFor(m => m.AccountNo, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.AccountNo, "", new { @class = "Error_Msg" })
+                                </div>
+                        </div>
+                              
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5">
+                                    @Html.LabelFor(m => m.LedgerName, new { @class = "InputLabel" })<span class="InputLabel">:</span>
+                                </div>
+                                <div class="col-md-10-5">
+                                    <span class="ReQSimbol">*</span>
+                                    @Html.TextBoxFor(m => m.LedgerName, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.LedgerName, "", new { @class = "Error_Msg" })
+                                    <span class="search" id="LedgerSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#LedgerModal"></i></span>
+                                    @*@Html.ValidationMessageFor(m => m.PartyName)*@
+                                    @*<span style="color:red" id="ErrPartyName"></span>*@
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5">
+                                    @Html.LabelFor(m => m.Address, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-10-5">
+                                    @Html.TextAreaFor(m => m.Address, new { style = "width:100%;height:75px;" })
+                                    @Html.ValidationMessageFor(m => m.Address, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5">
+                                    @Html.LabelFor(m => m.IFSC, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-2">
+                                    @Html.TextBoxFor(m => m.IFSC, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.IFSC, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-3">
+                                    @Html.LabelFor(m => m.Branch, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <span class="ReQSimbol">*</span>
+                                    @Html.TextBoxFor(m => m.Branch, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.Branch, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5">
+                                    <label>Phone No:</label>
+                                </div>
+                                <div class="col-md-4">
+                                    <span class="ReQSimbol">*</span>
+                                    @Html.TextBoxFor(m => m.MobileNo, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.MobileNo, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-1">
+                                    @Html.LabelFor(m => m.FaxNo, new { @class = "InputLabel" })<span class="InputLabel">:</span>
+                                </div>
+                                <div class="col-md-4">
+                                    @Html.TextBoxFor(m => m.FaxNo, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.FaxNo, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5">
+                                    @Html.LabelFor(m => m.Email, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <span class="ReQSimbol">*</span>
+                                    @Html.TextBoxFor(m => m.Email, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.Email, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-4 col-md-2" style="text-align:center">
+                                <input type="submit" class="btn log_Btn_sm" value="Save" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" class="btn log_Btn_sm" value="Reset" onclick="ResetBank()" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg" style="background-color:transparent">
+                            <div id="DivBankMsg"></div>
+                        </div>
+                        <div id="DivBankErrMsg" class="logErrMsg" style="background-color:transparent"></div>
+                }
+
+                <div class="row Form_Space_top">
+                    <div class="col-md-12 SignUp_space_bottom">
+                        <div id="DivBankList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="LedgerModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Ledger</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Ledgerbox" type="text" />
+                <ul class="navList" id="lstLedger">
+                    @*@{
+                        foreach (var item in Model.lstGodownList)
+                        {
+                        <li id="@item.GodownId">@item.GodownName</li>
+                        }
+                        }*@
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+
+

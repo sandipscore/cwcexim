@@ -1,0 +1,1265 @@
+﻿@model CwcKandla.Areas.Import.Models.PPG_JobOrderByRoad
+<script src="~/Areas/Import/Scripts/App/Services/JobOrderByRoadService.js"></script>
+<script src="~/Areas/Import/Scripts/App/Controllers/JobOrderByRoadCtrl.js"></script>
+<script>
+    angular.bootstrap(document.getElementById('JobOrderByRoadAppDiv'), ['CWCApp']);
+</script>
+<style>
+    #DivFormOneDet {
+        height: 330px;
+        overflow-x: hidden;
+    }
+    #tbleSline.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+    .slimScrollDiv {
+        height: 300px;
+    }
+    .table.tblhd {
+        border-bottom: 0;
+    }
+    .slim_tble{
+        width:100%;
+        table-layout: fixed;
+    }
+    .txt_wrp{
+         overflow:hidden; 
+         word-wrap:break-word;
+    }
+</style>
+
+
+@{
+
+    if (ViewBag.RightsList != null)
+    {
+        <input type="hidden" id="hdnRights" value="@ViewBag.RightsList" />
+    }
+    else
+    {
+        <input type="hidden" id="hdnRights" value="" />
+    }
+
+    if (ViewBag.View != null)
+    {
+        <input type="hidden" ng-model="hdnView" id="hdnView" value="@ViewBag.View" />
+    }
+    else
+    {
+        <input type="hidden" ng-model="hdnView" id="hdnView" value="" />
+    }
+
+    
+if (ViewBag.ListOfShippingLine != null)
+{
+    <input type="hidden" id="hdnShipping" value="@ViewBag.ListOfShippingLine" />
+}
+else
+{
+    <input type="hidden" id="hdnShipping" value="" />
+}
+
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.StringifyXML)
+    <div id="JobOrderByRoadAppDiv" ng-controller="JobOrderByRoadCtrl">
+        <div>
+            
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="Head_h4">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h4>Job Order By Road</h4>
+                                </div>
+                            </div>
+                            <div class="content_wrp">
+                                <div class="row Form_Space_top">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Job Order No:</label>
+                                        </div>
+                                        @Html.TextBoxFor(m => m.FormOneNo, new { @readonly = true })
+                                        @Html.HiddenFor(m => m.FormOneId)
+                                    </div>
+
+                                    <div class="col-md-3 col-md-offset-6">
+                                        <div class="form-group">
+                                            <label>Job Order Date:</label>
+                                        </div>
+                                        
+
+                                        <input type="text" id="FormOneDate"
+                                               name="date"
+                                               placeholder="dd/mm/yyyy"
+                                               onkeyup="var v = this.value;
+                                                if (v.match(/^\d{2}$/) !== null) {
+                                                this.value = v + '/';
+                                                } else if (v.match(/^\d{2}\/\d{2}$/) !== null) {
+                                                this.value = v + '/';
+                                                }"
+                                               maxlength="10" />
+
+                                        <span style="color:red" id="ErrJobOrderDate"></span>
+                                    </div>
+                                </div>
+
+                                <div class="row Form_Space_top" ng-hide="true">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2 padding_rt">
+                                            <label>Shipping Line Name:</label>
+                                        </div>
+                                        <div class="col-md-10-5 col_cus_10">
+                                            
+                                            @Html.HiddenFor(m => m.ShippingLineId, new { @value = "0" })
+                                            @Html.TextBoxFor(m => m.ShippingLineName, new { @class = "form-control input-sm", @readonly = true })
+                                            <span class="search" id="ShippingLineSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#slmodal"></i></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Transport By:</label>
+                                        </div>
+
+                                        @Html.TextBoxFor(m => m.TransportBy, new { @placeholder = "Transport By" })
+                                    </div>
+                                    <div class="col-md-3 col-md-offset-6">
+                                        <div class="form-group">
+                                            <label>Container / CBT:</label>
+                                        </div>
+
+
+                                        @Html.DropDownListFor(m => m.CONTCBT, new List<SelectListItem>
+                                      {
+                                      new SelectListItem { Text="Container",Value="CONT"},
+                                      new SelectListItem { Text="CBT",Value="CBT"},
+                                      }, "----Select----", new { @placeholder = "Container / CBT" })
+
+                                    </div>
+                                </div>
+
+
+                                
+                                    <div class="d-flex justify-content-center">
+                                        <input type="button" value="Add Row" ng-show="ishide" class="btn btn-primary mr-1 btn-100px" ng-click="AddJobOrderByRoad()" />
+                                    </div>
+                                
+
+                                <div class="row">
+                                    <div class="SignUp_space_bottom SignUp_space_top"></div>
+                                </div>
+
+                                <div class="brdr_sec">
+                                    <div class="Form_Space_top" ng-hide="!JODetails.length">
+                                        <div id="DivFormOneDet">
+                                            <table class="table table-bordered table-striped dataTable" style="width:100%;">
+                                                <thead>
+                                                    <tr>
+                                                        <th width="8%" style="text-align:center;" ng-show="ishide">Action</th>
+                                                        <th width="5%">Sl No</th>
+                                                        <th>Container / CBT No.</th>
+                                                        <th>Size</th>
+                                                        <th>Shipping Line</th>
+                                                        <th>Container / CBT Load Type</th>
+                                                        <th>Foreign Liner</th>
+                                                        <th>Vessel Name</th>
+                                                        <th>Vessel No</th>                                                        
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr ng-repeat="j in JODetails">
+                                                        <td width="8%" style="text-align:center;" ng-show="ishide">
+                                                            <div class="table_icon">
+                                                                <a href="#" ng-click="Delete($index)"><i class="fa fa-trash-o" aria-hidden="true"></i></a>
+                                                            </div>
+                                                        </td>
+                                                        <td width="5%">{{$index+1}}<input type="hidden" ng-model="j.ID" /></td>
+                                                        <td><input type="text" ng-model="j.ContainerNo" ng-disabled="isView" ng-blur="onchangetext(j);" /></td>
+                                                        <td>
+                                                            <select ng-model="j.ContainerSize" ng-disabled="isView">
+                                                                <option value="">--Select--</option>
+                                                                <option value="{{t.id}}" ng-repeat="t in ContainerSizeList">{{t.ContainerSize}}</option>
+                                                            </select>
+                                                            <input type="hidden" ng-model="j.FormOneDetailID" />
+                                                        </td>
+                                                        <td class="position-relative">
+                                                            <input type="text" ng-model="j.ShippingLineName" id="ShippingLineName_{{$index}}" ng-disabled="true" required />
+                                                            <input type="text" ng-hide="true" ng-model="j.ShippingLineId" />
+                                                            <span class="input_icon" style="top: 6px; right: 13px;" id="ShippingLineSerach"><i class="fa fa-search" aria-hidden="true" ng-model="j.Slmodal" ng-click="onShippingLineChange($index)" data-toggle="modal" data-target="#ShippingLineModal"></i></span>
+                                                        </td>
+                                                        <td>
+                                                            <select ng-model="j.LCLFCL" ng-disabled="isView">
+                                                                <option value="">--Select--</option>
+                                                                <option value="{{t.id}}" ng-repeat="t in ContainerLoadTypeList">{{t.ContainerLoadType}}</option>
+                                                            </select>
+                                                        </td>
+                                                        <td><input type="text" ng-model="j.ForeignLiner" ng-disabled="isView" ng-blur="onchangetext(j);" /></td>
+                                                        <td><input type="text" ng-model="j.VesselName" ng-disabled="isView" ng-blur="onchangetext(j);" /></td>
+                                                        <td><input type="text" ng-model="j.VesselNo" ng-disabled="isView" ng-blur="onchangetext(j);" /></td>
+                                                        
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="SignUp_space_bottom SignUp_space_top"></div>
+                                </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label>Remarks:</label>
+                                        </div>
+                                            @Html.TextAreaFor(m => m.Remarks, new { @placeholder = "Remarks", @cols = "20", @maxlength = "250", @rows = "2" })                                       
+                                    </div>
+                                </div>
+
+                                <div class="SignUp_space_bottom SignUp_space_top"></div>
+
+                                
+                                    <div class="d-flex justify-content-left">
+                                        <input type="submit" id="BtnYardSubmit" value="Save" ng-show="isSave" class="btn btn-primary mr-1 btn-100px" ng-click="OnJobOrderSave()" /> @*onclick="datevalidation();"*@
+                                    
+                                        <input type="button" value="Reset" class="btn btn-primary-border btn-100px" ng-click="ResetImpJODetails()" />
+                                    </div>
+                                
+
+                                <div class="logSuccMsg" style="background-color:transparent" id="DivJobOrder"></div>
+                                <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivJobOrderErrMsg"></div>
+
+
+                              
+                                @*<div class="row Form_Space_top Form_Space_bottom">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-offset-9 col-md-3">
+                                            @Html.TextBox("ContainerNoSearch", "", new { placeholder = "Search By Container / CBT" })
+                                            <span class="search"><i class="fa fa-search" aria-hidden="true" onclick="SearchByContainerNo()"></i></span>
+                                        </div>
+                                    </div>
+                                </div>*@
+
+                                <div class="row Form_Space_top">
+                                    <div class="col-md-12">
+                                        <div class="form-group mb-0 position-relative">
+                                            <input id="ContainerNoSearch" placeholder="Search By Container / CBT" type="text" value="">
+                                            <span class="input_icon"><i class="fa fa-search" aria-hidden="true" onclick="SearchContainer()"></i></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12 SignUp_space_bottom">
+                                        <div id="DivYardList"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                    </div>
+                </div>
+            
+
+            @Scripts.Render("~/bundles/jqueryval")
+
+            <script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+            <script type="text/javascript">
+                $(function () {
+                    $('#slim_scroll').slimScroll({
+                        allowPageScroll: true
+                    });
+                });
+            </script>
+
+            <div id="blNomodal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of Train No.</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <input placeholder="Search Me" id="TrainNobox" type="text" />
+                            <ul class="navList" id="lstTrainNoNo" ng-click="GetTrainDetails()">
+                                @{
+                                    if (ViewBag.ListOfTrain != null)
+                                    {
+                                        foreach (var item in ViewBag.ListOfTrain)
+                                        {
+                                            <li id="@item.TrainSummaryID">@item.TrainNo</li>
+                                        }
+                                    }
+                                }
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="ShippingLineModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" onclick="CloseEximTrader()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of Shipping Line</h4>
+                        </div>
+                        <div class="modal-body popup_body" style="position:relative;">
+                            <input placeholder="Search By Shipping Line Name Or Party Code" id="ShpngLinebox" type="text" />
+                            <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByPartyCode()"></i></span>
+
+                            <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                                <thead>
+                                    <tr>
+                                        <th colspan="8" width="80%">Shipping Line Name</th>
+                                        <th colspan="4" width="20%">Party Code</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div id="slim_scroll">
+                                <table class="table dataTable table-bordered table-striped slim_tble" id="tbleSline">
+
+                                    @{
+                                        if (ViewBag.lstShippingLine != null)
+                                        {
+                                            foreach (var item in ViewBag.lstShippingLine)
+                                            {
+                                                <tr onclick="SelectShippingLine(@item.ShippingLineId,'@item.ShippingLineName')">
+                                                    <td colspan="8" width="80%" class="txt_wrp">@item.ShippingLineName</td>
+                                                    <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                                </tr>
+                                            }
+                                        }
+                                    }
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                                    {
+                                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                                    }
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" onclick="CloseEximTrader()">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+@Scripts.Render("~/bundles/jqueryval")
+
+<script>
+    var ind = 0;
+    var FormOneDetails = [];
+    if ($('#FormOneId').val() == 0) {
+        LoadJOList();
+    }
+    var dt;
+    $(function () {
+        var today = new Date();
+        var dd = today.getDate();
+        var mm = today.getMonth() + 1; //January is 0!
+
+        var yyyy = today.getFullYear();
+        if (dd < 10) {
+            dd = '0' + dd;
+        }
+        if (mm < 10) {
+            mm = '0' + mm;
+        }
+        var today = dd + '/' + mm + '/' + yyyy;
+
+        $('#JobOrderDate').val(today);
+        $('#joborderCheck').val(new Date());
+        $('#trainCheck').val(new Date());
+
+        TimeInSeconds = 5000;
+        SubDomain = '@System.Configuration.ConfigurationManager.AppSettings["SubDomain"]';
+
+        //   $('#TblCustomAppraisementDet').hide();
+    });
+    // $(function () { LoadJOList();
+    // });
+
+    //$('#JobOrderDate').datetimepicker({
+    //    dateFormat: "dd/MM/yy",
+    //    showOn: "button",
+    //    buttonImage: "/Content/images/calendar.png",
+    //    buttonImageOnly: true,
+    //    buttonText: "Select date",
+    //    changeMonth: true,
+    //    changeYear: true,
+    //    showAnima: "fadein",
+    //    ampm: true,
+    //    timeFormat: 'hh:mm',
+    //    onSelect: function (dateText) {
+    //        dateText = $('#JobOrderDate').datepicker({ dateFormat: 'MM/dd/yyyy' }).val();
+
+    //        var dt = dateText.split("/");
+
+    //        var mm = "";
+    //        if (dt[1] == 'Jan') {
+    //            mm = "01";
+    //        }
+    //        if (dt[1] == 'Feb') {
+    //            mm = "02";
+    //        }
+    //        if (dt[1] == 'Mar') {
+    //            mm = "03";
+    //        }
+    //        if (dt[1] == 'Apr') {
+    //            mm = "04";
+    //        }
+    //        if (dt[1] == 'May') {
+    //            mm = "05";
+    //        }
+    //        if (dt[1] == 'Jun') {
+    //            mm = "06";
+    //        }
+    //        if (dt[1] == 'Jul') {
+    //            mm = "07";
+    //        }
+    //        if (dt[1] == 'Aug') {
+    //            mm = "08";
+    //        }
+    //        if (dt[1] == 'Sep') {
+    //            mm = "09";
+    //        }
+    //        if (dt[1] == 'Oct') {
+    //            mm = "10";
+    //        }
+    //        if (dt[1] == 'Nov') {
+    //            mm = "11";
+    //        }
+    //        if (dt[1] == 'Dec') {
+    //            mm = "12";
+    //        }
+
+    //        var tt = dt[2].split(" ");
+    //        var tt1 = tt[1].split(":");
+    //        var tt2 = 0;
+
+
+    //        var dt1 = mm + "/" + dt[0] + "/" + tt[0] + " " + tt[1];
+
+    //        var dt2 = new Date(dt1);
+    //        var ampm = dt2.getHours();
+    //        if (ampm < 12) {
+    //            tt2 = ampm + 12;
+    //        }
+    //        else {
+    //            tt2 = ampm;
+    //        }
+
+    //        var timm = tt2 + ":" + tt1[1];
+    //        var dt3 = mm + "/" + dt[0] + "/" + tt[0] + timm;
+
+    //        $('#joborderCheck').val(dt1);
+    //    },
+
+    //    onClose: function () {
+    //    }
+    //}).datetimepicker("setDate", new Date());
+
+    //$('#TrainDate').datepicker({
+    //    dateFormat: "dd/MM/yy",
+    //    showOn: "button",
+    //    buttonImage: "/Content/images/calendar.png",
+    //    buttonImageOnly: true,
+    //    buttonText: "Select date",
+    //    changeMonth: true,
+    //    changeYear: true,
+    //    showAnima: "fadein",
+    //    ampm: true,
+    //    onSelect: function (dateText) {
+    //        dateText = $('#TrainDate').datepicker({ dateFormat: 'MM/dd/yyyy' }).val();
+
+    //        var dt = dateText.split("/");
+
+    //        var mm = "";
+    //        if (dt[1] == 'Jan') {
+    //            mm = "01";
+    //        }
+    //        if (dt[1] == 'Feb') {
+    //            mm = "02";
+    //        }
+    //        if (dt[1] == 'Mar') {
+    //            mm = "03";
+    //        }
+    //        if (dt[1] == 'Apr') {
+    //            mm = "04";
+    //        }
+    //        if (dt[1] == 'May') {
+    //            mm = "05";
+    //        }
+    //        if (dt[1] == 'Jun') {
+    //            mm = "06";
+    //        }
+    //        if (dt[1] == 'Jul') {
+    //            mm = "07";
+    //        }
+    //        if (dt[1] == 'Aug') {
+    //            mm = "08";
+    //        }
+    //        if (dt[1] == 'Sep') {
+    //            mm = "09";
+    //        }
+    //        if (dt[1] == 'Oct') {
+    //            mm = "10";
+    //        }
+    //        if (dt[1] == 'Nov') {
+    //            mm = "11";
+    //        }
+    //        if (dt[1] == 'Dec') {
+    //            mm = "12";
+    //        }
+
+    //        var tt = dt[2].split(" ");
+    //        var tt1 = tt[1].split(":");
+    //        var tt2 = 0;
+
+
+    //        var dt1 = mm + "/" + dt[0] + "/" + tt[0] + " " + tt[1];
+
+    //        var dt2 = new Date(dt1);
+    //        var ampm = dt2.getHours();
+    //        if (ampm < 12) {
+    //            tt2 = ampm + 12;
+    //        }
+    //        else {
+    //            tt2 = ampm;
+    //        }
+
+    //        var timm = tt2 + ":" + tt1[1];
+    //        var dt3 = mm + "/" + dt[0] + "/" + tt[0] + timm;
+
+    //        $('#trainCheck').val(dt1);
+    //    },
+
+    //    onClose: function () {
+    //    }
+    //});
+
+    $('#TrainNobox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstTrainNoNo > li').show();
+        else {
+            $('#lstTrainNoNo > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    $('#lstTrainNoNo > li').on("click", function () {
+        debugger;
+        $('#TrainNo').val($(this).text().split('(')[0]);
+        $('#TrainSummaryID').val($(this).attr('id'));
+        $("#blNomodal").modal("hide");
+        angular.element('#JobOrderAppDiv').scope().GetTrainDetails();
+        angular.element('#JobOrderAppDiv').scope().$apply();
+        //GetTrainDetails();
+    });
+
+    function SearchByPartyCode() {
+        if ($('#ShpngLinebox').val() != '') {
+            $.ajax({
+                url: '/Import/PpG_CWCImport/SearchByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#ShpngLinebox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstShippingLine, function (item, elem) {
+                            html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleSline tbody').html('');
+                        $('#tbleSline tbody').html(html);
+                        $('#btnLoadMore').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleSline tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadEximTrader();
+    }
+
+    var Page = 0;
+    function LoadMoreEximTrader() {
+        debugger;
+        $.ajax({
+            url: '/Import/PpG_CWCImport/LoadEximtradeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleSline tbody').html(html);
+                    else
+                        $('#tbleSline tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadEximTrader() {
+        Page = 0;
+        $.ajax({
+            url: '/Import/PpG_CWCImport/LoadEximtradeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+
+                    $('#tbleSline tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SelectShippingLine(ShippingLineId, ShippingLineName) {
+        debugger;
+        //$('#ShippingLineName').val(ShippingLineName);
+        //$('#ShippingLineId').val(ShippingLineId);
+        angular.element('#JobOrderByRoadAppDiv').scope().JODetails[ind].ShippingLineName = ShippingLineName;
+        angular.element('#JobOrderByRoadAppDiv').scope().JODetails[ind].ShippingLineId = ShippingLineId;
+        angular.element('#JobOrderByRoadAppDiv').scope().$apply();
+
+        $("#ShippingLineModal").modal("hide");
+        $('#ShpngLinebox').val('');
+        LoadEximTrader();
+    }
+
+    function CloseEximTrader() {
+        $('#ShpngLinebox').val('');
+        $("#ShippingLineModal").modal("hide");
+        LoadEximTrader();
+    }
+
+    //$('#ShpngLinebox').keyup(function () {
+    //    var val = $(this).val().toLowerCase();
+    //    if (val == "")
+    //        $('#lstsline > li').show();
+    //    else {
+    //        $('#lstsline > li').each(function () {
+    //            var text = $(this).text().toLowerCase();
+    //            (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+    //        });
+    //    }
+    //});
+    //$('#lstsline > li').on("click", function () {
+    //    debugger;
+    //    //$('#SLine').val($(this).text().split('(')[0]);
+    //    $('#ShippingLineName').val($(this).text().split('(')[0]);
+    //    $('#ShippingLineId').val($(this).attr('id'));
+    //    $("#slmodal").modal("hide");
+
+    //});
+
+    function checklenrem() {
+        if ($('#Remarks').val().length > 200) {
+            $('#ErrRemarks').html('Exceed Max langth 200 characters');
+            return false;
+        }
+        else {
+            $('#ErrRemarks').html('');
+        }
+    }
+
+    function checklencar() {
+        if ($('#CargoDescription').val().length > 200) {
+            $('#ErrCargoDescription').html('Exceed Max langth 200 characters');
+            return false;
+        }
+        else {
+            $('#ErrCargoDescription').html('');
+        }
+    }
+    function AddJoborder() {
+
+
+
+        if ($('#Remarks').val().length > 200) {
+            $('#ErrRemarks').html('Exceed Max langth 200 characters');
+            return false;
+        }
+        else if ($('#CargoDescription').val().length > 200) {
+            $('#ErrCargoDescription').html('Exceed Max langth 200 characters');
+            return false;
+        }
+        else if ($('#CLType').val() == '') {
+            $('#ErrContainerLoadType').html('Container / CBT Load Type should not be blank');
+            return false;
+
+        }
+        else if ($('#CrType').val() == '') {
+            $('#ErrCrType').html('Cargo Type should not be blank');
+            return false;
+
+        }
+        else if ($('#SLine').val() == '') {
+            $('#ErrShipping').html('Shipping Line should not be blank');
+            return false;
+
+        }
+        else {
+            $('#AddJobOrd').prop("disabled", "disabled");
+            var TrainDetail = {
+                "TrainSummarySerial": $('#TrainSummarySerial').val(),
+                "TrainSummaryID": $('#TrainSummaryID').val(),
+                "TrainNo": $('#TNo').val(),
+                "TrainDate": $('#TrainDt').val(),
+                "PortId": $('#PortID').val(),
+                "Wagon_No": $('#Wagon_No').val(),
+                "Container_No": $('#CNNo').val(),
+                "CT_Size": $('#size').val(),
+                "CustomSealNo": $('#CSNo').val(),
+                "ShippingLineNo": $('#SLNo').val(),
+                "ShippingLineId": $('#SlineId').val(),
+                "ShippingLineName": $('#SLine').val(),
+                "ForeignLiner": $('#ForeignLiner').val(),
+                "VesselName": $('#VesselName').val(),
+                "VesselNo": $('#VesselNo').val(),
+                "CargoType": $('#CrType').val(),
+                "ContainerLoadType": $('#CLType').val(),
+                "TransportForm": $('#TransportForm').val(),
+                "NoOfPackages": $('#NPckg').val(),
+                "Line_Seal_No": $('#Line_Seal_No').val(),
+                "Cont_Commodity": $('#Cont_Commodity').val(),
+                "S_Line": $('#Line_Seal_No').val(),
+                "Ct_Tare": $('#Ct_Tare').val(),
+                "Cargo_Wt": $('#Cargo_Wt').val(),
+                "Gross_Wt": $('#GWeg').val(),
+                "Ct_Status": $('#Ct_Status').val(),
+                "Destination": $('#Destination').val(),
+                "Smtp_No": $('#Smtp_No').val(),
+                "Received_Date": $('#Received_Date').val(),
+                "Genhaz": $('#Genhaz').val(),
+                "Remarks": $('#Remarks').val(),
+                "CargoDescription": $('#CargoDescription').val()
+            }
+        }
+        flagg = 0;
+        FormOneDetails.push(TrainDetail);
+
+        GenerateTable();
+        ResetJobOrder();
+        // ResetFormOneDetPartial();
+
+    }
+
+
+    function ResetJobOrder() {
+        $('#CNNo, #size, #CSNo, #SLNo,#SLine,#Remarks,#CargoDescription').val('');
+        $('#GWeg,#NPckg').val('0');
+        //  $('#IsReefer, #IsFlatReck').attr('checked', false)
+        $('#CrType, #CLType,#TransportForm').prop('selectedIndex', 0);
+        //   $('#btnAddFormOneDet').prop("disabled", false);
+    }
+    //function GetTrainDetails() {
+    //    debugger;
+    //    var TSumId = $('#TrainSummaryID').val();
+    //    $.ajax({
+    //        url: '/Import/Ppg_CWCImport/GetTrainDetl',
+    //        dataType: 'JSON',
+    //        type: 'GET',
+    //        data: { TrainSumId: TSumId },
+    //        success: function (data) {
+    //            if (data != null) {
+    //                var html = '';
+    //                FormOneDetails = [];
+    //                $.each(data, function (i, elem) {
+    //                    $('#TrainNo').val(elem.TrainNo);
+    //                    $('#TrainDate').val(elem.TrainDate).toString("dd/MMM/yyyy hh:mm");
+
+    //                    var dt = $('#TrainDate').val().split("/");
+
+    //                    var mm = "";
+    //                    if (dt[1] == 'Jan') {
+    //                        mm = "01";
+    //                    }
+    //                    if (dt[1] == 'Feb') {
+    //                        mm = "02";
+    //                    }
+    //                    if (dt[1] == 'Mar') {
+    //                        mm = "03";
+    //                    }
+    //                    if (dt[1] == 'Apr') {
+    //                        mm = "04";
+    //                    }
+    //                    if (dt[1] == 'May') {
+    //                        mm = "05";
+    //                    }
+    //                    if (dt[1] == 'Jun') {
+    //                        mm = "06";
+    //                    }
+    //                    if (dt[1] == 'Jul') {
+    //                        mm = "07";
+    //                    }
+    //                    if (dt[1] == 'Aug') {
+    //                        mm = "08";
+    //                    }
+    //                    if (dt[1] == 'Sep') {
+    //                        mm = "09";
+    //                    }
+    //                    if (dt[1] == 'Oct') {
+    //                        mm = "10";
+    //                    }
+    //                    if (dt[1] == 'Nov') {
+    //                        mm = "11";
+    //                    }
+    //                    if (dt[1] == 'Dec') {
+    //                        mm = "12";
+    //                    }
+
+    //                    var tt = dt[2].split(" ");
+    //                    var tt1 = tt[1].split(":");
+    //                    var tt2 = 0;
+
+
+    //                    var dt1 = mm + "/" + dt[0] + "/" + tt[0] + " " + tt[1];
+
+    //                    var dt2 = new Date(dt1);
+    //                    var ampm = dt2.getHours();
+    //                    if (ampm < 12) {
+    //                        tt2 = ampm + 12;
+    //                    }
+    //                    else {
+    //                        tt2 = ampm;
+    //                    }
+
+    //                    var timm = tt2 + ":" + tt1[1];
+    //                    var dt3 = mm + "/" + dt[0] + "/" + tt[0] + timm;
+
+    //                    $('#trainCheck').val(dt1);
+
+
+    //                    //   html += '<li id="' + elem.YardId + '" onclick="SelectYard(this)">' + elem.YardName + '</li>';
+
+    //                    //  $('#lstYard').html(html);
+    //                    var flag = 0;
+    //                    $.each(FormOneDetails, function (i1, elem1) {
+
+    //                        if (elem.Container_No == elem1.Container_No) {
+
+    //                            flag = 1;
+
+    //                        }
+    //                    });
+
+    //                    debugger;
+    //                    var TransFormname = "";
+    //                    if (flag == 0) {
+    //                        var TrainDetail = {
+    //                            "TrainSummarySerial": elem.TrainSummarySerial,
+    //                            "TrainSummaryID": elem.TrainSummaryID,
+    //                            "TrainNo": elem.TrainNo,
+    //                            "TrainDate": elem.TrainDate,
+    //                            "PortId": elem.PortId,
+    //                            "Wagon_No": elem.Wagon_No,
+    //                            "Container_No": elem.Container_No,
+    //                            "CT_Size": elem.CT_Size,
+    //                            "CustomSealNo": elem.Line_Seal_No,
+    //                            "ShippingLineNo": elem.S_Line,
+    //                            "ShippingLineId": elem.ShippingLineId,
+    //                            "ShippingLineName": elem.ShippingLineName,
+    //                            "CargoType": 'Non HAZ',
+    //                            "ContainerLoadType": elem.Ct_Status,
+    //                            "TransportForm": elem.TransportName,
+    //                            "NoOfPackages": 0,
+    //                            "Line_Seal_No": elem.Line_Seal_No,
+    //                            "Cont_Commodity": elem.Cont_Commodity,
+    //                            "S_Line": elem.S_Line,
+    //                            "Ct_Tare": elem.Ct_Tare,
+    //                            "Cargo_Wt": elem.Cargo_Wt,
+    //                            "Gross_Wt": elem.Gross_Wt,
+    //                            "Ct_Status": elem.Ct_Status,
+    //                            "Destination": elem.Destination,
+    //                            "Smtp_No": elem.Smtp_No,
+    //                            "Received_Date": elem.Received_Date,
+    //                            "Genhaz": elem.Genhaz,
+    //                            "Remarks": "",
+    //                            "CargoDescription": ""
+    //                        }
+    //                        FormOneDetails.push(TrainDetail);
+    //                    }
+
+    //                });
+    //                ResetJobOrder();
+    //                GenerateTable();
+    //            }
+    //        }
+    //    });
+    //}
+    function GenerateTable() {
+        var html = '';
+
+
+        $('#StringifyXML').val(JSON.stringify(FormOneDetails));
+        html = '<table class="table table-bordered table-striped dataTable"><thead><tr><th class="text-center" style="width:10%;">SL No</th><th>Container / CBT No</th><th>Container / CBT Size</th><th>Custom Seal No</th><th style="width:15%;">Cargo Type</th><th>Commodity</th><th style="text-align:center; width:10%;">Edit</th><th class="text-center" style="width:10%;">Delete</th></tr></thead><tbody>';
+
+        if (FormOneDetails != null) {
+            $.each(FormOneDetails, function (i, elem) {
+                html += '<tr><td class="text-center" style="width:10%;">' + (i + 1) + '</td><td><input type="text" id="ContainerNo_' + i + '" value="' + elem.Container_No + '"/></td><td><input type="text" id="Size_' + i + '" value="' + elem.CT_Size + '"/>';
+                html += '</td><td><input type="text" id="CustomSealNo_' + i + '" value="' + elem.Line_Seal_No + '"/></td>';
+                html += '<td><input type="text" id="ShippingLineNo_' + i + '" value="' + elem.S_Line + '"/></td>';
+                html += '<td><input type="text" id="ShippingLineName_' + i + '" value="' + elem.ShippingLineName + '"/></td>';
+                html += '<td><input type="text" id="ShippingLineId_' + i + '" value="' + elem.ShippingLineId + '"/></td>';
+                html += '<td><input type="text" id="ForeignLiner' + i + '" value="' + elem.ForeignLiner + '"/></td>';
+                html += '<td><input type="text" id="VesselName' + i + '" value="' + elem.VesselName + '"/></td>';
+                html += '<td><input type="text" id="VesselNo' + i + '" value="' + elem.VesselNo + '"/></td>';
+                html += '<td><select id="CargoType_' + i + '"><option value="0">--Select--</option><option value="0">HAZ</option><option value="0">Non-HAZ</option></select></td>';
+                html += '<td><select id="ContainerLoadType_' + i + '"><option value="0">--Select--</option><option value="FCL">FCL</option><option value="LCL">LCL</option><option value="DD">DD</option></select></td>';
+                html += '<td><input type="text" id="TransportForm_' + i + '" value="' + elem.TransportForm + '"/></td>';
+                html += '<td><input type="text" id="GrossWt_' + i + '" value="' + elem.Gross_Wt + '"/></td>';
+                html += '<td><input type="text" id="Remarks_' + i + '" value=""/></tdTransport Form>';
+                html += '<td class="text-center"><a href="#" onclick="EditContainerDet(' + i + ')"><i class="fa fa-pencil-square Edit" aria-hidden="true"></i></a></td><td class="text-center" style="width:10%;"><a href="#" onclick="DeleteContainerDet(' + i + ')"><i class="fa fa-window-close-o Delete"></i></a></td></tr>';
+            });
+            html += '</tbody></table>';
+            $('#DivFormOneDet').html('');
+            $('#DivFormOneDet').html(html);
+        }
+        else {
+            $('#DivDeliveryAppTblErrMsg').html('Container / CBT details data is not found for this job order');
+        }
+
+    }
+
+    function DeleteContainerDet(FormOneDetailId) {
+        debugger;
+        var Confirm = confirm("Are You Sure You Want To Delete?");
+        if (Confirm == true) {
+            //  LocationDetailArray.splice(Index, 1);
+            FormOneDetails.splice(FormOneDetailId, 1);
+            GenerateTable();
+        }
+
+    }
+    var flagg = 0;
+
+    function EditContainerDet(i) {
+        debugger;
+
+
+        if (flagg == 0) {
+            flagg = 1;
+            $('#AddJobOrd').prop("disabled", false);
+            $('#TrainSummarySerial').val(FormOneDetails[i].TrainSummarySerial);
+            $('#TrainSummaryID').val(FormOneDetails[i].TrainSummaryID);
+            $('#TNo').val(FormOneDetails[i].TrainNo);
+            $('#TrainDt').val(FormOneDetails[i].TrainDate);
+            $('#PortID').val(FormOneDetails[i].PortId);
+            $('#TransportForm').val(FormOneDetails[i].TransportForm);
+            $('#CNNo').val(FormOneDetails[i].Container_No);
+            $('#size').val(FormOneDetails[i].CT_Size);
+            $('#CSNo').val(FormOneDetails[i].CustomSealNo);
+            $('#SLNo').val(FormOneDetails[i].ShippingLineNo);
+            $('#SlineId').val(FormOneDetails[i].ShippingLineId);
+            $('#SLine').val(FormOneDetails[i].ShippingLineName);
+            $('#CrType').val(FormOneDetails[i].CargoType);
+            $('#CLType').val(FormOneDetails[i].ContainerLoadType);
+            $('#ForeignLiner').val(FormOneDetails[i].ForeignLiner);
+            $('#VesselName').val(FormOneDetails[i].VesselName);
+            $('#VesselNo').val(FormOneDetails[i].VesselNo);
+            $('#NPckg').val(FormOneDetails[i].NoOfPackages);
+            $('#GWeg').val(FormOneDetails[i].Gross_Wt);
+            $('#Remarks').val(FormOneDetails[i].Remarks);
+            $('#CargoDescription').val(FormOneDetails[i].CargoDescription);
+            $('#Wagon_No').val(FormOneDetails[i].Wagon_No);
+            $('#Line_Seal_No').val(FormOneDetails[i].Line_Seal_No);
+            $('#Cont_Commodity').val(FormOneDetails[i].Cont_Commodity);
+            $('#Ct_Tare').val(FormOneDetails[i].Ct_Tare);
+            $('#Cargo_Wt').val(FormOneDetails[i].Cargo_Wt);
+            $('#Ct_Status').val(FormOneDetails[i].Ct_Status);
+            $('#Destination').val(FormOneDetails[i].Destination);
+            $('#Smtp_No').val(FormOneDetails[i].Smtp_No);
+            $('#Received_Date').val(FormOneDetails[i].Received_Date);
+            $('#Genhaz').val(FormOneDetails[i].Genhaz);
+            FormOneDetails.splice(i, 1);
+            GenerateTable();
+
+        }
+
+        else {
+            alert("Add Current Container");
+        }
+    }
+
+    function LoadJOList() {
+        $('#DivYardList').load('/Import/Ppg_CWCImport/ListOfJobOrderByRoadDetails?ImpJobOrderId=' + 0);
+    }
+
+    function SearchByContainerNo() {
+        debugger;
+        if ($('#ContainerNoSearch').val().trim() == "" || $('#ContainerNoSearch').val().trim() == null) {
+            LoadJOList();
+        }
+        else {
+            //$('#tblEntryDet').hide();
+            $('#DivYardList').load('/Import/Ppg_CWCImport/SearchListOfJobOrderByRoadDetails?ContainerNo=' + $('#ContainerNoSearch').val().trimLeft());
+        }
+    }
+    function impJOOnSuccess(data) {
+
+        if (data.Status == 1) {
+            $('#DivJobOrder').html(data.Message);
+            setTimeout(function () {
+                $('#DivBody').load('/Import/PpG_CWCImport/CreateJobOrder');
+            }, 5000)
+        }
+        else {
+            $('#DivJobOrderErrMsg').html(data.Message);
+        }
+        //if (data.Status == 1) {
+        //    $('#DivJobOrder').html(data.Message);
+        //    setTimeout(impJOOnSuccess, TimeInSeconds);
+        //  // ResetImpJODetails();
+        //  //    LoadJOList();
+        //  //  $('#DivBody').load('/Import/PpG_CWCImport/CreateJobOrder');
+        //}
+        //else {
+        //    $('#DivJobOrderErrMsg').html(data.Message);
+        //}
+        //  setTimeout(function () { $('#DivJobOrderErrMsg,#DivJobOrder').html(''); }, 5000);
+    }
+    function impJOOnFailure() { }
+
+    function SaveDetails() {
+        $('#StringifyXML').val(JSON.stringify(FormOneDetails));
+    }
+
+
+    function BindTrain(PickUp) {
+
+
+        if ($('#hdnTrainNo').val() != '') {
+            var TrainNoJson = JSON.parse($('#hdnTrainNo').val());
+            var html = '';
+            $.each(TrainNoJson, function (i, item) {
+                //if (PickUp == item.PickUpLoc) {
+                html += '<li id="' + item.TrainSummaryID + '" onclick="selectTrain(' + item.TrainSummaryID + ');">' + item.TrainNo + '</li>';
+                //}
+            });
+            $('#TrainNo').val('');
+            FormOneDetails = [];
+
+            $('#lstTrainNoNo').html(html);
+            $('#DivFormOneDet').html('');
+            //  GenerateTable();
+        }
+    }
+
+    function selectTrain(Tid) {
+        $("#blNomodal").modal("hide");
+        $.ajax({
+            url: '/Import/Ppg_CWCImport/GetTrainDetl',
+            dataType: 'JSON',
+            type: 'GET',
+            data: { TrainSumId: Tid },
+            success: function (data) {
+                if (data != null) {
+                    var html = '';
+                    FormOneDetails = [];
+                    $.each(data, function (i, elem) {
+                        $('#TrainNo').val(elem.TrainNo);
+                        $('#TrainDate').val(elem.TrainDate).toString("dd/MMM/yyyy hh:mm");
+
+                        //   html += '<li id="' + elem.YardId + '" onclick="SelectYard(this)">' + elem.YardName + '</li>';
+
+                        //  $('#lstYard').html(html);
+                        var flag = 0;
+                        $.each(FormOneDetails, function (i1, elem1) {
+
+                            if (elem.Container_No == elem1.Container_No) {
+
+                                flag = 1;
+
+                            }
+                        });
+
+                        debugger;
+                        if (flag == 0) {
+                            var TrainDetail = {
+                                "TrainSummarySerial": elem.TrainSummarySerial,
+                                "TrainSummaryID": elem.TrainSummaryID,
+                                "TrainNo": elem.TrainNo,
+                                "TrainDate": elem.TrainDate,
+                                "PortId": elem.PortId,
+                                "Wagon_No": elem.Wagon_No,
+                                "Container_No": elem.Container_No,
+                                "CT_Size": elem.CT_Size,
+                                "CustomSealNo": elem.Line_Seal_No,
+                                "ForeignLiner": elem.ForeignLiner,
+                                "VesselName": elem.VesselName,
+                                "VesselNo": elem.VesselNo,
+                                "ShippingLineNo": elem.S_Line,
+                                "ShippingLineId": 0,
+                                "ShippingLineName": "",
+                                "CargoType": "",
+                                "ContainerLoadType": "",
+                                "TransportForm": elem.TransportName,
+                                "NoOfPackages": 0,
+                                "Line_Seal_No": elem.Line_Seal_No,
+                                "Cont_Commodity": elem.Cont_Commodity,
+                                "S_Line": elem.S_Line,
+                                "Ct_Tare": elem.Ct_Tare,
+                                "Cargo_Wt": elem.Cargo_Wt,
+                                "Gross_Wt": elem.Gross_Wt,
+                                "Ct_Status": elem.Ct_Status,
+                                "Destination": elem.Destination,
+                                "Smtp_No": elem.Smtp_No,
+                                "Received_Date": elem.Received_Date,
+                                "Genhaz": elem.Genhaz,
+                                "Remarks": "",
+                                "CargoDescription": ""
+                            }
+                            FormOneDetails.push(TrainDetail);
+                        }
+
+                    });
+                    GenerateTable();
+                }
+            }
+        });
+
+    }
+
+
+    function TrainBinding() {
+        debugger;
+        var TrainJson = JSON.parse($('#hdnTrain').val());
+        var html = '';
+        $.each(TrainJson, function (i, item) {
+            html += '<li id="' + item.TrainSummaryID + '">' + item.TrainNo + '</li>';
+        });
+
+
+        $('#lstTrainNoNo').html(html);
+    }
+    function datevalidation() {
+        debugger;
+
+        var joborderdt = $('#joborderCheck').val();
+        var traindate = $('#trainCheck').val();
+        var jdt = new Date(joborderdt);
+
+        var tdt = new Date(traindate);
+
+        if ($('#TrainNo').val() == '') {
+            // $('[data-valmsg-for="PartyName"]').html('<span>Fill Out This Field</span>');
+            //  $('#ErrPartyName').html('Fill Out This Field');
+            return false;
+        }
+        else if (jdt < tdt) {
+            alert("Job Order Date should not be less from TrainDate");
+            $('#JobOrderDate').val('');
+            //   $('#ErrJobOrderDate').html('Job Order Date should not be less from TrainDate');
+            return false;
+
+        }
+
+
+        else if (FormOneDetails.length <= 0) {
+            $('#PickUpLocation').val('');
+
+            alert("Container / CBT should not be blank");
+            return false;
+        }
+
+        else if (FormOneDetails.length > 0) {
+
+            var flag = 0;
+            $.each(FormOneDetails, function (i1, elem1) {
+
+                if (elem1.ContainerLoadType == '' || elem1.CargoType == '' || elem1.ShippingLineName == '') {
+
+                    flag = 1;
+
+                }
+            });
+
+            if (flag == 1) {
+                $('#PickUpLocation').val('');
+                $('#DivDeliveryAppTblErrMsg').html('Please Edit Container / CBT details some fields are blank');
+                return false;
+
+            }
+            else {
+                return true;
+            }
+
+        }
+        else {
+
+
+
+
+            return true;
+            //var conf = confirm("Do you want to save ?");
+
+            //if (conf) {
+            //    try {
+            //        $('#btnSave').attr('disabled', true);
+            //       // $('form#JobOrder').submit();
+
+            //    }
+            //    catch (e) {
+            //        $('#btnSave').removeAttr('disabled');
+            //    }
+            //}
+        }
+
+
+
+    }
+</script>

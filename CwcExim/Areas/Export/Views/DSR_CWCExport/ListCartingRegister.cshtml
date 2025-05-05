@@ -1,0 +1,175 @@
+﻿@model IEnumerable<CwcExim.Areas.Export.Models.DSR_CartingRegister>
+<table class="table table-striped table-bordered" id="tblRegisterDtl" style="width:100%;">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("SL No")</th>
+            <th>@Html.DisplayNameFor(m => m.CartingRegisterNo)</th>
+            <th>Shipping Bill No</th>
+            <th>Register Date</th>
+            <th>@Html.DisplayNameFor(m => m.ApplicationNo)</th>
+            <th>@Html.DisplayName("CHA")</th>
+            <th class="text-center">@Html.DisplayName("Edit")</th>
+            <th class="text-center">@Html.DisplayName("View")</th>
+            <th class="text-center">@Html.DisplayName("Delete")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{ var SerialNo = 1;
+            foreach (var data in Model)
+            {
+                <tr>
+                    <td class="text-center">@SerialNo.ToString()</td>
+                    <td>@data.CartingRegisterNo</td>
+                    <td>@data.ShippingBillNo</td>
+                    <td>@data.RegisterDate</td>
+                    <td>@data.ApplicationNo</td>
+                    <td>@data.CHAName</td>
+                    <td class="text-center"><a href="#" class="edit" onclick="EditRegisterDetails(@data.CartingRegisterId)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td class="text-center"><a href="#" class="view"  onclick="ViewRegisterDetails(@data.CartingRegisterId)"><i class="fa fa-search-plus Edit"></i></a></td>
+                    <td class="text-center"><a href="#" class="delete"  onclick="DeleteRegisterDetails(@data.CartingRegisterId)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+<script>
+    var Page = 0;
+
+    $(document).ready(function () {
+
+    var r2 = JSON.parse($("#hdnRights").val());
+    if (r2.CanEdit == 1) {
+        
+    } else {        
+        $('.edit').removeAttr('onclick');
+        $('.edit').attr('onclick', 'return false');
+    }
+
+    if (r2.CanDelete == 1) {
+       
+    } else {      
+        $('.delete').removeAttr('onclick');
+        $('.delete').attr('onclick', 'return false');
+    }
+
+    if (r2.CanView == 1) {
+    }
+    else {
+        $('.view').removeAttr('onclick');
+        $('.view').attr('onclick', 'return false');
+    }
+
+
+    
+        var tblRegisterDtl = $('#tblRegisterDtl').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                       { "sName": "SL No","width": "8%" },
+                       { "sName": "CartingRegisterNo", "bSortable": false },
+                       { "sName": "ShippingBillNo", "bSortable": false },
+                       { "sName": "RegisterDate", "bSortable": false },
+                       { "sName": "ApplicationNo", "bSortable": false },
+                       { "sName": "CHA" },
+                       { "sName": "Edit", "bSortable": false, "width": "8%" },
+                       { "sName": "View", "bSortable": false, "width": "8%" },
+                       { "sName": "Delete", "bSortable": false, "width": "8%" }                       
+
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0)', nRow).addClass("text-center");
+                $('td:eq(6),td:eq(7),td:eq(8)', nRow).addClass("text-center");
+                $('td:eq(0)', nRow).css("width", "8%");
+
+               
+                $('td:eq(6)', nRow).css("width", "8%");
+                $('td:eq(7)', nRow).css("width", "8%");
+                $('td:eq(8)', nRow).css("width", "8%");
+
+            }
+        });
+        new $.fn.dataTable.FixedHeader(tblRegisterDtl);
+    });
+    function DeleteRegisterDetails(CartingRegisterId)
+    {
+        var Status=confirm("Are you sure you want to Delete?");
+        if(Status==true)
+        {
+            var Val=$('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url:'/Export/DSR_CWCExport/DeleteCartingRegister',
+                type:'POST',
+                headers:{"__RequestVerificationToken":Val},
+                data:{CartingRegisterId:CartingRegisterId},
+                dataType:'JSON',
+                success:function(data)
+                {
+                    if(data.Status==1)
+                    {
+                        alert(data.Message);
+                        LoadCartingRegPage();
+                    }
+                    else
+                        alert(data.Message);
+                },
+                
+            });
+        }
+    }
+
+    function LoadCartingRegPage(){
+        $('#DivBody').load('/Export/DSR_CWCExport/CreateCartingRegister');
+    }
+    function ViewRegisterDetails(CartingRegisterId)
+    {
+        $('#DivBody').load( '/Export/DSR_CWCExport/ViewCartingRegister?CartingRegisterId='+CartingRegisterId);
+    }
+    function EditRegisterDetails(CartingRegisterId)
+    {
+        $('#DivBody').load( '/Export/DSR_CWCExport/EditCartingRegister?CartingRegisterId='+CartingRegisterId);
+    }    
+    function LoadMoreListData() {
+        debugger; 
+        var ShippbillNo = $('#SearchShipBillNo').val();
+        if (ShippbillNo != '' && ShippbillNo != null) {
+            var URL = '/Export/DSR_CWCExport/ListLoadMoreCartingRegister?SBNo=' + ShippbillNo;
+        }
+        else {
+            var URL = '/Export/DSR_CWCExport/ListLoadMoreCartingRegister?SBNo=' + "";
+        }       
+        $.ajax({
+            url: URL,
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1, SBNo:ShippbillNo },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblRegisterDtl').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.CartingRegisterNo],
+        [item.ShippingBillNo],
+        [item.RegisterDate],
+        [item.ApplicationNo],
+        [item.CHAName],
+        ['<a href="#" onclick=EditRegisterDetails(' + [item.CartingRegisterId] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#" onclick=ViewRegisterDetails(' + [item.CartingRegisterId] + ')><i class="fa fa-search-plus View"></i></a>'],
+        ['<a href="#" onclick=DeleteRegisterDetails(' + [item.CartingRegisterId] + ')><i class="fa fa-window-close Delete"></i></a>'],
+       
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+</script>

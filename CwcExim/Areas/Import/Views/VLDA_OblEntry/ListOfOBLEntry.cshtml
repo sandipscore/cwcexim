@@ -1,0 +1,159 @@
+﻿@model IEnumerable<CwcExim.Areas.Import.Models.Wfld_OblEntry>
+<table class="table table-bordered table-striped" id="tblOblEntry" style="width:100%">
+    <thead>
+        <tr>
+            <th style="width:5%;" class="text-center">@Html.DisplayName("Sl No")</th>
+            <th style="width:10%;">Container / CBT No</th>
+            <th style="width:10%;">Container / CBT Size</th>
+            <th style="width:10%;">IGM No</th>
+            <th style="width:10%;">IGM Date</th>
+            <th style="width:10%;">OBL/HBL Date</th>
+            <th style="width:5%;" class="text-center">@Html.DisplayName("Edit")</th>
+            <th style="width:5%;" class="text-center">@Html.DisplayName("Delete")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td style="width:5%;" class="text-center">@SerialNo</td>
+                    <td style="width:10%;">@item.ContainerNo</td>
+                    <td style="width:10%;">@item.ContainerSize</td>
+                    <td style="width:10%;">@item.IGM_No</td>
+                    <td style="width:10%;">@item.IGM_Date</td>
+                    <td style="width:10%;">@item.OBLCreateDate</td>
+                    <td style="width:5%;" class="text-center"><a href="#" onclick="EditOBLEntry(@item.Id)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td style="width:5%;" class="text-center"><a href="#" onclick="DeleteOBLEntry(@item.Id,@item.IsAlreadyUsed)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+<script>
+    var Page = 0;
+    $(document).ready(function () {
+        var tblOblEntry = $('#tblOblEntry').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns": [
+                       { "sName": "SL No","width": "5%" },
+                       { "sName": "Container / CBT No","width": "10%"  },
+                       { "sName": "Container / CBT Size", "bSortable": false,"width": "10%"  },
+                       { "sName": "IGM No","width": "10%"  },
+                       { "sName": "IGM Date","width": "10%"  },
+                       { "sName": "OBL/HBL CreateDate","width": "10%" },
+                       { "sName": "Edit", "bSortable": false,"width": "5%" },
+                       { "sName": "Delete", "bSortable": false,"width": "5%" },
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0)', nRow).addClass("text-center");
+                $('td:eq(6),td:eq(7)', nRow).addClass("text-center");
+                $('td:eq(0)', nRow).css("width", "5%");
+                $('td:eq(1)', nRow).css("width", "10%");
+                $('td:eq(2)', nRow).css("width", "10%");
+                $('td:eq(3)', nRow).css("width", "10%");
+                $('td:eq(4)', nRow).css("width", "10%");
+                $('td:eq(5)', nRow).css("width", "10%");
+                $('td:eq(6)', nRow).css("width", "5%");
+                $('td:eq(7)', nRow).css("width", "5%");
+            }
+        });
+        new $.fn.dataTable.FixedHeader(tblOblEntry);
+    });
+    function EditOBLEntry(OBLEntryId)
+    {
+        $('#DivBody').load( '/Import/VLDA_OblEntry/OBLEntry?OBLEntryId=' + OBLEntryId);
+    }
+    function ViewJobOrder(OBLEntryId) 
+    {
+        $('#DivBody').load( '/Export/CWCExport/ViewJobOrder?JobOrderId=' + OBLEntryId);
+    }
+    function DeleteOBLEntry(OBLEntryId,IsAlreadyUsed)
+    {
+        //if(IsAlreadyUsed==1){
+        //    alert("Cannot Delete OBL Entry As It Already Exists In Another Page.");
+        //    return false;
+        //}
+        var Confirm = confirm("Are you sure you want to delete?");
+        if(Confirm==true)
+        {
+            var Token=$('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Import/VLDA_OblEntry/DeleteOBLEntry',
+                type: 'POST',
+                dataType: 'JSON',
+                data: { OBLEntryId: OBLEntryId },
+                headers:{"__RequestVerificationToken":Token},
+                success: function (data) {
+                    if(data.Status==1)
+                    {
+                        alert("Data deleted successfully.");
+                        LoadOblEntryList();
+                        ResetAllField();
+                    }
+                    else
+                    {
+                        alert(data.Message);
+                    }
+                }
+            });
+        }
+    }
+    function PrintJODet(JobOrderId)
+    {
+        var Token=$('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/Export/CWCExport/PrintJO',
+            type:'POST',
+            data:{JobOrderId:JobOrderId},
+            headers:{"__RequestVerificationToken":Token},
+            dataType:'JSON',
+            success:function(data)
+            {
+                if(data.Status==1)
+                    window.open(data.Message+"?_t="+(new Date().getTime()),"_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+    }
+    function LoadMoreListData() {
+        debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Import/VLDA_OblEntry/LoadListMoreData',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblOblEntry').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.ContainerNo],
+        [item.ContainerSize],
+        [item.IGM_No],
+        [item.IGM_Date],
+        [item.OBLCreateDate],
+        ['<a href="#" onclick=EditOBLEntry(' + [item.Id] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#" onclick=DeleteOBLEntry(' + [item.Id] + ')><i class="fa fa-window-close-o Delete"></i></a>'],
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+</script>
+

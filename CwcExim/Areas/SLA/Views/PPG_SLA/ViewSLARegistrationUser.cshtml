@@ -1,0 +1,285 @@
+﻿@model CwcExim.Areas.SLA.Models.PPGSLARegistrationList
+<script>
+    function LoadRegistrationListPage() {
+        $('#DivBody').load('/SLA/PPG_SLA/GetRegistrationListUser');
+    }
+
+    function DownloadFile() {
+        var fileName = $('#FileName').val();
+        $.ajax({
+            type: "POST",
+            url: "/SLA/PPG_SLA/DownloadFile",
+            data: '{fileName: "' + fileName + '"}',
+            contentType: "application/json; charset=utf-8",
+            dataType: "text",
+            success: function (r) {
+                //Convert Base64 string to Byte Array.
+                var bytes = Base64ToBytes(r);
+
+                //Convert Byte Array to BLOB.
+                var blob = new Blob([bytes], { type: "application/octetstream" });
+
+                //Check the Browser type and download the File.
+                var isIE = false || !!document.documentMode;
+                if (isIE) {
+                    window.navigator.msSaveBlob(blob, fileName);
+                } else {
+                    var url = window.URL || window.webkitURL;
+                    link = url.createObjectURL(blob);
+                    var a = $("<a />");
+                    a.attr("download", fileName);
+                    a.attr("href", link);
+                    $("body").append(a);
+                    a[0].click();
+                    $("body").remove(a);
+                }
+            }
+        });
+    };
+    function Base64ToBytes(base64) {
+        var s = window.atob(base64);
+        var bytes = new Uint8Array(s.length);
+        for (var i = 0; i < s.length; i++) {
+            bytes[i] = s.charCodeAt(i);
+        }
+        return bytes;
+    };
+</script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.Confirm = "Are you sure you want to save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "RegistrationOnSuccess";
+    options.OnFailure = "RegistrationOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("AddEditSLARegistration", "PPG_SLA", options))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-12">
+                            <h4>User Section</h4>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group Form_Input clearfix">
+                            <div class="col-md-1-5 padding_rt">
+                                <label>Ticket No:</label>
+                            </div>
+                            <div class="col-md-4">
+                                @Html.HiddenFor(m => m.TicketId)
+                                @Html.TextBoxFor(m => m.TicketNo, new { @class = "form-control input_sm", @readonly = true })
+                                @*@Html.TextBox("TicketNo", "", new { @readonly = true })*@
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-2 padding_rt col_cus_2">
+                                <label>Raised On:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_1_5">
+                                @Html.TextBoxFor(m => m.RaisedOn, new { @class = "form-control input_sm", @readonly = true })
+                                @*@Html.TextBox("RaisedOn", "", new { @readonly = true, Value = DateTime.Now.ToString("dd/MM/yyyy HH:mm") })*@
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group Form_Input clearfix">
+                            <div class="col-md-1-5 padding_rt">
+                                <label>Raised By:</label>
+                            </div>
+                            <div class="col-md-4">
+                                @Html.TextBoxFor(m => m.RaisedBy, new { @class = "form-control input_sm", @readonly = true })
+                                @*@Html.TextBox("RaisedBY", (object)ViewBag.UserName, new { @readonly = true })*@
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group Form_Input clearfix">
+                            <div class="col-md-1-5 padding_rt">
+                                <label>Issue Description:</label>
+                            </div>
+                            <div class="col-md-10">
+                                @Html.TextAreaFor(m => m.IssueDescription, new { @class = "form-control input_sm", @readonly = true })
+                                @*@Html.TextArea("IssueDescription", "", new { @rows = "5" })*@
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group Form_Input clearfix">
+                            <div class="col-md-1-5 padding_rt">
+                                <label>Upload Document:</label>
+                            </div>
+                            <div class="col-md-8">
+                                @Html.TextBoxFor(m => m.FileName, new { @class = "form-control input_sm", @readonly = true })
+                                @*<input type="file" id="FileUpload1" />*@
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" id="BtnDownLoad" value="DownLoad" class="btn log_Btn_sm" onclick="DownloadFile()" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 padding_rt">
+                                <label>Issue Type:</label>
+                            </div>
+                            <div class="col-md-1 padding_rt">
+                                <div class="boolean-container">
+                                    @Html.RadioButton("IssueType", "Issue", new { @class = "", @id = "Issue" })
+                                    <label for="Issue"><i class="circle"></i><span>Issue</span></label>
+                                </div>
+                            </div>
+                            <div class="col-md-1 padding_rt">
+                                <div class="boolean-container">
+                                    @Html.RadioButton("IssueType", "NewRequirement", new { @class = "", @id = "NewRequirement" })
+                                    <label for="NewRequirement"><i class="circle"></i><span>New Requirement</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="Head_h4" style="border:0; margin-top: 1rem;">
+                        <div class="Head_h5">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h5>Resolution Level</h5>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-12 padding_rt">
+                                        <div class="boolean-container">
+                                            @Html.RadioButton("ResolutionLevel", "R1", new { @class = "", @id = "R1" })
+                                            <label for="R1">
+                                                <i class="circle"></i>
+                                                <span><span style="font-weight: bold; font-size:14px;">R1 -</span> Queries regarding issues which has the greatestbusiness impact wherein the user is not able to perform his / her regular work.</span><br />
+                                                <span style="margin-left: 2rem;">(MTR - 24 Hours)</span><br />
+                                                <span style="margin-left: 2rem;">(For Example - Non availability of application.)</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12 padding_rt">
+                                        <div class="boolean-container">
+                                            @Html.RadioButton("ResolutionLevel", "R2", new { @class = "", @id = "R2" })
+                                            <label for="R2">
+                                                <i class="circle"></i>
+                                                <span><span style="font-weight: bold; font-size:14px;">R2 -</span> Queries regarding issues which have medium business impact wherein the user is partially able to perform his / her regular work.</span><br />
+                                                <span style="margin-left: 2rem;">(MTR - 72 Hours)</span><br />
+                                                <span style="margin-left: 2rem;">(For Example - System is not able to perform any particular activity.)</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12 padding_rt">
+                                        <div class="boolean-container">
+                                            @Html.RadioButton("ResolutionLevel", "R3", new { @class = "", @id = "R3" })
+                                            <label for="R3">
+                                                <i class="circle"></i>
+                                                <span><span style="font-weight: bold; font-size:14px;">R3 -</span> Queries regarding issues which have the least / no business impact involving cosmetic changes.</span><br />
+                                                <span style="margin-left: 2rem;">(MTR - 120 Hours)</span><br />
+                                                <span style="margin-left: 2rem;">(For Example - Cosmetic changes.)</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="Head_h4" style="border:0; margin-top: 1rem;">
+                        <div class="Head_h5">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h5>Resolution Section</h5>
+                                </div>
+                            </div>
+
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input clearfix">
+                                    <div class="col-md-1-5 padding_rt">
+                                        <label>Resolve Date:</label>
+                                    </div>
+                                    <div class="col-md-4">
+                                        @Html.TextBoxFor(m => m.ResolveDate, new { @class = "form-control input_sm", @readonly = true })
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-2 padding_rt col_cus_2">
+                                        <label>Resolved By:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_1_5">
+                                        @Html.TextBoxFor(m => m.ResolvedBy, new { @class = "form-control input_sm", @readonly = true })
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="form-group Form_Input clearfix">
+                                    <div class="col-md-1-5 padding_rt">
+                                        <label>Issue Status:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        <span class="ReQSimbol">*</span>
+                                        @Html.DropDownList("IssueStatus", new List<SelectListItem>
+                                        {
+                                            new SelectListItem { Text="Resolved / Closed",Value="Resolved"},
+                                            new SelectListItem { Text="Return",Value="Return"},
+                                            new SelectListItem { Text="On Hold",Value="OnHold"},
+                                            new SelectListItem { Text="New Requirement",Value="New"},
+
+                                        }, "----Select----", new { @class = "form-control input-sm dropdown", @disabled = true })
+                                        @Html.ValidationMessage("Size", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="form-group Form_Input clearfix">
+                                    <div class="col-md-1-5 padding_rt">
+                                        <label>Remarks:</label>
+                                    </div>
+                                    <div class="col-md-10">
+                                        @Html.TextAreaFor(m => m.Remarks, new { @class = "form-control input_sm", @readonly = true })
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                    </div>
+                            <div class="row SignUp_space_bottom">
+
+                                <div class="col-md-2">
+                                    <input type="button" id="BtnRegistrationReset" value="Back" class="btn log_Btn_sm" onclick="LoadRegistrationListPage()" />
+                                </div>
+                            </div>
+                            <div class="logSuccMsg Form_Space_top SignUp_space_bottom2" style="background-color:transparent">
+                                <div id="DivRegistrationMsg"></div>
+                            </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@Scripts.Render("~/bundles/jqueryval")
+
+
+
+
+
+
+
+
+
+
+

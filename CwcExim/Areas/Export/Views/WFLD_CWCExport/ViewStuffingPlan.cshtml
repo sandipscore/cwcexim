@@ -1,0 +1,615 @@
+﻿
+@model CwcExim.Areas.Export.Models.WFLD_StuffingPlan
+<style>
+    #tbleCommodity.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .slimScrollDiv {
+        height: 300px;
+    }
+
+    .table.tblhd {
+        border-bottom: 0;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>Stuffing Plan</h4>
+                    </div>
+                    @*<input type="hidden" id="hdnPaymentMode" value="@ViewBag.PaymentMode" />*@
+                </div>
+                @using (Ajax.BeginForm("AddEditStuffingPlan", "WFLD_CWCExport", new AjaxOptions
+                {
+
+                    HttpMethod = "POST",
+                    OnSuccess = "OnSuccess",
+                    OnFailure = "OnFailure"
+                }, new { id = "frmStuffingPlan" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    @Html.Hidden("hdnSearchValue")
+                    @*@Html.HiddenFor(m => m.InvoiceId)
+                        @Html.HiddenFor(m => m.PartySDBalance)
+                        @Html.HiddenFor(m => m.IsInGateEntry)
+                        @Html.HiddenFor(m => m.OTEHr)*@
+                    @Html.Hidden("ShortCargoDtlId")
+                    @Html.Hidden("CartingDetailsId")
+                    @Html.Hidden("CommodityName")
+                    @Html.Hidden("StuffingPlanDtl")
+                    @Html.Hidden("isSubmit", 0)
+                    if (ViewBag.check != null)
+                    {
+                        <input type="hidden" id="hdnShippingLineList" value="@ViewBag.check" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="hdnShippingLineList" value="" />
+                    }
+                    if (ViewBag.ListOfSBNo != null)
+                    {
+                        <input type="hidden" id="hdnShippingBillList" value="@ViewBag.ListOfSBNo" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="hdnShippingBillList" value="" />
+                    }
+
+                    if (ViewBag.ListOfPort != null)
+                    {
+                        <input type="hidden" id="hdnPortName" value="@ViewBag.PortName" />
+                        <input type="hidden" id="hdnPortId" value="@ViewBag.PortId" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="hdnPortName" value="" />
+                        <input type="hidden" id="hdnPortId" value="" />
+                        <input type="hidden" id="hdnListOfPort" value="" />
+                    }
+
+                    <div id="DivJOHdr" class="Form_Space_bottom">
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Stuffing Plan No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.HiddenFor(m => m.StuffingPlanId)
+                                    @Html.TextBoxFor(m => m.StuffingPlanNo, new { @class = "form-control input_sm", @readonly = true, tabindex = 1 })
+
+
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                    <label> Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.StuffingPlanDate, new { @class = "form-control input_sm", @readonly = true, tabindex = 2 })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>SB No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+
+                                    @Html.TextBoxFor(m => m.SBNo, new { @class = "form-control input_sm", tabindex = 3, autofocus = "", @onkeydown = "PopupActivate('myModal');" })
+                                    @Html.ValidationMessageFor(m => m.SBNo, "", new { @class = "Error_Msg" })
+                                    @*<span class="search" id="ShippingBillLineSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#myModal"></i></span>*@
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table id="TblStuffingReqTotal" class="table table-striped table-bordered dataTable nowrap" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center" style="width:5%;">Sl No</th>
+                                        <th class="text-center">ShippingBill No</th>
+                                        <th class="text-center">Exporter</th>
+                                        <th class="text-center">Package</th>
+                                        <th class="text-center">Weight</th>
+                                        <th class="text-center">FOB</th>
+                                        <th class="text-center">CBM</th>
+                                        <th class="text-center">Location</th>
+                                       
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyStuffing"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                                    <div class="row">
+                                        <div class="logErrMsg" id="DivTblStuffingErrMsg" style="background-color:transparent"></div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <table id="TblStuffingPlanTotal" class="table table-striped table-bordered dataTable nowrap" style="width:100%">
+                                                <thead>
+                                                    <tr>
+                                                        <th class="text-center" style="width:5%;">Sl No</th>
+                                                        <th class="text-center">Package</th>
+                                                        <th class="text-center">Weight</th>
+                                                        <th class="text-center">FOB</th>
+                                                        <th class="text-center">CBM</th>
+
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tbodyTotalStuffing"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                                    </div>
+                                    <div class="row SignUp_space_top2">
+                                        <div class="col-md-offset-3 col-md-2">
+                                            <input type="button" id="btnReset" class="btn log_Btn_sm" value="Back" onclick="ResetAllField()" tabindex=27 />
+                                        </div>
+                                        <div class="col-md-2">
+                                            @*<input type="button" id="btnSubmit" class="btn log_Btn_sm" disabled value="Submit" onclick="SubmitStuffingPlan()" tabindex=26 />*@
+                                        </div>
+                                        <div class="col-md-2">
+                                          
+                                        </div>
+                                        @*<div class="col-md-2">
+                                                <input type="button" id="btnPrint" class="btn log_Btn_sm" value="Print" onclick="PrintInvoice()" disabled style="display:none;" tabindex  = 24 />
+                                            </div>*@
+
+                                    </div>
+                                    <div class="logSuccMsg Form_Space_top" id="DivSucMsg" style="background-color:transparent"></div>
+                                    <div class="logErrMsg Form_Space_bottom" id="DivErrMsg" style="background-color:transparent"></div>
+                }
+                <div class="row">
+                    <div class="col-md-2">
+                        <input type="button" id="BtnCCINEntryLoad" value="Show List" class="btn log_Btn_sm" onclick="StuffingPlanList()" tabindex=26 />
+                    </div>
+                    <div class="col-md-2 col-md-offset-4">
+                        @*<input type="text" placeholder="Search by Ship bill No." id="SearchSBNo" maxlength="50" />*@
+                    </div>
+                    <div class="col-md-2">
+                        @*<input type="text" placeholder="Search by No." id="SearchCCINNo" maxlength="50" />*@
+                    </div>
+                    <div class="col-md-2">
+                        @*<input type="button" value="Search" onclick="SearchSBNo()" class="btn log_Btn_sm" />*@
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="tblEntryDet"></div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="StuffingPlanList"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade mTabindex" id="PackUQCModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="ClosePackUQC()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List Of Pack UQC</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Pack UQC Name Or Pack UQC Code " id="PackUQCbox" type="text" tabindex="200" autofocus />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchPackUQCByCode()"></i></span>
+
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Pack UQC Description</th>
+                            <th colspan="4" width="20%">Pack UQC Code</th>
+                        </tr>
+                    </thead>
+                </table>
+
+                <div id="slim_scroll_3">
+                    <table tabindex="201" class="table dataTable table-bordered table-striped slim_tble" id="tblePackUQC">
+                        @{
+                            if (ViewBag.lstPackUQC != null)
+                            {
+                                var tabvalue = 202;
+                                foreach (var item in ViewBag.lstPackUQC)
+                                {
+                                    <tr tabindex="@tabvalue" onclick="SelectPackUQC(@item.PackUQCId,'@item.PackUQCDescription','@item.PackUQCCode')" onkeypress="SelectPackUQC(@item.PackUQCId,'@item.PackUQCDescription','@item.PackUQCCode')">
+                                        <td colspan="8" width="80%" class="txt_wrp">@item.PackUQCDescription</td>
+                                        <td colspan="4" width="20%" class="txt_wrp">@item.PackUQCCode</td>
+                                    </tr>
+                                    tabvalue++;
+                                }
+                            }
+                        }
+
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.PackUQCState != null && Convert.ToBoolean(ViewBag.PackUQCState) == true)
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMorePackUQC()" class="btn log_Btn_sm" id="btnLoadPackUQC">Load More Data</button>
+                        }
+                        else
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMorePackUQC()" class="btn log_Btn_sm" id="btnLoadPackUQC" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="ClosePackUQC()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+<div class="modal fade mTabindex" id="myModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="myModalClose()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Carting No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="box" type="text" tabindex="401" />
+                <ul class="navList" id="CartingRegList">
+                    @*@{
+                            if (ViewBag.CartingRegNoList != null)
+                            {
+                                var tabvalue = 401;
+                                var u = '_';
+                                var i = 0;
+                                foreach (var item in ViewBag.CartingRegNoList)
+                                {
+                                    <li tabindex="@tabvalue@u@i" onkeypress="CartingRegListClick(@item.Value,'@item.Text')" onclick="CartingRegListClick(@item.Value,'@item.Text')" id="@item.Value">@item.Text</li>
+                                    i++;
+                                }
+                            }
+                        }*@
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="myModalClose()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+<div class="modal fade mTabindex" id="SBNoModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="SBNoModalClose()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Shipbill</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Shipbill" id="SBNobox" type="text" tabindex="401" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchShipbill()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="10" width="100%">ShippingbillNo</th>
+
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll_sb">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tbleParty">
+                        <tbody>
+                            @{
+                                if (ViewBag.ListOfSBNo != null)
+                                {
+                                    var tabvalue = 401;
+                                    var tab = 0;
+                                    var u = "_";
+                                    foreach (var item in ViewBag.ListOfSBNo)
+                                    {
+                                        <tr tabindex="@tabvalue@u@tab" onkeypress="selectSBNo('@item.SBId')" onclick="selectSBNo('@item.SBId')">
+                                            <td colspan="10" width="100%" class="txt_wrp">@item.SBNo</td>
+
+                                        </tr>
+                                        tab++;
+                                    }
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.StateShipbill != null && Convert.ToBoolean(ViewBag.StateShipbill) == true)
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreSb()" class="btn log_Btn_sm" id="btnLoadMorePayee">Load More Data</button>
+                        }
+                        else
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreSb()" class="btn log_Btn_sm" id="btnLoadMorePayee" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseShipbill()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    var mainarray = [];
+    $(document).ready(function () {
+        $('#StuffingPlanDate').datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $('[data-valmsg-for="StuffingPlanDate"]').html('');
+            },
+            onSelect: function () {
+                $('#SBNo').focus();
+            }
+        });
+        $("#StuffingPlanDate").datepicker("setDate", new Date());
+        $('#slim_scroll_sb').slimScroll({
+            allowPageScroll: true
+        });
+        debugger;
+        mainarray=@Html.Raw(Json.Encode(Model.lstStuffingPlan));
+        GenerateTable();
+
+    });
+
+    function SBNoModalClose() {
+        $("#SBNoModal").modal("hide");
+        $('#SBNobox').val('');
+        $('#SBNo').focus();
+    }
+
+    $('#ShippingBillLineSerach').on("click", function () {
+        debugger;
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/GetCartingNoForStuffingPlan',
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                    var EcJson = JSON.parse(data);
+                    var html = '';
+                    var tab = 401;
+
+                    debugger;
+                    $.each(EcJson, function (i, item) {
+                        debugger;
+                        // html += '<li tabindex=' + tab + '_' + i + ' onkeypress="CartingRegListClick(' + item.CartingRegisterId + ',&quot;' + item.CartingRegisterNo + '-' + item.ShippingBillNo + '&quot;)" onclick="CartingRegListClick(' + item.CartingRegisterId + ',&quot;' + item.CartingRegisterNo + '-' + item.ShippingBillNo + '&quot;)" id=' + item.CartingRegisterId + '>' + item.CartingRegisterNo + '-' + item.ShippingBillNo + '</li>';
+                        html += '<li tabindex=' + tab + ' id="' + item.ShortCargoDtlId + '" onkeypress="CartingRegListClick(' + item.ShortCargoDtlId + ',&quot;' + item.CartingRegisterNo + '&quot;);" onclick="CartingRegListClick(' + item.ShortCargoDtlId + ',&quot;' + item.CartingRegisterNo + '&quot;);">' + item.CartingRegisterNo + '</li>';
+
+
+                    });
+                    $('#CartingRegList').html(html);
+
+                    //}
+                }
+            }
+
+        });
+    });
+    function myModalClose() {
+        $('#myModal').modal("hide");
+        $('#box').val('');
+        $('#myModal .navList > li').show();
+        $('#modalpadId').focus();
+    }
+
+    function CartingRegListClick(id, Name) {
+        debugger;
+      //  $('#CartingRegisterNo').val(Name.split('-')[0]);
+        $('#ShortCargoDtlId').val(id);
+        var ShortCargoDtlId = $('#ShortCargoDtlId').val();
+        $("#myModal").modal("hide");
+        $("#PackUQCModal").modal("hide");
+        // removed  $('#DivTblStuffingErrMsg').html('');
+        GetStuffingDetails(ShortCargoDtlId);
+        $('#modalpadId').focus();
+    }
+
+
+    function GetStuffingDetails(ShortCargoId) {
+        debugger;
+        CheckDet = [];
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/GetCartRegDetForStuffingReq',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { ShortCargoDtlId: ShortCargoId },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+
+                    $('#CartingDetailsId').val(data.Data.ContainerDetails[0].CartRegDtlId);
+                    $('#CommodityName').val(data.Data.ContainerDetails[0].CommodityName);
+                    mainarray.push(data.Data.LstStuffing[0]);
+                    GenerateTable();
+                    $('#DivTblStuffingErrMsg').html('');
+                }
+            }
+        });
+    }
+
+
+
+    function GenerateTable()
+    {
+        var varHtml='';
+        $.each(mainarray, function (key,val) {
+            varHtml += '<tr><td>' + (key + 1) + '</td><td>' + val.ShippingBillNo + '</td><td>' + val.Exporter + '</td><td>' + val.NoOfUnits + '</td><td>' + val.GrossWeight + '</td><td>' + val.Fob + '</td><td>' + val.TotalCBM + '</td><td>' + val.GodownName + '</td></tr>';
+        });
+
+        $('#tbodyStuffing').html(varHtml);
+
+        var totalPkg = 0;
+        var totalWeight = 0;
+        var totalFob = 0;
+        var totalCBM = 0;
+        $.each(mainarray, function (key, val) {
+            totalPkg = totalPkg + val.NoOfUnits;
+            totalWeight = totalWeight + val.GrossWeight;
+            totalFob = totalFob + val.Fob;
+            totalCBM = totalCBM + val.TotalCBM;
+        });
+
+        var totalHtml = '';
+        totalHtml += '<tr><td>1</td><td>' + totalPkg + '</td><td>' + totalWeight + '</td><td>' + totalFob + '</td><td>' + totalCBM + '</td></tr>';
+        $('#tbodyTotalStuffing').html(totalHtml);
+
+    }
+
+    function DeleteStuff(i)
+    {
+        mainarray.splice(i, 1);
+        GenerateTable();
+    }
+
+    function ResetAllField ()
+    {
+        $('#DivBody').load('/Export/WFLD_CWCExport/StuffingPlan');
+    }
+    function OnSuccess(data) {
+        debugger;
+        if (data.Status == 1 || data.Status == 2) {
+            $('#DivSucMsg').html(data.Message);
+            $('#isSubmit').val(1);
+            //setTimeout(ResetAllField, 3000);
+            //    $('#InvoiceNo').val(data.Data.split('#')[1]);
+            $('#DivErrMsg').html('');
+            $('#btnSubmit').attr('disabled', false);
+            //$('#btnPrint').removeAttr('disabled');
+            $('#btnSave').prop("disabled", true);
+            $('#StuffingPlanId').val(data.Data);
+
+            //    $('#btnSave').attr('disabled', true);
+            //  $('#btnPrint').attr('disabled', false);
+            //setTimeout(ResetAllField, 3000);
+            // LoadCCINEntryList();
+        }
+        else {
+            $('#btnSave').prop("disabled", false);
+            $('#DivErrMsg').html(data.Message);
+        }
+        setTimeout(function () { $('#DivErrMsg,#DivSucMsg').html(''); }, 3000);
+    }
+    function OnFailure()
+    {
+
+    }
+
+    $('#btnSave').on("click", function () {
+        debugger;
+        if (mainarray.length > 0)
+        {
+            $('#StuffingPlanDtl').val(JSON.stringify(mainarray));
+            $('#frmStuffingPlan').submit();
+            $('#btnSave').prop("disabled", true);
+            return true;
+
+        }
+        else
+        {
+            $('#DivTblStuffingErrMsg').html('Please Add Atleast One Record In Order To Save Stuffing Plan Detail');
+            return false;
+        }
+
+    });
+
+    function StuffingPlanList()
+    {
+        $('#StuffingPlanList').load('/Export/WFLD_CWCExport/StuffingPlanList');
+    }
+
+    function SubmitStuffingPlan()
+    {
+        var StuffinfgPlanId = $('#StuffingPlanId').val();
+        var Confirm = confirm("Are You Sure You Want To Submit?");
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        if (Confirm == true) {
+            $.ajax({
+                url: '/Export/WFLD_CWCExport/AddEditStuffingPlanSubmit',
+                type: 'POST',
+                headers: { '__RequestVerificationToken': Token },
+                data: { StuffingPlanId: StuffinfgPlanId },
+                dataType: 'JSON',
+                async: false,
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        $('#DivSucMsg').html(data.Message);
+                        $('#btnSubmit').attr('disabled', true);
+
+                    }
+                    else {
+                        alert(data.Message);
+                    }
+                }
+            });
+        }
+    }
+</script>

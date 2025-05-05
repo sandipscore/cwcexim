@@ -1,0 +1,130 @@
+﻿@model CwcExim.Areas.Report.Models.PartyWiseUnpaid
+@using (Ajax.BeginForm("PartyWiseUnpaidAmout", "DSR_ReportCWC", new AjaxOptions { HttpMethod = "POST", OnSuccess = "UnpaidSuccess", OnFailure = "UnpaidFailure" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Payer Unpaid Bill Status</h4>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>Payer Name:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_1_5 ">
+                                    @Html.TextBoxFor(m=>m.PartyName,new { @readonly=true})
+                                    <span class="search" id="PartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>
+                                    @Html.HiddenFor(m=>m.PartyId)
+                                    @Html.ValidationMessageFor(m=>m.PartyName)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>As On Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m=>m.AsOnDate,new { @readonly=true})
+                                    @Html.ValidationMessageFor(m => m.AsOnDate)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logErrMsg" id="DivMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div id="PartyModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Payer Name</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Partybox" type="text" />
+                <ul class="navList" id="lstParty">
+                    @{
+                        if (ViewBag.GetPaymentParty != null)
+                        {
+                            foreach (var item in ViewBag.GetPaymentParty)
+                            {
+                                <li onclick="selectParty(@item.PartyId)" id="@item.PartyId">@item.PartyName</li>
+                            }
+                        }
+
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $(function () {
+        $("#AsOnDate").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });  
+    });
+    $('#Partybox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstParty > li').show();
+        else {
+            $('#lstParty > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    function selectParty(id) {
+        $('#PartyId').val(id);
+        $('#PartyName').val($('#lstParty #'+id).text());
+        $("#PartyModal").modal("hide");
+    }
+    function UnpaidSuccess(data)
+    {
+        if (data.Status == 1) {
+            window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+            $('#DivMsg').html('');
+        }
+        else
+            $('#DivMsg').html(data.Message);
+    }
+    function UnpaidFailure() { }
+</script>

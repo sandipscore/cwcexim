@@ -1,0 +1,144 @@
+﻿@model IEnumerable<CwcExim.Areas.Export.Models.ListLoadContReq>
+<table class="table table-bordered table-striped" id="tblContReq" style="width:100%">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("SL No")</th>
+            <th>@Html.DisplayName("Container / CBT Request No")</th>
+            <th>@Html.DisplayName("Container / CBT Request Date ")</th>
+            <th>@Html.DisplayName("CHA")</th>
+            <th class="text-center">@Html.DisplayName("Edit")</th>
+            <th class="text-center">@Html.DisplayName("View")</th>
+            <th class="text-center">@Html.DisplayName("Delete")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center">@SerialNo</td>
+                    <td>@item.LoadContReqNo</td>
+                    <td>@item.LoadContReqDate</td>
+                    <td>@item.CHAName</td>
+                    <td class="text-center"><a class="edit" href="#" onclick="EditContReq(@item.LoadContReqId)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td class="text-center"><a class="view" href="#" onclick="ViewContReq(@item.LoadContReqId)"><i class="fa fa-search-plus View"></i></a></td>
+                    <td class="text-center"><a class="delete" href="#" onclick="DelContReq(@item.LoadContReqId)"><i class="fa fa-window-close Delete"></i></a></td>
+                </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+<script>
+    var Page = 0;
+    $(document).ready(function () {
+        debugger;
+        var r2 = JSON.parse($("#hdnRights").val());
+        if (r2.lstMenu[0].CanEdit == 1) {
+
+        } else {
+            $('.edit').removeAttr('onclick');
+            $('.edit').attr('onclick', 'return false');
+        }
+
+        if (r2.lstMenu[0].CanDelete == 1) {
+
+        } else {
+            $('.delete').removeAttr('onclick');
+            $('.delete').attr('onclick', 'return false');
+        }
+
+        if (r2.lstMenu[0].CanView == 1) {
+        }
+        else {
+            $('.view').removeAttr('onclick');
+            $('.view').attr('onclick', 'return false');
+        }
+
+
+
+
+        var tblContReq = $('#tblContReq').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns": [
+                       { "sName": "SL No","width": "8%" },
+                       { "sName": "LoadContReqNo", "bSortable": false },
+                       { "sName": "LoadContReqDate", "bSortable": false },
+                       { "sName": "CHAName" },
+                       { "sName": "Edit", "bSortable": false, "width": "10%" },
+                       { "sName": "View", "bSortable": false, "width": "10%" },
+                       { "sName": "Delete", "bSortable": false, "width": "10%" },
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(tblContReq);
+    });
+    function EditContReq(LoadContReqId)
+    {
+        $('#DivBody').load('/Export/Chn_CWCExport/EditLoadContainerRequest?LoadContReqId=' + LoadContReqId);
+    }
+    function ViewContReq(LoadContReqId)
+    {
+        $('#DivBody').load('/Export/Chn_CWCExport/ViewLoadContainerRequest?LoadContReqId=' + LoadContReqId);
+    }
+
+    function DelContReq(LoadContReqId) {
+        var Confirm = confirm("Are you sure you want to Delete?");
+        if (Confirm == true) {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("DeleteLoadContReq", "Chn_CWCExport", new { areas="Export"}) ',
+                type: 'POST',
+                data: { LoadContReqId: LoadContReqId },
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                success: function (data) {
+                    alert(data.Message);
+                    if (data.Status == 1)
+                        $('#DivLoadContList').load('/Export/Chn_CWCExport/ListLoadContainerRequest');
+                }
+            });
+        }
+    }
+
+    function LoadMoreListData() {
+        debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Export/Chn_CWCExport/LoadMoreContainerRequestList',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblContReq').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.LoadContReqNo],
+        [item.LoadContReqDate],
+        [item.CHAName],
+        //[item.PortInDate],
+        ['<a href="#" onclick=EditContReq(' + [item.LoadContReqId] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#" onclick=ViewContReq(' + [item.LoadContReqId] + ')><i class="fa fa-search-plus Edit"></i></a>'],
+        ['<a href="#" onclick=DelContReq(' + [item.LoadContReqId] + ')><i class="fa fa-window-close-o Delete"></i></a>'],
+       // ['<a href="#" onclick=PrintCCINEntry(' + [item.Id] + ')><i class="fa fa-file-pdf-o Edit"></i></a>'],
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+
+  
+</script>
+

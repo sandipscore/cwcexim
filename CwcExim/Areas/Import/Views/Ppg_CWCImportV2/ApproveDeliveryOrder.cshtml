@@ -1,0 +1,289 @@
+﻿@model CwcExim.Areas.Import.Models.Ppg_ApproveDeliveryOrder
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "CstmAppraiseOnSuccess";
+    options.OnFailure = "CstmAppraiseOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+              @using (Ajax.BeginForm("VarifyOTPDeliveryApproved", "Ppg_CWCImportV2", options))
+              {
+
+                    @Html.AntiForgeryToken()
+                    <div id="DivAddCustomAppraisement">
+                    
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Approve Delivery Order</h4>
+                            </div>
+                        </div>
+                       
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>OBL No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.HiddenFor(m => m.DestuffingId)
+                                    @Html.TextBoxFor(m => m.OBLNo, new { @class = "form-control input-sm", @readonly = true })
+                                    <span class="search" id="OBLSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#myModal"></i></span>
+                                </div>
+                                <div class="col-md-2 col-md-offset-3-5 col_cus_offset_2_5 col_cus_2_5">
+                                    <label>Approve Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    <input type="hidden" id="AppraisementDateCheck" />
+                                    @Html.TextBoxFor(m => m.ApproveDate, new { @class = "form-control input-sm", @readonly = true, @onkeyup = "checks()", @onblur = "checkdates()", @tabindex = 1 })
+                                    @Html.ValidationMessageFor(m => m.ApproveDate, "", new { @class = "Error_Msg" })
+                                    <span style="color:red" id="ErrAppDate"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>OBL Date:</label>
+                                </div>
+                                <div class="col-md-2-5">                                   
+                                    @Html.TextBoxFor(m => m.OBLDate, new { @class = "form-control input-sm", @readonly = true , @tabindex = 2 })                                   
+                                </div>
+                                <div class="col-md-2 col-md-offset-3-5 col_cus_offset_2_5 col_cus_2_5">
+                                    <label>Container No:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">                                    
+                                    @Html.TextBoxFor(m => m.ContainerNo, new { @class = "form-control input-sm", @readonly = true, @tabindex = 3 })                                    
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top hidden" id="divGenerateOTP">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2 col_cus_2">
+                                    <label>Enter Verification Code::</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                   
+                                    @Html.TextBoxFor(m => m.MobileGenerateCode, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.MobileGenerateCode, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="submit" class="btn log_Btn_sm" value="Verify" id="BtnSaveCustomAppraisement" tabindex="34" />
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="button" class="btn log_Btn_sm" value="Re-Generate Code" id="BtnSaveCustomAppraisement" onclick="GenerateCode()" tabindex="34" />
+                                </div>
+                            </div>
+                        </div>
+                       
+                    </div>
+
+
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-offset-2-5 col-md-2 SignUp_space_bottom">
+                            <input type="button" class="btn log_Btn_sm" value="Yes" id="BtnSaveCustomAppraisement" onclick="GenerateCode()" tabindex="34" />
+                        </div>
+                        <div class="col-md-2 SignUp_space_bottom">
+                            <input type="button" class="btn log_Btn_sm" value="No" id="BtnSaveCustomAppraisement" tabindex="34" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Reset" onclick="ResetAllFields()" tabindex="35" />
+                        </div>
+                    </div>
+                <div class="logSuccMsg Form_Space_top" id="DivSucMsg" style="background-color:transparent"></div>
+                <div class="logErrMsg Form_Space_bottom" id="DivErrMsg" style="background-color:transparent"></div>
+              }
+
+                @Scripts.Render("~/bundles/jqueryval")
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="DivCustomAppraisementList"></div>
+                    </div>
+                </div>
+
+                <div class="modal fade mTabindex" id="myModal" role="dialog">
+                    <div class="modal-dialog">
+                        <!-- Modal content-->
+                        <div class="modal-content popup_modal">
+                            <div class="modal-header popup_header">
+                                <button type="button" class="close" onclick="myModalClose()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                                <h4 class="modal-title">List of OBL No</h4>
+                            </div>
+                            <div class="modal-body popup_body">
+                                <input placeholder="Search Me" id="box" type="text" tabindex="401" />
+                                <ul class="navList" id="OBLList">
+                                   
+                                </ul>
+                            </div>
+                            <div class="modal-footer">
+                                <div class="row">
+                                    <div class="col-md-offset-6 col-md-6">
+                                        <button type="button" class="btn log_Btn_sm" onclick="myModalClose()">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+
+        $('#ApproveDate').datepicker({
+            //showOn: "button",
+            //buttonImage: "/Content/images/calendar.png",
+            //buttonImageOnly: true,
+            minDate: new Date(),
+            maxDate: new Date(),
+            dateFormat: "dd/mm/yy",
+            altField: "#slider_example_4andHalf_alt",
+            altFieldTimeOnly: false,
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+                $('[data-valmsg-for="Data"]').html('<span></span>');
+            }
+        });        
+        $("#ApproveDate").datepicker("setDate", new Date());
+    });
+    $('#OBLSerach').on("click", function () {
+        debugger;
+        $.ajax({
+            url: '/Import/Ppg_CWCImportV2/GetDestuffingNoForApproveDeliveryOrder',
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                   // var EcJson = JSON.parse(data);
+                    var html = '';
+                    var tab = 401;
+
+                    debugger;
+                    $.each(data, function (i, item) {
+                        debugger;
+                       
+                        html += '<li tabindex=' + tab + ' id="' + item.DestuffingId + '" onkeypress="OBLSelectClick(' + item.DestuffingId + ',&quot;' + item.DestuffingEntryNo + '&quot;' + ',&quot;' + item.OBLDate + '&quot;' + ',&quot;' + item.ContainerNo + '&quot;);" onclick="OBLSelectClick(' + item.DestuffingId + ',&quot;' + item.DestuffingEntryNo + '&quot;' + ',&quot;' + item.OBLDate + '&quot;' + ',&quot;' + item.ContainerNo + '&quot;);">' + item.DestuffingEntryNo + '</li>';
+
+
+                    });
+                    $('#OBLList').html(html);
+
+                    //}
+                }
+            }
+
+        });
+    });
+    $('#box').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#myModal .navList > li').show();
+        } else {
+            $('#myModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    function myModalClose() {
+        $('#myModal').modal("hide");
+        $('#box').val('');
+        $('#myModal .navList > li').show();
+        $('#modalpadId').focus();
+    }
+
+    function OBLSelectClick(Id,OBL,OBLDate,ContainerNo)
+    {
+        $('#DestuffingId').val(Id);
+        $('#OBLNo').val(OBL);
+        $('#OBLDate').val(OBLDate);
+        $('#ContainerNo').val(ContainerNo);
+        $('#myModal').modal("hide");
+    }
+
+    function ResetAllFields ()
+    {
+        $('#DivBody').load('/Import/Ppg_CWCImportV2/ApproveDeliveryOrder');
+    }
+
+    function GenerateCode()
+    {
+        debugger;
+        if ($('#OBLNo').val() == '' || $('#OBLNo').val()==null)
+        {
+            alert('Please Select OBL No.');
+        }
+        else
+        {
+            
+            var Confirm = confirm("Are You Sure You Want To Approve?");
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            if (Confirm == true) {
+                
+                $.ajax({
+                    url: '/Import/Ppg_CWCImportV2/GenerateOTP',
+                    type: 'GET',
+                    headers: { '__RequestVerificationToken': Token },                   
+                    dataType: 'JSON',
+                    async: false,
+                    success: function (data) {
+                        debugger;
+                        if (data.Status == 1) {
+                            $('#divGenerateOTP').removeClass('hidden');
+                            $('#DivSucMsg').html(data.Msg);
+                            $('#btnSubmit').attr('disabled', true);
+                            setTimeout(function () { $('#DivErrMsg,#DivSucMsg').html(''); }, 3000);                            
+                        }
+                        else {
+                            $('#DivErrMsg').html(data.Msg);
+                            setTimeout(function () { $('#DivErrMsg,#DivSucMsg').html(''); }, 3000);
+                        }
+                    }
+                });
+            }
+        }
+
+       
+        
+    }
+
+    function CstmAppraiseOnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            $('#DivSucMsg').html(data.Msg);
+            setTimeout(function () {
+                ResetAllFields();
+            }, 5000)
+
+
+            //   setTimeout(CstmAppraiseOnSuccess, TimeInSeconds);
+            // $('#ContainerList #' + $('#ContainerNo').val()).remove();
+            // setTimeout(ResetAllFields, TimeInSeconds);
+            // GetCustomAppraisementList();
+        }
+        else {
+            $('#DivErrMsg').html(data.Msg);
+        }
+        setTimeout(function () { $('#DivErrMsg,#DivSucMsg').html(''); }, 3000);
+    }
+</script>
+

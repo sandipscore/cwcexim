@@ -1,0 +1,644 @@
+﻿@model CwcExim.Areas.Auction.Models.DestructionViewModel
+<style>
+    .Date_Img img {
+        right: 16px !important;
+    }
+
+    .search {
+        right: 19px;
+    }
+</style>
+
+<script src="~/Scripts/Extended.Jquery.Plugins.js"></script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    //options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "DestructionFinalizationOnSuccess";
+    options.OnFailure = "DestructionFinalizationFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+}
+@using (Ajax.BeginForm("SaveDestruction", "Destruction", options))
+{
+    @Html.AntiForgeryToken()
+    //'/Auction/Bid/BidFinalization'
+
+    @Html.HiddenFor(x => x.GodownID)
+    @Html.HiddenFor(x => x.DestructionID)
+
+    @Html.HiddenFor(x => x.RefDate)
+
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="Head_h4">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>Destruction</h4>
+                    </div>
+                </div>
+
+                <div class="content_wrp">
+                    <div class="row Form_Space_top">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="Radiocontainer">
+                                    ShipBill
+                                    @Html.RadioButtonFor(m => m.Type, "ShipBill", new { @id = "txtShipbill", @onclick = "ChangeRefType()", @checked = "true" })
+                                    <span class="checkmark"></span>
+                                </label>
+                                <label class="Radiocontainer">
+                                    OBL
+                                    @Html.RadioButtonFor(m => m.Type, "OBL", new { @id = "txtOBL", @onclick = "ChangeRefType()" })
+                                    <span class="checkmark"></span>
+                                </label>
+                                <label class="Radiocontainer">
+                                    Container
+                                    @Html.RadioButtonFor(m => m.Type, "Container", new { @id = "txtContainer", @onclick = "ChangeRefType()" })
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 col-md-offset-3">
+                            <div class="form-group">
+                                <label>Ref No:</label>
+                                <div class="position-relative">
+                                    @Html.EditorFor(model => model.RefNo, new { htmlAttributes = new { @readonly = true } })
+                                    <span class="input_icon" id="NoticeNoModalid"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#OBLShipBillModal"></i></span>
+                                    @Html.ValidationMessageFor(m => m.RefNo, "", new { @class = "Error_Msg" })                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <span style="color:red;">*</span>
+                                <label>Godown:</label>
+                                <div class="position-relative">
+                                    @Html.EditorFor(model => model.GodownName, new { htmlAttributes = new { @readonly = true } })
+                                    <span class="input_icon" id="LstGodownName"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#modalGodownName"></i></span>
+                                    @Html.ValidationMessageFor(m => m.GodownName, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 col-md-offset-6">
+                            <div class="form-group">
+                                <span style="color:red;">*</span>
+                                <label>Custom Gate Pass No:</label>
+                                @Html.EditorFor(model => model.CustomGatePassNo, new { htmlAttributes = new { @placeholder = "Enter Custom Gate Pass No" }})
+                                @Html.ValidationMessageFor(m => m.CustomGatePassNo, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <span style="color:red;">*</span>
+                                <label>Vehicle No.:</label>
+                                @Html.EditorFor(model => model.VehicleNo, new { htmlAttributes = new {@placeholder = "Enter Vehicle No." }})
+                                @Html.ValidationMessageFor(m => m.VehicleNo, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 col-md-offset-6">
+                            <div class="form-group">
+                                <span style="color:red;">*</span>
+                                <label>Shed No.:</label>
+                                <div class="position-relative">
+                                    @Html.EditorFor(model => model.ShedNo, new { htmlAttributes = new { @readonly = true }})
+                                    <span class="input_icon" id="LstShed"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#modalShed"></i></span>
+                                    @Html.ValidationMessageFor(m => m.ShedNo, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>     
+                    
+                    <div class="row Form_Space_top">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <span style="color:red;">*</span>
+                                <label>Remarks:</label>
+                                @Html.TextArea("Remarks", new { @style = "height:75px;", @maxlength = "500", @placeholder = "Enter Remarks" })
+                            </div>
+                        </div>
+                    </div>                                     
+
+                    <div class="row SignUp_space_bottom SignUp_space_top">
+                        <div class="col-md-12">
+                            <div class="stoke"></div>
+                        </div>
+                    </div>
+
+                    <div class="logSuccMsg Form_Space_bottom" id="msgDiv" style="background-color:transparent"></div>
+
+                    <div class="d-flex justify-content-left">
+                        <input type="submit" id="btnSave" class="btn btn-primary mr-1 btn-100px" value="Save">
+                        <input type="button" id="btnReset" class="btn btn-primary-border btn-100px" value="Reset" onclick="Reset()">
+                    </div>
+
+                    <div class="row SignUp_space_top2 SignUp_space_bottom2">
+                        <div class="col-md-12">
+                            <div class="stoke"></div>
+                        </div>
+                    </div>
+
+                    <div class="row mt10 mb10">
+                        <div class="col-md-12">
+                            <input type="button" value="Show List" onclick="LoadDespatchList()" class="btn btn-primary btn-100px" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 SignUp_space_bottom">
+                            <div id="DivNoticeList">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+@Scripts.Render("~/bundles/jqueryval")
+
+
+
+<div id="OBLShipBillModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">Ref Number</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Refbox" type="text" />
+                <ul class="navList" id="lstRefNo"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="modalGodownName" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">Godown Name</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Godownbox" type="text" />
+                <ul class="navList" id="lstGodown"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalShed" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Godown Wise Location</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <div class="row">
+                    <div class="form-group Form_Input" id="DivLocationDet">
+                        @*@{
+                                foreach (var item in Model.lstGdnWiseLctn)
+                                {
+                                    @Html.Label(item.Row + " " + item.Column, new { @for = item.LocationId })
+                                    @Html.CheckBox(@item.LocationId.ToString())
+                                }
+                            }*@
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+<script>
+
+
+
+    $(document).ready(function () {
+        $("#DestructionDate").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+                $('[data-valmsg-for="Data"]').html('<span></span>');
+            }
+        });
+        $("#DestructionDate").datepicker().datepicker("setDate", new Date());
+
+        GetLstGownNo();
+        GetLstRefNo(2);
+    });
+
+    var LocationDetails = [];
+
+
+    function GetLstRefNo(flag) {
+        $.ajax({
+            type: 'GET',
+            url: '/Auction/Destruction/GetRefNoForDestruction?Flag=' + flag + '',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+
+                var jsonData = '';
+                $('#lstRefNo').html('');
+                if (data != null && data.length > 0) {
+
+                    for (var i = 0; i < data.length; i++) {
+                        jsonData = jsonData + '<li  onclick="GetRefNoDetails(this)">' + data[i].RefNo + '</li>';
+                    }
+                    $('#lstRefNo').html(jsonData);
+                }
+                else {
+                    $('#lstRefNo').html('');
+                }
+
+            }
+        });
+    }
+
+    function GetLstGownNo() {
+        $.ajax({
+            type: 'GET',
+            url: '/Auction/Destruction/GetLstGodown',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+
+                var jsonData = '';
+                $('#lstGodown').html('');
+                if (data != null && data.length > 0) {
+
+                    for (var i = 0; i < data.length; i++) {
+                        jsonData = jsonData + '<li id=' + data[i].GodownId + ' onclick="GetGodownDetails(this)">' + data[i].GodownName + '</li>';
+                    }
+                    $('#lstGodown').html(jsonData);
+                }
+                else {
+                    $('#lstGodown').html('');
+                }
+
+            }
+        });
+    }
+
+
+    function GetGodownDetails(em) {
+        debugger;
+        $('#GodownName').val($(em).text())
+        var id = $(em).attr('id')
+        $('#GodownID').val($(em).attr('id'));
+        $.ajax({
+
+            url: '/Auction/Destruction/GetLocationDetailsByGodownId',
+            type: 'GET',
+            data: { GodownId: id },
+            dataType: 'JSON',
+            success: function (data) {
+
+                LocationDetails = data;
+                console.log(data);
+                LocationDet();
+            }
+        });
+        $("#modalGodownName").modal("hide");
+    }
+    function LocationDet() {
+
+        debugger;
+        var htm = '';
+        $.each(LocationDetails, function (i, data) {
+            //if (data.IsOccupied)
+            //    htm += '<div class="col-md-4"><div class="boolean-container"><input type="checkbox" onclick="CheckBoxChange()" disabled id="' + data.LocationId + '"/><label for="' + data.LocationId + '">' + data.Row + ' ' + data.Column + '<i class="square" style="margin-left:10px;"></i></label></div></div>';
+            //else
+            htm += '<div class="col-md-4"><div class="boolean-container"><input type="checkbox" onclick="CheckBoxChange()" id="Loc' + data.LocationId + '"/><label for="Loc' + data.LocationId + '">' + data.LocationName + '<i class="square" style="margin-left:10px;"></i></label></div></div>';
+        });
+        $('#DivLocationDet').html(htm);
+    }
+
+    function CheckBoxChange() {
+        debugger;
+        var Locationtext = '';
+        $('#DivLocationDet').find('input[type="checkbox"]:checked').each(function () {
+            if (Locationtext == '')
+                Locationtext = $('label[for="' + $(this).prop('id') + '"]').text();
+            else {
+                Locationtext += ',' + $('label[for="' + $(this).prop('id') + '"]').text();
+            }
+        });
+        $('#ShedNo').val(Locationtext);
+    }
+    function ResetRegDtl() {
+        $('#DivShippingDetails').find('input:text').val('');
+        $('#DivLocationDet').find('input[type="checkbox"]:checked').each(function () {
+            //$(this).prop("disabled", true);
+            $(this).prop("checked", false);
+        });
+    }
+
+
+
+    function GetDestructionDetails(id) {
+
+        $.ajax({
+
+            url: '/Auction/Destruction/GetDestructionList',
+            type: 'GET',
+            data: { id: id },
+            dataType: 'JSON',
+            success: function (data) {
+
+                debugger;
+
+            }
+        });
+
+    }
+
+
+    function GetRefNoDetails(em) {
+        debugger;
+        $('#RefNo').val($(em).text());
+        $("#OBLShipBillModal").modal("hide");
+    }
+
+    function ChangeRefType() {
+        debugger;
+        if ($('#txtShipbill').is(":checked")) {
+            $('#RefNo').val('');
+            GetLstRefNo(2);
+        }
+        else if ($('#txtOBL').is(":checked")) {
+            $('#RefNo').val('');
+            GetLstRefNo(1);
+        }
+        else {
+            $('#RefNo').val('');
+            GetLstRefNo(3);
+        }
+
+    }
+
+
+
+
+
+    $('#Godownbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstGodown > li').show();
+        else {
+            $('#lstGodown > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+
+    $('#Refbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstRefNo > li').show();
+        else {
+            $('#lstRefNo > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+
+
+
+
+    var TimeInSeconds = 3000;
+    function DestructionFinalizationOnSuccess(data) {
+
+        debugger;
+        if (data.Status == 1 || data.Status == 2) {
+            TableArray = [];
+            if ($('#msgDiv').hasClass('logErrMsg'))
+                $('#msgDiv').removeClass('logErrMsg').addClass('logSuccMsg text-center');
+            $('#msgDiv').html(data.Message);
+            setTimeout(Reset, TimeInSeconds);
+            //LoadDespatchList();
+            //GetExitThroughGateList();
+        }
+
+        else {
+            if ($('#msgDiv').hasClass('logSuccMsg'))
+                $('#msgDiv').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#msgDiv').html(data.Message);
+        }
+    }
+    function DestructionFinalizationFailure() {
+        //alert("Error");
+        //LoadBiFinalization();
+    }
+
+    function Reset() {
+        $('#DivBody').load('/Auction/Destruction/Destruction');
+
+        // location.href = '/Auction/Destruction/Destruction';
+    }
+
+
+    function GetAuctionDetails(elm) {
+        debugger;
+        var id = $(elm).attr('id')
+        $('#NoticeID').val(id);
+        $('#NoticeNo').val($(elm).text());
+
+
+        $('#NoticeNoModal').modal('hide');
+
+    }
+
+
+    function LoadDespatchList() {
+        $('#DivNoticeList').load('/Auction/Destruction/GetAllDestruction');
+    }
+
+    function PreviewDestruction(id) {
+        $.ajax({
+
+            url: '/Auction/Destruction/GetPreviewDestruction',
+            type: 'GET',
+            data: { id: id },
+            dataType: 'JSON',
+            success: function (data) {
+
+                if (data.Status == 1) {
+                    // $('#msgDiv').html('').removeClass('logErrMsg').addClass('logSuccMsg');
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+                else {
+                    $('#msgDiv').html(data.Message).removeClass('logSuccMsg').addClass('logErrMsg');
+                }
+
+            }
+        });
+    }
+    function EditDestruction(id) {
+        $.ajax({
+
+            url: '/Auction/Destruction/GetDestructionList',
+            type: 'GET',
+            data: { id: id },
+            dataType: 'JSON',
+            success: function (data) {
+
+                if (data.length > 0) {
+                    if (data[0].RefFlag == '1') {
+                        $('#txtOBL').prop('checked', true);
+                        $('#Type').val('OBL');
+                    }
+                    else if (data[0].RefFlag == '2') {
+                        $('#txtShipbill').prop('checked', true);
+                        $('#Type').val('Shipbill');
+                    }
+                    else if (data[0].RefFlag == '3') {
+                        $('#txtContainer').prop('checked', true);
+                        $('#Type').val('Container');
+                    }
+                    $('#RefNo').val(data[0].RefNo);
+                    $('#GodownName').val(data[0].GodownName);
+                    $('#CustomGatePassNo').val(data[0].CustomGatePassNo);
+                    $('#DestructionAgencyName').val(data[0].DestructionAgencyName);
+                    $('#DestructionDate').val(data[0].DestructionDate);
+                    $('#VehicleNo').val(data[0].VehicleNo);
+                    $('#ShedNo').val(data[0].ShedNo);
+                    $('#Remarks').val(data[0].Remarks);
+                    $('#GodownID').val(data[0].GodownID);
+                    $('#DestructionID').val(data[0].DestructionID);
+
+                }
+
+
+
+            }
+        });
+    }
+    function ViewDestruction(id) {
+        $.ajax({
+
+            url: '/Auction/Destruction/GetDestructionList',
+            type: 'GET',
+            data: { id: id },
+            dataType: 'JSON',
+            success: function (data) {
+
+                if (data.length > 0) {
+                    $('#btnSave').addClass('hidden');
+                    if (data[0].RefFlag == '1') {
+                        $('#txtOBL').prop('checked', true);
+                        $('#Type').val('OBL');
+                    }
+                    else if (data[0].RefFlag == '2') {
+                        $('#txtShipbill').prop('checked', true);
+                        $('#Type').val('Shipbill');
+                    }
+                    else if (data[0].RefFlag == '3') {
+                        $('#txtContainer').prop('checked', true);
+                        $('#Type').val('Container');
+                    }
+                    $('#RefNo').val(data[0].RefNo);
+                    $('#GodownName').val(data[0].GodownName);
+                    $('#CustomGatePassNo').val(data[0].CustomGatePassNo);
+                    $('#DestructionAgencyName').val(data[0].DestructionAgencyName);
+                    $('#DestructionDate').val(data[0].DestructionDate);
+                    $('#VehicleNo').val(data[0].VehicleNo);
+                    $('#ShedNo').val(data[0].ShedNo);
+                    $('#Remarks').val(data[0].Remarks);
+                    $('#GodownID').val(data[0].GodownID);
+                    $('#DestructionID').val(data[0].DestructionID);
+
+                }
+
+
+
+            }
+        });
+    }
+    function DeleteDestruction(id) {
+        var r = confirm("Are You Sure You Want To Delete?");
+        if (r == true) {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Auction/Destruction/DeleteDestruction',
+                headers: { "__RequestVerificationToken": Token },
+                type: 'POST',
+                data: { DestructionID: id },
+                dataType: 'JSON',
+                success: function (data) {
+                    if (data.Status == 1 || data.Status == 2) {
+                        TableArray = [];
+                        if ($('#msgDiv').hasClass('logErrMsg'))
+                            $('#msgDiv').removeClass('logErrMsg').addClass('logSuccMsg text-center');
+                        $('#msgDiv').html(data.Message);
+                        setTimeout(Reset, TimeInSeconds);
+                        //LoadDespatchList();
+                        //GetExitThroughGateList();
+                    }
+
+                }
+            });
+        }
+    }
+
+
+</script>
+

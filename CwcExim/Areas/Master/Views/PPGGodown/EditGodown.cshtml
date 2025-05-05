@@ -1,0 +1,322 @@
+﻿@model CwcExim.Areas.Master.Models.PPGGodownVM
+<script>
+    var TimeInSeconds;
+    var LocationId;
+    var LocationDetailArray = [];
+    var DelLocationDetail = [];
+    $(document).ready(function () {
+        TimeInSeconds = 5000;
+        LocationId = 0;
+        $('#DivTblLocation').css("display", "none");
+        debugger;
+        LocationDetailArray= $.parseJSON($("#LocationDetail").val());
+        GenerateTable();
+    });
+    function LoadGodownPage() {
+        $('#DivBody').load('/Master/PPGGodown/CreateGodown');
+    }
+    function ClearValidationMessage() {
+        $('.field-validation-error').each(function () {
+            $(this).html("");
+        });
+        $('.field-validation-valid').each(function () {
+            $(this).html("");
+        });
+    }
+    //function GodownReset() {
+    //    LocationDetailArray = [];
+    //    ClearValidationMessage();
+    //    $('#MstGodwon_GodownName').val('');
+    //    $('#LocationName').val('');
+    //    $('#Row').val('');
+    //    $('#Column').val('');
+    //    $('#DivTblLocation table tbody').html('');
+    //    $('#DivTblLocation').css("display", "none");
+    //    $('#DivGodownErrMsg').html('');
+    //    $('#DivGodownMsg').html('');
+    //}
+    function ValidateColumn(evt) {
+        debugger;
+        $('[data-valmsg-for="LocationName"]').html('<span></span>');
+        evt = (evt) ? evt : window.event;
+        var CharCode = (evt.which) ? evt.which : evt.keyCode;
+        if (CharCode > 31 && (CharCode < 48 || CharCode > 57)) {
+            evt.preventDefault();
+            return false;
+        }
+        return true;
+    }
+    function ValidateRow(evt) {
+        $('[data-valmsg-for="Row"]').html('<span></span>');
+        var CharCode;
+        if (window.event)
+            CharCode = window.event.keyCode;  //for IE
+        else
+            CharCode = evt.which;  //for firefox
+        if ((CharCode > 64 && CharCode < 91) || (CharCode > 96 && CharCode < 123) || (CharCode == 8)) {
+            return true;
+        }
+        else {
+            evt.preventDefault();
+            return false;
+        }
+    }
+    function ValidateLocationName(evt) {
+        $('[data-valmsg-for="LocationName"]').html('<span></span>');
+        var charCode;
+        if (window.event)
+            charCode = window.event.keyCode;  //for IE
+        else
+            charCode = evt.which;  //for firefox
+        if (charCode == 32) //for &lt;space&gt; symbol
+            return true;
+        if ((charCode > 31 && charCode < 48) || (charCode > 57 && charCode < 65)) {
+            evt.preventDefault();
+            return false;
+        }
+        if (charCode > 90 && charCode < 97) //for characters between 'Z' and 'a' in ASCII Table
+        {
+            evt.preventDefault();
+            return false;
+        }
+        if (charCode > 122) //for characters beyond 'z' in ASCII Table
+        {
+            evt.preventDefault();
+            return false;
+        }
+        return true;
+
+    }
+    function AddLocationDetail() {
+        debugger;
+        $('#DivGodownErrMsg').html("");
+        $('[data-valmsg-for="LocationName"]').html('<span></span>');
+        $('[data-valmsg-for="Column"]').html('<span></span>');
+        var ValidateData = true;
+        var LocationName=($('#LocationName').val()).trim();
+        var Row = $('#LocationName').val();
+        var Column = $('#Column').val();
+        var _LocationId=0;
+        if (LocationName != "" )
+        {
+            if (Column == 0) {
+                $('[data-valmsg-for="Column"]').html('<span>Column Should Be Greater Than 0</span>');
+                return false;
+            }
+            $.each(LocationDetailArray, function (i, item) {
+                debugger;
+                if (LocationName.trim().toUpperCase() == item.LocationName.toUpperCase()) {
+                    debugger;
+                    $('[data-valmsg-for="LocationName"]').html('<span>Location Name Already Exist</span>');
+                    ValidateData = false;
+                }
+                else if (Row.toUpperCase() == item.Row.toUpperCase() & Column == item.Column) {
+                    debugger;
+                    $('[data-valmsg-for="Column"]').html('<span>Row And Column Already Exist</span>');
+                    ValidateData = false;
+                }
+                if (LocationId > 0) {
+                    _LocationId = LocationId;
+                }
+                LocationId = 0;
+            });
+            if (ValidateData == true) {
+                var LocationDetail = {
+                    "LocationName": LocationName,
+                    "Row": LocationName,
+                    "Column": Column,
+                    "LocationId": _LocationId
+                }
+                $('#LocationName').val('');
+                $('#Row').val('');
+                $('#Column').val('');
+                LocationDetailArray.push(LocationDetail);
+                GenerateTable();
+            }
+            else {
+                return false;
+            }
+        }
+        else
+        {
+            if (LocationName == "") {
+                $('[data-valmsg-for="LocationName"]').html('<span>Fill Out This Field</span>');
+            }
+            else if (Row == "") {
+                $('[data-valmsg-for="Row"]').html('<span>Fill Out This Field</span>');
+            }
+            else if (Column == "") {
+                $('[data-valmsg-for="Column"]').html('<span>Fill Out This Field</span>');
+            }
+        }
+    }
+    function GenerateTable() {
+        debugger;
+        var TableRow = '';
+        $.each(LocationDetailArray, function (i, item) {
+            debugger;
+            TableRow += '<tr><td style="text-align:center"><div class="table_icon"><a href="#" onclick="EditLocationDetail(' + i + ')"><i class="fa fa-pencil"></i></a></div></td><td style="text-align:center"><div class="table_icon"><a href="#" onclick="DeleteLocationDetail(' + i + ',' + item.LocationId + ')"><i class="fa fa-trash-o"></i></a></div></td><td>' + item.LocationName + '</td></tr>';
+        });
+        $('#DivTblLocation table tbody').html(TableRow);
+        $('#LocationDetail').val(JSON.stringify(LocationDetailArray));
+        if (LocationDetailArray.length > 0) {
+            $('#DivTblLocation').css("display","");
+        }
+        else {
+            $('#DivTblLocation').css("display", "none");
+            $('#LocationDetail').val('');
+        }
+    }
+    function EditLocationDetail(Index) {
+        debugger;
+        var LocationDetail = LocationDetailArray[Index];
+        $('#LocationName').val(LocationDetail.LocationName);
+        $('#Row').val(LocationDetail.LocationName);
+        $('#Column').val(LocationDetail.Column);
+        LocationId = LocationDetail.LocationId;
+        LocationDetailArray.splice(Index, 1);
+        GenerateTable();
+    }
+    function DeleteLocationDetail(Index,LocationId) {
+        debugger;
+        var Confirm = confirm("Are You Sure You Want To Delete?");
+            if (Confirm == true)
+            {
+                if (Number(LocationId) > 0) {
+                    var DelLocationDet = {
+                        "LocationId": LocationId
+                    };
+                    DelLocationDetail.push(DelLocationDet);
+                    $('#DelLocationDetail').val(JSON.stringify(DelLocationDetail));
+                }
+                LocationDetailArray.splice(Index, 1);
+                GenerateTable();
+            }
+    }
+    $('#BtnGodownSubmit').click(function () {
+        debugger;
+        var LocationName = ($('#LocationName').val()).trim();
+        $('#DivGodownErrMsg').html('');
+        var Row = $('#LocationName').val();
+        var Column = $('#Column').val();
+        if (LocationName != "" ) {
+            $('#DivGodownErrMsg').html("Please Insert Location Detail In The Table Before Saving");
+            return false;
+        }
+        if (LocationDetailArray.length < 1) {
+            $('#DivGodownErrMsg').html("Minimum One Location Against Godown Should Be Added");
+           // $('[data-valmsg-for="LocationName"]').html('<span>Fill Out This Field</span>');
+            //$('[data-valmsg-for="Row"]').html('<span>Fill Out This Field</span>');
+           // $('[data-valmsg-for="Column"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+    });
+    function GodownVMOnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            LocationDetailArray = [];
+            DelLocationDetail = [];
+            //$('#DivTblLocation table tbody').html("");
+            $('#DivGodownMsg').html(data.Message);
+            setTimeout(LoadGodownPage, TimeInSeconds);
+        }
+        else if (data.Status == 2) {
+            $('[data-valmsg-for="MstGodwon.GodownName"]').html('<span>'+data.Message+'</span>');
+        }
+        else {
+            $('#DivGodownErrMsg').html(data.Message);
+        }
+    }
+    function GodownVMOnFailure() {
+
+    }
+</script>
+
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "GodownVMOnSuccess";
+    options.OnFailure = "GodownVMOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+@using (Ajax.BeginForm("AddEditGodownDetail", "PPGGodown", options))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.MstGodwon.GodownId)
+    @Html.HiddenFor(m => m.LocationDetail)
+    @Html.HiddenFor(m => m.DelLocationDetail)
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="Head_h4">
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-12">
+                            <h4>Godown Master</h4>
+                        </div>
+                    </div>
+
+                    <div class="content_wrp">
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-5">
+                                <div class="form-group">
+                                    <span class="ReQSimbol">*</span>
+                                    <label>Godown Name:</label>
+                                    @Html.TextBoxFor(m => m.MstGodwon.GodownName, new { @class = "" })
+                                    @Html.ValidationMessageFor(m => m.MstGodwon.GodownName, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <span class="ReQSimbol">*</span>
+                                    <label>Location Alias:</label>
+                                    <input type="text" name="LocationName" id="LocationName" class="" maxlength="30" onkeypress="ValidateLocationName(event)" />
+                                    @Html.ValidationMessage("LocationName", "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex locationAddBtn">
+                                    <input type="button" class="btn btn-primary mr-1 btn-100px" value="Add" id="BtnGodownLocation" name="BtnGodownLocation" onclick="AddLocationDetail()">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="stoke SignUp_space_bottom SignUp_space_top">
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-left">
+                            <input type="submit" class="btn btn-primary mr-1 btn-100px" value="Save" id="BtnGodownSubmit">
+                            <input type="button" class="btn btn-primary-border btn-100px" value="Cancel" onclick="LoadGodownPage()">
+                        </div>                       
+
+                        <div class="logSuccMsg Form_Space_top SignUp_space_bottom2" style="background-color:transparent">
+                            <div id="DivGodownMsg"></div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div id="DivTblLocation" class="col-sm-12 col-md-12">
+                                <table class="table table-striped table-bordered dataTable Form_Input">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align:center;width:3%;">Edit</th>
+                                            <th style="text-align:center;width:3%;">Delete</th>
+                                            <th>Location Name</th>                                            
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div id="DivGodownErrMsg" class="logErrMsg" style="background-color:transparent"></div>
+                    </div>
+            </div>
+        </div>
+    </div>
+}
+
+@Scripts.Render("~/bundles/jqueryval")

@@ -1,0 +1,264 @@
+﻿
+@model CwcExim.Areas.CashManagement.Models.CashDepositToBank
+@if (ViewBag.Banks != null)
+{
+    <input type="hidden" id="hdnBank" value="@ViewBag.Banks" />
+}
+else
+{
+    <input type="hidden" id="hdnBank" value="" />
+}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>Cash Deposit</h4>
+                    </div>
+                </div>
+                @using (Ajax.BeginForm("SaveCashDepositToBank", "WFLD_CashManagement", new AjaxOptions
+                {
+                    Confirm = "Are you sure you want to save?",
+                    HttpMethod = "POST",
+                    OnSuccess = "OnSuccess",
+                    OnFailure = "OnFailure"
+                }, new { id = "frmCCINEntry" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.Id)
+
+                    <div id="DivJOHdr" class="Form_Space_bottom">
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2-5 col_cus_2">
+                                    <label>Date:</label>
+                                </div>
+                                <div class="col-md-3-5 Date_Img">
+                                    @Html.TextBoxFor(m => m.DepositDate, new { @class = "form-control input_sm", @readonly = true,@onchange= "DepositDateChanged()" })
+                                    @Html.ValidationMessageFor(m => m.DepositDate, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2-5 col_cus_2">
+                                    <label>Bank:</label>
+                                </div>
+                                <div class="col-md-3-5">
+                                    @Html.HiddenFor(m => m.BankId)
+                                    @Html.TextBoxFor(m => m.BankName, new { @class = "form-control input_sm", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.BankName, "", new { @class = "Error_Msg" })
+                                    <span class="search" id="BankSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#BankModal"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2-5 col_cus_2">
+                                    <label>A/C No:</label>
+                                </div>
+                                <div class="col-md-3-5">
+                                    @Html.TextBoxFor(m => m.BankAccountNo, new { @class = "form-control input_sm", @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2-5 col_cus_2">
+                                    <label>CFS Cash Deposit Balance:</label>
+                                </div>
+                                <div class="col-md-3-5">
+                                    @Html.TextBoxFor(m => m.BalanceAmount, new { @class = "form-control input_sm", @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2-5 col_cus_2">
+                                    <label>Deposit Amount:</label>
+                                </div>
+                                <div class="col-md-3-5">
+                                    @Html.TextBoxFor(m => m.DepositAmount, new { @class = "form-control input_sm" })
+                                    @Html.ValidationMessageFor(m => m.DepositAmount, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                    </div>
+                    <div class="row SignUp_space_top2">
+                        <div class="col-md-offset-3 col-md-2">
+                            <input type="submit" id="btnSave" class="btn log_Btn_sm" onclick="return validate();" value="Save" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" id="btnReset" class="btn log_Btn_sm" value="Reset" onclick="ResetAllField()" />
+                        </div>
+                        @*<div class="col-md-2">
+                                <input type="button" id="btnPrint" class="btn log_Btn_sm" value="Print" onclick="PrintInvoice()" disabled />
+                            </div>*@
+                    </div>
+                    <div class="logSuccMsg Form_Space_top" id="DivSucMsg" style="background-color:transparent"></div>
+                    <div class="logErrMsg Form_Space_bottom" id="DivErrMsg" style="background-color:transparent"></div>
+                }
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="CCINEntryList"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="BankModal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Shipping Line Names</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Bankbox" type="text" />
+                <ul class="navList" id="lstBank">
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+
+    $(function () {
+
+        // Decimal Number
+        $("#DepositAmount").keydown(function (e) {
+            if (e.keyCode == 190 || e.keyCode == 110) {
+                if ($(this).val().indexOf('.') >= 0) {
+                    e.preventDefault();
+                }
+            }
+            // Allow: backspace, delete, tab, escape, enter and .
+            if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 110, 190]) !== -1 ||
+                // Allow: Ctrl+A, Command+A
+                (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+                // Allow: home, end, left, right, down, up
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                // let it happen, don't do anything
+                return;
+            }
+            // Ensure that it is a number or character
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                e.preventDefault();
+            }
+        });
+
+    
+
+        var BankList = JSON.parse($('#hdnBank').val());
+        var html = '';
+        for (var i = 0; i < BankList.length; i++) {
+            html += '<li id="' + BankList[i].BankId + '">' + BankList[i].BankName + '</li>';
+        }
+        $("#lstBank").html(html);
+
+    });
+
+    $('#DepositDate').datetimepicker({
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        dateFormat: "dd/mm/yy",
+        altField: "#slider_example_4andHalf_alt",
+        altFieldTimeOnly: false,
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+            //angular.element('#ctrldiv').scope().ContainerSelect();
+        }
+    });
+
+    $('#Bankbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstBank > li').show();
+        else {
+            $('#lstBank > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    $('#lstBank > li').on("click", function () {
+        $('#BankName').val($(this).text());
+        $('#BankId').val($(this).attr('id'));
+        debugger;
+        var BankList = JSON.parse($('#hdnBank').val());
+        var SelectedBank = $.grep(BankList, function (item) { return item.BankId == $('#BankId').val(); })[0];
+        $('#BankName').val(SelectedBank.BankName);
+        $('#BankAccountNo').val(SelectedBank.AccountNo);
+        $("#BankModal").modal("hide");
+    });
+
+    function validate() {
+        if(parseFloat($('#DepositAmount').val()) > parseFloat($('#BalanceAmount').val())) {
+            alert("Deposit Amount cannot greater than Balance Amount.");
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
+
+    function DepositDateChanged() {
+
+        $.ajax({
+            type: 'GET',
+            url: '/CashManagement/WFLD_CashManagement/GetCashDepositBalance',
+            data: { TransactionDate: $('#DepositDate').val() },
+            dataType: 'JSON',
+            success: function (data) {
+                if (data != null) {
+                    $('#BalanceAmount').val(data);
+                }
+                else {
+                    $('#BalanceAmount').val(0);
+                }
+            }
+        });
+    }
+
+
+    function OnSuccess(data) {
+        if (data.Status == 1) {
+            $('#DivSucMsg').html(data.Message);
+            $('#DivErrMsg').html('');
+            $('#btnSave').attr('disabled', true);
+             setTimeout(ResetAllField, 3000);
+        }
+        else {
+            $('#DivErrMsg').html(data.Message);
+        }
+        // setTimeout(function () { $('#DivErrMsg,#DivSucMsg').html(''); }, 5000);
+    }
+
+    function OnFailure() { }
+
+    function ResetAllField() {
+        $('#DivBody').load('/CashManagement/WFLD_CashManagement/CashDepositToBank');
+    }
+
+
+
+</script>

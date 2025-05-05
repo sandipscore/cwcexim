@@ -1,0 +1,148 @@
+﻿@model IEnumerable<CwcExim.Areas.CashManagement.Models.DSR_NewPaymentValucherModel>
+<div>
+
+    <script>
+        var Page = 0;
+        $(document).ready(function () {
+            var table = $('#DivTblPaymentVoucherList').DataTable({
+                "bFilter": false,
+                "bInfo": false,
+                "aoColumns": [
+                    { "sName": "Sl No", "bSortable": true, "width": "8%" },
+                    { "sName": "Party Name", "bSortable": false, "width": "25%" },
+                    { "sName": "Voucher No", "bSortable": false, "width": "25%" },
+                    { "sName": "Voucher Date", "bSortable": false, "width": "15%" },
+                    { "sName": "Amount", "bSortable": false },
+                    { "sName": "Action", "bSortable": false, "width": "10%" }
+                ],
+
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $('td:eq(0)', nRow).addClass("text-center");
+                    $('td:eq(5)', nRow).addClass("text-center");
+                    $('td:eq(4)', nRow).addClass("text-right");
+                    $('td:eq(0)', nRow).css("width", "8%");
+                    $('td:eq(1)', nRow).css("width", "25%");
+                    $('td:eq(2)', nRow).css("width", "25%");
+                    $('td:eq(3)', nRow).css("width", "15%");
+                    $('td:eq(5)', nRow).css("width", "10%");
+                }
+                //responsive: true
+            });
+
+            new $.fn.dataTable.FixedHeader(table);
+        });
+        function Print(PVId) {
+            window.open("../../Docs/PaymentVoucher/" + PVId + "/PaymentVoucher.pdf?t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes');
+        }
+
+        function LoadMoreListData() {
+            debugger;           
+            var SearchValue = $('#SearchVoucherNo').val().trim();
+            if (SearchValue != '' && SearchValue != null) {
+                                
+                var URL = '/CashManagement/DSR_CashManagement/GetLoadMorePaymentVoucherList?SearchValue=' + SearchValue;
+
+                    $.ajax({
+                        url: URL,
+                        type: 'GET',
+                        dataType: 'JSON',
+                        data: { SearchValue: SearchValue, Page: Page + 1 },
+                        success: function (data) {
+                            debugger;
+                            if (data != null && data != '' && data != undefined && data.length > 0) {
+                                Page++;
+                                var html = '';
+                                var dt = $('#DivTblPaymentVoucherList').dataTable();
+                                var len = dt.fnGetData().length;
+                                $.each(data, function (i, item) {
+                                    debugger;
+                                    len++;
+                                    dt.fnAddData([
+
+                                    len,
+                                    [item.Party],
+                                    [item.VoucherNo],
+                                    [item.PaymentDate],
+                                    [item.TotalAmount.toFixed(2)],
+                                    ['<a href="#" onclick=Print(' + [item.PVHeadId] + ')><i class="fa fa-print"></i></a>'],
+
+                                    ]);
+                                });
+                            }
+                            else alert('No more data available');
+                        }
+                    });             
+
+            }
+            else {
+                var URL = '/CashManagement/DSR_CashManagement/GetLoadMorePaymentVoucherList';
+
+                $.ajax({
+                    url: URL,
+                    type: 'GET',
+                    dataType: 'JSON',
+                    data: { Page: Page + 1 },
+                    success: function (data) {
+                        debugger;
+                        if (data != null && data != '' && data != undefined && data.length > 0) {
+                            Page++;
+                            var html = '';
+                            var dt = $('#DivTblPaymentVoucherList').dataTable();
+                            var len = dt.fnGetData().length;
+                            $.each(data, function (i, item) {
+                                debugger;
+                                len++; 
+                                dt.fnAddData([
+
+                                len,
+                                [item.Party],
+                                [item.VoucherNo],
+                                [item.PaymentDate],
+                                [item.TotalAmount.toFixed(2)],
+                                ['<a href="#" onclick=Print(' + [item.PVHeadId] + ')><i class="fa fa-print"></i></a>'],
+
+                                ]);
+                            });
+                        }
+                        else alert('No more data available');
+                    }
+                });
+            }
+
+        }
+
+    </script>
+    <table id="DivTblPaymentVoucherList" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+        <thead>
+            <tr>
+                <th>Sl No</th>
+                <th>Party Name</th>
+                <th>Voucher No</th>
+                <th>Voucher Date</th>
+                <th style="text-align:right;">Amount</th>
+                <th style="text-align:center;">@Html.DisplayName("Action")</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                var SerialNo = 1;
+
+                foreach (var item in Model)
+                {
+
+                    <tr>
+                        <td>@SerialNo.ToString()</td>
+                        <td>@Html.DisplayFor(modelItem => item.Party)</td>
+                        <td>@Html.DisplayFor(modelItem => item.VoucherNo)</td>
+                        <td>@Html.DisplayFor(modelItem => item.PaymentDate)</td>
+                        <td style="text-align:right;">@Html.DisplayFor(modelItem => item.TotalAmount)</td>
+                        <td style="text-align:center;"><a href="#" onclick="Print('@item.PVHeadId')"><i class="fa fa-print" aria-hidden="true"></i></a></td>
+                    </tr>
+                    SerialNo = SerialNo + 1;
+                }
+            }
+        </tbody>
+    </table>
+
+    <div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+</div>

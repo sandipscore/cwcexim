@@ -1,0 +1,16 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+
+namespace CwcExim.Areas.Import.Models
+{
+    public class VRN_PickupModel
+    {
+        public int id { get; set; }
+        public string pickup_location { get; set; }
+        public string alias { get; set; }
+
+
+    }
+}

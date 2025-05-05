@@ -1,0 +1,244 @@
+﻿@model CwcExim.Areas.Master.Models.WFLDOperation
+
+<script>
+    var TimeInSeconds;
+    $(document).ready(function () {
+        TimeInSeconds = 5000;
+        GetOperationList();
+    });
+    function GetOperationList() {
+        $('#DivOperationList').load('/Master/WFLDMaster/GetOperationList');
+    }
+    function ResetOperation() {
+        $('#DivOperation').find('input:text').val('');
+        $('[data-valmsg-for]').html('<span></span>');
+        $('select').val('');
+        $('textarea').val('');
+        $('#DivOperationMsg').html('');
+        $('#DivOperationErrMsg').html('');
+    }
+    function OperationOnSuccess(data) {
+        if (data.Status == 1) {
+            $('#DivOperationMsg').html(data.Message);
+            GetOperationList();
+            ResetOperation();
+        }
+        else {
+            $('#DivOperationErrMsg').html(data.Message);
+        }
+        setTimeout(function () {
+            $('#DivOperationMsg').html('');
+            $('#DivOperationErrMsg').html('');
+        }, 5000);
+    }
+    function OperationOnFailure() { }
+
+    $('#box').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('.navList > li').show();
+        } else {
+            $('.navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+    $('.navList li').on("click", function () {
+        var SACCode = $(this).text();
+        var SACId = $(this).attr('id');
+        $('#SacCode').val(SACCode);
+        $('#SacId').val(SACId);
+        $("#myModal").modal("hide");
+    });
+</script>
+
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "OperationOnSuccess";
+    options.OnFailure = "OperationOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+<div id="DivOperation" class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("AddOperation", "WFLDMaster", options))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-12">
+                            <h4>Operation Master</h4>
+                        </div>
+                    </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    @Html.LabelFor(m => m.Type, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    <span class="ReQSimbol">*</span>
+                                    @if (Session["BranchId"].ToString() == "1")
+                                    {
+                                        <span>
+                                            @Html.DropDownListFor(m => m.Type, new List<SelectListItem> {
+                               new SelectListItem { Value="1",Text="Import"},
+                               new SelectListItem {Value="4",Text="Import (RMS)" },
+                               new SelectListItem { Value="5",Text="Import (Non RMS [100%])"},
+                               new SelectListItem { Value = "6", Text = "Import (Non RMS [25%])" },
+                               new SelectListItem { Value = "7", Text = "Heavy Scrap" },
+                               new SelectListItem { Value="2",Text="Export"},
+                               new SelectListItem { Value="3",Text="General"}}, "----Select----", new { @class = "form-control input-sm dropdown" })
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span>
+                                            @Html.DropDownListFor(m => m.Type, new List<SelectListItem> {
+                               new SelectListItem { Value="1",Text="Import"},
+                               new SelectListItem {Value="4",Text="Import (RMS)" },
+                               new SelectListItem { Value="2",Text="Export"},
+                               new SelectListItem { Value="3",Text="General"}}, "----Select----", new { @class = "form-control input-sm dropdown" })
+                                        </span>
+                                    }
+                                    @Html.ValidationMessageFor(m => m.Type, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    @Html.LabelFor(m => m.Code, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    @*<span class="ReQSimbol">*</span>*@
+                                    @*Code is actually refering to Clause*@
+                                    @Html.TextBoxFor(m => m.Code, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.Code, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1">
+                                    @Html.LabelFor(m => m.SacCode, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    <span class="ReQSimbol">*</span>
+                                    @Html.TextBoxFor(m => m.SacCode, new { @class = "form-control input-sm", @readonly = "readonly" })
+                                    @Html.HiddenFor(m => m.SacId)
+                                    @Html.ValidationMessageFor(m => m.SacCode, "", new { @class = "Error_Msg" })
+                                    <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#myModal"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Short Description:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextBoxFor(m => m.ShortDescription, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.ShortDescription, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Description:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextAreaFor(m => m.Description, new { @style = "width:100%;height:75px;" })
+                                    @Html.ValidationMessageFor(m => m.Description, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-offset-4 col-md-2" style="text-align:center">
+                                <input type="submit" class="btn log_Btn_sm" value="Save" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" class="btn log_Btn_sm" value="Reset" onclick="ResetOperation()" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_top SignUp_space_bottom2" style="background-color:transparent">
+                            <div id="DivOperationMsg"></div>
+                        </div>
+                        <div class="logErrMsg" style="background-color:transparent" id="DivOperationErrMsg"></div>
+                }
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="DivOperationList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+
+
+
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of SAC Code</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="box" type="text" />
+                <ul class="navList" id="PartyList">
+                    @{
+                        foreach (var item in Model.LstSac)
+                        {
+                            <li id="@item.SACId">@item.SACCode</li>
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@*<div class="modal fade"id="myModal"role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dissmiss="modal">&times;</button>
+                    <h4 class="modal-title">List Of SAC Code</h4>
+                </div>
+                <div class="modal-body">
+                    <input placeholder="Search Me" id="box" type="text" />
+                    <ul class="navList" id="SacList">
+                        @{
+                            foreach (var item in Model.LstSac)
+                            {
+                                <li id="@item.SACId">@item.SACCode</li>
+                            }
+                        }
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dissmiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>*@
+
+

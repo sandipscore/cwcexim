@@ -1,0 +1,689 @@
+﻿
+@model CwcExim.Areas.Report.Models.Ppg_PartyLedgerStatement
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "PDAOnFailure";
+    options.OnSuccess = "PDAOnSuccess";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<script>
+    $(function () {
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+
+</script>
+@using (Ajax.BeginForm("GetPartyLedgerReportExternalUser", "Ppg_ReportCWCV2", options))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Party Ledger Statement</h4>
+                            </div>
+                        </div>
+                        <div class="Form_Space_top">
+                            <div class="row">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Period From:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.FromDate, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true, @tabindex = 1 })
+                                        @Html.ValidationMessageFor(m => m.FromDate, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col_cus_2 col_cus_offset_3 col-md-offset-5 padding_rt">
+                                        <label for="FromDate" class="InputLabel">Period To:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.ToDate, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true, @tabindex = 2 })
+                                        @Html.ValidationMessageFor(m => m.ToDate, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Party:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.Party, "", new { @class = "form-control input-sm", @readonly = true, @tabindex = 3 })                                   
+                                    @Html.HiddenFor(m => m.PartyId)
+                                    @Html.ValidationMessageFor(m => m.Party, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="btnPWOAPrint" tabindex=4 />
+                            </div>
+                        </div>
+                        <div class="logErrMsg Form_Space_bottom" id="DivONErrMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="PartyModal" role="dialog">
+            <div class="modal-dialog">
+
+                <!-- Modal content-->
+                <div class="modal-content popup_modal" style="width:80%;">
+                    <div class="modal-header popup_header">
+                        <button type="button" class="close" onclick="CloseParty()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                        <h4 class="modal-title">List of Party</h4>
+                    </div>
+                    <div class="modal-body popup_body" style="position:relative;">
+                        <input placeholder="Search By Party Or Party Code" id="PartyBox" type="text" tabindex="100" />
+                        <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchParty()"></i></span>
+                        <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                            <thead>
+                                <tr>
+                                    <th colspan="8" width="80%">Party</th>
+                                    <th colspan="4" width="20%">Party Code</th>
+                                </tr>
+                            </thead>
+                        </table>
+                        <div id="slim_scroll">
+                            <table class="table dataTable table-bordered table-striped slim_tble" id="tblParty">
+                                @{
+                                    if (ViewBag.LstParty != null)
+                                    {
+                                        var tabindex = 101;
+                                        foreach (var item in ViewBag.LstParty)
+                                        {
+                                            <tr tabindex="@tabindex" onclick="SelectParty(@item.PartyId,'@item.Party')" onkeypress="SelectParty(@item.PartyId,'@item.Party')">
+                                                <td colspan="8" width="80%" class="txt_wrp">@item.Party</td>
+                                                <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                            </tr>
+
+                                            tabindex++;
+                                        }
+                                    }
+                                }
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="row">
+                            <div class="col-md-5">
+                                @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                                {
+                                    <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreParty()" class="btn log_Btn_sm" id="btnLoadMoreParty">Load More Data</button>
+                                }
+                                else
+                                {
+                                    <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreParty()" class="btn log_Btn_sm" id="btnLoadMoreParty" disabled>Load More Data</button>
+                                }
+                            </div>
+                            <div class="col-md-offset-3 col-md-4">
+                                <button type="button" class="btn log_Btn_sm" onclick="CloseParty()">Close</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+                                    }
+
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+</script>
+<script>
+    $('#PeriodFrom').focus();
+    $('#btnPWOAPrint').on("click", function () {
+        debugger;
+        var Status = true;
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="FromDate"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="ToDate"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        if ($('#Party').val() == "") {
+            $('[data-valmsg-for="Party"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        $('#DivONErrMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivONErrMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('Period To must be greater than Period From');
+            return false;
+        }
+        return true;
+    });
+    function PDAOnFailure() { }
+    function PDAOnSuccess(data) {
+        $('#DivONErrMsg').html('')
+        debugger;
+        if (data.Status == 1) {
+
+            SaveReportPdf(data);
+        }
+        else {
+            $('#DivONErrMsg').html(data.Message);
+        }
+    }
+
+    function SaveReportPdf(data)
+    {
+        debugger;
+
+        var today = new Date();
+       var dd = today.getDate();
+        var mm = today.getMonth() + 1;
+
+        var yyyy = today.getFullYear();
+        if (dd < 10) {
+            dd = '0' + dd;
+        }
+        if (mm < 10) {
+            mm = '0' + mm;
+        }
+        var today = dd + '/' + mm + '/' + yyyy;
+        var OAFromDate = $('#PeriodFrom').val();
+        var OAToDate = $('#PeriodTo').val();
+        var PostData = new FormData(); 
+        var Pages="";
+
+        Pages +="<table cellspacing='0' cellpadding='5' style='width:100%; font-family: Arial, Helvetica, sans-serif; margin: 0;'><thead>";
+        Pages +="<tr><td colspan='12'>";
+        Pages +="<table cellspacing='0' cellpadding='5' style='width:100%; font-family: Arial, Helvetica, sans-serif; margin: 0;'><tbody>";
+        Pages +="<tr><td width='40%' valign='top'><img align='right' src='IMGSRC'/></td>";
+        Pages +="<td width='200%' valign='top' align='center'><h1 style='font-size: 16px; margin: 0; padding: 0;'>CENTRAL WAREHOUSING CORPORATION</h1><label style='font-size: 7pt;'>(A Govt. of India Undertaking)</label><br/><span style='font-size:7pt;'>ICD Patparganj-Delhi</span><br/><label style='font-size: 7pt; font-weight:bold;'>PARTY LEDGER STATEMENT</label></td>";
+        Pages +="<td width='40%' valign='top'><img align='right' src='ISO'/></td>";
+        Pages +="<td width='40%' valign='top'><img align='right' src='SWACHBHARAT'/></td>";
+        Pages +="</tr>";
+        Pages +="</tbody></table>";
+        Pages +="</td></tr>";
+        Pages +="</thead></table>";
+
+        Pages +="<table cellspacing='0' cellpadding='5' style='width:100%; font-family: Arial, Helvetica, sans-serif; margin: 0; font-size:6pt;'><thead>";
+        Pages +="<tr><td colspan='6' style='border:1px solid #000; border-bottom:0;'><b>Party Name :</b>" + data.Data.PartyName + "</td>";
+        Pages +="<td colspan='6' style='border:1px solid #000; border-left:0; border-bottom:0;'><b>Date: :</b>" + today + "</td></tr>";
+        Pages +="<tr><td colspan='6' style='border:1px solid #000; border-bottom:0;'><b>GST NO :</b>" + data.Data.PartyGst + "</td>";
+        Pages +="<td colspan='6' style='border:1px solid #000; border-left:0; border-bottom:0;'><b>Period :</b> " + OAFromDate + " - " + OAToDate + "</td></tr>";
+        Pages +="<tr><td colspan='6' style='border:1px solid #000;'><b>Opening Balance :" + data.Data.Opening + "</b></td>";
+        Pages +="<td colspan='6' style='border:1px solid #000; border-left:0;'><b> Security Deposit :" + data.Data.SDBalance + "</b></td></tr>";
+        Pages +="<tr><td><span><br/></span></td></tr>";
+        Pages +="</thead></table>";
+
+        Pages +="<table cellspacing='0' cellpadding='5' style='width:100%; text-align:center; border-collapse:collapse; font-size:6.5pt;'>";
+        Pages +="<thead>";
+        Pages +="<tr>";
+        //Pages +="<th style='border:1px solid #000; width:50px;'>SL.No</th>";
+        Pages +="<th style='border:1px solid #000; width:12%;'>Receipt Date/Invoice Date</th>";
+        Pages +="<th style='border:1px solid #000; border-left:0; width:18%;'>Receipt No./Invoice No.</th>";
+        Pages +="<th style='border:1px solid #000; border-left:0; width:27%;'>Charge Code</th>";
+        Pages +="<th style='border:1px solid #000; border-left:0; width:13%;'>Container/ShipBill</th>";
+        Pages +="<th style='border:1px solid #000; border-left:0; width:13%; text-align:right;'>Debit Amount</th>";
+        Pages +="<th style='border:1px solid #000; border-left:0; width:13%; text-align:right;'>Credit Amount</th>";
+        Pages +="<th style='border:1px solid #000; border-left:0; width:13%; text-align:right;'>Balance</th>";
+        Pages +="<th style='border:1px solid #000; border-left:0; width:15%;'>Cheque No.</th></tr>";
+        Pages +="</thead>";
+
+        Pages += "<tbody>";
+        var balan=data.Data.Opening;
+        var sl=1;
+        var page=0;
+        var pagecount=0;
+        counter=0;
+        var rno="";
+        var flagg=0;
+        var total=0;
+        var ntotal=0;
+        var pr=0;
+        var inc=0;
+        $.each(data.Data.LstOnAccountDtl, function (i, item) {
+            debugger;
+
+            counter=1;
+            if(item.ChargeCode!='Total')
+            {
+                balan=balan+(item.DepositAmt)-(item.InvAmt);
+                inc=inc+item.InvAmt;
+            }
+            if(i==0 && item.InvAmt>0)
+            {
+                rno=item.ReceiptNo;
+
+
+            }
+            if(rno==item.ReceiptNo && item.InvAmt>0)
+            { flagg=0;
+            }
+
+            if((rno!=item.ReceiptNo) && item.InvAmt>0)
+            { flagg=1;
+            rno=item.ReceiptNo;
+            $.each(data.Data.LstOnSum, function (i1, itemd) {
+
+                if(itemd.ReceiptNo==rno)
+                {
+                    ntotal=itemd.Total;
+
+                }
+            });
+
+                sl=sl+1;
+            }
+
+            page=page+1;
+
+
+            if(page==44 && pagecount==0)
+            {
+                page=0;
+                pagecount=pagecount+1;
+                Pages +="<tr style='height:20px;'><th></th></tr>";
+                //Pages +="<tr><th style='border:1px solid #000; width:50px;'>SL.No</th>";
+                Pages +="<tr>";
+                Pages +="<th style='border:1px solid #000; width:12%;'>Receipt Date/Invoice Date</th>";
+                Pages +="<th style='border:1px solid #000; border-left:0; width:18%;'>Receipt No./Invoice No.</th>";
+                Pages +="<th style='border:1px solid #000; border-left:0; width:27%;'>Charge Code</th>";
+                Pages +="<th style='border:1px solid #000; border-left:0; width:13%;'>Container/ShipBill</th>";
+                Pages +="<th style='border:1px solid #000; border-left:0; width:13%; text-align:right;'>Debit Amount</th>";
+                Pages +="<th style='border:1px solid #000; border-left:0; width:13%; text-align:right;'>Credit Amount</th>";
+                Pages +="<th style='border:1px solid #000; border-left:0; width:13%; text-align:right;'>Balance</th>";
+                Pages +="<th style='border:1px solid #000; border-left:0; width:15%;'>Cheque No.</th></tr>";
+
+            }
+
+            if(page==51 && pagecount>0)
+            {
+                page=0;
+                pagecount=pagecount+1;
+                Pages +="<tr style='height:20px;'><th></th></tr>";
+                //Pages +="<tr><th style='border:1px solid #000; width:50px;'>SL.No</th>";
+                Pages +="<tr>";
+                Pages +="<th style='border:1px solid #000; width:12%;'>Receipt Date/Invoice Date</th>";
+                Pages +="<th style='border:1px solid #000; border-left:0; width:18%;'>Receipt No./Invoice No.</th>";
+                Pages +="<th style='border:1px solid #000; border-left:0; width:27%;'>Charge Code</th>";
+                Pages +="<th style='border:1px solid #000; border-left:0; width:13%;'>Container/ShipBill</th>";
+                Pages +="<th style='border:1px solid #000; border-left:0; width:13%; text-align:right;'>Debit Amount</th>";
+                Pages +="<th style='border:1px solid #000; border-left:0; width:13%; text-align:right;'>Credit Amount</th>";
+                Pages +="<th style='border:1px solid #000; border-left:0; width:13%; text-align:right;'>Balance</th>";
+                Pages +="<th style='border:1px solid #000; border-left:0; width:15%;'>Cheque No.</th></tr>";
+
+            }
+
+            if(i==0 && item.InvAmt>0)
+            {
+
+                //Pages += "<tr style='height:10px;'><td style='border:1px solid #000; border-top:0;'>" + sl +"</td>";
+                Pages += "<tr style='height:10px;'>";
+                Pages += "<td style='border:1px solid #000; border-top:0;'>" + item.ReceivedDate + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0;'>" + item.ReceiptNo + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0;'>" + item.ChargeCode + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0;'>" + item.ContainerNo + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0; text-align:right;'>" + item.InvAmt + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0; text-align:right;'>" + item.DepositAmt + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0; text-align:right;'>" + balan.toFixed(2) + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0;'>" + item.Cheque_No + "</td></tr>";
+            }
+
+            if(flagg==0 && (rno==item.ReceiptNo) && i>0 && item.InvAmt>0 )
+            {
+                //Pages += "<tr style='height:10px;'><td style='border:1px solid #000; border-top:0;'></td>";
+                Pages += "<tr style='height:10px;'>";
+                Pages += "<td style='border:1px solid #000; border-top:0;'></td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0;'></td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0;'>" + item.ChargeCode + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0;'>" + item.ContainerNo + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0; text-align:right;'>" + item.InvAmt + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0; text-align:right;'>" + item.DepositAmt + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0; text-align:right;'>" + balan.toFixed(2) + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0;'>" + item.Cheque_No + "</td></tr>";
+
+            }
+
+
+            if(flagg==1 && i>0 && item.InvAmt>0)
+            {
+                //Pages += "<tr style='height:10px;'><td style='border:1px solid #000; border-top:0;'>" + sl +"</td>";
+                Pages += "<tr style='height:10px;'>";
+                Pages += "<td style='border:1px solid #000; border-top:0;'>" + item.ReceivedDate + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0;'>" + item.ReceiptNo + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0;'>" + item.ChargeCode + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0;'>" + item.ContainerNo + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0; text-align:right;'>" + item.InvAmt + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0; text-align:right;'>" + item.DepositAmt + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0; text-align:right;'>" + balan.toFixed(2) + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0;'>" + item.Cheque_No + "</td></tr>";
+            }
+
+
+
+            if( item.DepositAmt>0)
+            {
+
+
+                //Pages += "<tr style='height:10px;'><td style='border:1px solid #000; border-top:0;'>" + sl +"</td>";
+                Pages += "<tr style='height:10px;'>";
+                Pages += "<td style='border:1px solid #000; border-top:0;'>" + item.ReceivedDate + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0;'>" + item.ReceiptNo + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0;'>" + item.ChargeCode + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0;'>" + item.ContainerNo + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0; text-align:right;'>" + item.InvAmt + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0; text-align:right;'>" + item.DepositAmt + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0; text-align:right;'>" + balan.toFixed(2) + "</td>";
+                Pages += "<td style='border:1px solid #000; border-left:0; border-top:0;'>" + item.Cheque_No + "</td></tr>";
+            }
+
+
+
+        });
+        Pages +="<tr><th cellpadding='6' colspan='5' style='border:1px solid #000; border-top:0; text-align:left;'>TOTAL :</th>";
+        Pages +="<th style='border:1px solid #000; border-left:0; border-top:0; text-align:right;'>" + inc.toFixed(2) + "</th>";
+        Pages +="<th style='border:1px solid #000; border-left:0; border-top:0; text-align:right;'>" + data.Data.Deposit + "</th>";
+        Pages +="<th style='border:1px solid #000; border-left:0; border-top:0;'></th>";
+        Pages +="<th style='border:1px solid #000; border-left:0; border-top:0;'></th>";
+        Pages +="</tr>";
+        if(counter==1)
+        {
+            Pages += "<tr><th cellpadding='6' colspan='8' style='border:1px solid #000; border-top:0; text-align:right;'>Closing Balance : " +  balan.toFixed(2) + "</th>";
+
+        }
+        else
+        {
+            Pages += "<tr><th cellpadding='6' colspan='8' style='border:1px solid #000; border-top:0; text-align:right;'>Closing Balance : " + data.Data.Opening + "</th>";
+        }
+
+    Pages += "<th style='border:1px solid #000; border-left:0; border-top:0;'></th></tr>";
+
+        Pages +="</tbody></table>";        
+
+        PostData.append("Page", Pages);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GeneratePDFForPartyLedgerDetails", "Ppg_ReportCWCV2", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            async:false,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+            }
+        });
+    }
+
+    var Page=0;
+
+    function LoadMoreParty() {
+        debugger;
+        $.ajax({
+            url: '/Report/WFLD_ReportCWC/OALoadPartyLedgerParty',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tabindex=101;
+                    $.each(data.Data.LstParty, function (item, elem) {
+                        debugger;
+                        html += '<tr tabindex='+ tabindex +'  onclick="SelectParty(' + elem.PartyId + ',&quot;' + elem.Party + '&quot;)" onkeypress="SelectParty(' + elem.PartyId + ',&quot;' + elem.Party + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.Party + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        tabindex++;
+                    });
+                    if (Page == -1)
+                        $('#tblParty tbody').html(html);
+                    else
+                        $('#tblParty tbody').append(html);
+                    Page++;
+
+                    debugger;
+                    if (data.Data.State == true)
+                        $('#btnLoadMoreParty').prop('disabled', false);
+                    else $('#btnLoadMoreParty').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+
+    function LoadParty() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/Report/WFLD_ReportCWC/OALoadPartyLedgerParty',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    var tabindex=101;
+                    $.each(data.Data.LstParty, function (item, elem) {
+                        debugger;
+                        html += '<tr tabindex='+ tabindex +' onclick="SelectParty(' + elem.PartyId + ',&quot;' + elem.Party + '&quot;)" onkeypress="SelectParty(' + elem.PartyId + ',&quot;' + elem.Party + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.Party + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        tabindex++;
+                    });
+
+                    $('#tblParty tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMoreParty').prop('disabled', false);
+                    else $('#btnLoadMoreParty').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SelectParty(PartyId, Party) {
+        debugger;
+        $('#Party').val(Party);
+        $('#PartyId').val(PartyId);
+        $("#PartyModal").modal("hide");
+        $('#PartyBox').val('');
+        LoadParty();
+    }
+
+    function SearchParty() {
+        debugger;
+        if ($('#PartyBox').val() != '') {
+            $.ajax({
+                url: '/Report/WFLD_ReportCWC/OASearchPartyLedgerParty',
+                type: 'GET',
+                data: { PartyCode: $('#PartyBox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        debugger;
+                        var html = '';
+                        var tabindex = 101;
+                        $.each(data.Data.LstParty, function (item, elem) {
+                            debugger;
+                            html += '<tr tabindex=' + tabindex + '  onclick="SelectParty(' + elem.PartyId + ',&quot;' + elem.Party + '&quot;)" onkeypress="SelectParty(' + elem.PartyId + ',&quot;' + elem.Party + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.Party + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                            tabindex++;
+                        });
+                        $('#tblParty tbody').html('');
+                        $('#tblParty tbody').html(html);
+                        $('#btnLoadMoreParty').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tblParty tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMoreParty').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadParty();
+    }
+
+    function CloseParty() {
+        debugger;
+        $('#PartyBox').val('');
+        $("#PartyModal").modal("hide");
+        LoadParty();
+    }
+
+
+    function PopupActivate(Id) {
+        debugger;
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+
+        if (CharCode == 32) {
+
+            if (Id == "stuffingModal") {
+                debugger;
+                $("#stuffingModal").modal('show');
+            }
+
+            if (Id == "CHAModal") {
+                debugger;
+                angular.element('#YardInvoiceController').scope().LoadCHAList();
+
+
+                $("#CHAModal").modal('show');
+            }
+
+
+
+
+            $('#' + Id).modal('show');
+            if (Id == "MyModal") {
+                debugger;
+                $('#box').focus();
+            }
+
+            if (Id == "PartyModal") {
+                debugger;
+
+
+
+                $("#PartyModal").modal('show');
+            }
+
+
+            if (Id == "PayeeModal") {
+                debugger;
+
+                angular.element('#YardInvoiceController').scope().LoadPayeeList();
+
+
+                $("PayeeModal").modal('show');
+            }
+
+            if (Id == "CHAModal") {
+                debugger;
+                $('#SearchCHAText').focus();
+            }
+
+            if (Id == "PortDestModal") {
+                debugger;
+                $('#PortDestbox').focus();
+            }
+
+
+            if (Id == "PortModal") {
+                debugger;
+                $('#Portbox').focus();
+            }
+
+            if (Id == "CommodityModal") {
+                debugger;
+                $('#CommodityBox').focus();
+            }
+            if (Id == "SBNoModal") {
+                debugger;
+                $('#SBNoBox').focus();
+            }
+            if (Id == "ExporterModal") {
+                debugger;
+                $('#Exporterbox').focus();
+            }
+        }
+
+
+
+
+    }
+
+
+
+
+    $('#PartyModal').on('shown.bs.modal', function () {
+
+        $('#PartyBox').focus();
+
+    });
+
+
+    $('#PartyBox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstCHA > li').show();
+        else {
+            $('#lstCHA > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+
+            SearchParty();
+        }
+    });
+</script>

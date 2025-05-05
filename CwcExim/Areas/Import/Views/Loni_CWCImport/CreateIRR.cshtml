@@ -1,0 +1,436 @@
+﻿@if (ViewBag.ContainersList != null)
+{
+    <input type="hidden" id="hdnContainersList" value="@ViewBag.ContainersList" />
+}
+else
+{
+    <input type="hidden" id="hdnContainersList" value="" />
+}
+
+@if (ViewBag.TrainsList != null)
+{
+    <input type="hidden" id="hdnTrainsList" value="@ViewBag.TrainsList" />
+}
+else
+{
+    <input type="hidden" id="hdnTrainsList" value="" />
+}
+
+
+@if (ViewBag.RightsList != null)
+{
+    <input type="hidden" id="hdnRights" value="@ViewBag.RightsList" />
+}
+else
+{
+    <input type="hidden" id="hdnRights" value="" />
+}
+<input type="hidden" id="hdnCurDate" value="@DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")" />
+
+
+<script src="~/Areas/Import/Scripts/App/Models/IrrInvoiceModel.js"></script>
+<script src="~/Areas/Import/Scripts/App/Services/IrrService.js"></script>
+<script src="~/Areas/Import/Scripts/App/Controllers/IrrCtrl.js"></script>
+<script>
+
+    angular.bootstrap(document.getElementById('IrrAppDiv'), ['CWCApp']);
+
+    $('#InvoiceDate').datetimepicker({
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        dateFormat: "dd/mm/yy",
+        altField: "#slider_example_4andHalf_alt",
+        altFieldTimeOnly: false,
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+    var TaxType = '@ViewData["InvType"].ToString()';
+    function IVType(Type) {
+        debugger;
+        TaxType = Type;
+        $('#DivBody').load('/Import/Loni_CWCImport/CreateIRR?type=' + Type);
+    }
+    if (TaxType == 'Tax')
+        $('#Tax').prop('checked', true);
+    else
+        $('#Bill').prop('checked', true);
+
+
+
+    function PrintInvoice() {
+        debugger;
+        var invoiceno = $('#InvoiceNo').val();
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            /*url: 'Url.Action("YardInvoicePrint", "Loni_CWCImport", new { Area = "Import" }) ',*/
+            url: '@Url.Action("GetBulkInvoiceReport", "Ppg_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                InvoiceNumber: invoiceno,
+                InvoiceModule: 'IRR',
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                InvoiceModuleName: 'IRR',
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }
+</script>
+
+
+<div id="IrrAppDiv">
+    <div ng-controller="IrrCtrl">
+
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-offset-0-5 col-md-11">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>IRR Invoice</h4>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col-md-offset-1-5 col_cus_offset_2 col_cus_2">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("InvoiceType", "Tax", new { id = "Tax", @checked = true, @onclick = "IVType('Tax')" })
+                                        <label for="Tax"><i class="circle"></i><span>Tax Invoice</span></label>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 col_cus_3">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("InvoiceType", "Bill", new { id = "Bill", @onclick = "IVType('Bill')" })
+                                        <label for="Bill"><i class="circle"></i><span>Bill Of Supply</span></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Invoice No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    <input id="InvoiceNo" ng-model="IrrObj.InvoiceNo" type="text"  readonly />
+                                </div>                                
+
+                                <div class="col-md-1-5 col-md-offset-4-5 col_cus_2">
+                                    <label>Delivery Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    <input type="text" id="InvoiceDate" ng-model="IrrObj.InvoiceDate" readonly/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Train No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    <input type="text" id="TrainNo" readonly ng-model="TrainNo" />
+                                    <span class="search" id="TrainNosearch" ng-hide="IrrObj.TrainNo !=''"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#TrainNoModal"></i></span>
+                                </div>
+                                <div class="col-md-1-5">
+                                    Train Date:
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    <input type="text" id="Train Date" readonly ng-model="TrainDate" />
+                                </div>                               
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Container No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    <input type="text" id="ContainerNo" readonly ng-model="ContainerNo"/>
+                                    <span class="search" id="ContainerNosearch" ng-hide="IrrObj.InvoiceNo !=''"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerNoModal"></i></span>
+
+                                </div>
+                                <div class="col-md-1-5">
+                                    ICD Code:
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    <input type="text" id="DisplayCfs" readonly ng-model="DisplayCfs" />
+                                </div>
+                               
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Cargo Type:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    <select ng-change="CalculateCharges()" ng-model="IrrObj.CargoType" ng-options="c.Value as c.Text for c in CargoTypes"></select>
+                                </div>
+                                <div class="col-md-1-5">
+                                    Size:
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    <input type="text" id="Size" readonly ng-model="Size" />
+                                </div>
+                               
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    Gross Wt.:
+                                </div>
+                                <div class="col-md-2-5 col_cus_10">
+                                    <input type="text" id="GrossWt" readonly ng-model="GrossWt" />
+                                </div>
+                                <div class="col-md-1-5">
+                                    Tare Wt.:
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    <input type="text" id="TareWt" readonly ng-model="TareWt" />
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-1 col_cus_2">
+                                   Net Wt.:
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    <input type="text" id="CargoWt" readonly ng-model="CargoWt" />
+                                </div>
+
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Wagon No:</label>
+                                </div>
+                                <div class="col-md-2-5 col_cus_10">
+                                    <input type="text" id="WagonNo" readonly ng-model="WagonNo" />
+                                </div>
+                                <div class="col-md-1-5">
+                                    Via:
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    <input type="text" id="Via" readonly ng-model="Via" />
+                                </div> 
+                                <div class="col-md-1-5 col-md-offset-1 col_cus_2">
+                                    Port Of Origin:
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    <input type="text" id="PortOfOrigin" readonly ng-model="PortOfOrigin" />
+                                </div>                             
+
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Shipping Line:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    <input type="text" readonly ng-model="IrrObj.PayeeName"/>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Party :</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    <input type="text" readonly  ng-model="IrrObj.PartyName"/>                                  
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label> GST No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    <input type="text"  readonly  ng-model="IrrObj.GstNo"/>
+                                </div>
+                                <div class="col-md-1-5">
+                                    <label>SEZ</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.DropDownList("SEZ", new List<SelectListItem>
+                                        {
+                                        new SelectListItem { Text="SEZWP",Value="SEZWP"},
+                                        new SelectListItem {Text="SEZWOP",Value="SEZWOP" }
+
+                                        }, "---Select---", new { @class = "form-control input-sm dropdown" })
+                                    @Html.ValidationMessage("SEZ", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="Head_h5">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h5>Charges</h5>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="col-md-12">
+                                    <table id="tblCWCCharges" class="table table-bordered table-striped dataTable Table_center">
+                                        <thead>
+                                            <tr>
+                                                <th rowspan="2">Charges</th>
+                                                <th rowspan="2">Value</th>
+                                                <th colspan="2" class="text-center">IGST</th>
+                                                <th colspan="2" class="text-center">CGST</th>
+                                                <th colspan="2" class="text-center">SGST</th>
+                                                <th rowspan="2" style="width:15%;">Total</th>
+                                            </tr>
+                                            <tr>
+                                                <th>%</th>
+                                                <th>Amt</th>
+                                                <th>%</th>
+                                                <th>Amt</th>
+                                                <th>%</th>
+                                                <th style="border-right:1px solid #ddd;">Amt</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>{{IrrObj.OperationDesc}} [{{IrrObj.OperationSDesc}}]</td>
+                                                <td style="text-align:right;">{{IrrObj.Amount | number : 2}}</td>
+                                                <td style="text-align:right;">{{IrrObj.IGSTPer | number : 2}}</td>
+                                                <td style="text-align:right;">{{IrrObj.IGST | number : 2}}</td>
+                                                <td style="text-align:right;">{{IrrObj.CGSTPer | number : 2}}</td>
+                                                <td style="text-align:right;">{{IrrObj.CGST | number : 2}}</td>
+                                                <td style="text-align:right;">{{IrrObj.SGSTPer | number : 2}}</td>
+                                                <td style="text-align:right;">{{IrrObj.SGST | number : 2}}</td>
+                                                <td style="text-align:right;">{{IrrObj.Total | number : 2}}</td>
+                                            </tr>
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                    <td colspan="8" class="text-right">Total:</td>
+                                                    <td style="font-weight:bold;color:#ff0000;text-align:right;">
+                                                        {{IrrObj.Total | number : 2}}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="8" class="text-right">Round Up:</td>
+                                                    <td style="font-weight:bold;color:#ff0000;text-align:right;">
+                                                        {{IrrObj.RoundOff | number : 2}}
+                                                    </td>
+                                                </tr>
+                                            <tr>
+                                                <td colspan="8" class="text-right">Total Invoice Amount:</td>
+                                                <td style="font-weight:bold;color:#ff0000;text-align:right;">
+                                                    {{IrrObj.InvoiceAmt | number : 2}}
+                                                </td>
+                                            </tr>
+
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5">
+                                    <label>Remarks:</label>
+                                </div>
+                                <div class="col-md-10-5">
+                                    <textarea id="Remarks" style="height:75px;" maxlength="500" ng-model="IrrObj.Remarks"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_bottom SignUp_space_top">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivPaySheetCargoMsg" style="background-color:transparent">{{Message}}</div>
+                        <div class="row SignUp_space_bottom2">
+                            <div class="col-md-offset-3 col-md-2">
+                                <input type="button" id="btnSave" value="Save"  class="btn log_Btn_sm" ng-click="Save()" ng-disabled="IrrObj.InvoiceNo !=''" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" value="Reset" class="btn log_Btn_sm" ng-click="Reset()" />
+                            </div>
+
+                            <div class="col-md-3">
+                                <input type="button" id="BtnGenerateIRN" class="btn log_Btn_sm" value="Generate IRN" ng-click="GenerateIRN()" disabled="disabled" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" value="Print" class="btn log_Btn_sm" id="btnPrint" onclick="PrintInvoice()" ng-disabled="IrrObj.InvoiceNo ==''"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+        <div id="ContainerNoModal" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+                <!-- Modal content-->
+                <div class="modal-content popup_modal">
+                    <div class="modal-header popup_header">
+                        <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                        <h4 class="modal-title">List of Containers</h4>
+                    </div>
+                    <div class="modal-body popup_body">
+                        <input placeholder="Search Me"  type="text" ng-model="searchContno" />
+                        <ul class="navList" id="lstContainers">
+                            <li ng-repeat="c in Containers | filter :{ContainerNo:searchContno}"  ng-click="SelectContainer(c)">{{c.ContainerNo}}</li>
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="row">
+                            <div class="col-md-offset-6 col-md-6">
+                                <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="TrainNoModal" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+                <!-- Modal content-->
+                <div class="modal-content popup_modal">
+                    <div class="modal-header popup_header">
+                        <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                        <h4 class="modal-title">List of Train</h4>
+                    </div>
+                    <div class="modal-body popup_body">
+                        <input placeholder="Search Me" type="text" ng-model="searchTrainno" />
+                        <ul class="navList" id="lstTrains">
+                            <li ng-repeat="c in Trains | filter :{TrainNo:searchTrainno}" ng-click="SelectTrain(c)">{{c.TrainNoDate}}</li>
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="row">
+                            <div class="col-md-offset-6 col-md-6">
+                                <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

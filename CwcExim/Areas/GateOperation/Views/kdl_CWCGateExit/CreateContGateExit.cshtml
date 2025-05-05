@@ -1,0 +1,267 @@
+﻿@model CwcExim.Areas.GateOperation.Models.Kdl_GateEntryExitCBT
+
+@{
+    AjaxOptions options = new AjaxOptions();
+    // options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "GateExitOnSuccess";
+    options.OnFailure = "GateExitOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<script type="text/javascript">
+    var TimeInSeconds;
+    $(document).ready(function () {
+
+        TimeInSeconds = 3000;
+
+    });
+
+
+
+    
+
+</script>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+
+                @using (Ajax.BeginForm("AddEditExitThroughKdlGateCBT", "kdl_CWCGateExit", options))
+                { 
+                @Html.AntiForgeryToken()
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>Container Exit Through Gate</h4>
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5 col_cus_2">
+                            @Html.Label("Container No:")
+                        </div>
+                        <div class="col-md-2-5">
+                            @Html.Hidden("txtContainerId")
+                            @Html.Hidden("CFSCode")
+                            @*@Html.TextBox("txtContainerNo", new { @class = "form-control input-sm", @readonly = true })*@
+                            <input type="text" id="ContainerNo" name="ContainerNo" readonly="readonly" class="form-control input-sm" />
+                            <span class="search" id="ShippingLineSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerModal"></i></span>
+                            @Html.ValidationMessage("txtContainerNo", "", new { @class = "Error_Msg" })
+
+                            @*@Html.TextBox("txtContainerNo", "", new { @class = "form-control input-sm", @onblur = "ClearErrMsg(this)", onkeypress = "return ValidateData(event)", maxlength = "30" })
+                        @Html.ValidationMessage("txtContainerNo", new { @class = "Error_Msg" })*@
+                        </div>
+
+                    </div>
+                </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_top2 SignUp_space_bottom2"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-offset-4 col-md-2">
+                            <input type="button" id="btnSave" class="btn log_Btn_sm" value="Exit" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" id="btnReset" class="btn log_Btn_sm" value="Reset" onclick="ResetAllFields()" />
+                        </div>
+                    </div>
+
+
+                    <div class="logSuccMsg Form_Space_top" id="DivMsg" style="background-color:transparent"></div>
+                    <div class="logSuccMsg SignUp_space_bottom2" style="background-color:transparent">
+                        <div id="DivExitThroughGateMsg" style="background-color:transparent"></div>
+                    </div>
+
+
+                }
+
+                         <div id="ContainerModal" class="modal fade" role="dialog">
+                            <div class="modal-dialog">
+                            <!-- Modal content-->
+                            <div class="modal-content popup_modal">
+                                <div class="modal-header popup_header">
+                                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                                    <h4 class="modal-title"> Entered Container</h4>
+                                </div>
+                                <div class="modal-body popup_body">
+                                    <input placeholder="Search Me" id="Containerbox" type="text" />
+                                    <ul class="navList" id="lstContainer">
+                                        @{
+                                            if (@ViewBag.Lstcontainer != null)
+                                            {
+                                                foreach (var item in @ViewBag.Lstcontainer)
+                                                {
+                                                        <li id="@item.ContainerNo" onclick="GetCBTDet('@item.ContainerNo','@item.CFSCode')">@item.ContainerNo</li>
+                                                }
+                                            }
+                                        }
+                                    </ul>
+                                </div>
+                                <div class="modal-footer">
+                                    <div class="row">
+                                        <div id="DivGateExitList" class="col-md-offset-6 col-md-6">
+                                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+              </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+
+    function GetCBTDet(ContainerNo, CFSCode)
+    {
+        debugger;
+        var ContainerNo = ContainerNo.split('_');
+        $('#ContainerNo').val(ContainerNo[0]);
+        $('#CFSCode').val(CFSCode);
+        $('#ContainerModal').modal("hide");
+
+    }
+
+
+    $('#Containerbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('lstContainer > li').show();
+        else {
+            $('#lstContainer > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    $('#ContainerList li').on("click", function () {
+        debugger;
+        $('#ContainerNo').val($(this).text());
+        $('#CFSCode').val($(this).attr('id'));
+        var CFSCode = $('#CFSCode').val();
+        $("#ContainerModal").modal("hide");
+    });
+
+
+    function LoadGateExitView() {
+        $('#DivBody').load('/GateOperation/kdl_CWCGateExit/CreateContGateExit');
+    }
+
+    function GateExitOnSuccess(data) {
+
+        debugger;
+        if (data.Status == 1 || data.Status == 2) {
+
+            if ($('#DivExitThroughGateMsg').hasClass('logErrMsg'))
+                $('#DivExitThroughGateMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivExitThroughGateMsg').html(data.Message);
+            setTimeout(LoadGateExitView, TimeInSeconds);
+            //GetExitThroughGateList();
+        }
+
+        else {
+            if ($('#DivExitThroughGateMsg').hasClass('logSuccMsg'))
+                $('#DivExitThroughGateMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivExitThroughGateMsg').html(data.Message);
+        }
+    }
+    function GateExitOnFailure() {
+    }
+
+
+
+
+
+    function ClearErrMsg(elem) {
+        $('[data-valmsg-for="' + elem.id + '"]').html('');
+    }
+
+    function ValidateData(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if (CharCode == 32) {
+            return true;
+        }
+        if ((CharCode > 31 & CharCode < 48) || (CharCode > 57 & CharCode < 65) || (CharCode > 90 & CharCode < 97) || (CharCode > 122)) {
+            evt.preventDefault();
+            return false;
+        }
+        return true;
+    }
+
+
+    function AllowOnlyDecimal(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || (CharCode == 46) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+
+
+    $('#btnSave').on("click", function () {
+
+        if ($('#ContainerNo').val() == "" || $('#ContainerNo').val() == undefined)
+        {
+            alert("Select ContainerNo !!");
+            return false;
+        }
+        else
+        {
+            var conf = confirm("Are You Sure You Want To Exit?");
+            if (conf) {
+                $('#btnSave').prop("disabled", true);
+                $('#btnSave').submit();
+                return true;
+            }
+            else {
+                return false;
+            }
+
+        }
+    });
+
+
+
+    function ResetAllFields() {
+        $('[data-valmsg-for]').html('');
+        $('#ContainerNo').val('');
+
+    }
+
+
+
+
+    $('.clockpicker').clockpicker({
+        donetext: 'Done',
+        twelvehour: true
+    });
+
+    function SearchGateExit() {
+        debugger;
+        if ($('#GESearch').val().trim() == "" || $('#GESearch').val().trim() == null) {
+            GetExitThroughGateList();
+        }
+        else {
+            $('#DivGateExitList').load('/GateOperation/Kdl_GateEntryExitCBT/SearchGateExitCont?ContainerNo=' + $('#GESearch').val().trim());
+
+        }
+    }
+
+</script>
+

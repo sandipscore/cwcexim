@@ -1,0 +1,266 @@
+﻿@model CwcExim.Areas.Report.Models.DailyCashBook
+
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "RptInvoiceReportDetails";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+
+}
+<script>
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+</script>
+@using (Ajax.BeginForm("GetSDCollectionUtilizationReport", "Kdl_ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Daily SD Collection</h4>
+                            </div>
+                        </div>
+                        <div class="Form_Space_top" style="padding:5px;">
+                            <div class="row">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Period From:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col_cus_2 col_cus_offset_3 col-md-offset-4">
+                                        <label>Period To:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+
+    Date.prototype.AddDays = function (days) {
+        days = parseInt(days, 10);
+        return new Date(this.valueOf() + 1000 * 60 * 60 * 24 * days);
+    }
+
+    var dateFromRange =new Date();
+    var dateToRange = new Date();
+    var dateToProcess = new Date();
+    $('#BtnPreview').on("click", function () {
+        //alert("in");
+        //ValidateExitDet();
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        dateFromRange=FromDate;
+        dateToRange = ToDate;
+        
+        return true;
+    });
+    function RptConsumerListDtlOnFailure() { }
+    function RptInvoiceReportDetails(data) {
+        $('#DivDwnldWavMsg').html('')
+        //alert(data);
+        debugger;
+        if (data.Status == 1) {
+
+            debugger;
+            //SaveReportPdf(data);
+         
+                debugger;
+                window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+           // }
+
+
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+
+
+    function ValidateExitDet() {
+        var Status = true;
+
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="txtGrossWeight"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+
+        return Status;
+    }
+    function SaveReportPdf(data) {
+        debugger;
+       /* var FormDate = $("#PeriodFrom").val();
+        var ToDate = $("#PeriodTo").val();
+        var PostData = new FormData();
+        var Html = '<div style="text-align: center;border: 1px solid #000;">Daily cash Book From ' + FormDate + ' To ' + ToDate + '</div>'
+        Html += "<table style='width:100%;font-size:7pt;font-family:Verdana,Arial,San-serif;border:1px solid #000;border-collapse:collapse;'><thead><tr><th style='border:1px solid #000;text-align:center;'>Sr.No.</th>";
+        Html += "<th style='border:1px solid #000;text-align:center;'>Receipt Date</th>";
+        Html += "<th style='border:1px solid #000;text-align:center;'>Receipt No</th><th style='border:1px solid #000;text-align:center;'>Party Name</th><th style='border:1px solid #000;text-align:center;'>CHQ NO</th>";
+        Html += "<th style='border:1px solid #000;text-align:center;'>GEN SPACE</th><th style='border:1px solid #000;text-align:center;'>STO</th><th style='border:1px solid #000;text-align:center;'>INS</th>";
+        Html += "<th style='border:1px solid #000;text-align:center;'>GRE</th><th style='border:1px solid #000;text-align:center;'>GRL</th><th style='border:1px solid #000;text-align:center;'>MF CHRG</th>";
+         Html += "<th style='border:1px solid #000;text-align:center;'>ENT CHRG</th><th style='border:1px solid #000;text-align:center;'>FUM</th><th style='border:1px solid #000;text-align:center;'>OT CHRG</th>";
+         Html += "<th style='border:1px solid #000;text-align:center;'>CGST</th><th style='border:1px solid #000;text-align:center;'>SGST</th><th style='border:1px solid #000;text-align:center;'>IGST</th>";
+         Html += "<th style='border:1px solid #000;text-align:center;'>MISC</th><th style='border:1px solid #000;text-align:center;'>MISC EXCESS</th><th style='border:1px solid #000;text-align:center;'>TOTAL CASH</th>";
+         Html += "<th style='border:1px solid #000;text-align:center;'>TOTAL CHQ</th><th style='border:1px solid #000;text-align:center;'>TDS</th><th style='border:1px solid #000;text-align:center;'>CR. TDS</th></tr></thead>";
+         Html += "<tbody>";*/
+
+         var FormDate = $("#PeriodFrom").val();
+         var ToDate = $("#PeriodTo").val();
+         var PostData = new FormData();
+
+         var Html = '<div style="float:left; width:20%;"><img align="right" src="IMGSRC" width="90"/></div>'
+        Html += "<div style='text-align:center; width:80%; float:left;'><h1 style='font-size: 16px; margin: 0; padding: 0;'>CENTRAL WAREHOUSING CORPORATION</h1><label style='font-size: 12px;'>(A Govt. of India Undertaking)</label><br/><span style='font-size:12px;'>CFS Kandla</span><br/><label style='font-size: 14px; font-weight:bold;'>Daily SD Collection From " + FormDate + " To " + ToDate + "</label></div>";
+
+         //var Html = '<div style="text-align: center;border: 1px solid #000;">Daily cash Book From ' + FormDate + ' To ' + ToDate + '</div>'
+         Html += "<table cellpadding='5' cellspacing='0' style='margin-top: 10px; text-align:center; width:100%; font-size:8pt; font-family:Verdana,Arial,San-serif; border:1px solid #000;border-collapse:collapse;'>";
+         Html += "<thead><tr>";
+         Html += "<th style='border:1px solid #000; width:80px; text-align:center;'>Date</th>";       
+         Html += "<th style='border:1px solid #000; width:200px; text-align:left;'>PARTY NAME</th>";
+         Html += "<th style='border:1px solid #000; width:200px; text-align:right;'>AMOUNT</th>";
+         Html += "</tr></thead>";
+         Html += "<tbody>";
+         var totalamt = 0;
+         //while (dateFromRange <= dateToRange)
+         //{
+         //   // debugger;
+         //    dateFromRange = dateFromRange.AddDays(1);
+             for (i = 0; i < data.Data.length; i++) {
+                 dateToProcess=new Date(data.Data[i].PeriodFrom);
+                 //if (dateToProcess == dateFromRange)
+                 //{
+            debugger;
+                   //  j = j + 1;
+            Html += "<tr>";
+                     Html += "<td style='border: 1px solid #000;'>" + data.Data[i].ReceiptDate + "</td>";
+            Html += "<td style='border: 1px solid #000; text-align:left;'>" + data.Data[i].PartyName + "</td>";
+            Html += "<td style='border: 1px solid #000; text-align:right;'>" + data.Data[i].Amount + "</td>";
+            Html += "</tr>";
+                     totalamt = totalamt + parseFloat(data.Data[i].Amount);
+               //  }
+                // debugger;
+                
+             //}
+
+
+        }
+
+
+        // var j = 0;
+        // var totalamt = 0;
+        //for (i = 0; i < data.Data.length;i++)
+        //{
+        //    debugger;
+        //    j = j + 1;
+        //    Html += "<tr>";
+        //    Html += "<td style='border: 1px solid #000;'>" + j + "</td>";
+        //    Html += "<td style='border: 1px solid #000; text-align:left;'>" + data.Data[i].PartyName + "</td>";
+        //    Html += "<td style='border: 1px solid #000; text-align:right;'>" + data.Data[i].Amount + "</td>";
+        //    Html += "</tr>";
+        //    totalamt = totalamt + parseFloat(data.Data[i].Amount);
+        //}
+        Html += "<tr>";
+        Html += "<td style='border: 1px solid #000;'>Total</td>";
+        Html += "<td style='border: 1px solid #000; text-align:left;'></td>";
+        Html += "<td style='border: 1px solid #000; text-align:right;'>" + totalamt + "</td>";
+        Html += "</tr>";
+        Html += "</tbody></table>"
+        debugger;
+        PostData.append("Page", Html);
+       // alert("PostData=" + PostData);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GeneratePdSummaryUtilizationPDF", "Kdl_ReportCWC", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+
+            }
+        });
+    }
+
+</script>
+
+
+
+

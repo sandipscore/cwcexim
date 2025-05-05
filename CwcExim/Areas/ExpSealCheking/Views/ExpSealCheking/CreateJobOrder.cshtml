@@ -1,0 +1,467 @@
+﻿@model CwcExim.Areas.ExpSealCheking.Models.CHN_SealChekingJobOrder
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "SealChekingJOOnSuccess";
+    options.OnFailure = "SealCheckingJOOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4 postn_rel">
+    @using (Ajax.BeginForm("AddEditJobOrder", "ExpSealCheking", options))
+
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.CustomId)
+        @Html.HiddenFor(m => m.JobOrderDetailsJS)
+        @Html.HiddenFor(m => m.CFSCode)
+        @Html.HiddenFor(m => m.BranchId)
+        @Html.ValidationMessageFor(m => m.JobOrderDetailsJS)
+        @*@Html.HiddenFor(m=>m.JsonContainer)*@
+        @*<input type="hidden" id="JsonContainer" value="@ViewBag.JSONResult" name="JsonContainer" />*@
+        <div class="row">
+            <div class="col-md-12">
+                <h4>Seal Checking Job Order</h4>
+            </div>
+        </div>
+        <div class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-1-5 col_cus_2 padding_rt">
+                    <label>Job Order No:</label>
+                </div>
+                <div class="col-md-2-5">
+                    @Html.TextBoxFor(m => m.JobOrderNo, new { @class = "form-control input-sm", @readonly = "true" })
+                   @*@ @Html.ValidationMessageFor(m => m.JobOrderNo, "", new { @class = "Error_Msg" })*@
+                </div>
+                <div class="col-md-1-5 col_cus_2 col-md-offset-2-5 col_cus_offset_0_5 padding_rt">
+                    <label>Job Order Date:</label>
+                </div>
+                <div class="col-md-2 col_cus_2_5 Date_Img">
+                    @Html.TextBoxFor(m => m.JobOrderDate, new { @class = "form-control input-sm", placeholder = "dd/mm/yyyy", @readonly = true })
+                    @Html.ValidationMessageFor(m => m.JobOrderDate, "", new { @class = "Error_Msg", Value = DateTime.Today.ToString("dd/MM/yyyy") })
+                </div>
+            </div>
+        </div>
+        <div class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-1-5 col_cus_2">
+                    <label>TruckSlip No:</label>
+                </div>
+                <div class="col-md-2-5">
+                    @Html.TextBoxFor(m => m.TruckSlipNo, "", new { @class = "form-control input-sm", @readonly = true })
+                    <span class="search" id="TruckSlipSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#TruckSlipModal"></i></span>
+                    @Html.ValidationMessageFor(m => m.TruckSlipNo, "", new { @class = "Error_Msg" })
+                </div>
+                <div class="col-md-1-5 col_cus_2 col-md-offset-2-5 col_cus_offset_0_5 padding_rt">
+                    <label>Truck Slip Date:</label>
+                </div>
+                <div class="col-md-2 col_cus_2_5 Date_Img">
+                    @Html.TextBoxFor(m => m.TruckSlipDate, "{0:dd-MM-yyyy}", new { @class = "form-control input-sm", @readonly = "true" })
+                </div>
+              </div>
+           </div>
+        <div class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-1-5 col_cus_2 padding_rt">
+                    <label>Container/CBT No:</label>
+                </div>
+                <div class="col-md-2-5" id="ContainerNoDiv">
+                    @Html.TextBoxFor(m => m.ContainerNo, new { @class = "form-control input-sm", @readonly = true })
+                    @Html.ValidationMessageFor(m => m.ContainerNo, "", new { @class = "Error_Msg" })
+                </div>
+                <div class="col-md-1-5 col_cus_2 col-md-offset-2-5 col_cus_offset_0_5 padding_rt">
+                    @Html.LabelFor(m => m.Size, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                </div>
+                <div class="col-md-2 col_cus_2_5">
+                    @Html.DropDownListFor(m => m.Size, new List<SelectListItem>
+                               {
+                                new SelectListItem { Text="20",Value="20"},
+                                new SelectListItem { Text="40",Value="40"}
+                                //new SelectListItem { Text="ODC",Value="ODC"},
+                                }, "----Select----", new { @class = "form-control input-sm", @onblur = "ClearValidationMsg(this)",@readonly = true,@disabled=true })
+                    @Html.ValidationMessageFor(m => m.Size, "", new { @class = "Error_Msg" })
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="stoke SignUp_space_top SignUp_space_bottom"></div>
+        </div>
+        <div class="brdr_sec">
+            <div class="row Form_Space_top" style="padding:0 10px;">
+                <div class="form-group Form_Input">
+                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                        <label>Clause:</label>
+                    </div>
+                    <div class="col-md-2">
+                        @Html.DropDownList("OperationId", new SelectList(ViewBag.Operation, "OperationId", "Code"), "---Select---", new { @class = "form-control input-sm" })
+                        @Html.ValidationMessage("ErrOperation", "", new { @class = "Error_Msg" })
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="row SignUp_space_bottom2 SignUp_space_top2">
+            <div class="col-md-offset-4 col-md-2">
+                <input type="button" id="btnaddC" class="btn log_Btn_sm" value="Add" onclick="AddClause()" />
+            </div>
+            <div class="col-md-2">
+                <input type="button" id="btnresetC" class="btn log_Btn_sm" value="Reset" onclick="ResetClause()" />
+            </div>
+        </div>
+                                                <div>
+                                                    @Html.HiddenFor(m => m.JobOrderClauseJS)
+                                                    @Html.ValidationMessageFor(m => m.JobOrderClauseJS)
+                                                </div>
+                                                <div class="row Form_Space_top Form_Space_bottom">
+                                                    <div class="col-md-12">
+                                                        <table class="table table-striped table-bordered dataTable" id="tblClause" style="width:100%;"></table>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                                                </div>
+                                                <div class="row SignUp_space_bottom">
+                                                    <div class="col-md-offset-4 col-md-2">
+                                                        <input type="submit" id="btnSave" class="btn log_Btn_sm" value="Save" />
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <input type="button" id="btnReset" class="btn log_Btn_sm" value="Reset" onclick="ResetJODetails()" />
+                                                    </div>
+                                                </div>
+                                                <div class="logSuccMsg" style="background-color:bisque" id="DivsucMsg"></div>
+                                       
+                                                <div class="logErrMsg" id="DivErrorMsg" style="color:red"></div>
+
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <div id="DivImportJOList"></div>
+                                                    </div>
+                                                </div>
+                                    }
+            </div>
+        </div>
+        </div>
+    </div>
+
+
+
+<div class="modal fade" id="TruckSlipModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of TruckSlip No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="TruckSlipBox" type="text" />
+                <ul class="navList" id="TruckSlipList"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    var ArrayOfClause = [];
+    
+
+    $(document).ready(function () {
+        debugger;
+        LoadJOList();
+    });
+
+    $('#TruckSlipBox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#TruckSlipModal .navList > li').show();
+        } else {
+            $('#TruckSlipModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+    $('#TruckSlipSearch').on("click", function () {
+        $.ajax({
+            url: "/ExpSealCheking/ExpSealCheking/GetTruckSlipListForJobOrder",
+            type: "GET",
+            dataType: "JSON",
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    var Html = '';
+                    $.each(data.Data, function (i, item) {
+
+                        Html += '<li id=' + item.TruckSlipNo + ' onclick="FillTruckSlipTxtBox(&quot;' + item.TruckSlipNo + '&quot;)">' + item.TruckSlipNo + '</li>';
+                    });
+                    $('#TruckSlipList').html(Html);
+                }
+            }
+
+        });
+    });
+
+    function FillTruckSlipTxtBox(TruckSlipNo) {
+        debugger;
+        $('#JobOrderDetailsJS').val('');
+        $('#TruckSlipNo').val(TruckSlipNo);
+        $("#TruckSlipModal").modal("hide");
+        GetContainerDet(TruckSlipNo);
+    }
+
+    function GetContainerDet(TruckSlipNo) {
+        debugger;
+        $.ajax({
+            url: '/ExpSealCheking/ExpSealCheking/GetContainerDetForJobOrder',
+            type: 'GET',
+            dataType: 'JSON',
+            async: false,
+            data: { TruckSlipNo: TruckSlipNo },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    $('#ContainerNo').val(data.Data.ContainerNo);
+                    $('#Size').val(data.Data.Size);
+                    $('#CFSCode').val(data.Data.CFSCode);
+                    $('#BranchId').val(data.Data.BranchId);
+                    var ContArray = [];
+                    var Object = {
+                        ContainerNo: data.Data.ContainerNo,
+                        Size: data.Data.Size,
+                        BranchId: data.Data.BranchId,
+                        CFSCode: data.Data.CFSCode,
+
+                    };
+                    ContArray.push(Object);
+                    $('#JobOrderDetailsJS').val(JSON.stringify(ContArray));
+                    var a = $('#JobOrderDetailsJS').val();
+                    // $('#JobOrderDetailsJS').val();
+                    $('#CHAName').val(data.Data.CHAName);
+                    $('#VehicleNo').val(data.Data.VehicleNo);
+                    $('#TruckSlipNo').val(data.Data.TruckSlipNo);
+                    $('#CustomId').val(data.Data.CustomId);
+                    $('#TruckSlipDate').val(data.Data.TruckSlipDate);
+                    data.Data.AppraisementStatus == 1 ? $('#Pass').prop("checked", true) : $('#Fail').prop("checked", true);
+                    // ArrayOfDestuffingEntry = data.Data.LstDestuffing;
+                    //  GenerateDestuffingTable();
+                }
+            }
+        });
+    }
+
+    $("#JobOrderDate").datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        maxDate: new Date(),
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+
+    function ValidateClause() {
+        debugger;
+        var Status = true;
+        if ($('#OperationId').val() == "" || $('#OperationId').val() == '---Select---' || $('#OperationId').val() == null) {
+            $('#ErrOperation').html('Fill Out This Field');
+            Status = false;
+        }
+        return Status;
+    }
+
+
+    function AddClause() {
+        debugger;
+
+        if (ValidateClause()) {
+            var ClauseDetails = {
+                "OperationId": $('#OperationId').val(),
+                "OperationType": $('#OperationId').find("option:selected").text()
+            };
+
+            var flag = 0;
+            $.each(ArrayOfClause, function (i, elem) {
+
+                if (elem.OperationId == ClauseDetails.OperationId) {
+                    flag = 1;
+                }
+            });
+
+
+            if (flag == 0) {
+                ArrayOfClause.push(ClauseDetails);
+            }
+
+            $('#tblClause').html('');
+            GenerateTableClause();
+            $('#OperationId').val('---Select---');
+            //ResetFormOneDet();
+            // ResetClausePartial();
+        }
+    }
+
+    function EditClause(i) {
+        debugger;
+
+        if ($('#OperationId').val() == '' || $('#OperationId').val() == null) {
+            $('#tblClause').prop("disabled", false);
+            $('#OperationId').val(ArrayOfClause[i].OperationId);
+            ArrayOfClause.splice(i, 1);
+            GenerateTableClause();
+
+        }
+        else
+            alert('Please add the earlier record to edit');
+    }
+    function DeleteClause(i) {
+        debugger;
+        ArrayOfClause.splice(i, 1);
+        GenerateTableClause();
+    }
+
+    $('#btnSave').on("click", function () {
+        debugger;
+        var a = $('#JobOrderDetailsJS').val();
+        if (ValidateGrid() == false) {
+            return false;
+        }
+        //else {
+        //    $('#btnSave').prop('disabled', true);
+
+        //    $('#formJobOrder').submit();
+        //    return true;
+        //};
+
+        //return true;
+        //$('#formJobOrder').submit();
+    });
+
+    function CreateJobOrder() {
+        $('#DivBody').load('/ExpSealCheking/ExpSealCheking/CreateJobOrder');
+    }
+
+    function LoadJOList() {
+        debugger;
+        $('#DivImportJOList').load('/ExpSealCheking/ExpSealCheking/ListOfJobOrderDetails');
+    }
+
+    function SealChekingJOOnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            $('#DivsucMsg').html(data.Message);
+            LoadJOList();
+            //ResetJODetails();
+            //alert(data.Message);
+           
+            //$('#btnSave').prop('disabled', true);
+            setTimeout(CreateJobOrder, 5000);
+            
+        }
+        else {
+            $('#DivErrorMsg').html(data.Message);
+            //alert(data.Message);
+        }
+        ResetClause();
+        ResetJODetails();
+
+    }
+
+    function SealCheckingJOOnFailure() { }
+
+    function ResetClause() {
+        $('#tblClause').html("");
+    }
+
+    function ResetJODetails() {
+        $('input[type="text"],textarea,select').val('');
+        $('input[type="checkbox"').prop('checked', false);
+        $('[data-valmsg-for]').html('');
+        $('#tblClause').html('');
+    }
+
+    function GenerateTableClause() {
+        debugger;
+
+        var tablehtml = '<table id="tblClause" class="table table-striped table-bordered dataTable" style="width:100%;">'
+            + '<thead><tr><th style="width:8%;text-align:center;">SL No</th><th>Clause</th><th style="width:10%;text-align:center;">Edit</th><th style="width:10%;text-align:center;">Delete</th></tr>'
+            + '</thead><tbody>';
+        $.each(ArrayOfClause, function (i, data) {
+            tablehtml += '<tr><td style="text-align:center;">' + (i + 1) + '</td><td>' + data.OperationType + '</td>' +
+            '<td style="text-align:center;"><a href="#" onclick="EditClause(' + i + ')"><i class="fa fa-pencil-square Edit"></i></a></td>'
+                + '<td style="text-align:center;"><a href="#" onclick="DeleteClause(' + i + ')"><i class="fa fa-window-close-o Delete"></i></a></td></tr>';
+        });
+        tablehtml += '</tbody></table>';
+        $('#tblClause').html(tablehtml);
+
+        if (ArrayOfClause.length > 0) {
+            $('#JobOrderClauseJS').val(JSON.stringify(ArrayOfClause));
+        }
+        else {
+            $('#JobOrderClauseJS').val('');
+        }
+    }
+
+    function ValidateGrid() {
+        debugger;
+        if ($('#JobOrderDetailsJS').val() == '') {
+            alert('Container Details Must Have Data.');
+            return false;
+        }
+
+        if ($('#JobOrderClauseJS').val() == '') {
+            alert('Clause Details Must Have Data.');
+            return false;
+        }
+            //else if ($('#FormOneDetailsJS').val()) {
+
+            //}
+        else {
+            var flag = false;
+            var ContainerJArray = JSON.parse($('#JobOrderDetailsJS').val());
+            $.each(ContainerJArray, function (i, item) {
+                if (item.DateOfLanding == '') {
+                    flag = true;
+                    return false;
+                }
+            });
+            //if (flag) {
+            //    alert('Container Details Must Have Date Of Landing.');
+            //    return false;
+            //}
+            //else {
+            //    return true;
+            //}
+        }
+    }
+
+    function ResetClausePartial() {
+        // removed $('#FormOneDetailId, #CHAId').val('0');
+        //addedd
+        //$('#JobOrderDetailId').val('0');
+        //
+        //removed  $('#txtContainerNo, #txtSealNo, #txtMarksNo, #txtCHAName, #txtCargoDesc, #txtDateOfLanding, #txtRemarks').val('');
+        //added
+        $('#OperationId').val('---Select---');
+        $('#btnaddC').prop("disabled", false);
+    }
+</script>

@@ -1,0 +1,168 @@
+﻿@model IEnumerable<CwcExim.Areas.Export.Models.PPG_ContainerStuffingV2>
+
+<script>
+    var Page=0;
+    $(function(){
+        var TblContainerStuffList = $('#TblContainerStuffList').DataTable({
+            "bFilter":false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns":[
+                       {"sName":"SL No","width":"8%"},
+                       {"sName":"Stuffing No"},
+                       {"sName":"Stuffing Date"},
+                       {"sName":"Container No"},
+                       {"sName":"Edit","bSortable":false,"width":"10%"},
+                       {"sName":"View","bSortable":false,"width":"10%"},
+                       {"sName":"Delete","bSortable":false,"width":"10%"},
+                       {"sName":"Print","bSortable":false,"width":"10%"}
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0)', nRow).addClass("text-center");
+                $('td:eq(3),td:eq(4),td:eq(5),td:eq(6),td:eq(7)', nRow).addClass("text-center");
+                $('td:eq(0)', nRow).css("width", "10px");
+                $('td:eq(1)', nRow).css("width", "150px");
+                $('td:eq(2)', nRow).css("width", "150px");
+                $('td:eq(3)', nRow).css("width", "150px");
+                $('td:eq(4)', nRow).css("width", "150px");
+                $('td:eq(5)', nRow).css("width", "150px");
+                $('td:eq(6)', nRow).css("width", "50px");
+                $('td:eq(7)', nRow).css("width", "50px");
+            }
+
+        });
+        new $.fn.dataTable.FixedHeader(TblContainerStuffList);
+    });
+    function LoadContainerStuffing() {
+        $('#DivBody').load('/Export/Loni_CWCExportV2/CreateContainerStuffing');
+    }
+    function EditContainerStuffing(ContainerStuffingId) {
+        debugger;
+        $('#DivBody').load('/Export/Loni_CWCExportV2/EditContainerStuffing?ContainerStuffingId=' + ContainerStuffingId);
+    }
+    function ViewContainerStuffing(ContainerStuffingId) {
+        debugger;
+        $('#DivBody').load('/Export/Loni_CWCExportV2/ViewContainerStuffing?ContainerStuffingId=' + ContainerStuffingId);
+    }
+    function DeleteContainerStuffing(ContainerStuffingId) {
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        var Confirm=confirm("Are You Sure You Want To Delete?");
+        if(Confirm==true){
+            $.ajax({
+                url: '/Export/Loni_CWCExportV2/DeleteContainerStuffingDet',
+                type:'POST',
+                headers:{'__RequestVerificationToken':Token},
+                data: { ContainerStuffingId: ContainerStuffingId },
+                dataType:'JSON',
+                async:false,
+                success:function(data){
+                    debugger;
+                    if (data.Status == 1 || data.Status == 2 || data.Status == 3) {
+                        alert(data.Message);
+                        LoadContainerStuffing();
+                    }
+                    else
+                    {
+                        alert(data.Message);
+                    }
+                }
+            });
+        }
+    }
+
+    function PrintContainerStuffing(ContainerStuffingId){
+        var Token=$('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url:"/Export/Loni_CWCExportV2/PrintContainerStuffing",
+            type:"POST",
+            dataType:"JSON",
+            data:{ContainerStuffingId:ContainerStuffingId},
+            headers:{"__RequestVerificationToken":Token},
+            async:false,
+            success:function(data){
+                if(data.Status==1){
+                    window.open(data.Message+"?_t="+(new Date().getTime()),"_blank");
+                }
+                else
+                {
+                    alert(data.Message);
+                }
+            }
+        });
+    }
+    function LoadMoreListData() {
+        debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Export/Loni_CWCExportV2/LoadContainerStuffingList',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#TblContainerStuffList').dataTable();
+                    var len = dt.fnGetData().length;
+
+                    $.each(data, function (i, item) {
+                        debugger;
+                        //var CFS= item.ContainerNo;
+                        //CFS = CFS.split('(')[0];
+                        // var ContainerNo = ContainerNo.Split('(')[1].ToString().Substring(0, item.ContainerNo.Split('(')[1].Length - 1)
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.StuffingNo],
+        [item.StuffingDate],
+        [item.ContainerNo],
+        ['<a href="#" onclick=EditContainerStuffing(' + [item.ContainerStuffingId] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#" onclick=ViewContainerStuffing(' + [item.ContainerStuffingId] + ')><i class="fa fa-search-plus Edit"></i></a>'],
+        ['<a href="#" onclick=DeleteContainerStuffing(' + [item.ContainerStuffingId] + ')><i class="fa fa-window-close-o Delete"></i></a>'],
+        ['<a href="#" onclick=PrintContainerStuffing(' + [item.ContainerStuffingId] + ')><i class="fa fa-file-pdf-o Edit"></i></a>'],
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+
+        });
+    }
+</script>
+
+<table id="TblContainerStuffList" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("SL No")</th>
+            <th>Stuffing No</th>
+            <th>Stuffing Date</th>
+            <th>Container No</th>
+            <th class="text-center">@Html.DisplayName("Edit")</th>
+            <th class="text-center">@Html.DisplayName("View")</th>
+            <th class="text-center">@Html.DisplayName("Delete")</th>
+           <th class="text-center">@Html.DisplayName("Print")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center">@SerialNo</td>
+                    <td>@Html.DisplayFor(m => item.StuffingNo)</td>
+                    <td>@Html.DisplayFor(m => item.StuffingDate)</td>
+                    <td>@Html.DisplayFor(m => item.ContainerNo)</td>
+                    <td class="text-center"><a href="#" onclick="EditContainerStuffing(@item.ContainerStuffingId)"><i class="fa fa-pencil-square Edit" aria-hidden="true"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="ViewContainerStuffing(@item.ContainerStuffingId)"><i class="fa fa-search-plus Edit" aria-hidden="true"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="DeleteContainerStuffing(@item.ContainerStuffingId)"><i class="fa fa-window-close-o Delete" aria-hidden="true"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="PrintContainerStuffing(@item.ContainerStuffingId)"><i class="fa fa-file-pdf-o Edit" aria-hidden="true"></i></a></td>
+                </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+

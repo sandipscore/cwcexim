@@ -1,0 +1,574 @@
+﻿@if (ViewBag.InvoiceList != null)
+{
+    <input type="hidden" id="hdnInvoice" value="@ViewBag.InvoiceList" />
+}
+else
+{
+    <input type="hidden" id="hdnInvoice" value="" />
+}
+@if (ViewBag.StuffingReqList != null)
+{
+    <input type="hidden" id="hdnStuffingReq" value="@ViewBag.StuffingReqList" />
+}
+else
+{
+    <input type="hidden" id="hdnStuffingReq" value="" />
+}
+@if (ViewBag.PaymentParty != null)
+{
+    <input type="hidden" id="hdnPartyPayee" value="@ViewBag.PaymentParty" />
+}
+else
+{
+    <input type="hidden" id="hdnPartyPayee" value="" />
+}
+
+
+@if (ViewBag.RightsList != null)
+{
+    <input type="hidden" id="hdnRights" value="@ViewBag.RightsList" />
+}
+else
+{
+    <input type="hidden" id="hdnRights" value="" />
+}
+
+<input type="hidden" id="hdnBOL" value="" />
+
+@*<script src="~/Scripts/AngularScript/App.js"></script>*@
+@*<script src="~/Areas/Import/Scripts/App/Services/YardInvoiceService.js"></script>
+<script src="~/Areas/Import/Scripts/App/Controllers/YardInvoiceCtrl.js"></script>*@
+<script src="~/Areas/CashManagement/Scripts/App/Services/YardInvoiceEditService.js"></script>
+<script src="~/Areas/CashManagement/Scripts/App/Controllers/YardInvoiceEditCtrl.js"></script>
+
+<script>
+
+    angular.bootstrap(document.getElementById('YardAppDiv'), ['CWCApp']);
+
+    $('#InvoiceDate').datetimepicker({
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        dateFormat: "dd/mm/yy",
+        altField: "#slider_example_4andHalf_alt",
+        altFieldTimeOnly: false,
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+            angular.element('#ctrldiv').scope().ContainerSelect();
+        }
+    });
+
+    function PaymentOnSuccess(data) {
+        debugger;
+        if (data.Status == 1 || data.Status == 2) {
+            if ($('#DivPaySheetCargoMsg').hasClass('logErrMsg'))
+                $('#DivPaySheetCargoMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#InvoiceNo').val(data.Data.InvoiceNo);
+            $('#PaymentSheetModelJson').val(JSON.stringify(data.Data));
+            $('#DivPaySheetCargoMsg').html(data.Message);
+            $('#btnPrint').removeAttr('disabled');
+            //setTimeout(ResetField, TimeInSeconds);
+        }
+        else {
+            if ($('#DivPaySheetCargoMsg').hasClass('logSuccMsg')) {
+                $('#DivPaySheetCargoMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+                $('#btnSave').removeAttr('disabled');
+            }
+            $('#DivPaySheetCargoMsg').html(data.Message);
+        }
+    }
+    function PaymentOnFailure() {
+        alert("Error");
+    }
+    function ResetField() {
+        debugger;
+        $('#DivBody').load('/CashManagement/WFLD_CashManagement/EditYardInvoice');
+    }
+    /*
+    var TaxType = 'ViewData["InvType"].ToString()';
+    function IVType(Type) {
+        debugger;
+        TaxType = Type;
+        $('#DivBody').load('/CashManagement/WFLD_CashManagement/EditYardInvoice?type=' + Type);
+    }
+    if (TaxType == 'Tax')
+        $('#Tax').prop('checked', true);
+    else
+        $('#Bill').prop('checked', true);
+    */
+
+    function PrintInvoice() {
+        debugger;
+        var invoiceno = $('#InvoiceNo').val();
+
+        //if (invoiceno == '')
+        //{
+        //    alert('No Invoice No');
+        //    return;
+        //}
+
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            /*url: 'Url.Action("YardInvoicePrint", "WFLD_CWCImport", new { Area = "Import" }) ',*/
+            url: '@Url.Action("GetBulkInvoiceReport", "WFLD_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                InvoiceNumber: invoiceno,
+                InvoiceModule: 'IMPYard',
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                InvoiceModuleName: 'ASSESSMENT SHEET FCL',
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }
+
+
+
+</script>
+
+
+
+@using (Ajax.BeginForm("AddEditContPaymentSheet", "WFLD_CWCImport", new AjaxOptions { HttpMethod = "POST", OnSuccess = "PaymentOnSuccess", OnFailure = "PaymentOnFailure" }, new { @Id = "PaymentSheetForm" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.Hidden("ContainerJson")
+
+
+    <input type="hidden" id="hdnAddress" ng-model="hdnAddress" />
+    <input type="hidden" id="hdnState" ng-model="hdnState" />
+    <input type="hidden" id="hdnStateCode" ng-model="hdnStateCode" />
+    <input type="hidden" id="hdnDeliveryType" ng-model="hdnDeliveryType" />
+
+    @Html.Hidden("PaymentSheetModelJson")
+    <div id="YardAppDiv">
+        <div ng-controller="YardInvoiceEditCtrl" id="ctrldiv">
+
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-offset-0-5 col-md-11">
+                        <div class="Head_h4">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h4>Edit Yard Invoice (FCL)</h4>
+                                </div>
+                            </div>
+                            @*<div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col-md-offset-1-5 col_cus_offset_2 col_cus_2">
+                                        <div class="boolean-container">
+                                            @Html.RadioButton("InvoiceType", "Tax", new { id = "Tax", @checked = true, @onclick = "IVType('Tax')" })
+                                            <label for="Tax"><i class="circle"></i><span>Tax Invoice</span></label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 col_cus_3">
+                                        <div class="boolean-container">
+                                            @Html.RadioButton("InvoiceType", "Bill", new { id = "Bill", @onclick = "IVType('Bill')" })
+                                            <label for="Bill"><i class="circle"></i><span>Bill Of Supply</span></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>*@
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Invoice No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @*@Html.TextBoxFor(m => m.InvoiceNo, new { @readonly = true })
+                                            @Html.TextBox("InvoiceNo", "", new { @readonly = true})*@
+                                        @Html.Hidden("InvoiceId")
+                                        <input name="InvoiceNo" id="InvoiceNo" type="text" ng-model="InvoiceNo" readonly />
+                                        <span class="search" id="invoicesearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#InvoiceModal"></i></span>
+                                        
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                        <label>Delivery Date:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @*@Html.TextBoxFor(m => m.InvoiceDate, new { @readonly = true, Value = DateTime.Today.ToString("dd/MM/yyyy") })*@
+                                        @Html.TextBox("InvoiceDate", "", new { @readonly = true, Value = DateTime.Now.ToString("dd/MM/yyyy HH:mm") })
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Application No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        <input type="hidden" id="StuffingReqId" ng-model="StuffingReqId" />
+                                        <input type="text" id="StuffingReqNo" ng-model="StuffingReqNo" readonly />
+                                        @*<span class="search" id="stuffingsearch" ng-show="!IsContSelected"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#stuffingModal"></i></span>*@
+
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                        <label>Date:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5">
+                                        <input type="text" id="StuffingReqDate" ng-model="StuffingReqDate" readonly />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>CHA Name:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        <input type="hidden" id="PartyId" ng-model="PartyId" />
+                                        <input type="text" id="PartyName" ng-model="PartyName" readonly="True" />
+                                        <span class="search" id="PartySearch" ng-show="!IsContSelected"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>
+                                        @*@Html.ValidationMessageFor(m => m.PartyName)*@
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Payer Name:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        <input type="hidden" id="PayeeId" ng-model="PayeeId" />
+                                        <input type="text" id="PayeeName" ng-model="PayeeName" readonly="True" />
+                                        <span class="search" id="PayeeSearch" ng-show="!IsContSelected"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PayeeModal"></i></span>
+                                        @*@Html.ValidationMessageFor(m => m.PayeeName)*@
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label> GST No:</label>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" id="GSTNo" ng-model="GSTNo" readonly="true" />
+                                    </div>
+                                    @*<div class="col-md-3 col_cus_4">
+                    <input class="btn log_Btn_sm" aria-hidden="true" data-toggle="modal" data-target="#Containerdtl" type="button" value="Container Details" />
+                </div>*@
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label> OT Hours:</label>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="text" id="OTHours" ng-model="OTHours" />
+                                    </div>
+                                    <div class="col-md-offset-2 col-md-3 col_cus_4">
+                                        <input class="btn log_Btn_sm" aria-hidden="true" data-toggle="modal" data-target="#Containerdtl" type="button" value="Container Details" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top Form_Space_bottom">
+                                <div class="col-md-12">
+                                    <table id="tblContainer" class="table table-bordered table-striped dataTable">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:8%;" class="text-center">Sl No</th>
+                                                <th>ICD Code</th>
+                                                <th>Container No</th>
+                                                <th>Size</th>
+                                                <th>Reefer</th>
+                                                <th>Insured</th>
+                                                <th>DO Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="c in InvoiceObj.lstPostPaymentCont">
+                                                <td>{{$index+1}}</td>
+                                                <td>{{c.CFSCode}}</td>
+                                                <td>{{c.ContainerNo}}</td>
+                                                <td>{{c.Size}}</td>
+                                                <td>
+                                                    <span ng-if="c.Reefer==1">Yes</span>
+                                                    <span ng-if="c.Reefer==0">No</span>
+                                                </td>
+                                                <td>
+                                                    <span ng-if="c.Insured==1">Yes</span>
+                                                    <span ng-if="c.Insured==0">No</span>
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Importers:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        <textarea id="Importers" ng-model="InvoiceObj.ImporterExporter" readonly ></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="Head_h5">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h5>Charges</h5>
+                                    </div>
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="col-md-12">
+                                        <table id="tblCWCCharges" class="table table-bordered table-striped dataTable Table_center">
+                                            <thead>
+                                                <tr>
+                                                    <th rowspan="2">Charges</th>
+                                                    <th rowspan="2">Value</th>
+                                                    <th colspan="2" class="text-center">IGST</th>
+                                                    <th colspan="2" class="text-center">CGST</th>
+                                                    <th colspan="2" class="text-center">SGST</th>
+                                                    <th rowspan="2" style="width:15%;">Total</th>
+                                                </tr>
+                                                <tr>
+                                                    <th>%</th>
+                                                    <th>Amt</th>
+                                                    <th>%</th>
+                                                    <th>Amt</th>
+                                                    <th>%</th>
+                                                    <th style="border-right:1px solid #ddd;">Amt</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr ng-repeat="c in InvoiceObj.lstPostPaymentChrg">
+                                                    <td>{{c.ChargeName}} [{{c.Clause}}]</td>
+                                                    <td style="text-align:right;">{{c.Taxable | number : 2}}</td>
+                                                    <td style="text-align:right;">{{c.IGSTPer | number : 2}}</td>
+                                                    <td style="text-align:right;">{{c.IGSTAmt | number : 2}}</td>
+                                                    <td style="text-align:right;">{{c.CGSTPer | number : 2}}</td>
+                                                    <td style="text-align:right;">{{c.CGSTAmt | number : 2}}</td>
+                                                    <td style="text-align:right;">{{c.SGSTPer | number : 2}}</td>
+                                                    <td style="text-align:right;">{{c.SGSTAmt | number : 2}}</td>
+                                                    <td style="text-align:right;">{{c.Total | number : 2}}</td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot>
+                                                @*<tr>
+                                                    <td colspan="8" class="text-right">Total:</td>
+                                                    <td style="font-weight:bold;color:#ff0000;text-align:right;">
+                                                        {InvoiceObj.AllTotal | number : 2}}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="8" class="text-right">Round Up:</td>
+                                                    <td style="font-weight:bold;color:#ff0000;text-align:right;">
+                                                        {InvoiceObj.RoundUp | number : 2}}
+                                                    </td>
+                                                </tr>*@
+                                                <tr>
+                                                    <td colspan="8" class="text-right">Invoice Amount:</td>
+                                                    <td style="font-weight:bold;color:#ff0000;text-align:right;">
+                                                        {{InvoiceObj.InvoiceAmt | number : 2}}
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5">
+                                        <label>Remarks:</label>
+                                    </div>
+                                    <div class="col-md-10-5">
+                                        <textarea id="Remarks" ng-model="Remarks" style="height:75px;" maxlength="500"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row SignUp_space_bottom SignUp_space_top">
+                                <div class="stoke"></div>
+                            </div>
+                            <div class="logSuccMsg Form_Space_bottom" id="DivPaySheetCargoMsg" style="background-color:transparent">{{Message}}</div>
+                            <div class="row SignUp_space_bottom2">
+                                <div class="col-md-offset-3 col-md-2">
+                                    <input type="button" id="btnSave" value="Save" ng-click="SubmitInvoice()" class="btn log_Btn_sm" disabled />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="button" value="Reset" class="btn log_Btn_sm" onclick="ResetField()" />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="button" value="Print" class="btn log_Btn_sm" onclick="PrintInvoice()" id="btnPrint" disabled />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div id="InvoiceModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of Invoice No.</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <input placeholder="Search Me" id="invoicebox" type="text" ng-model="invoicebox" />
+                            <ul class="navList" id="lstInvoice" >
+                               <li ng-repeat="i in InvoiceList | filter: {InvoiceNo: invoicebox}" ng-click="SelectInvoice(i)">{{i.InvoiceNo}}</li>
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div id="stuffingModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of Custom Appraisement No</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <input placeholder="Search Me" id="stuffingbox" type="text" ng-model="searchReq" />
+                            <ul class="navList" id="lststuffing">
+                                @*@{
+                                    foreach (var item in Model.lstGodownList)
+                                    {
+                                    <li id="@item.GodownId">@item.GodownName</li>
+                                    }
+                                    }*@
+                                <li ng-repeat="r in ReqNos | filter: searchReq " ng-click="SelectReqNo(r)">{{r.StuffingReqNo}}</li>
+
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="PartyModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of Party</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <input placeholder="Search Me" id="Partybox" type="text" ng-model="searchParty" />
+                            <ul class="navList" id="lstParty">
+                                @*@{
+                                    foreach (var item in Model.lstGodownList)
+                                    {
+                                    <li id="@item.GodownId">@item.GodownName</li>
+                                    }
+                                    }*@
+                                <li ng-repeat="p in PartyList | filter: { PartyName : searchParty}" ng-click="SelectParty(p)">{{p.PartyName}}</li>
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="PayeeModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of Payer</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <input placeholder="Search Me" id="Payeebox" type="text" ng-model="searchPayee" />
+                            <ul class="navList" id="lstPayee">
+                                @*@{
+                                    foreach (var item in Model.lstGodownList)
+                                    {
+                                    <li id="@item.GodownId">@item.GodownName</li>
+                                    }
+                                    }*@
+                                <li ng-repeat="p in PayeeList | filter: {PartyName : searchPayee}" ng-click="SelectPayee(p)">{{p.PartyName}}</li>
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="Containerdtl" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true" ng-click="ContainerSelect()"></i></button>
+                            <h4 class="modal-title">List of Container</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+
+                            <table id="lstcfsCode" class="table table-bordered">
+                                <tbody>
+                                    <tr ng-repeat="item in conatiners">
+                                        <td>
+                                            <div class="boolean-container">
+                                                <input type="checkbox" ng-model="item.Selected" id={{item.CFSCode}} /><label for={{item.CFSCode}}>
+                                                    <i class="square" style="margin-left:10px;"></i>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td>{{item.CFSCode}} </td>
+                                        <td>{{item.ContainerNo}}</td>
+
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal" ng-click="ContainerSelect()">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+}
+@Scripts.Render("~/bundles/jqueryval")
+

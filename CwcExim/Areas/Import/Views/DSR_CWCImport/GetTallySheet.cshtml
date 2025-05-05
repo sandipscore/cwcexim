@@ -1,0 +1,334 @@
+﻿@model CwcExim.Areas.Import.Models.TallySheet
+<div class="container-fluid">
+    <div class="col-md-offset-0-5 col-md-11">
+        <div class="Head_h4">
+            @using (Ajax.BeginForm("AddEditTallySheet", "DSR_CWCImport",
+                new AjaxOptions
+                {
+                    Confirm = "Are you sure you want to Save?",
+                    HttpMethod = "POST",
+                    OnSuccess = "TallySheetOnSuccess",
+                    OnFailure = "TallySheetOnFailure"
+                }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.TallySheetId)
+                @Html.HiddenFor(m=>m.SealCuttingId)
+                @Html.HiddenFor(m => m.ContainerId)
+                @Html.HiddenFor(m => m.GodownId)
+                @Html.HiddenFor(m => m.StringifyXML)
+               {
+                    if (ViewBag.RightsList != null)
+                    {
+                    <input type="hidden" id="hdnRights" value="@ViewBag.RightsList" />
+                    }
+                    else
+                    {
+                    <input type="hidden" id="hdnRights" value="" />
+                    }
+                }
+                <div id="DivCreateDeliveryApp">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Tally Sheet</h4>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                @Html.LabelFor(m => m.TallySheetNo)<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.TallySheetNo, new { @class = "form-control input-sm", @readonly = true })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_2 padding_rt">
+                                @Html.LabelFor(m => m.TallySheetDate)<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2-5 Date_Img">
+                                @Html.TextBoxFor(m => m.TallySheetDate, new { @class = "form-control input-sm", @readonly = true })
+                                @*@Model.TallySheetDate=@ViewBag.Currentdate;*@
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label for="ContainerNo">Container / CBT No :</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.ContainerNo, new { @class = "form-control input-sm", @readonly = true })
+                                <span class="search" id="ContainerNo"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerNoModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.ContainerNo)
+                            </div>
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                @Html.LabelFor(m => m.CFSCode)<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.CFSCode, new { @class = "form-control input-sm", @readonly = true })
+                            </div>
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                @Html.LabelFor(m => m.Size)<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.Size, new { @class = "form-control input-sm", @readonly = true })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                @Html.LabelFor(m => m.GodownId)<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.GodownName, new { @class = "form-control input-sm", @readonly = true })
+                            </div>
+                            <div class="col-md-offset-4 col-md-1-5 col_cus_2 padding_rt">
+                                <label for="GateInNo">Gate In No. :</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.GateInNo, new { @class = "form-control input-sm", @readonly = true })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="col-md-12" id="tblData"></div>
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-offset-4 col-md-2">
+                            <input type="submit" class="btn log_Btn_sm" value="Save" id="BtnSaveApp" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Reset" onclick="ResetAll()" />
+                        </div>
+                    </div>
+                    <div id="DivMsg" class="logSuccMsg" style="background-color:transparent"></div>
+                </div>
+
+                <div class="row Form_Space_top Form_Space_bottom">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-2">
+                            <input type="button" id="BtnTallySheetLoad" value="Show List" class="btn log_Btn_sm" onclick="LoadTallyList()" style="margin-left:0;" />
+                        </div>
+                        <div class="col-md-offset-7 col-md-3">
+                            @Html.TextBox("ContainerNoSearch", "", new { placeholder = "Search By Container" })
+                            <span class="search"><i class="fa fa-search" aria-hidden="true" onclick="SearchByContainerNo()"></i></span>
+                        </div>
+                    </div>
+                </div>
+
+            }
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="tblEntryDet"></div>
+                </div>
+                <div class="col-md-12">
+                    <div id="DivTallyList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="ContainerNoModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Container / CBT No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="DestuffingEntrybox" type="text" />
+                <ul class="navList" id="DestuffingEntryNoList">
+                    @{
+                        if (ViewBag.ContainerNo != null)
+                        {
+                            foreach (var item in ViewBag.ContainerNo)
+                            {
+                                <li id="@item.SealCuttingId">@item.CONTAINERNO</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    var JsonData = [];
+    var r2;
+    $(function () {
+        $('#TallySheetId').val('0');
+        $('#TallySheetDate').val('@ViewBag.Currentdate');
+        //LoadTallyList();
+        GenerateBlankTable();
+        r2 = JSON.parse($("#hdnRights").val());
+        if(r2.CanAdd==0)
+        {
+            $('#BtnSaveApp').prop('disabled', true);
+        }
+    });
+    $("#TallySheetDate").datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+    function LoadTallyList() {
+        debugger;
+        $('#tblEntryDet').hide();
+        $('#DivTallyList').load('/Import/DSR_CWCImport/GetTallySheetList');
+    }
+
+    $('#ContainerNoSearch').keypress(function (e) {
+        var regex = new RegExp("^[a-zA-Z0-9]+$");
+        var str = String.fromCharCode(!e.charCode ? e.which : e.charCode);
+        if (regex.test(str)) {
+            return true;
+        }
+
+        e.preventDefault();
+        return false;
+    });
+
+    function SearchByContainerNo() {
+        debugger;
+        $('#tblEntryDet').hide();
+        $('#DivTallyList').load('/Import/DSR_CWCImport/GetTallySheetSearchByContainer?ContainerNo=' + $('#ContainerNoSearch').val());
+    }
+    function GenerateBlankTable() {
+        tablehtml = '';
+        var tablehtml = '<table id="tblEntryDet" class="table table-striped table-bordered dataTable" style="width:100%;"><thead><tr><th class="text-center">SL No</th><th>Tally Sheet No.</th><th>Tally Sheet Date</th><th>ICD Code</th><th>Container / CBT No</th><th>Godown No</th><th>Gate In No</th><th class="text-center">View</th><th class="text-center">Edit</th><th class="text-center">Delete</th><th class="text-center">Print</th></tr></thead><tbody>';
+        tablehtml += '</tbody></table>';
+        $('#tblEntryDet').html(tablehtml);
+    }
+    function ResetAll() {
+        $('#tblData').html('');
+        $('#CFSCode,#ContainerId,#ContainerNo,#Size,#GodownId,#GodownName,#GateInNo,#SealCuttingId').val('');
+        JsonData = [];
+    }
+
+    $('#DestuffingEntryNoList li').on("click", function () {
+        $('#ContainerNo').val($(this).text().split('(')[0]);
+        $('#CFSCode').val(($(this).text()).split('(')[1].split('-')[0]);
+        $('#SealCuttingId').val($(this).attr('id'));
+        $("#ContainerNoModal").modal("hide");
+        FillAllData();
+    });
+    $('#DestuffingEntrybox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#ContainerNoModal .navList > li').show();
+        } else {
+            $('#ContainerNoModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    function FillAllData() {
+        $('#ContainerId,#ContainerNo,#Size,#GodownId,#GodownName,#GateInNo').val('');
+        $('#tblData').html('');
+        var SealCuttingId = $('#SealCuttingId').val();
+        $.ajax({
+            url: '/Import/DSR_CWCImport/GetObldataAgainstContId',
+            type: 'GET',
+            data: { SealCuttingId: SealCuttingId },
+            success: function (data) {
+                if (data != null || data != undefined) {
+                    $('#ContainerId').val(data.ContainerId);
+                    $('#ContainerNo').val(data.ContainerNo);
+                    $('#Size').val(data.Size);
+                    $('#GodownId').val(data.GodownId);
+                    $('#GodownName').val(data.GodownName);
+                    $('#GateInNo').val(data.GateInNo);
+                    JsonData = data.lstDtl;
+                    var tablehtml = '<table class="table table-bordered table-striped dataTable Table_center"><thead><tr><th colspan="2">OBL / HBL</th><th rowspan="2">IGM No.</th><th rowspan="2">Line No.</th><th rowspan="2">Cargo</th>' +
+                        '<th rowspan="2">No Of Pkg</th><th rowspan="2">Wt</th><th rowspan="2">UOM</th>' +
+                        '<th rowspan="2">Area(Approx.)</th></tr>' +
+                        '<tr><th>No.</th><th style="border-right: 1px solid;">Date</th></tr></thead><tbody>';
+                    $.each(data.lstDtl, function (i, elem) {
+                        tablehtml += '<tr><td>' + elem.OblNo + '</td><td>' + elem.OblDate + '</td><td>' + elem.IGMNo + '</td><td>' + elem.LineNo + '</td>' +
+                            '<td>' + elem.Cargo + '</td><td>' + elem.Pkg + '</td><td>' + elem.Wt + '</td><td><select  id="txtUOM' + elem.Serial + '"><option text="SQM" selected=true>SQM</option></select></td><td><input type="text" onkeypress="return numbersonly(this, event);" id="txtArea' + elem.Serial + '" value="' + elem.Area + '"/></td></tr>';
+                    });
+                    tablehtml += '</tbody></table>';
+                    $("#TallySheetDate").datepicker("option", "minDate", data.SealCuttingDt);
+                }
+                $('#tblData').html(tablehtml);
+            }
+        });
+    }
+    function TallySheetOnSuccess(data) {
+        if (data.Status == 1) {
+            if ($('#DivMsg').hasClass('logErrMsg'))
+                $('#DivMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivMsg').html(data.Message);
+            $('#DestuffingEntryNoList #' + $('#SealCuttingId').val()).remove();
+            @*//$('#TallySheetDate').val('@DateTime.Now.ToString("dd/MM/yyyy")');*@
+            LoadTallyList();
+            ResetAll();
+        }
+        else {
+            if ($('#DivMsg').hasClass('logSuccMsg'))
+                $('#DivMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivMsg').html(data.Message);
+        }
+        setTimeout(function () { $('#DivMsg').html(''); }, 5000);
+    }
+    function TallySheetOnFailure() {
+
+    }
+    $('#BtnSaveApp').on('click', function () {
+        $.each(JsonData, function (i, elem) {
+            elem.Area = ($('#txtArea' + elem.Serial).val() == '' ? 0 : $('#txtArea' + elem.Serial).val());
+            elem.UOM = $('#txtUOM' + elem.Serial).val();
+        });
+        $('#StringifyXML').val(JSON.stringify(JsonData));
+    });
+    function numbersonly(myfield, e, dec) {
+        var key;
+        var keychar;
+
+        if (window.event)
+            key = window.event.keyCode;
+        else if (e)
+            key = e.which;
+        else
+            return true;
+        keychar = String.fromCharCode(key);
+
+        //control keys
+        if ((key == null) || (key == 0) || (key == 8) || (key == 9) || (key == 13) || (key == 27))
+            return true;
+
+            //numbers
+        else if ((("0123456789.").indexOf(keychar) > -1))
+            return true;
+
+            //decimal point jump
+            /*else if (dec && (keychar == ".")) {
+            myfield.form.elements[dec].focus();
+            return false;
+            }*/
+        else
+            return false;
+    }
+</script>
+
+

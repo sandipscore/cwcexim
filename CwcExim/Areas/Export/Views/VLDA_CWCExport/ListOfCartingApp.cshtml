@@ -1,0 +1,113 @@
+﻿@model IEnumerable<CwcExim.Areas.Export.Models.CartingList>
+<table id="tblCartingList" class="table table-bordered table-striped" style="width:100%">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("SL No")</th>
+            <th>@Html.DisplayNameFor(m => m.CartingNo)</th>
+            <th>@Html.DisplayNameFor(m => m.ApplicationDate)</th>
+            <th>@Html.DisplayNameFor(m => m.CHAName)</th>
+            <th class="text-center">@Html.DisplayName("Edit")</th>
+            <th class="text-center">@Html.DisplayName("View")</th>
+            <th class="text-center">@Html.DisplayName("Delete")</th>
+            <th class="text-center">@Html.DisplayName("Print Preview")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{ var Serial = 1;
+            foreach (var data in Model)
+            {
+                <tr>
+                    <td class="text-center">@Serial.ToString()</td>
+                    <td>@data.CartingNo</td>
+                    <td>@data.ApplicationDate</td>
+                    <td>@data.CHAName</td>
+                    <td class="text-center"><a href="#" class="edit" onclick="EditCartingApp(@data.CartingAppId)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td class="text-center"><a href="#" class="view" onclick="ViewCartingApp(@data.CartingAppId)"><i class="fa fa-search-plus Edit"></i></a></td>
+                    <td class="text-center"><a href="#" class="delete" onclick="DeleteCartingApp(@data.CartingAppId)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="PrintPreviewCartingApp(@data.CartingAppId)"><i class="fa fa-file-pdf-o Edit"></i></a></td>
+                </tr>
+                Serial++;
+            }
+        }
+    </tbody>
+</table>
+<script>
+
+    var r2 = JSON.parse($("#hdnRights").val());
+    if (r2.CanEdit == 1) {
+        
+    } else {        
+        $('.edit').removeAttr('onclick');
+        $('.edit').attr('onclick', 'return false');
+    }
+
+    if (r2.CanDelete == 1) {
+       
+    } else {      
+        $('.delete').removeAttr('onclick');
+        $('.delete').attr('onclick', 'return false');
+    }
+
+    if (r2.CanView == 1) {
+    }
+    else {
+        $('.view').removeAttr('onclick');
+        $('.view').attr('onclick', 'return false');
+    }
+
+    $(document).ready(function () {
+        var tblCartingList = $('#tblCartingList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                       { "sName": "SL No" },
+                       { "sName": "Carting No", "bSortable": false },
+                       { "sName": "Carting Date", "bSortable": false },
+                       { "sName": "CHA" },
+                       { "sName": "Edit", "bSortable": false, "width": "10%" },
+                       { "sName": "View", "bSortable": false, "width": "10%" },
+                       { "sName": "Delete", "bSortable": false, "width": "10%" },
+                       { "sName": "Print Preview", "bSortable": false, "width": "10%" },
+
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(tblCartingList);
+    });
+    function ViewCartingApp(CartingAppId) {
+        $('#DivBody').load('/Export/VLDA_CWCExport/ViewCartingApp?CartingAppId=' + CartingAppId);
+    }
+    function EditCartingApp(CartingAppId) {
+        $('#DivBody').load('/Export/VLDA_CWCExport/EditCartingApp?CartingAppId=' + CartingAppId);
+    }
+    function DeleteCartingApp(CartingAppId) {
+        var Confirm = confirm("Are you sure you want to Delete?");
+        if (Confirm == true) {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("DeleteCartingApp", "VLDA_CWCExport", new { areas="Export"}) ',
+                type: 'POST',
+                data: { CartingAppId: CartingAppId },
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                success: function (data) {
+                    alert(data.Message);
+                    if (data.Status == 1) LoadCartingAppList();
+                }
+            });
+        }
+    }
+    function PrintPreviewCartingApp(CartingAppId) {
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("PrintCartingApp", "VLDA_CWCExport", new { areas="Export"}) ',
+            type: 'POST',
+            data: { CartingAppId: CartingAppId },
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+            }
+        });
+    }
+</script>

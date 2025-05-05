@@ -1,0 +1,113 @@
+﻿@model IEnumerable<CwcExim.Areas.ExpSealCheking.Models.CHN_JobOrderList>
+<table class="table table-bordered table-striped" id="tblImpJOList">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("SL No")</th>
+            <th>Job Order No</th>
+            <th>Job Order Date</th>
+            <th>Truck Slip No</th>
+            <th>Truck Slip Date</th>
+            <th class="text-center">@Html.DisplayName("Edit")</th>
+            <th class="text-center">@Html.DisplayName("View")</th>
+            <th class="text-center">@Html.DisplayName("Delete")</th>
+            <th class="text-center">@Html.DisplayName("Preview")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var Serial = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center">@Serial</td>
+                    <td>@item.JobOrderNo</td>
+                    <td>@item.JobOrderDate</td>
+                    <td>@item.TruckSlipNo</td>
+                    <td>@item.TruckSlipDate</td>
+                    <td class="text-center"><a href="#" onclick="EditJODet(@item.JobOrderId)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td class="text-center"><a href="#" style="color: #00305A;" onclick="ViewJODet(@item.JobOrderId)"><i class="fa fa-search-plus view"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="DeleteJODet(@item.JobOrderId)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="PrintJODet(@item.JobOrderId,'@item.JobOrderNo','@item.TruckSlipNo')"><i class="fa fa-file-pdf-o Edit"></i></a></td>
+                </tr>
+                Serial++;
+            }
+        }
+    </tbody>
+</table>
+<script>
+    $(document).ready(function () {
+        var tblImpJOList = $('#tblImpJOList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                       { "sName": "Sl No", "width": "8%" },
+                       { "sName": "Job Order No", "bSortable": false },
+                       { "sName": "Job Order Date", "bSortable": false },
+                       { "sName": "Truck Slip No", "bSortable": false, },
+                       { "sName": "Truck Slip Date", "bSortable": false, },
+                       { "sName": "Edit", "bSortable": false, "width": "10%" },
+                       { "sName": "View", "bSortable": false, "width": "10%" },
+                       { "sName": "Delete", "bSortable": false, "width": "10%" },
+                       { "sName": "Preview", "bSortable": false, "width": "10%" }
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(tblImpJOList);
+    });
+
+    function ViewJODet(JobOrderId)
+    {
+        $('#DivBody').load('/ExpSealCheking/ExpSealCheking/ViewJobOrder?ImpJobOrderId=' +JobOrderId);
+    }
+
+    function EditJODet(JobOrderId)
+    {
+        $('#DivBody').load('/ExpSealCheking/ExpSealCheking/EditJobOrder?ImpJobOrderId=' +JobOrderId);
+    }
+
+    function DeleteJODet(JobOrderId)
+    {
+        var Confirm = confirm("Are you sure you want to delete?");
+        if(Confirm==true)
+        {
+            var Token=$('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/ExpSealCheking/ExpSealCheking/DeleteJobOrder',
+                type:'POST',
+                data:{ImpJobOrderId:JobOrderId},
+                headers:{"__RequestVerificationToken":Token},
+                dataType:'JSON',
+                success:function(data)
+                {
+                    alert(data.Message);
+                    if(data.Status==1){
+                        $('#DivBody').load('/ExpSealCheking/ExpSealCheking/CreateJobOrder');
+                        // else
+                        //  alert(data.Message);
+                    }
+                }
+            });
+        }
+    }
+
+    function PrintJODet(JobOrderId,JobOrderNo,TruckSlipNo)
+    {
+        var Token=$('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/ExpSealCheking/ExpSealCheking/PrintJobOrder',
+            type:'POST',
+            data:{JobOrderId:JobOrderId,JobOrderNo:JobOrderNo,TruckSlipNo:TruckSlipNo},
+            headers:{"__RequestVerificationToken":Token},
+            dataType:'JSON',
+            success:function(data)
+            {
+                if(data.Status==1)
+                    window.open(data.Message+"?_t="+(new Date().getTime()),"_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+
+    }
+</script>
+
+

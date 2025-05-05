@@ -1,0 +1,139 @@
+﻿@model IEnumerable<CwcExim.Areas.Export.Models.DndExportEIR>
+<table class="table table-bordered table-striped" id="tblEIR" style="width:100%">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("Sl No")</th>
+            <th>Container No</th>
+            <th>CFS Code</th>
+            <th>Gate Exit Date & Time</th>
+            <th>Port Of Loading</th>
+            <th>Port In Date & Time</th>
+            <th class="text-center">@Html.DisplayName("Edit")</th>
+            <th class="text-center">@Html.DisplayName("View")</th>
+            <th class="text-center">@Html.DisplayName("Delete")</th>
+            @*<th class="text-center">@Html.DisplayName("Print")</th>*@
+        </tr>
+    </thead>
+    <tbody>
+        @{var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center">@SerialNo</td>
+                    <td>@item.ContainerNo</td>
+                    <td>@item.CFSCOde</td>
+                    <td>@item.GateExitDate</td>
+                    <td>@item.PortOfLoading</td>
+                    <td>@item.PortInDate</td>
+                    <td class="text-center"><a href="#" onclick="EditEIR(@item.EIRId)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="ViewEIR(@item.EIRId)"><i class="fa fa-search-plus Edit"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="DeleteEIR(@item.EIRId)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                    @*<td class="text-center"><a href="#" onclick="PrintCCINEntry('@item.InvoiceNo')"><i class="fa fa-file-pdf-o Edit"></i></a></td>*@
+                </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+
+<script>
+    $(document).ready(function () {
+        var tblEIR = $('#tblEIR').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns": [
+                       { "sName": "SL No", "width": "10%" },
+                       { "sName": "Container No" },
+                       { "sName": "CFS Code", "bSortable": false },
+                       { "sName": "Gate Exit Date & Time" },
+                       { "sName": "Port Of Loading", "bSortable": false },
+                       { "sName": "Port In Date & Time", "bSortable": false },
+                       { "sName": "Edit", "bSortable": false, "width": "9%" },
+                       { "sName": "View", "bSortable": false, "width": "9%" },
+                       { "sName": "Delete", "bSortable": false, "width": "9%" },
+                       //{ "sName": "Print", "bSortable": false, "width": "9%" },
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0),td:eq(1),td:eq(2),td:eq(3),td:eq(4),td:eq(5),td:eq(6),td:eq(7),td:eq(8)', nRow).addClass("text-center");
+            }
+        });
+        new $.fn.dataTable.FixedHeader(tblEIR);
+    });
+
+    function EditEIR(EIRId) {
+        $('#DivBody').load('/Export/Dnd_CWCExport/EditExportEIR?EIRId=' + EIRId);
+    }
+    function ViewEIR(EIRId) {
+        $('#DivBody').load('/Export/Dnd_CWCExport/ViewExportEIR?EIRId=' + EIRId);
+    }
+
+    function DeleteEIR(EIRId) {
+        var Confirm = confirm("Are you sure you want to delete?");
+        debugger;
+        if (Confirm == true) {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Export/Dnd_CWCExport/DeleteExportEIR',
+                type: 'POST',
+                dataType: 'JSON',
+                data: { EIRId: EIRId },
+                headers: { "__RequestVerificationToken": Token },
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        debugger;
+                        alert(data.Message);
+                        LoadEIRView();
+                    }
+                    else {
+                        alert(data.Message);
+                    }
+                }
+            });
+        }
+    }
+
+    function LoadEIRView() {
+        $('#DivBody').load('/Export/Dnd_CWCExport/CreateExportEIR');
+    }
+
+    var Page = 0;
+    function LoadMoreListData() {
+        debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Export/Dnd_CWCExport/LoadMoreEIRList',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblEIR').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.ContainerNo],
+        [item.CFSCOde],
+        [item.GateExitDate],
+        [item.PortOfLoading],
+        [item.PortInDate],
+        ['<a href="#" onclick=EditEIR(' + [item.EIRId] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#" onclick=ViewEIR(' + [item.EIRId] + ')><i class="fa fa-search-plus Edit"></i></a>'],
+        ['<a href="#" onclick=DeleteEIR(' + [item.EIRId] + ')><i class="fa fa-window-close-o Delete"></i></a>'],
+       // ['<a href="#" onclick=PrintCCINEntry(' + [item.Id] + ')><i class="fa fa-file-pdf-o Edit"></i></a>'],
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+</script>

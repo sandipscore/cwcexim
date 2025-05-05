@@ -1,0 +1,298 @@
+﻿<style>
+    .slimScrollDiv, #slim_scroll{
+        height:182px !important;
+    }
+</style>
+
+@if (ViewBag.InvoiceList != null)
+{
+    <input type="hidden" id="hdnInvoiceList" value="@ViewBag.InvoiceList" />
+}
+else
+{
+    <input type="hidden" id="hdnInvoiceList" value="" />
+}
+
+@using (Ajax.BeginForm("AddEditBulkIRN", "VRN_ReportCWC", new AjaxOptions { HttpMethod = "POST", OnSuccess = "PaymentOnSuccess", OnFailure = "PaymentOnFailure" }, new { @Id = "PaymentSheetForm" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.Hidden("PaymentSheetModelJson")
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-offset-0-5 col-md-11"> 
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Bulk IRN Generation</h4>
+                        </div>
+                    </div>
+                    <div class="Form_Space_top Form_Space_bottom">
+                        <div class="Head_h5">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h5>Invoice</h5>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="col-md-12">
+                                    <div id="slim_scroll">
+                                        <table id="tblInvoice" class="table table-bordered table-striped dataTable Table_center" style="width:100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th>Invoice No</th>
+                                                    <th>Invoice Date</th>
+                                                    <th>Party Name</th>
+                                                    <th>Gst No</th>
+                                                    <th>Supply Type</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                        @*Credit Note*@
+                    <div class="Form_Space_top Form_Space_bottom">
+                        <div class="Head_h5">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h5>Credit Note</h5>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="col-md-12">
+                                    <div id="slim_scroll_1">
+                                        <table id="tblCreditNote" class="table table-bordered table-striped dataTable Table_center" style="width:100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th>Credit Note No</th>
+                                                    <th>Credit Note Date</th>
+                                                    <th>Party Name</th>
+                                                    <th>Gst No</th>
+                                                    <th>Supply Type</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                        @*Debit Note*@
+                    <div class="Form_Space_top Form_Space_bottom">
+                        <div class="Head_h5">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h5>Debit Note</h5>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="col-md-12">
+                                    <div id="slim_scroll_2">
+                                        <table id="tblDebitNote" class="table table-bordered table-striped dataTable Table_center" style="width:100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th>Debit Note No</th>
+                                                    <th>Debit Note Date</th>
+                                                    <th>Party Name</th>
+                                                    <th>Gst No</th>
+                                                    <th>Supply Type</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+
+                        <div class="row SignUp_space_bottom SignUp_space_top">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivPaySheetCargoMsg" style="background-color:transparent"></div>
+                        <div class="row SignUp_space_bottom2">
+                            <div class="col-md-offset-4-5 col-md-2-5">
+                                <input type="button" id="BtnGenerateIRN" class="btn log_Btn_sm" value="Generate IRN" onclick="BindJson()" />
+                            </div>
+                        </div>
+
+                        @*<div class="row SignUp_space_bottom SignUp_space_top">
+                            <div class="stoke"></div>
+                        </div>
+
+                        <div><br /></div>*@
+
+                    </div>
+        </div>
+    </div>
+        </div>
+}
+@Scripts.Render("~/bundles/jqueryval")
+
+
+<script>
+   
+    $(document).ready(function () {        
+        ContainerSelect();
+    });
+
+    function ContainerSelect() {
+        debugger;
+        $.ajax({
+            url: '/Report/VRN_ReportCWC/GetBulkIrnDetails',
+                    type: 'POST',                    
+                    dataType: 'JSON',
+                    success: function (data) {
+                        if (data != null && data != 'undefined') {
+                            $('#PaymentSheetModelJson').val(JSON.stringify(data));
+                            
+                            var html = '';
+                            var html1 = '';
+                                                    
+                            //Invoice Binding
+                            debugger;
+                            var CWCCharge = $.grep(data.lstPostPaymentChrg, function (item) { return item.InvoiceType == "Inv"; });
+                            html = '';
+                            var TotalCWC = 0;
+                            $.each(CWCCharge, function (i, item) {
+                                //html += '<tr><td>' + item.Clause + '. ' + item.ChargeName + '</td>'
+                                html += '<tr><td>' + item.InvoiceNo + '</td>'
+                                        + '<td>' + item.InvoiceDate + '</td>'
+                                        + '<td>' + item.PartyName + '</td>'
+                                        + '<td>' + item.GstNo + '</td>'
+                                        + '<td>' + item.SupplyType + '</tr>';
+                            });
+                            $('#tblInvoice tbody').html(html);
+                           
+                            // Credit Note Binding
+                           
+                            debugger;
+                            var CWCCharge = $.grep(data.lstPostPaymentChrg, function (item) { return item.InvoiceType == "C"; });
+                            html = '';
+                            var TotalCWC = 0;
+                            $.each(CWCCharge, function (i, item) {                               
+                                //html += '<tr><td>' + item.Clause + '. ' + item.ChargeName + '</td>'
+                                html += '<tr><td>' + item.InvoiceNo + '</td>'
+                                        + '<td>' + item.InvoiceDate + '</td>'
+                                        + '<td>' + item.PartyName + '</td>'
+                                        + '<td>' + item.GstNo + '</td>'
+                                        + '<td>' + item.SupplyType + '</tr>';
+                            });
+                            $('#tblCreditNote tbody').html(html);
+                            
+                            // Debit Note Binding
+                            debugger;
+                            var CWCCharge = $.grep(data.lstPostPaymentChrg, function (item) { return item.InvoiceType == "D"; });
+                            html = '';
+                            var TotalCWC = 0;
+                            $.each(CWCCharge, function (i, item) {
+                                TotalCWC += item.Total;
+                                //html += '<tr><td>' + item.Clause + '. ' + item.ChargeName + '</td>'
+                                html += '<tr><td>' + item.InvoiceNo + '</td>'
+                                        + '<td>' + item.InvoiceDate + '</td>'
+                                        + '<td>' + item.PartyName + '</td>'
+                                        + '<td>' + item.GstNo + '</td>'
+                                        + '<td>' + item.SupplyType + '</tr>';
+                            });
+                            $('#tblDebitNote tbody').html(html);                           
+                           
+                        }
+                        else {
+                            $('#PaymentSheetModelJson').val('');                            
+                            $('#tblInvoice tbody').html('');
+                            $('#tblCreditNote tbody').html('');
+                            $('#tblDebitNote').val('');                           
+                        }
+                    }
+                });
+            }          
+      
+          
+
+    function BindJson() {        
+
+          //var conf = confirm("Do you want to Generate IRN ?");
+          //  if (conf) {
+          //      try {
+                    debugger;
+                   
+                    $('#PaymentSheetModelJson').val(JSON.stringify(rawJson));
+                    //console.log(rawJson);
+                    $('form#PaymentSheetForm').submit();
+            //    }
+            //    catch (e) {
+                    
+            //    }
+            //}
+        }
+
+</script>
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script>
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+    $(function () {
+        $('#slim_scroll_1').slimScroll({
+            allowPageScroll: true
+        });
+    });
+    $(function () {
+        $('#slim_scroll_2').slimScroll({
+            allowPageScroll: true
+        });
+    });
+</script>
+<script>
+    function PaymentOnSuccess(data) {
+        debugger;
+        if (data.Status == 1 || data.Status == 2) {
+            if ($('#DivPaySheetCargoMsg').hasClass('logErrMsg'))
+                $('#DivPaySheetCargoMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+                  
+            $('#PaymentSheetModelJson').val(JSON.stringify(data.Data));
+            $('#DivPaySheetCargoMsg').html(data.Message);           
+            setTimeout(function () { LoadPage(); }, 5000);
+        }
+        else {
+            if ($('#DivPaySheetCargoMsg').hasClass('logSuccMsg'))
+                $('#DivPaySheetCargoMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivPaySheetCargoMsg').html(data.Message);
+           
+        }
+    }
+    function PaymentOnFailure()
+    {
+        //alert("Error");
+    }
+
+    function LoadPage() {
+        $('#DivBody').load('/Report/VRN_ReportCWC/BulkIRNGeneration');
+    }
+    //function GenerateIRN() {
+    //    $.ajax({
+    //        url: '/Import/Wfld_CWCImport/GetIRNForYardInvoice',
+    //        type: 'POST',
+    //        data: { InvoiceNo: $('#InvoiceNo').val(), SupplyType: $('#ServiceType').val() },
+    //        // headers:{"__RequestVerificationToken":Token},
+    //        dataType: 'JSON',
+    //        success: function (data) {
+
+    //            alert(data.Message);
+    //        }
+    //    });
+    //}
+
+       
+
+       
+</script>

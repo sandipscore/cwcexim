@@ -1,0 +1,206 @@
+﻿
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-11 col-md-offset-0-5">
+            <div class="container-fluid">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Bond Register</h4>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 padding_rt">
+                                <label>Bond No.:</label>   
+                            </div>
+                            <div class="col-md-4 col_cus_2_5">
+                                @Html.Hidden("DepositeAppId")
+                                @Html.TextBox("BondNo", "", new { @class = "form-control", @readonly = true })
+                                <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#BondModal"></i></span>
+                                @Html.ValidationMessage("BondNo", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 padding_rt">
+                                <label>Period From:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBox("PeriodFrom", "", new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                @Html.ValidationMessage("PeriodFrom", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-offset-4 col-md-1-5">
+                                <label>Period To:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBox("PeriodTo", "", new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                @Html.ValidationMessage("PeriodTo", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row SignUp_space_top SignUp_space_bottom">
+                        <div class="stoke"></div>
+                    </div>
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-offset-5 col-md-2">
+                            <input type="button" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                        </div>
+                    </div>
+                    <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="BondModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Bond No.</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="BondNoBox" type="text" />
+                <ul class="navList" id="lstInvoiceList">
+                    @{
+                        if (ViewBag.GetBondNo != null)
+                        {
+                            foreach (var item in ViewBag.GetBondNo)
+                            {
+                                <li id="@item.DepositAppId">@item.BondNo</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+
+    $("#PeriodFrom").datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+        }
+    });
+
+         $("#PeriodTo").datepicker({
+             dateFormat: "dd/mm/yy",
+             showOn: "button",
+             buttonImage: "/Content/images/calendar.png",
+             buttonImageOnly: true,
+             buttonText: "Select date",
+             changeMonth: true,
+             changeYear: true,
+             showAnima: "fadein",
+             onClose: function () {
+                 $(".Date_Img .Error_Msg").text("");
+             }
+         });
+
+    $('#lstInvoiceList li').on('click', function ()
+    {
+        $('#BondNo').val($(this).text());
+        $('#DepositeAppId').val($(this).attr('id'));
+        $("#BondModal").modal("hide");
+    });
+    $('#BondNoBox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstInvoiceList > li').show();
+        else {
+            $('#lstInvoiceList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    $('#BtnPreview').on('click', function ()
+    {
+        debugger;
+        var Appid = $('#DepositeAppId').val();
+        if (Appid == "") {
+            Appid = 0;
+        }
+        var Fromdate = $('#PeriodFrom').val();
+        var ToDate = $('#PeriodTo').val();
+        if (PreviewValidate())
+        {
+            debugger;
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Report/Wlj_ReportCWC/GetBondRegister',
+                type: 'POST',
+                data: { DepositeAppId: Appid, FromDate: Fromdate,ToDate:ToDate },
+                dataType:'JSON',
+                headers: { '__RequestVerificationToken': Token },
+                success: function (data) {
+                    window.open(data.Message + '?_t' + (new Date().getTime()), "_blank");
+                }
+            });
+        }
+    });
+
+    function PreviewValidate(){
+        if ($('#BondNo').val() == "" && $('#PeriodFrom').val() == "" && $('#PeriodTo').val() == "")
+        {
+            alert("Select Bond No Or Bond Date");
+            return false;
+        }
+        if ($('#BondNo').val() == "" && $('#PeriodFrom').val() != "" && $('#PeriodTo').val() == "")
+        {
+            $('[data-valmsg-for="PeriodTo"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+
+        if ($('#BondNo').val() == "" && $('#PeriodFrom').val() == "" && $('#PeriodTo').val() != "")
+        {
+            $('[data-valmsg-for="PeriodFrom"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        return true;
+    }
+
+    function BondOnFailure() {
+        alert("No Data");
+    }
+    function BondOnSuccess(data) {
+        $('#DivDwnldWavMsg').html('');
+        if (data.Status == 1) {
+            window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes');
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+</script>

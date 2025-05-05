@@ -1,0 +1,250 @@
+﻿@model CwcExim.Areas.CashManagement.Models.DSR_DirectOnlinePayment
+
+@using (Ajax.BeginForm("DirectPaymentVoucher", "DSR_CashManagement", new AjaxOptions { HttpMethod = "POST", OnSuccess = "DirectOnlinePayOnSuccess", LoadingElementDuration = 1000, LoadingElementId = "divProgress", OnBegin = "validateForm", OnComplete = "SaveDisabled", Confirm = "Are you sure you want to Pay?" }))
+{
+    @Html.AntiForgeryToken()
+
+
+
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-offset-0-5 col-md-11">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Direct Online Payment</h4>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-2 col_cus_2">
+                                <label>Payment Amount:</label>
+                            </div>
+                            <div class="col-md-2">
+                                @Html.TextBoxFor(m => m.PaymentAmount, new { @class = "form-control input-sm", @onkeypress = "return AllowOnlyDecimal(event)", onfocusout = "calcTotal()" })
+                                @Html.ValidationMessageFor(m => m.PaymentAmount)
+                            </div>
+                            <div class="col-md-2-5 col_cus_2">
+                                <label>Online Facilitation Chagres:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                @Html.TextBoxFor(m => m.OnlineFacilitationCharges, new { @class = "form-control input-sm", @onkeypress = "return AllowOnlyDecimal(event)", onfocusout = "calcTotal()" })
+                                @Html.ValidationMessageFor(m => m.OnlineFacilitationCharges)
+
+                            </div>
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>TDS:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                @Html.TextBoxFor(m => m.TDS, new { @class = "form-control input-sm", @onkeypress = "return AllowOnlyDecimal(event)", onfocusout = "calcTotal()" })
+                                @Html.ValidationMessageFor(m => m.TDS)
+
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-2 col_cus_2">
+                                <label>Total Amount:</label>
+                            </div>
+                            <div class="col-md-2">
+                                @Html.TextBoxFor(m => m.TotalPaymentAmount, new { @class = "form-control input-sm", @onkeypress = "return AllowOnlyDecimal(event)", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.TotalPaymentAmount)
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="logSuccMsg" style="background-color:transparent" id="DivCancelInvoiceMsg"></div>
+                    <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivCancelInvoiceErrMsg"></div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_top2 SignUp_space_bottom2">
+                        </div>
+                    </div>
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-offset-5 col-md-2">
+                            <button type="submit" id="submit" class="btn log_Btn_sm">Pay</button>
+                        </div>
+                        @*<div class="col-md-2">
+                                <button type="reset" class="btn log_Btn_sm" onclick="ResetForm()">Reset</button>
+                            </div>
+                            <div class="col-md-2" style="display:none">
+                                <button id="BtnPrint" type="button" class="btn log_Btn_sm" onclick="PrintVoucher()"></button>
+                            </div>*@
+                    </div>
+                    <div class="logSuccMsg" style="background-color:transparent" id="DivMsg"></div>
+                    <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivErrMsg"></div>
+                    <div class="row">
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-2">
+                                <input type="button" value="Show List" onclick="ShowList()" class="btn log_Btn_sm" />
+                            </div>
+                            <div class="col-md-offset-5 col-md-3">
+                                <input type="text" placeholder="Order Id" id="SearchPaymentParty" />
+                            </div>
+
+                            <div class="col-md-2">
+                                <input type="button" value="Search" onclick="SearchPayment();" class="btn log_Btn_sm" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_top2 SignUp_space_bottom2">
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div id="DivDirectPaymentList" class="col-md-12 ClearFix SignUp_space_bottom">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="PayDetailsModal" role="dialog" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">Confirm Payment Details</h4>
+                </div>
+                <div class="modal-body popup_body" id="tblsucess">
+                    <div class="row" style="border-bottom: 1px dashed #ccc; padding-bottom: 10px;">
+                        <div class="col-md-6">
+                            <h6><b>Name :</b> <span id="TransactionName"></span></h6>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><b>Amount :</b> <span id="TransactionAmount"></span></h6>
+                        </div>
+                    </div>
+                    <input type="button" value="Confirm" onclick="ConfirmPayment();" class="btn log_Btn_sm" />
+                  @Html.HiddenFor(x => x.OrderId)
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+<script>
+    var TimeInSeconds = 3000;
+
+    function calcTotal() {
+        debugger;
+        var sum = 0.00;
+        var paymentAmount = (isNaN($('#PaymentAmount').val())) ? 0 : parseFloat($('#PaymentAmount').val());
+        var onlineFacilitationCharges = (($('#OnlineFacilitationCharges').val()=='')) ? 0 : parseFloat($('#OnlineFacilitationCharges').val());
+        var TDS = ($('#TDS').val() == '') ? 0 : parseFloat($('#TDS').val());
+        sum = (parseFloat(paymentAmount) + parseFloat(onlineFacilitationCharges) - parseFloat(TDS));
+        sum = (isNaN(sum) ? 0 : sum);
+        $('#TotalPaymentAmount').val(sum);
+
+    }
+    function validateForm() {
+        $('#submit').prop('disabled', true);
+    }
+    function DirectOnlinePayOnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+
+
+            $('#TransactionName').text(data.Data.Name);
+            $('#TransactionAmount').text(data.Data.TotalPaymentAmount);
+            $('#OrderId').val(data.Data.OrderId);
+            $('#PayDetailsModal').modal('show');
+
+           // $('#DivMsg').html('Please be patient while we are redirecting you to Merchant site...');
+         //   ReloadDirectOnlinePay();
+
+        }
+        else if (data.Status == 3) {
+            $('#DivMsg').html(data.Message);
+        }
+        else {
+            $('#DivErrMsg').html(data.Message);
+        }
+    }
+
+    function SaveDisabled()
+    {
+        $('#submit').prop('disabled', true);
+    }
+    function ReloadDirectOnlinePay() {
+        window.location.href = '/PaymentGateway/index';
+        //$('#DivBody').load('~/Views/PaymentGateway/Index.cshtml');
+    }
+    $(".onlyNumerics").keydown(function (event) {
+        var num = event.keyCode;
+        if ((num > 95 && num < 106) || (num > 36 && num < 41) || num == 9) {
+            return;
+        }
+        if (event.shiftKey || event.ctrlKey || event.altKey) {
+            event.preventDefault();
+        } else if (num != 46 && num != 8) {
+            if (isNaN(parseInt(String.fromCharCode(event.which)))) {
+                event.preventDefault();
+            }
+        }
+    });
+    function AllowOnlyDecimal(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || (CharCode == 46) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+    function ShowList() {
+        $('#DivDirectPaymentList').load('/CashManagement/DSR_CashManagement/DirectOnlinePaymentList');
+    }
+
+    function SearchPayment() {
+        var OrderId = $('#SearchPaymentParty').val().trim();
+        if (OrderId == "")
+            alert("Enter OrderId to Search");
+        else
+            $('#DivDirectPaymentList').load('/CashManagement/DSR_CashManagement/DirectOnlinePaymentList?OrderId=' + OrderId);
+    }
+
+    function ConfirmPayment()
+    {
+        debugger;
+        var idada = { 'OrderId': $('#OrderId').val(), 'TotalPaymentAmount': $('#TransactionAmount').text() }
+        $.ajax({
+            url: '/CashManagement/DSR_CashManagement/ConfirmPayment',
+            type: 'POST',
+            data: idada,
+            success: function (data) {
+                debugger;
+                if (data.Data == "1")
+                {
+                    ReloadDirectOnlinePay();
+                }
+                else
+                {
+                    alert('Invalid Amount..');
+                }
+               
+            }
+        });
+    }
+</script>

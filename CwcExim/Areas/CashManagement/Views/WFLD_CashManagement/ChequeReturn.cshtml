@@ -1,0 +1,927 @@
+﻿@model CwcExim.Areas.CashManagement.Models.ChequeReturn
+<script>
+    // var r = JSON.parse($("#hdnRights").val());
+
+    //  $("#btnPrint").prop("disabled", true);
+    $(function () {
+        $('#btnPrint').attr('disabled', true);
+    });
+    $(document).ready(function () {
+        LoadPartyWiseTDSDepositList();
+        $("#BtnSaveCustomAppraisement").click(function () {
+
+            if ($("#PartyName").val() == "") {
+                $('#ErrPartyName').html('Fill Out This Field');
+                return false;
+            }
+            if ($("#ChequeNo").val() == "") {
+                $('#ErrChequeNo').html('Fill Out This Field');
+                return false;
+            }
+
+        });
+    });
+    function LoadPartyWiseTDSDepositList() {
+        debugger;
+        $('#CargoSeizeList').load('/CashManagement/WFLD_CashManagement/ListOfChequeReturn');
+    }
+
+    $("#Amount").change(function () {
+        debugger;
+        $('#ErrAmount').html('');
+        var a = parseFloat($('#Amount').val());
+        var b = parseFloat($('#Balance').val());
+        @*if (b<a||a<=0)*@
+        if (a <= 0) {
+            $('#ErrAmount').html('Amount should be greater than 0');
+            return false;
+            @*$('#ErrAmount').html('Amount should be less than equal to balance or amount should be greater than 0');*@
+
+          
+        }
+        else
+            Calculate();
+    });
+    function OnSuccess(data) {
+        if (data.Status) {
+            $('#DivSucMsg').html(data.Message).delay(5000).fadeOut('slow');
+            $('#ReceiptNo').val(data.Data);
+            $('#PartyName').val("");
+            $('#SdNo').val(""),
+           $('#Balance').val(""),
+           $('#ChequeNo').val(""),
+          $('#DraweeBank').val(""),
+            $('#Amount').val(""),
+          $('#AdjustedBalance').val(""),
+                $('#Narration').val(""),
+           $('#btnPrint').prop('disabled', false);
+            LoadPartyWiseTDSDepositList()
+            $('#BtnSaveCustomAppraisement').attr('disabled', true);
+
+        }
+    }
+
+   
+    $('#ChequeReturnDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyBpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBXaW5kb3dzIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjg0RThEQzY5NjVFNjExRTY5QkM2QzI0NEJEOEU1MTQ1IiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjg0RThEQzZBNjVFNjExRTY5QkM2QzI0NEJEOEU1MTQ1Ij4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6ODRFOERDNjc2NUU2MTFFNjlCQzZDMjQ0QkQ4RTUxNDUiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6ODRFOERDNjg2NUU2MTFFNjlCQzZDMjQ0QkQ4RTUxNDUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz4K6/yIAAAEK0lEQVR42qRVXWhcRRQ+Z2bu3t3sbrU1qSUSlZJiSbWgYkF9U/CheYnUN4VCUfC1BQUVUUQUHyyIhdLHPPikYH0JpAEVX0RDhYooikTQiAbrT5vs3d37c47f3Lu72WZ/Ijjs7MydOf/fOWdYVSksV2jm0F1UnZqksNkilraJbeU9JZ63lk4S6YckTOonMQWUkNPURCZcJOYFMXpKWN+3GVMpcZSEQlp2dGVlhQztGBlZCAn3E5sFZq5nwo9nYnLhfngVqVqKXbCXmU7gtGaFTpRicHZo+ofr/8D1fpBVSI2FIPiWDzXKZSwzfu/JQNNMrRWbSXGipJylNXXBNL42MTcgTDxz7sFErX6ntfYtjuU3MvIlhM+Cr9XR2xRJ7lNDP2B+41djZNmo3AbB7cIyjimozOPu+zTIfobGC5zK0Z4HB+fueVlEnkQcvMIwKFGcaWEBiTTSaJODPfvApyEVbpSwSWJWbzthiQQrFRFyLPS0NtM7sH8s9yBLkrkuM2hukoxCgPoC2C8aSS64Sv0wdQNW4DDTDJwVpTMq+lG7HJyHaYdvCL7hQ70QeTv779pMZwHgOrO8KkF4P7vgjRuYmUNuZe9A5RoMf8XF2TGj9NwOPAdB3uanOfi+hJ2yz0vSARrk1cO4+tTfIURMTEOHo7GDeeyt/40nGapgE/h+Dpuv9ULIpoC2iwN3nep5Bgi4iosHsd87XoHoOdj1Yr/L0twi4EAG6ZV/J8hOdsQoc+4o4bwe5LSyOdvPO6AAxfht4TZii1WiLcqiBrmJ2nEOygs5UZJcJMtLbINnQXHEnwCGd5X5a7A08F0d7UFHu8e2gshU6jVSzJbwQy3RZ/xdtVrfSEWXYpEn2PCjObmhS/hvDSbDSACZErgjPDJBRvHzrlnUpUgR1wY65O2TwG2rudzabMZ5a6lOfBylKbVb8XnE/lLeI5mvILXvHptFveZWVN4Bn4aJaOuX9fW/xQaXyYbfeYJ/rl+L1DBZ45ZRzR55Xwl/QtnRXV2E0AT/D2BdwlwBwWtBgAwy9iQs/MJPi71h32/pTbB8grkM4cco592lDgxaJYin0Kzv7SjcqJTRrTOdThI96M+CwE0n6Iaa6RFjqBMWnUQEovHvAaxqRRE56yJXKv0FJSHm1TiJId80i4KDrixDC88T4So+fVr67Imo+zqMUmCdoz9+/7Veq9/8wS2Ttx4XyYyPbaOdeWmLCNNnng7p+RNcRcPklwDW23lTN7yKt3Ye6e14lAJBZkwdmH7KuNIq3oe1vLcrW7Jl33pRvvpjEUdf0joLW731171TMHsW/p3y78mAB7DS5LUL1MoTtUew+Qp72c7ond10aHeFfA6GYoCbVSwerJpK/jQE9D+Gb4sienk7RIZeh8FrcOB53O4ZauJ/G0hAbVZK4bl99eqiP/hXgAEAGxXRtLB4dQoAAAAASUVORK5CYII=",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+        }
+    });
+    $('#ChequeDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyBpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBXaW5kb3dzIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjg0RThEQzY5NjVFNjExRTY5QkM2QzI0NEJEOEU1MTQ1IiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjg0RThEQzZBNjVFNjExRTY5QkM2QzI0NEJEOEU1MTQ1Ij4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6ODRFOERDNjc2NUU2MTFFNjlCQzZDMjQ0QkQ4RTUxNDUiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6ODRFOERDNjg2NUU2MTFFNjlCQzZDMjQ0QkQ4RTUxNDUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz4K6/yIAAAEK0lEQVR42qRVXWhcRRQ+Z2bu3t3sbrU1qSUSlZJiSbWgYkF9U/CheYnUN4VCUfC1BQUVUUQUHyyIhdLHPPikYH0JpAEVX0RDhYooikTQiAbrT5vs3d37c47f3Lu72WZ/Ijjs7MydOf/fOWdYVSksV2jm0F1UnZqksNkilraJbeU9JZ63lk4S6YckTOonMQWUkNPURCZcJOYFMXpKWN+3GVMpcZSEQlp2dGVlhQztGBlZCAn3E5sFZq5nwo9nYnLhfngVqVqKXbCXmU7gtGaFTpRicHZo+ofr/8D1fpBVSI2FIPiWDzXKZSwzfu/JQNNMrRWbSXGipJylNXXBNL42MTcgTDxz7sFErX6ntfYtjuU3MvIlhM+Cr9XR2xRJ7lNDP2B+41djZNmo3AbB7cIyjimozOPu+zTIfobGC5zK0Z4HB+fueVlEnkQcvMIwKFGcaWEBiTTSaJODPfvApyEVbpSwSWJWbzthiQQrFRFyLPS0NtM7sH8s9yBLkrkuM2hukoxCgPoC2C8aSS64Sv0wdQNW4DDTDJwVpTMq+lG7HJyHaYdvCL7hQ70QeTv779pMZwHgOrO8KkF4P7vgjRuYmUNuZe9A5RoMf8XF2TGj9NwOPAdB3uanOfi+hJ2yz0vSARrk1cO4+tTfIURMTEOHo7GDeeyt/40nGapgE/h+Dpuv9ULIpoC2iwN3nep5Bgi4iosHsd87XoHoOdj1Yr/L0twi4EAG6ZV/J8hOdsQoc+4o4bwe5LSyOdvPO6AAxfht4TZii1WiLcqiBrmJ2nEOygs5UZJcJMtLbINnQXHEnwCGd5X5a7A08F0d7UFHu8e2gshU6jVSzJbwQy3RZ/xdtVrfSEWXYpEn2PCjObmhS/hvDSbDSACZErgjPDJBRvHzrlnUpUgR1wY65O2TwG2rudzabMZ5a6lOfBylKbVb8XnE/lLeI5mvILXvHptFveZWVN4Bn4aJaOuX9fW/xQaXyYbfeYJ/rl+L1DBZ45ZRzR55Xwl/QtnRXV2E0AT/D2BdwlwBwWtBgAwy9iQs/MJPi71h32/pTbB8grkM4cco592lDgxaJYin0Kzv7SjcqJTRrTOdThI96M+CwE0n6Iaa6RFjqBMWnUQEovHvAaxqRRE56yJXKv0FJSHm1TiJId80i4KDrixDC88T4So+fVr67Imo+zqMUmCdoz9+/7Veq9/8wS2Ttx4XyYyPbaOdeWmLCNNnng7p+RNcRcPklwDW23lTN7yKt3Ye6e14lAJBZkwdmH7KuNIq3oe1vLcrW7Jl33pRvvpjEUdf0joLW731171TMHsW/p3y78mAB7DS5LUL1MoTtUew+Qp72c7ond10aHeFfA6GYoCbVSwerJpK/jQE9D+Gb4sienk7RIZeh8FrcOB53O4ZauJ/G0hAbVZK4bl99eqiP/hXgAEAGxXRtLB4dQoAAAAASUVORK5CYII=",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+        }
+    });
+    for (var i = 0; i < 5; i++) {
+        $('#Details_' + i + '__Date').datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyBpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBXaW5kb3dzIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjg0RThEQzY5NjVFNjExRTY5QkM2QzI0NEJEOEU1MTQ1IiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjg0RThEQzZBNjVFNjExRTY5QkM2QzI0NEJEOEU1MTQ1Ij4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6ODRFOERDNjc2NUU2MTFFNjlCQzZDMjQ0QkQ4RTUxNDUiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6ODRFOERDNjg2NUU2MTFFNjlCQzZDMjQ0QkQ4RTUxNDUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz4K6/yIAAAEK0lEQVR42qRVXWhcRRQ+Z2bu3t3sbrU1qSUSlZJiSbWgYkF9U/CheYnUN4VCUfC1BQUVUUQUHyyIhdLHPPikYH0JpAEVX0RDhYooikTQiAbrT5vs3d37c47f3Lu72WZ/Ijjs7MydOf/fOWdYVSksV2jm0F1UnZqksNkilraJbeU9JZ63lk4S6YckTOonMQWUkNPURCZcJOYFMXpKWN+3GVMpcZSEQlp2dGVlhQztGBlZCAn3E5sFZq5nwo9nYnLhfngVqVqKXbCXmU7gtGaFTpRicHZo+ofr/8D1fpBVSI2FIPiWDzXKZSwzfu/JQNNMrRWbSXGipJylNXXBNL42MTcgTDxz7sFErX6ntfYtjuU3MvIlhM+Cr9XR2xRJ7lNDP2B+41djZNmo3AbB7cIyjimozOPu+zTIfobGC5zK0Z4HB+fueVlEnkQcvMIwKFGcaWEBiTTSaJODPfvApyEVbpSwSWJWbzthiQQrFRFyLPS0NtM7sH8s9yBLkrkuM2hukoxCgPoC2C8aSS64Sv0wdQNW4DDTDJwVpTMq+lG7HJyHaYdvCL7hQ70QeTv779pMZwHgOrO8KkF4P7vgjRuYmUNuZe9A5RoMf8XF2TGj9NwOPAdB3uanOfi+hJ2yz0vSARrk1cO4+tTfIURMTEOHo7GDeeyt/40nGapgE/h+Dpuv9ULIpoC2iwN3nep5Bgi4iosHsd87XoHoOdj1Yr/L0twi4EAG6ZV/J8hOdsQoc+4o4bwe5LSyOdvPO6AAxfht4TZii1WiLcqiBrmJ2nEOygs5UZJcJMtLbINnQXHEnwCGd5X5a7A08F0d7UFHu8e2gshU6jVSzJbwQy3RZ/xdtVrfSEWXYpEn2PCjObmhS/hvDSbDSACZErgjPDJBRvHzrlnUpUgR1wY65O2TwG2rudzabMZ5a6lOfBylKbVb8XnE/lLeI5mvILXvHptFveZWVN4Bn4aJaOuX9fW/xQaXyYbfeYJ/rl+L1DBZ45ZRzR55Xwl/QtnRXV2E0AT/D2BdwlwBwWtBgAwy9iQs/MJPi71h32/pTbB8grkM4cco592lDgxaJYin0Kzv7SjcqJTRrTOdThI96M+CwE0n6Iaa6RFjqBMWnUQEovHvAaxqRRE56yJXKv0FJSHm1TiJId80i4KDrixDC88T4So+fVr67Imo+zqMUmCdoz9+/7Veq9/8wS2Ttx4XyYyPbaOdeWmLCNNnng7p+RNcRcPklwDW23lTN7yKt3Ye6e14lAJBZkwdmH7KuNIq3oe1vLcrW7Jl33pRvvpjEUdf0joLW731171TMHsW/p3y78mAB7DS5LUL1MoTtUew+Qp72c7ond10aHeFfA6GYoCbVSwerJpK/jQE9D+Gb4sienk7RIZeh8FrcOB53O4ZauJ/G0hAbVZK4bl99eqiP/hXgAEAGxXRtLB4dQoAAAAASUVORK5CYII=",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+            }
+        });
+    }
+    //GenerateParties();
+    //function GenerateParties() {
+    //    var parties = JSON.parse($('#Parties').val());
+    //    debugger;
+    //    var html = '';
+    //    $.each(parties, function (i, item) {
+    //        html += '<li id="' + item.ChequeId + '" onclick="GetPartyDetail(this)">' + item.ChequeName + '</li>';
+    //    });
+    //    $('#lstCHA').html(html);
+    //}
+    /* GeneratePayBy();
+     function GeneratePayBy() {
+         var paymentparty = JSON.parse($('#PaymentParty').val());
+         debugger;
+         var html = '';
+         $.each(paymentparty, function (i, item) {
+             html += '<li id="' + item.Id + '" onclick="GetChequeDetail(this)">' + item.SdNo + '</li>';
+         });
+         $('#lstCH').html(html);
+     }*/
+    function GetChequeDetail(elem) {
+        debugger;
+        $('#ChequeNo').val(SdNo);
+        $('#PartyId').val($(elem).attr('id'));
+        $("#ChequeList").modal("hide");
+
+    }
+
+    //GeneratePayby();
+    //function GeneratePayby() {
+    //    debugger;
+    //    var paymentparty = JSON.parse($('#PaymentParty').val());
+    //    debugger;
+    //    var html = '';
+    //    $.each(paymentparty, function (i, item) {
+    //        debugger;
+    //        html += '<li id="' + item.ChequeId + '" onclick="GetChequeDetail(this)">' + item.ChequeName + '</li>';
+    //    });
+    //    $('#lstCH').html(html);
+    //}
+    function GetChequeDetail(elem) {
+        debugger;
+        var Party = $(elem).text(ChequeName);
+        $('#ChequeNo').val(Party);
+        $('#PartyId').val($(elem).attr('id'));
+        $("#ChequeList").modal("hide");
+
+    }
+
+    function GetPartyDetail(elem) {
+        debugger;
+        if (ChequeNo != "")
+            document.getElementById("ErrPartyName").innerHTML = "";
+        var Party = $(elem).text();
+        var PartyName = Party.split('_');
+        $('#PartyName').val(PartyName[0]);
+        $('#PartyId').val($(elem).attr('id'));
+        var parties = JSON.parse($('#Parties').val());
+        var party = $.grep(parties, function (item) { return item.ChequeId == $(elem).attr('id'); })[0];
+        $('#Balance').val(party.ChequeBalance);
+        $('#SdNo').val(party.ChequeSdNo);
+        $('#ChequeNo').val("");
+        $('#ChequeNo').val(""),
+       $('#DraweeBank').val(""),
+        $('#ChequeDate').val(""),
+         $('#Amount').val(""),
+       $('#AdjustedBalance').val(""),
+
+        $("#PartyList").modal("hide");
+
+    }
+    function GetChequeDetail() {
+        debugger;
+        PartyId = $('#PartyId').val();
+
+
+
+        $.ajax({
+            url: '/CashManagement/WFLD_CashManagement/GetChequeDetail',
+            type: 'GET',
+            datatype: JSON,
+            data: { PartyId: PartyId },
+            success: function (data) {
+                debugger;
+                // ViewCHAShippingLine = data;
+                var html = '';
+                $.each(data, function (i, item) {
+                    html += '<tr id="' + item.Id + '" " onclick="GetChequeDetailed(' + item.Id + ',&quot;' + item.Cheque + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + item.Cheque + '</td></tr>';
+
+                });
+                $('#tblePayee').html(html);
+
+
+            }
+
+
+        });
+    }
+
+
+    function GetChequeDetailed(Id, Cheque) {
+        debugger;
+        $('#PartyId').val(Id);
+        $('#ChequeNo').val(Cheque);
+        //var DestuffingId =  $('#DeliApp_DestuffingId').val();
+        // var hdnDestuffingEntryNoList = $('#hdnDestuffingEntryNoList').val();
+
+        //  var Destuffing = $.grep(model, function (item) { return item.DestuffingId == DestuffingId;})[0];
+        //$('#ImporterId').val(Destuffing.ImporterId);
+        //$('#Importer').val(Destuffing.ImporterName);
+        ChequeNo = $('#ChequeNo').val();
+
+        $("#ChequeList").modal("hide");
+        if (ChequeNo != "")
+            document.getElementById("ErrChequeNo").innerHTML = "";
+        GetCheque();
+    }
+    $('#ChequePartySearch').on("click", function () {
+        debugger;
+        LoadParty();
+        @*$.ajax({
+          url: '@Url.Action("ListOfParty", "WFLD_CashManagement", new { Area = "CashManagement" })',
+          dataType: 'JSON',
+          type: 'GET',
+          success: function (data) {
+              debugger;
+              PartyDet = data;
+              var html = '';
+              $.each(data, function (i, item) {
+                  html += '<li id="' + item.PartyId + '" " onclick="GetParty(this)">' + item.PartyName + '</li>';
+              });
+              $('#lstParty').html(html);
+          },
+
+          error: function (response) {
+              debugger;
+              var r = jQuery.parseJSON(response.responseText);
+              alert("Message: " + r.Message);
+              alert("StackTrace: " + r.StackTrace);
+              alert("ExceptionType: " + r.ExceptionType);
+          }
+      });*@
+
+    });
+
+
+    function SearchByPartyCode() {
+        if ($('#boxParty').val() != '') {
+            $.ajax({
+                url: '/WFLD_CashManagement/SearchByChequePartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#boxParty').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstCheque, function (i, elem) {
+                            html += '<tr onclick="SelectParty(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;,&quot;' + elem.ChequeSdNo + '&quot;,&quot;' + elem.ChequeBalance + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tblParty tbody').html('');
+                        $('#tblParty tbody').html(html);
+                        $('#btnLoadMoreParty').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tblParty tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMoreParty').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadParty();
+    }
+
+    function LoadMoreParty() {
+        debugger;
+        $.ajax({
+            url: '/WFLD_CashManagement/LoadChequeParty',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.lstCheque, function (i, elem) {
+                        html += '<tr onclick="SelectParty(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;,&quot;' + elem.ChequeSdNo + '&quot;,&quot;' + elem.ChequeBalance + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tblParty tbody').html(html);
+                    else
+                        $('#tblParty tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMoreParty').prop('disabled', false);
+                    else $('#btnLoadMoreParty').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function LoadParty() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/WFLD_CashManagement/LoadChequeParty',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.lstCheque, function (i, elem) {
+                        html += '<tr onclick="SelectParty(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;,&quot;' + elem.ChequeSdNo + '&quot;,&quot;' + elem.ChequeBalance + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    $('#tblParty tbody').html(html);
+                    if (data.Data.State == true)
+                        $('#btnLoadMoreParty').prop('disabled', false);
+                    else $('#btnLoadMoreParty').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+
+    function SelectParty(Id, PartyName, SdNo, Balance) {
+        debugger;
+        $('#PartyName').val(PartyName);
+        $('#PartyId').val(Id);
+        $('#SdNo').val(SdNo);
+        $('#Balance').val(Balance);
+        //LoadParty();
+        $("#PartyModal").modal("hide");
+        $('#boxParty').val('');
+        $('#ChequeNo').val("");
+        $('#ChequeNo').val(""),
+       $('#DraweeBank').val(""),
+        $('#ChequeDate').val(""),
+         $('#Amount').val(""),
+       $('#AdjustedBalance').val(""),
+            $('#Narration').val("")
+    }
+    function CloseParty() {
+        debugger;
+        $('#boxParty').val('');
+        $("#PartyModal").modal("hide");
+        LoadParty();
+    }
+
+
+    function GetCheque() {
+        debugger;
+        ChequeNo = $('#ChequeNo').val();
+
+
+        $.ajax({
+            url: '/CashManagement/WFLD_CashManagement/GetChequeDetails',
+            type: 'GET',
+            async: false,
+            datatype: JSON,
+            data: { ChequeNo: ChequeNo },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    //StateList = data.Data;
+                    $.each(data.Data, function (i, item) {
+                        $("#DraweeBank").val(item.DraweeBank);
+
+                        $("#Amount").val(item.Amount);
+                        $("#ChequeDate").val(item.ChequeDate);
+
+
+                    })
+                }
+                else {
+                    alert("fail");
+                    //  $('#DivBody').load('/GateOperation/HDB_CWCGateOperation/CreateEntryThroughGate');
+                }
+
+                Calculate();
+
+            }
+        });
+    }
+
+
+    //$('#CHAbox').keyup(function () {
+    //    var val = $(this).val().toLowerCase();
+    //    if (val == "")
+    //        $('#lstCHA > li').show();
+    //    else {
+    //        $('#lstCHA > li').each(function () {
+    //            var text = $(this).text().toLowerCase();
+    //            (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+    //        });
+    //    }
+    //});
+    //$('#CHbox').keyup(function () {
+    //    var val = $(this).val().toLowerCase();
+    //    if (val == "")
+    //        $('#lstCH > li').show();
+    //    else {
+    //        $('#lstCH > li').each(function () {
+    //            var text = $(this).text().toLowerCase();
+    //            (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+    //        });
+    //    }
+    //});
+    function SearchByChequeNo() {
+        debugger;
+
+        PartyId = $('#PartyId').val();
+        ChequeNo = $('#CHbox').val();
+
+        $.ajax({
+            url: '/CashManagement/WFLD_CashManagement/SearchChequeNo',
+            type: 'GET',
+            async: false,
+            datatype: JSON,
+            data: { PartyId: PartyId, ChequeNo: ChequeNo },
+            success: function (data) {
+                var html = '';
+                $.each(data, function (i, item) {
+                    debugger;
+                    html += '<tr id="' + item.Id + '" " onclick="SelectChequeName(' + item.Id + ',&quot;' + item.SdNo + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + item.SdNo + '</td></tr>';
+
+                });
+
+                $('#tblePayee').html(html);
+
+
+            }
+
+        });
+    }
+
+    function SelectChequeName(PartyId, ChequeNo) {
+        debugger;
+
+        $('#PartyId').val(PartyId);
+        $('#ChequeNo').val(ChequeNo);
+
+        $("#ChequeList").modal("hide");
+        GetCheque();
+    }
+    /*  function SearchByChequeNo() {
+          debugger;
+          if ($('#CHbox').val() != '') {
+              $.ajax({
+                  url: '/CashManagement/WFLD_CashManagement/SearchChequeNo',
+                  type: 'GET',
+                  data: { Party: $('#PartyId').val() },
+                  success: function (data) {
+                      if (data.Status == 1) {
+                          var html = '';
+                          $.each(data.Data.lstCheques, function (item, elem) {
+                              html += '<tr onclick="GetChequeDetailed(' + elem.PartyId + ',&quot;' + elem.ChequeNo + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ChequeNo + '</td></tr>';
+                          });
+                          $('#tblePayee tbody').html('');
+                          $('#tblePayee tbody').html(html);
+                          $('#btnLoadMorePayee').prop('disabled', false);
+                          Page = -1;
+                      }
+                      else {
+                          $('#tblePayee tbody').html('');
+                          Page = -1;
+                          $('#btnLoadMorePayee').prop('disabled', false);
+                      }
+
+                  }
+              });
+          }
+          else
+              LoadCheque();
+      }
+
+      */
+
+    /*function LoadCheque() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/Import/WFLD_CashManagement/LoadChequeList',
+            type: 'GET',
+            data: { PartyId: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectPayee(' + elem.PartyId + ',&quot;' + elem.ChequeNo + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+
+                    $('#tblePayee tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMorePayee').prop('disabled', false);
+                    else $('#btnLoadMorePayee').prop('disabled', true);
+                }
+            }
+        });
+    }*/
+
+
+
+
+
+
+
+
+
+
+
+    function Calculate() {
+
+        $("#AdjustedBalance").val($('#Balance').val() - $('#Amount').val());
+    }
+    function Print() {
+        /*var printTable = "<table cellspacing='0' cellpadding='5' style='width:100%; font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 5px;'><thead>";
+        printTable += "<tr><td colspan='12'>";
+        printTable += "<table cellspacing='0' cellpadding='5' style='width:100%; font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 5px;'><tbody>";
+        printTable += "<tr><td width='10%' valign='top'><img align='right' src='IMGSRC' width='90'/></td>";
+        printTable += "<td width='90%' valign='top' align='center'><h1 style='font-size: 22px; margin: 0; padding: 0;'>CENTRAL WAREHOUSING CORPORATION</h1><span style='font-size:12px;'>(A Govt. of India Undertaking)</span><br/><span style='font-size:12px;'>ICD Patparganj-Delhi</span><br/><label style='font-size: 14px; font-weight:bold;'>Cash Deposit to SD Account Voucher</label></td></tr>";
+        printTable += "</tbody></table>";
+        printTable += "</td></tr>";
+        printTable += "</thead></table>";
+
+        printTable += "<table cellspacing='0' cellpadding='5' style='width:100%; font-family: Arial, Helvetica, sans-serif; margin: 50px 0 0; font-size:9pt;'><tr><td style='text-align:left;'><b>Receipt No. :</b> " + $('#ReceiptNo').val() + "</td><td style='text-align:right;'><b>Dated :</b> " + $('#TransDate').val() + "</td></tr><tr><td colspan='2' style='text-align:left;'><b>Payer Name :</b> " + $('#PartyName').val() + "</td></tr><tr><td colspan='2' style='text-align:left;'><b>Address :</b> " + $('#Address').val().replace(/\,/g, "<br/>") + "</td></tr>  <tr><td colspan='2' style='text-align:left;'><b>Folio No. :</b> " + $('#FolioNo').val() + "</td></tr></table><br/><br/>";
+        printTable += "<table cellspacing='0' cellpadding='5' style='width:100%; font-family: Arial, Helvetica, sans-serif; margin: 20px 0 0; font-size:9pt; border:1px solid #000;'><thead><tr><th style='text-align:center;border-bottom:1px solid #000;'>Sl#</th><th style='text-align:center;border-bottom:1px solid #000;'>Mode</th><th style='text-align:center;border-bottom:1px solid #000;'>Bank</th><th style='text-align:center;border-bottom:1px solid #000;'>Ins. No</th><th style='text-align:center;border-bottom:1px solid #000;'>Date</th><th style='text-align:right;border-bottom:1px solid #000;'>Amount</th></tr></thead><tbody>";
+        for (var i = 0; i < 5; i++) {
+            printTable += "<tr><td style='text-align:center;'>" + (i + 1) + "</td><td style='text-align:center;'>" + $('#Details_' + i + '__Type').val() + "</td><td style='text-align:center;'>" + $('#Details_' + i + '__Bank').val() + "</td><td style='text-align:center;'>" + $('#Details_' + i + '__InstrumentNo').val() + "</td><td style='text-align:center;'>" + $('#Details_' + i + '__Date').val() + "</td><td style='text-align:right;'>" + Number($('#Details_' + i + '__Amount').val()).toFixed(2) + "</td></tr>";
+        }
+        printTable += "</tbody><tfoot><tr><th colspan='5' style='text-align:left; border-top:1px solid #000;'>Total Deposit : </th><th style='text-align:right; border-top:1px solid #000;'>" + Number($('#txtTotal').val()).toFixed(2) + "</th></tr></tfoot></table><table style='margin-top:50px; font-size:10pt;'><tr><th>Received By :</th></tr></table>";
+
+        var PostData = new FormData();
+        PostData.append("page", printTable);*/
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetBulkReceiptReport", "WFLD_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                ReceiptNumber: $('#ReceiptNo').val(),
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+    }
+    function Reset() {
+
+        $('#PartyName').val("");
+        $('#SdNo').val(""),
+       $('#Balance').val(""),
+       $('#ChequeNo').val(""),
+      $('#DraweeBank').val(""),
+       $('#ChequeDate').val(""),
+        $('#Amount').val(""),
+      $('#AdjustedBalance').val("")
+    }
+
+    function CloseCheques() {
+        $('#CHbox').val('');
+        $("#ChequeList").modal("hide");
+
+    }
+
+</script>
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+        $('#slim_scroll_1').slimScroll({
+            allowPageScroll: true
+        });
+
+
+    });
+   
+     
+ 
+</script>
+
+
+
+@using (Ajax.BeginForm("AddChequeReturn", "WFLD_CashManagement", new AjaxOptions { HttpMethod = "POST", Confirm = "Are you sure you want to Save?", OnSuccess = "OnSuccess", LoadingElementDuration = 1000, LoadingElementId = "divProgress" }))
+{
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>DISHONOUR CHEQUE </h4>
+                        </div>
+                    </div>
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.PartyId, new { Value = "0000000000" })
+
+
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-1-5">
+                                @Html.LabelFor(m => m.ReceiptNo)
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.ReceiptNo, new { Value = "000000", @readonly = true })
+                            </div>
+                            <div class="col-md-offset-4 col-md-1-5">
+                                @Html.LabelFor(m => m.ChequeReturnDate)
+                            </div>
+                            <div class="col-md-2 Date_Img">
+                                @Html.TextBoxFor(m => m.ChequeReturnDate, new { Value = DateTime.Today.ToString("dd/MM/yyyy"), @readonly = true })
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.PartyName)
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                @*@Html.ValidationMessageFor(m => m.PartyName)
+                            @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control input-sm",  @readonly = true })
+                            @Html.ValidationMessageFor(m => m.PartyName)*@
+                                @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control input-sm", @readonly = true })
+                                @*@Html.TextBox("PartyName", null, new { @class = "form-control valid", @data_val = "true", @data_val_required = "Party Name is required" })*@
+                                @*@Html.ValidationMessageFor(m => m.PartyName)*@
+                                <span class="search" id="ChequePartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>
+
+
+
+
+                                @*@Html.ValidationMessageFor(m => m.PartyName)*@
+                                <span style="color:red" id="ErrPartyName"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-1-5">
+                                @Html.LabelFor(m => m.SdNo)
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.SdNo, new { @readonly = true })
+                                @Html.ValidationMessageFor(m => m.SdNo)
+                            </div>
+                            <div class="col-md-offset-4 col-md-1-5">
+                                @Html.LabelFor(m => m.Balance)
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.Balance, new { @readonly = true })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-1-5">
+                                @Html.LabelFor(m => m.ChequeNo)
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.ChequeNo, new { @class = "form-control input-sm" })
+                                @Html.ValidationMessageFor(m => m.ChequeNo)
+                                <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="GetChequeDetail()" data-target="#ChequeList"></i></span>
+                                <span style="color:red" id="ErrChequeNo"></span>
+
+                            </div>
+                            <div class="col-md-offset-4 col-md-1-5">
+                                @Html.LabelFor(m => m.DraweeBank)
+                            </div>
+                            <div class="col-md-2-5">
+                          
+                                @Html.TextBoxFor(m => m.DraweeBank, new { })
+                                @Html.ValidationMessageFor(m => m.DraweeBank)
+                                <span style="color:red" id="ErrDrawee"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-1-5">
+                                @Html.LabelFor(m => m.ChequeDate)
+                            </div>
+                            
+                                <div class="col-md-2-5 Date_Img">
+                                    @Html.TextBoxFor(m => m.ChequeDate, new { Value = DateTime.Today.ToString("dd/MM/yyyy"), @readonly = true })
+                                </div>
+                             
+                            <div class="col-md-offset-4 col-md-1-5">
+                                @Html.LabelFor(m => m.Amount)
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.Amount, new { })
+                                @Html.ValidationMessageFor(m => m.Amount)
+                                <span style="color:red" id="ErrAmount"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-1-5">
+                                <label>Adjusted Balance:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.AdjustedBalance, new { @readonly = true })
+                            </div>
+                        </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5" style="padding-right:0px;">
+                                    <label>Narration:</label>
+                                </div>
+                                <div class="col-md-10-5">
+                                    @Html.TextAreaFor(m => m.Narration, new { maxlength = 500, @class = "form-control input_sm", @style = "width:100%;height:100px;" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-offset-3 col-md-2 SignUp_space_bottom">
+                                <input type="submit" class="btn log_Btn_sm" value="Save" id="BtnSaveCustomAppraisement" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" class="btn log_Btn_sm" value="Print" id="btnPrint" onclick="Print()" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" class="btn log_Btn_sm" value="Reset" id="btnReset" onclick="Reset()" />
+                            </div>
+                           
+                        </div>
+                    <div class="logSuccMsg Form_Space_top" id="DivSucMsg" style="background-color:transparent"></div>
+                    <div class="logErrMsg Form_Space_bottom" id="DivErrMsg" style="background-color:transparent"></div>
+                    </div>
+            
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="CargoSeizeList"></div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+   
+}
+
+<div id="PayeeModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Payer</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Payeebox" type="text" />
+                <ul class="navList" id="lstPayee">
+                    @*@{
+                        foreach (var item in Model.lstGodownList)
+                        {
+                        <li id="@item.GodownId">@item.GodownName</li>
+                        }
+                        }*@
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="ChequeList" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseCheques()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Cheques</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Cheque No" id="CHbox" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByChequeNo()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Cheque No</th>
+
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tblePayee">
+                        <tbody>
+                            @*@{
+                                    if (ViewBag.lstParty != null)
+                                    {
+                                        foreach (var item in ViewBag.lstParty)
+                                        {
+                                <tr onclick="SelectPayee(@item.PartyId,'@item.PartyName')">
+                                    <td colspan="8" width="80%" class="txt_wrp">@item.PartyName</td>
+                                    <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                </tr>
+                                        }
+                                    }
+                                }*@
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+
+
+
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseCheques()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="PartyModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseParty()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Party</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Party Name Or Party Code" id="boxParty" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByPartyCode()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Party Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll_1">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tblParty">
+                        <tbody>
+                            @if (ViewBag.lstParty != null)
+                            {
+                                foreach (var i in ViewBag.lstParty)
+                                {
+
+                                    <tr onclick="SelectEximTrader(@i.EximTraderId,'@i.EximTraderName','@i.ChequeSdNo','@i.ChequeBalance')">
+                                        <td colspan="8" width="80%" class="txt_wrp">@i.EximTraderName</td>
+                                        <td colspan="4" width="20%" class="txt_wrp">@i.PartyCode</td>
+                                    </tr>
+
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreParty()" class="btn log_Btn_sm" id="btnLoadMoreParty">Load More Data</button>
+                        }
+                        else
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreParty()" class="btn log_Btn_sm" id="btnLoadMoreParty" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-offset-2 col-md-4">
+                        <button type="button" style="width:100%; margin-left:0;" class="btn log_Btn_sm" onclick="CloseParty()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+
+

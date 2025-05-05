@@ -1,0 +1,31 @@
+﻿function ReservationModel() {
+    this.PartyId = 0;
+    this.PartyName = '';
+    this.GstNo = '';
+    this.Address = '';
+    this.StateCode = 0;
+    this.StateName = '';
+    this.SupplyType = '';
+    this.Amount = 0;
+    this.CGST = 0;
+    this.SGST = 0;
+    this.IGST = 0;
+    this.Total = 0;
+    this.RoundOff = 0;
+    this.InvoiceAmt = 0;
+    this.Remarks = '';
+    this.InvoiceDate = '';
+    this.InvoiceNo = '';
+    this.InvoiceId = 0;
+    this.GodownId = 0;
+    this.GodownName = '';
+    this.GF = 0;
+    this.MF = 0;
+    this.TotalSpace = 0;
+    this.CGSTPer = 0;
+    this.SGSTPer =0;
+    this.IGSTPer = 0;
+    this.ComStateCode = '';
+    this.IsCashReceipt = 0;
+    this.SEZ = '';
+}

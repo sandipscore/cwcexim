@@ -1,0 +1,159 @@
+﻿@model CwcExim.Areas.Master.Models.DSRCWCTds
+<script>
+    $(function () { });
+    $('#TdsEffectiveDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage:  "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select Date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $('[data-valmsg-for="EffectiveDate"]').html('');
+        }
+    });
+</script>
+@using (Ajax.BeginForm("AddEditMstTds", "DSRMaster", new AjaxOptions
+{
+    Confirm = "Are you sure you want to Save?",
+    HttpMethod = "POST",
+    OnSuccess = "TdsOnSuccess",
+    OnFailure = "TdsOnFailure"
+}))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.TdsId)
+    <div class="container-fluid">
+        <div class="row SignUp_space_bottom">
+            <div class="col-md-12 cwc_body">
+                <h5>TDS<span class="triangle"></span></h5>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group Form_Input">
+                <div class="col-md-1-5 col_cus_2">
+                    <label>Effective Date:</label>
+                </div>
+                <div class="col-md-2 Date_Img">
+                    <span class="ReQSimbol">*</span>
+                    @Html.TextBoxFor(m => m.EffectiveDate, new { @class = "form-control input-sm", @id = "TdsEffectiveDate", @readonly = true })
+                    @Html.ValidationMessageFor(m => m.EffectiveDate, "", new { @class = "Error_Msg" })
+                </div>
+                <div class="col-md-1-5 col-md-offset-3 col_cus_2 padding_rt">
+                    <label>CWC TDS %:</label>
+                </div>
+                <div class="col-md-2">
+                    <span class="ReQSimbol">*</span>
+                    @Html.TextBoxFor(m => m.CWCTdsPrcnt, new { @class = "form-control input-sm" })
+                    @Html.ValidationMessageFor(m => m.CWCTdsPrcnt, "", new { @class = "Error_Msg" })
+                </div>
+            </div>
+        </div>
+        <div class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-1-5 col_cus_2 padding_rt">
+                    <label>H & T TDS %:</label>
+                </div>
+                <div class="col-md-2">
+                    <span class="ReQSimbol">*</span>
+                    @Html.TextBoxFor(m => m.HTTdsPrcnt, new { @class = "form-control input-sm" })
+                    @Html.ValidationMessageFor(m => m.HTTdsPrcnt, "", new { @class = "Error_Msg" })
+                </div>
+                <div class="col-md-1-5 col-md-offset-3 col_cus_2 padding_rt">
+                    <label>SAC Code:</label>
+                </div>
+                <div class="col-md-2">
+                    <span class="ReQSimbol">*</span>
+                    @Html.TextBoxFor(m => m.SacCode, new { @class = "form-control input-sm", @readonly = true })
+                    <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#myModal"></i></span>
+                    @Html.ValidationMessageFor(m => m.SacCode, "", new { @class = "Error_Msg" })
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+        </div>
+        <div class="row SignUp_space_bottom">
+            <div class="col-md-offset-4 col-md-2">
+                <input type="submit" value="Save" class="btn log_Btn_sm" />
+            </div>
+            <div class="col-md-2">
+                <input type="button" value="Back" class="btn log_Btn_sm" onclick="LoadTdsPage()" />
+            </div>
+        </div>
+        <div class="logSuccMsg SignUp_space_bottom2" id="DivTdsMsg" style="background-color:transparent;"></div>
+    </div>
+}
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of SAC Code</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="box" type="text" />
+                <ul class="navList" id="PartyList">
+                    @{
+                        if (ViewBag.ListOfSAC != null)
+                        {
+                            foreach (var item in ViewBag.ListOfSAC)
+                            {
+                                <li id="@item">@item</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    function LoadTdsPage()
+    {
+        $('#DivTds').load('/Master/DSRMaster/CreateTds');
+    }
+    function TdsOnSuccess(data)
+    {
+        if(data.Status==1||data.Status==2)
+        {
+            LoadTdsPage();
+        }
+        else
+        {
+            if ($('#DivTdsMsg').hasClass('logSuccMsg'))
+                $('#DivTdsMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivTdsMsg').html(data.Message);
+        }
+        setTimeout(function () { $('#DivTdsMsg').html(''); }, 5000);
+    }
+    function TdsOnFailure() { }
+    $('#box').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('.navList > li').show();
+        } else {
+            $('.navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+    $('.navList li').on("click", function () {
+        $('#SacCode').val($(this).text());
+        $("#myModal").modal("hide");
+    });
+</script>

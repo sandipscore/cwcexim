@@ -1,0 +1,262 @@
+﻿
+
+@model CwcExim.Areas.Report.Models.HDB_WorkSlipReport
+
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptWorkSlipListDtlOnFailure";
+    options.OnSuccess = "RptWorkSlipReportDetails";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+
+}
+<script>
+    //"/" + SubDomain +
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodFrom").datepicker("setDate", new Date());
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker("setDate", new Date());
+    });
+
+</script>
+@using (Html.BeginForm("GetWorkSlipBonddetailList", "Hdb_ReportCWC", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Work Slip Report (Details)</h4>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>Period From:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5">
+                                    <label>Period To:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                </div>
+                                
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $('#BtnPreview').on("click", function () {
+        //alert("in");
+        //ValidateExitDet();
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        return true;
+    });
+    function RptWorkSlipListDtlOnFailure() { }
+    function RptWorkSlipReportDetails(data) {
+        $('#DivDwnldWavMsg').html('')
+        //alert(data);
+       // debugger;
+        if (data.Status == 1) {
+
+           // debugger;
+            SaveReportPdf(data);
+
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+
+
+    function ValidateExitDet() {
+        var Status = true;
+
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="txtGrossWeight"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+
+        return Status;
+    }
+    function SaveReportPdf(data)
+    {
+        var FormDate = $("#PeriodFrom").val();
+        var ToDate = $("#PeriodTo").val();
+        var WorkSlipType = $("#WorkSlipType option:selected").text();
+
+        var PostData = new FormData();
+        var Html1 = '<table style="width:100%;font-size:8pt;font-family:Verdana,Arial,San-serif;border-collapse:collapse;repeat-header: yes;">';
+        Html1 += '<thead>';
+        Html1 += '<tr>';
+        Html1 += '<th colspan="4" style="text-align:right;">Work Slip From <span>' + FormDate + '</span> to <span>' + ToDate + '</span></th>';
+        Html1 += '<th></th>'
+        Html1 += '<th colspan="3" style="text-align:right;">Type : <span>' + WorkSlipType + '</span></th>';
+        Html1 += '</tr>';
+        Html1 += '<tr>';
+        Html1 += '<th rowspan="2" style="text-align:center;border:1px solid #000;padding:3px;">SL No.</th><th rowspan="2" style="text-align:center;border:1px solid #000;padding:3px;">Particulars / Job Details</th><th rowspan="2" style="text-align:center;border:1px solid #000;padding:3px;">Clause</th><th rowspan="2" style="text-align:center;border:1px solid #000;padding:3px;">SAC</th><th colspan="2" style="text-align:center;border:1px solid #000;padding:3px;">CARGO</th><th colspan="2" style="text-align:center;border:1px solid #000;padding:3px;">No of Containers</th>';
+        Html1 += '</tr>';
+        Html1 += '<tr>';
+        Html1 += '<th style="text-align:center;border:1px solid #000;padding:3px;">No. of Pkg.</th><th style="text-align:center;border:1px solid #000;padding:3px;">WT</th><th style="text-align:center;border:1px solid #000;padding:3px;">20</th><th style="text-align:center;border:1px solid #000;padding:3px;">40</th>';
+        Html1 += '</tr>';
+        Html1 += '</thead>';
+        Html1 += '<tbody>';
+
+        if (data.Data.WorkSlipSummaryList.length > 0) {
+            for (i = 0; i < data.Data.WorkSlipSummaryList.length; i++) {
+                Html1 += '<tr>';
+                Html1 += '<td style="text-align:center;border:1px solid #000;padding:3px;">' + data.Data.WorkSlipSummaryList[i].SrNo + '</td>';
+                Html1 += '<td style="text-align:left;border:1px solid #000;padding:3px;">' + data.Data.WorkSlipSummaryList[i].Particulars + '</td>';
+                Html1 += '<td style="text-align:center;border:1px solid #000;padding:3px;">' + data.Data.WorkSlipSummaryList[i].Clause + '</td>';
+                Html1 += '<td style="text-align:center;border:1px solid #000;padding:3px;">' + data.Data.WorkSlipSummaryList[i].SAC + '</td>';
+                Html1 += '<td style="text-align:right;border:1px solid #000;padding:3px;">' + data.Data.WorkSlipSummaryList[i].NoOfPackages + '</td>';
+                Html1 += '<td style="text-align:right;border:1px solid #000;padding:3px;">' + data.Data.WorkSlipSummaryList[i].GrossWeight + '</td>';
+                if (data.Data.WorkSlipSummaryList[i].Count_20 == null) {
+                    Html1 += '<td style="text-align:center;border:1px solid #000;padding:3px;">&nbsp;</td>';
+                }
+                else {
+                    Html1 += '<td style="text-align:center;border:1px solid #000;padding:3px;">' + data.Data.WorkSlipSummaryList[i].Count_20 + '</td>';
+                }
+
+                if (data.Data.WorkSlipSummaryList[i].Count_40 == null) {
+                    Html1 += '<td style="text-align:center;border:1px solid #000;padding:3px;">&nbsp;</td>';
+                }
+                else {
+                    Html1 += '<td style="text-align:center;border:1px solid #000;padding:3px;">' + data.Data.WorkSlipSummaryList[i].Count_40 + '</td>';
+                }
+
+
+                Html1 += '</tr>';
+            }
+        }
+        else {
+            Html1 += '<tr>';
+            Html1 += '<td colspan="8" style="text-align:center;border:1px solid #000;padding:3px;">No data found.</td>';
+            Html1 += '</tr>';
+        }
+
+        Html1 += '</tbody>';
+        Html1 += '</table>';
+
+        var Html2 = '<table style="width:100%;font-size:8pt;font-family:Verdana,Arial,San-serif;border-collapse:collapse;border:1px solid #000;repeat-header: yes;">';
+        Html2 += '<thead>';
+        Html2 += '<tr>';
+        Html2 += '<th style="text-align:center;border:1px solid #000;width:15%;padding:3px;">Clause</th><th style="text-align:center;border:1px solid #000;width:15%;padding:3px;">Size</th><th style="text-align:center;border:1px solid #000;width:70%;padding:3px;">Container</th>';
+        Html2 += '</tr>';
+        Html2 += '</thead>';
+        Html2 += '<tbody>';
+        if (data.Data.WorkSlipDetailList.length > 0) {
+            for (i = 0; i < data.Data.WorkSlipDetailList.length; i++) {
+                Html2 += '<tr>';
+                Html2 += '<td style="text-align:center;border:1px solid #000;padding:3px;">' + data.Data.WorkSlipDetailList[i].Clause + '</td>';
+                Html2 += '<td style="text-align:center;border:1px solid #000;padding:3px;">' + data.Data.WorkSlipDetailList[i].ContainerSize + '</td>';
+                Html2 += '<td style="text-align:left;border:1px solid #000;padding:3px;">' + data.Data.WorkSlipDetailList[i].Containers + '</td>';
+                Html2 += '</tr>';
+            }
+        }
+        else {
+            Html1 += '<tr>';
+            Html1 += '<td colspan="3" style="text-align:center;border:1px solid #000;padding:3px;">No data found.</td>';
+            Html1 += '</tr>';
+        }
+        Html2 += '</tbody>';
+        Html2 += '</table>';
+
+
+        PostData.append("Page", Html1);
+        PostData.append("nPage", Html2);
+       // alert("PostData=" + PostData);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GenerateWorkSlipPDF", "ReportCWC", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+
+            }
+        });
+    }
+
+</script>
+
+
+
+
+

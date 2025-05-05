@@ -1,0 +1,156 @@
+﻿@model CwcExim.Areas.Report.Models.StuffingRequest
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "StuffingReqOnFailure";
+    options.OnSuccess = "StuffingReqOnSuccess";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<script>
+    $(function () {
+
+        $("#FromDate").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $('[data-valmsg-for="FromDate"]').html('<span><span>');
+            }
+        });
+        $("#ToDate").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $('[data-valmsg-for="ToDate"]').html('<span></span>');
+            }
+        });
+    });
+
+</script>
+@using (Ajax.BeginForm("GetStuffingReqDetails", "DSR_ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Stuffing Request</h4>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>From Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.FromDate, new { @class = "form-control", @id = "FromDate", placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.FromDate, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4">
+                                    <label>To Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.ToDate, new { @class = "form-control", @id = "ToDate", placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.ToDate, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logErrMsg Form_Space_bottom" id="DivStuffingErrMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $('#BtnPreview').on("click", function () {
+        $('#DivStuffingErrMsg').html('');
+        var From = $('#FromDate').val();
+        var To = $('#ToDate').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivStuffingErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        return true;
+    });
+
+    function StuffingReqOnFailure() { }
+
+    function StuffingReqOnSuccess(data) {
+        $('#DivStuffingErrMsg').html('')
+        debugger;
+        if (data.Status == 1) {
+            debugger;
+            SaveReportPdf(data);
+        }
+        else {
+            $('#DivStuffingErrMsg').html(data.Message);
+        }
+    }
+
+    function SaveReportPdf(data)
+    {
+        var FromDate = $("#FromDate").val();
+        var ToDate = $("#ToDate").val();
+        var PostData = new FormData();
+        var Html = "<table style='width:100%;font-size:9pt;font-family:Verdana,Arial,San-serif;border-collapse:collapse;'><thead><tr><th colspan='7' style='text-align:center;padding:3px;'>Stuffing Request Report From <span>" + FromDate + "</span> to <span>" + ToDate + "</span></th></tr><tr><th style='text-align:center;border:1px solid #000;padding:3px;'>SL No.</th><th style='text-align:center;border:1px solid #000;padding:3px;width:15%;'>Shipping Bill No.</th><th style='text-align:center;border:1px solid #000;padding:3px;'>Exporter</th><th style='text-align:center;border:1px solid #000;padding:3px;'>Shipping Line</th><th style='text-align:center;border:1px solid #000;padding:3px;width:12%;'>Units</th><th style='text-align:center;border:1px solid #000;padding:3px;width:17%;'>Container No.</th><th style='text-align:center;border:1px solid #000;padding:3px;width:13%;'>Container Size</th></tr></thead><tbody>";
+        $.each(data.Data, function (i, item) {
+            Html += " <tr><td style='text-align:center;border:1px solid #000;padding:3px;'>" + ++i + "</td><td style='text-align:center;border:1px solid #000;padding:3px;'>" + item.ShippingBillNo + "</td><td style='text-align:left;border:1px solid #000;padding:3px;'>" + item.Exporter + "</td><td style='text-align:left;border:1px solid #000;padding:3px;'>" + item.ShippingLine + "</td><td style='text-align:right;border:1px solid #000;padding:3px;'>" + item.Units + "</td><td style='text-align:left;border:1px solid #000;padding:3px;'>" + item.ContainerNo + "</td><td style='text-align:right;border:1px solid #000;padding:3px;'>" + item.Size + "</td></tr>";
+        });
+        Html += "</tbody></table>"
+        PostData.append("Page", Html);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GeneratePDFForStuffingReq", "DSR_ReportCWC", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            async:false,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+            }
+        });
+    }
+
+</script>
+
+
+
+
+
+

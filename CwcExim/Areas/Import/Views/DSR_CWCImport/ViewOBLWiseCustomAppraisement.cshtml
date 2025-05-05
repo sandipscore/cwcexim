@@ -1,0 +1,908 @@
+﻿@model CwcExim.Areas.Import.Models.DSRCustomAppraisement
+<script src="~/Areas/Import/Scripts/App/Services/DSROBLWiseAppraisementService.js"></script>
+<script src="~/Areas/Import/Scripts/App/Controllers/DSROBLWiseAppraisementCtrl.js"></script>
+<script>
+    angular.bootstrap(document.getElementById('DivDSROBLWiseCustomAppraisement'), ['CWCApp']);
+</script>
+<style>
+    #tbleSline.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    #tbleCha.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    #tbleChaDtl.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .slimScrollDiv {
+        height: 300px;
+    }
+
+    .table.tblhd {
+        border-bottom: 0;
+    }
+
+    #tblContainer thead th, #tblContainer tbody td {
+        text-align: center;
+    }
+
+    table.table-bordered.dataTable th, table.table-bordered.dataTable td {
+        width: auto;
+    }
+
+    input[type="checkbox"]:disabled ~ label i.square:before, input[type="radio"]:disabled ~ label i.square:before {
+        color: #000;
+    }
+
+    #tblContainer tbody td label {
+        font-weight: normal;
+    }
+
+    input[type="checkbox"] {
+        position: absolute;
+        outline: none;
+        filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=0);
+        opacity: 0;
+    }
+
+        input[type="checkbox"][disabled] {
+            cursor: not-allowed;
+        }
+
+            input[type="checkbox"][disabled] + label {
+                cursor: not-allowed;
+            }
+
+                input[type="checkbox"][disabled] + label:before {
+                    filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
+                    opacity: 0.5;
+                }
+
+        input[type="checkbox"]:focus + label:before {
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="checkbox"]:checked + label:after {
+            filter: progid:DXImageTransform.Microsoft.Alpha(enabled=false);
+            opacity: 1;
+        }
+
+        input[type="checkbox"] + label {
+            position: relative;
+            cursor: pointer;
+            padding-left: 15px;
+        }
+
+            input[type="checkbox"] + label:before {
+                position: absolute;
+                left: 0;
+                top: -1px;
+                content: "";
+                width: 15px;
+                height: 15px;
+                display: block;
+                border-radius: 3px;
+                border: 1px solid #000;
+            }
+
+            input[type="checkbox"] + label:after {
+                content: "✓";
+                position: absolute;
+                top: -4px;
+                left: 0;
+                width: 15px;
+                font-weight: bold;
+                height: 15px;
+                line-height: 20px;
+                text-align: center;
+                color: #333333;
+                filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=0);
+                opacity: 0;
+                -moz-transition: all 0.2s;
+                -o-transition: all 0.2s;
+                -webkit-transition: all 0.2s;
+                transition: all 0.2s;
+            }
+
+            .full_frm label {
+                padding-top: 7px;
+                color: #000;
+                font-size: 0.9em;
+                font-weight: normal;
+                width: 150px;
+                word-wrap: break-word;
+                margin: 0 10px 0 0;
+                padding: 4px 0;
+            }
+
+            .full_frm label i {
+                color: #fe9b35;
+            }
+
+            .full_frm label:nth-child(2) {
+                width: 100px;
+            }
+
+            .full_frm label:nth-child(3) {
+                width: 100px;
+            }
+</style>
+
+<script>
+    var ArrayOfCustomAppraisement = [];
+    var ArrayOfDeliveryOrd = [];
+    var TimeInSeconds;
+    var SubDomain;
+    var OnEditDt;
+    $(function () {
+        ////debugger;
+        TimeInSeconds = 5000;
+        $('#AppraisementDate').focus();
+        OnEditDt=@Html.Raw(Json.Encode(ViewBag.AppraisementDtl));
+        if ($('#CustomAppraisementId').val() != 0)
+        {
+            if(OnEditDt!=null){
+                if(OnEditDt.IsDO==1)
+                {
+                    $("#WithDo").prop("checked", true);
+                    ArrayOfDeliveryOrd=@Html.Raw(Json.Encode(Model.LstCustomAppraisementOrdDtl));
+                    if (ArrayOfDeliveryOrd.length > 0) {
+                        document.getElementById("DivDeliveryOrderDetails").style.display = "";
+                        GenerateDeliveryOrdTable();
+                    }
+                }
+                else{
+                    $("#WithoutDo").prop("checked", true);
+                    $("#DivDeliveryOrderDetails").css("display", "none");
+                }
+            }
+            $('#DivContainerDtl').show();
+
+        }
+        else {
+            $('#DivContainerDtl').hide();
+            $('#AppraisementDateCheck').val(new Date());
+            SubDomain = '@System.Configuration.ConfigurationManager.AppSettings["SubDomain"]';
+            GetCustomAppraisementList();
+            $('#TblCustomAppraisementDet').hide();
+
+            if ($('#WithoutDO').val() == '2') {
+                $("#DivDeliveryOrderDetails").css("display", "none");
+                $("#IssuedBy").val('');
+                $("#CargsDelivered").val('');
+                $("#ddlValidType").val('');
+                $("#ValidDate").val('');
+                $('#TblDeliveryAppOrd>tbody').html('');
+                $('#rdoHdn').val('2');
+            }
+            else {
+                $("#DivDeliveryOrderDetails").css("display", "");
+            }
+
+        }
+
+    });
+
+    $('#AppraisementDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onSelect: function (dateText) {
+            dateText = $('#AppraisementDate').datepicker({ dateFormat: 'MM/dd/yyyy' }).val();
+            var dt = dateText.split("/");
+            var dt1 = dt[1] + "/" + dt[0] + "/" + dt[2];
+
+            $('#AppraisementDateCheck').val(dt1);
+        },
+        onClose: function () {
+            $("[data-valmsg-for='AppraisementDate']").html('');
+        }
+    });
+    $('#ValidDate').datepicker({
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        dateFormat: "dd/mm/yy",
+        altField: "#slider_example_4andHalf_alt",
+        altFieldTimeOnly: false,
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+
+
+    $('#BOEDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='BOEDate']").html('');
+        }
+    });
+
+    $('#OBLDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='OBLDate']").html('');
+        }
+    });
+
+
+    function ReloadCstmAppraise() {
+        $('#DivBody').load('/Import/DSR_CWCImport/OBLWiseCustomAppraisement?CustomAppraisementId=' + 0);
+    }
+
+    function ResetAllFields() {
+        ////debugger;
+        ArrayOfCustomAppraisement = [];
+        //$('input:hidden').val('');
+        $('#DivAddCustomAppraisement').find('input:hidden').val('');
+        $('#DivAddCustomAppraisement').find('input:text,textarea,select').val('');
+        $('#DivAddCustomAppraisement #DivCustomAppraisementMsg').html('');
+        $('#DivAddCustomAppraisement #DivCustomAppraisementErrMsg').html('');
+        $('[data-valmsg-for]').html('<span><span>');
+        $('#DivAddCustomAppraisement #TblCustomAppraisementDet >tbody').html('');
+        $('#TblCustomAppraisementDet').hide();
+        $('#DivCustomAppraisementTblMsg').html('');
+        document.getElementById("DivContainerDtl").style.display = "none";
+        document.getElementById("DivDeliveryOrderDetails").style.display = "none";
+        ReloadCstmAppraise();
+    }
+    function ResetEntryFields() {
+        ////debugger;
+
+        $('#DivAddCustomAppraisement').find('input:hidden').val('');
+        $('#DivAddCustomAppraisement').find('input:text,textarea,select').val('');
+
+        $('[data-valmsg-for]').html('<span><span>');
+        $('#Size').prop("selectedIndex", 0);
+        $('#LCLFCL').prop("selectedIndex", 0);
+        $('#ContainerType').prop("selectedIndex", 0);
+        $('#CargoType').prop("selectedIndex", 0);
+        $('#RMSValue').prop("selectedIndex", 0);
+        $('#ODCType').prop("selectedIndex",0);
+        $('#BOENo').val('');
+        $('#BOEDate').val('');
+        $('#NoOfPackages').val('');
+        $('#GrossWeight').val('');
+
+
+        $('#CIFValue').val('');
+        $('#Duty').val('');
+        $('#ManualWT').val('');
+        $('#MechanicalWT').val('');
+        $('#chkInterShifting').prop('checked', false);
+        $('#chkLiftOn').prop('checked', false);
+        $('#chkLiftOff').prop('checked', false);
+        $('#chkReworking').prop('checked', false);
+        $('#chkWeighment').prop('checked', false);
+
+        $('#DivCustomAppraisementTblMsg').html('');
+    }
+
+
+    function ResetContainerDtl(){
+        $('#ContainerNo').val('');
+        $('#CFSCode').val('');
+        $('#LineNo').val('');
+        $('#CHANameId').val(0);
+        $('#CHA').val('');
+        $('#Size').prop("selectedIndex", 0);
+        $('#LCLFCL').prop("selectedIndex",0);
+        $('#ContainerType').val(2);
+        $('#CargoType').prop("selectedIndex", 0);
+        $('#RMSValue').prop("selectedIndex", 0);
+        $('#ODCType').prop("selectedIndex", 0);
+
+    }
+
+
+    function GenerateCstmAppraiseTable() {
+        $('#TblCustomAppraisementDet').hide();
+        var Html = '';
+        if (ArrayOfCustomAppraisement.length != 0) {
+            $.each(ArrayOfCustomAppraisement, function (i, item) {
+                Html += '<tr><td class="text-center">' + (i + 1) + '</td><td>' + item.CFSCode + '</td><td>' + item.ContainerNo + '</td><td>' + item.OBLNo + '</td><td>' + item.BOENo + '</td><td class="text-center"><a href="#" onclick="EditCstmAppraise(' + i + ')"><i class="fa fa fa-pencil-square Edit" aria-hidden="true"></i></a></td><td class="text-center"><a href="#" onclick="ViewCstmAppraise(' + i + ')"><i class="fa fa-search-plus Edit" aria-hidden="true"></i></a></td></tr>';
+            });
+            $('#TblCustomAppraisementDet>tbody').html(Html);
+            $('#TblCustomAppraisementDet').show();
+        }
+    }
+
+
+    function GenerateDeliveryOrdTable() {
+        ////debugger;
+        $('#TblDeliveryAppOrd').hide();
+        var Html = '';
+        if (ArrayOfDeliveryOrd.length != 0) {
+            $.each(ArrayOfDeliveryOrd, function (i, item) {
+                ////debugger;
+                Html += '<tr><td class="text-center">' + (i + 1) + '</td><td>' + item.IssuedBy + '</td><td>' + item.DeliveredTo + '</td><td class="text-center"><a href="#" onclick="EditDeliveryOrdDtl(' + i + ')"><i class="fa fa fa-pencil-square Edit" aria-hidden="true"></i></a></td><td class="text-center"><a href="#" onclick="ViewDeliveryOrdDtl(' + i + ')"><i class="fa fa-search-plus" aria-hidden="true"></i></a></td></tr>';
+            });
+            $('#TblDeliveryAppOrd>tbody').html(Html);
+            $('#TblDeliveryAppOrd').show();
+
+        }
+    }
+    function ResetDeliveryOrdDet() {
+        ////debugger;
+        $('[data-valmsg-for="IssuedBy"]').html('');
+        $('[data-valmsg-for="CargsDelivered"]').html('');
+        $('#ErrddlValidType').html('');
+        $('#DivDeliveryOrderDetails').find('input:text,textarea').val('');
+
+        $('#ddlValidType').prop("selectedIndex", 0);
+
+    }
+
+
+    function ValidDt(vtype) {
+        ////debugger;
+        if (vtype.value == "Open") {
+            $("#ValidDate").datepicker("option", "disabled", true);
+            $("#ValidDate").val("");
+        }
+        else {
+
+            $("#ValidDate").datepicker("option", "disabled", false);
+        }
+    }
+
+    $('#WithDo').on("click", function () {
+        $("#DivDeliveryOrderDetails").css("display", "block");
+        $('#rdoHdn').val('1');
+    });
+    $('#WithoutDO').on("click", function () {
+        $("#DivDeliveryOrderDetails").css("display", "none");
+        $("#IssuedBy").val('');
+        $("#CargsDelivered").val('');
+        $("#ddlValidType").val('');
+        $("#ValidDate").val('');
+        $('#TblDeliveryAppOrd>tbody').html('');
+        $('#rdoHdn').val('2');
+    });
+
+    $('#Cargobox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstCargo > li').show();
+        else {
+            $('#lstCargo > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    function GetCargo(elem) {
+        ////debugger;
+        $('#CargsDelivered').val($(elem).text());
+
+        $("#CargoPartyModal").modal("hide");
+    }
+    var PartyDet = "";
+    $('#CargoPartySearch').on("click", function () {
+        ////debugger;
+        $.ajax({
+            url: '@Url.Action("ListOfCargoParty", "DSR_CWCImport", new { Area = "Import" })',
+            dataType: 'JSON',
+            type: 'GET',
+            success: function (data) {
+                //debugger;
+                PartyDet = data;
+                var html = '';
+                $.each(data, function (i, item) {
+                    html += '<li id="' + item.IssueBy + '" " onclick="GetCargo(this)">' + item.IssueBy + '</li>';
+                });
+                $('#lstCargo').html(html);
+            }
+        });
+
+    });
+
+
+    $('#IssuePartySearch').on("click", function () {
+        //debugger;
+        $.ajax({
+            url: '@Url.Action("ListOfIssueParty", "DSR_CWCImport", new { Area = "Import" })',
+            dataType: 'JSON',
+            type: 'GET',
+            success: function (data) {
+                //debugger;
+                PartyDet = data;
+                var html = '';
+                $.each(data, function (i, item) {
+                    html += '<li id="' + item.IssueBy + '" " onclick="GetIssue(this)">' + item.IssueBy + '</li>';
+                });
+                $('#lstIssue').html(html);
+            }
+        });
+
+    });
+    function GetIssue(elem) {
+        //debugger;
+        $('#IssuedBy').val($(elem).text());
+
+        $("#IssuePartyModal").modal("hide");
+    }
+    $('#Issuebox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstIssue > li').show();
+        else {
+            $('#lstIssue > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+</script>
+
+
+<div class="container-fluid" id="DivDSROBLWiseCustomAppraisement" ng-controller="DSROBLWiseAppraisementCtrl">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+
+                @{
+
+
+                    if (ViewBag.RightsList != null)
+                    {
+                        <input type="hidden" id="hdnRights" value="@ViewBag.RightsList" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="hdnRights" value="" />
+                    }
+
+                    if (ViewBag.AppOrderDetails != null)
+                    {
+                        <input type="hidden" id="hdnAppOrderDetails" value="@ViewBag.AppOrderDetails" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="hdnAppOrderDetails" value="" />
+                    }
+
+
+                    @Html.AntiForgeryToken()
+                    <div id="DivAddCustomAppraisement">
+                        @Html.HiddenFor(m => m.CustomAppraisementXML)
+                        @Html.HiddenFor(m => m.CAOrdDtlXml)
+                        @Html.HiddenFor(m => m.CustomAppraisementId)
+                        @Html.Hidden("hdnCIFValue")
+                        @Html.Hidden("hdnCargoDescription")
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Custom Appraisement</h4>
+                            </div>
+                        </div>
+
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Appraisement No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.AppraisementNo, new { @class = "form-control input-sm", @readonly = true })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                    <label>Appraisement Date:</label>
+                                </div>
+                                <div class="col-md-2-5 Date_Img">
+                                    <input type="hidden" id="AppraisementDateCheck" />
+                                    @Html.TextBoxFor(m => m.AppraisementDate, new { @class = "form-control input-sm", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.AppraisementDate, "", new { @class = "Error_Msg" })
+                                    <span style="color:red" id="ErrAppDate"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        @*----------------------------------------------------------------*@
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>OBL No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("OBLNo", "", new { @class = "form-control input-sm", @readonly = true })
+
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                    <label>OBL Date:</label>
+                                </div>
+                                <div class="col-md-2-5 Date_Img">
+                                    @Html.TextBox("OBLDate", "", new { @class = "form-control input-sm", @readonly = true, @disabled = true })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>BOE No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("BOENo", "", new { @class = "form-control input-sm", @disabled = true })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                    <label>BOE Date:</label>
+                                </div>
+                                <div class="col-md-2-5 Date_Img">
+                                    @Html.TextBox("BOEDate", "", new { @class = "form-control input-sm", @disabled = true })
+                                    @Html.ValidationMessage("BOEDate", "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>CIF Value:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("CIFValue", "", new { @class = "form-control input-sm", @disabled = true })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                    <label>Duty:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("Duty", "", new { @class = "form-control input-sm", @disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>No of Packages:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("NoOfPackages", "", new { @class = "form-control input-sm", @disabled = true })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                    <label>Gross WT(Kg):</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("GrossWeight", "", new { @class = "form-control input-sm", @disabled = true })
+                                </div>
+                            </div>
+                        </div>
+
+
+                        @*----------------------------------------------------------------*@
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Importer:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextBox("Importer", "", new { @class = "form-control input-sm", @disabled = true })
+                                    @Html.Hidden("ImporterId")
+                                </div>
+                            </div>
+                        </div>
+                        <div id="DivShippingLine" class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Shipping Line:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextBoxFor(m => m.ShippingLine, "", new { @class = "form-control input-sm", @disabled = true })
+                                    @Html.HiddenFor(m => m.ShippingLineId)
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Foreign line:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextBoxFor(m => m.ForeignLine, new { @class = "form-control input-sm", @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>CHA:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.HiddenFor(m => m.CHAId)
+                                    @Html.HiddenFor(m => m.operationType)
+                                    @Html.TextBoxFor(m => m.CHAName, new { @class = "form-control input-sm", @disabled = true })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Vessel:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextBoxFor(m => m.Vessel, new { @class = "form-control input-sm", @disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div id="DivRotation" class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Voyage:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.Voyage, "", new { @class = "form-control input-sm", @disabled = true })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                    <label>Rotation:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.Rotation, "", new { @class = "form-control input-sm", @disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+
+                                <div class="col-md-1-5">
+                                    <label>Line No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    <input type="hidden" id="GateEntryDate" />
+                                    @Html.TextBox("LineNo", "", new { @class = "form-control input-sm", @disabled = true })
+
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                    <label>Examination Type:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.DropDownList("RMSValue", new List<SelectListItem>{
+                                        new SelectListItem {Text="Upto 25%",Value="1" },
+                                        new SelectListItem {Text="Beyond 25% ",Value="2" },
+                                        new SelectListItem {Text="RMS Non Exim",Value="3" }
+                                      }, new { @class = "form-control input-sm dropdown", @readonly = true, @disabled = true })
+
+                                </div>
+
+                            </div>
+                        </div>                       
+
+                        @*------------------------------------------------------------------*@
+                        <div class="row Form_Space_top" style="display:none">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2 col-md-offset-1-5 col_cus_offset_2 col_cus_3">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("IsDO", "2", new { @class = "", @id = "WithoutDO", @disabled = "disabled" })
+                                        <label for="WithoutDO"><i class="circle"></i><span>Without DO</span></label>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 col_cus_3">
+
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("IsDO", "1", new { @class = "", @id = "WithDo", @disabled = "disabled" })
+                                        <label for="WithDo"><i class="circle"></i><span>With DO</span></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        
+
+                        @*----------------------------------------------------------------------*@
+                        <div class="row Form_Space_top Form_Space_bottom">
+                            <div class="col-md-12">
+                                <div id="DivContainerDtl">
+                                    @*<div class="col-md-12 full_frm">
+                                        <label><i class="fa fa-square" aria-hidden="true"></i> <b>INS</b> <span style="text-transform:uppercase;">(Inter Shifting)</span></label>
+                                        <label><i class="fa fa-square" aria-hidden="true"></i> <b>LIN</b> <span style="text-transform:uppercase;">(Lift On)</span></label>
+                                        <label><i class="fa fa-square" aria-hidden="true"></i> <b>LIO</b> <span style="text-transform:uppercase;">(Lift Off)</span></label>
+                                        <label><i class="fa fa-square" aria-hidden="true"></i> <b>REW</b> <span style="text-transform:uppercase;">(Reworking)</span></label>
+                                        <label><i class="fa fa-square" aria-hidden="true"></i> <b>WET</b> <span style="text-transform:uppercase;">(Weightment)</span></label>
+                                    </div>*@
+                                    <table id="tblContainer" class="table table-bordered table-striped dataTable" ng-hide="OblContainerDetails.length==0" tabindex="20">
+                                        <thead>
+
+                                            <tr>
+                                                <th rowspan="2" width="5%">Container No</th>
+                                                <th rowspan="2" width="5%">Size</th>
+                                                <th rowspan="2" width="5%">PKT</th>
+                                                <th rowspan="2" width="5%">WT</th>
+                                                <th rowspan="2" width="5%">Value</th>
+                                                <th rowspan="2" width="5%">Duty</th>
+                                                <th colspan="2" width="5%" style="border-bottom: 1px solid #dddddd;">Handling</th>
+                                                <th rowspan="2" width="5%">Custom Seal No</th>
+                                                <th rowspan="2" width="5%">Shipping Line Seal No</th>
+                                                @*<th width="5%">Exam Type</th>*@
+                                                @*<th rowspan="2" width="3%">INS</th>
+                                                <th rowspan="2" width="3%">LIN</th>
+                                                <th rowspan="2" width="3%">LIO</th>
+                                                <th rowspan="2" width="3%">REW</th>
+                                                <th rowspan="2" width="3%">WET</th>*@
+                                            </tr>
+
+                                            <tr>
+                                                <th width="5%" style="text-align:center;">Manual</th>
+                                                <th width="5%" style="border-right: 1px solid #ddd; text-align:center;">Mechanical</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="j in OblContainerDetails">
+
+                                                <td style="position:relative;">
+                                                    <input type="hidden" ng-model="j.CFSCode" id="CFSCode_{{$index}}" />
+                                                    <input type="text" ng-model="j.ContainerNo" id="ContainerNo_{{$index}}" ng-disabled="true" />
+                                                </td>
+
+                                                <td>
+                                                    <input type="text" ng-model="j.Size" id="Size_{{$index}}" ng-disabled="true" />
+                                                </td>
+                                                <td>
+                                                    <input type="text" ng-model="j.NoOfPkg" ng-disabled="true" onkeypress="return isNumber(event)" id="NoOfPkg_{{$index}}" />
+                                                </td>
+                                                <td>
+                                                    <input type="text" ng-model="j.Gr_Wt" ng-disabled="true" onkeypress="return isDecimalNumber(event)" id="Gr_Wt_{{$index}}" />
+                                                </td>
+                                                <td>
+                                                    <input type="text" ng-model="j.CValue" ng-disabled="true" onkeypress="return isDecimalNumber(event)" id="CValue_{{$index}}" />
+                                                </td>
+                                                <td>
+                                                    <input type="text" ng-model="j.CDuty" ng-disabled="true" onkeypress="return isDecimalNumber(event)" id="CDuty_{{$index}}" />
+                                                </td>
+                                                <td>
+                                                    <input type="text" ng-model="j.ManualWT" ng-disabled="true" onkeypress="return isDecimalNumber(event)" id="ManualWT_{{$index}}" />
+                                                </td>
+                                                <td>
+                                                    <input type="text" ng-model="j.MechanicalWT" ng-disabled="true" onkeypress="return isDecimalNumber(event)" id="MechanicalWT_{{$index}}" />
+                                                </td>
+
+                                                <td>
+                                                    <input type="text" ng-model="j.WithoutDOSealNo" ng-disabled="true" id="WithoutDOSealNo_{{$index}}" />
+                                                </td>
+
+                                                <td>
+                                                    <input type="text" ng-model="j.ShippingLineSealNo" ng-disabled="true" id="ShippingLineSealNo_{{$index}}" />
+                                                </td>
+
+                                                @*<td>
+                                                    <div style="display: inline-block; margin-left: 0.5em; margin-top: 6px;"><input type="checkbox" ng-model="j.InterShifting" ng-disabled="true" id="InterShifting_{{$index}}"><label for="InterShifting_{{$index}}"></label></div>
+                                                </td>
+
+                                                <td>
+                                                    <div style="display: inline-block; margin-left: 0.5em; margin-top: 6px;"><input type="checkbox" ng-model="j.LiftOn" id="LiftOn_{{$index}}" ng-disabled="true"><label for="LiftOn{{$index}}"></label></div>
+                                                </td>
+
+                                                <td>
+                                                    <div style="display: inline-block; margin-left: 0.5em; margin-top: 6px;"><input type="checkbox" ng-model="j.LiftOff" id="LiftOff_{{$index}}" ng-disabled="true"><label for="LiftOff{{$index}}"></label></div>
+                                                </td>
+
+                                                <td>
+                                                    <div style="display: inline-block; margin-left: 0.5em; margin-top: 6px;"><input type="checkbox" ng-model="j.Reworking" id="Reworking_{{$index}}" ng-disabled="true"><label for="Reworking{{$index}}"></label></div>
+                                                </td>
+
+                                                <td>
+                                                    <div style="display: inline-block; margin-left: 0.5em; margin-top: 6px;"><input type="checkbox" ng-model="j.Weighment" id="Weighment_{{$index}}" ng-disabled="true"><label for="Weighment_{{$index}}"></label></div>
+                                                </td>*@
+
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        
+
+                        @*------------------------------------------------------------------*@
+
+                    </div>
+                    <div id="DivDeliveryOrderDetails" class="Head_h5">
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                               <div class="col-md-2-5 col_cus_2 padding_rt">
+                                    <label>Do Issued By:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("IssuedBy", "", new { @class = "form-control input-sm", @disabled = true })
+
+                                </div>
+                                <div class="col-md-2-5">
+                                    <label>Cargs. Delivered To:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    @Html.TextBox("CargsDelivered", "", new { @class = "form-control input-sm", @disabled = true })
+
+
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                               @*<div class="col-md-2-5 col_cus_2">
+                                    <label>Valid Type</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.DropDownList("ddlValidType", new List<SelectListItem>
+                                        {
+                                        new SelectListItem { Text="Open",Value="Open"},
+                                        new SelectListItem { Text="Closed",Value="Closed"},
+
+                                        }, "----Select----", new { @class = "form-control input-sm", @disabled = true })
+                                    <span class="field-validation-error" id="ErrddlValidType"></span>
+                                </div>*@
+                                <div class="col-md-2-5">
+                                    <label>Do Valid Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBox("ValidDate", "", new { @readonly = true, Value = DateTime.Now.ToString("dd/MM/yyyy") })
+
+                                </div>
+
+                            </div>
+                        </div>
+                        <div class="row" style="display:none">
+                            <div class="stoke SignUp_space_top SignUp_space_bottom"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-offset-4 col-md-2" style="display:none">
+                                <input type="button" id="BtnAddDeliveryOrd" class="btn log_Btn_sm" value="Add" />
+                            </div>
+                            <div class="col-md-2" style="display:none">
+                                <input type="button" class="btn log_Btn_sm" value="Reset" />
+                            </div>
+                        </div>
+                        <div id="DivDeliveryOrdTblErrMsg" class="logErrMsg Form_Space_top Form_Space_bottom"></div>
+                        <table class="table table-striped table-bordered dataTable" id="TblDeliveryAppOrd">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">@Html.DisplayName("SL No")</th>
+                                    <th>@Html.DisplayName("Issued By")</th>
+                                    <th>@Html.DisplayName("Cargo. Delivered")</th>
+                                    <th>@Html.DisplayName("Edit")</th>
+                                    <th class="text-center">@Html.DisplayName("View")</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+                    <div class="row SignUp_space_bottom2">
+                        <div class="col-md-2 col-md-offset-4-5">
+                            <input type="button" class="btn log_Btn_sm" value="Back" onclick="ResetAllFields()" />
+                        </div>
+                    </div>
+                }
+                @Scripts.Render("~/bundles/jqueryval")
+
+            </div>
+        </div>
+    </div>
+</div>
+
+

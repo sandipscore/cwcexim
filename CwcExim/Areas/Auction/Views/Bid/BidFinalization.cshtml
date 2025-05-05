@@ -1,0 +1,823 @@
+﻿@model CwcExim.Areas.Auction.Models.AucBidFinalizationHdr
+
+<script src="~/Scripts/Extended.Jquery.Plugins.js"></script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    //options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "BidFinalizationOnSuccess";
+    options.OnFailure = "BidFinalizationFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+}
+@using (Ajax.BeginForm("BidFinalizationSave", "Bid", options))
+{
+    //'/Auction/Bid/BidFinalization'
+    if (@ViewBag.PartyDetails != null && @ViewBag.PartyDetails != "")
+    {
+        <input type="hidden" id="JsonParty" value="@ViewBag.PartyDetails" />
+    }
+    else
+    {
+        <input type="hidden" id="JsonParty" />
+    }
+
+    if (@ViewBag.RefNoList != null && @ViewBag.RefNoList != "")
+    {
+        <input type="hidden" id="JsonRef" value="@ViewBag.RefNoList" />
+    }
+    else
+    {
+        <input type="hidden" id="JsonRef" />
+    }
+
+
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.PartyId)
+    @Html.HiddenFor(m => m.BidIdHdr)
+    @Html.HiddenFor(m => m.StrTableDtls)
+    <input type="hidden" id="noticeDtls" />
+
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="Head_h4">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>Bid Finalization</h4>
+                    </div>
+                </div>
+
+                <div class="content_wrp">
+
+                    <div class="row Form_Space_top">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="Radiocontainer">
+                                    ShipBill
+                                    @Html.RadioButtonFor(m => m.Type, "Shipbill", new { @id = "txtShipbill", @onclick = "ChangeRefType()", @checked = "true" })
+                                    <span class="checkmark"></span>
+                                </label>
+                                <label class="Radiocontainer">
+                                    OBL
+                                    @Html.RadioButtonFor(m => m.Type, "OBL", new { @id = "txtOBL", @onclick = "ChangeRefType()" })
+                                    <span class="checkmark"></span>
+                                </label>
+                                <label class="Radiocontainer">
+                                    CONTAINER
+                                    @Html.RadioButtonFor(m => m.Type, "CONTAINER", new { @id = "txtContainer", @onclick = "ChangeRefType()" })
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 col-md-offset-3">
+                            <div class="form-group">
+                                <span style="color:red;">*</span>
+                                <label>Ref No:</label>
+                                <div class="position-relative">
+                                    @Html.EditorFor(model => model.RefNo, new { htmlAttributes = new { @readonly = true } })
+                                    <span class="input_icon" id="NoticeNoModalid"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#OBLShipBillModal"></i></span>
+                                    @Html.ValidationMessageFor(m => m.RefNo, "", new { @class = "Error_Msg" })                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Bid No.:</label>
+                                @Html.TextBoxFor(m => m.BidNo, new { @readonly = "true" })
+                                @Html.ValidationMessageFor(m => m.BidNo, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 col-md-offset-6">
+                            <div class="form-group">
+                                <label>Date:</label>
+                                <div class="position-relative Date_Img">
+                                    @Html.TextBoxFor(m => m.BidDate, new { placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.BidDate, "", new { @class = "Error_Msg", Value = DateTime.Today.ToString("dd/MM/yyyy") })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <span style="color:red;">*</span>
+                                <label>Party:</label>
+                                <div class="position-relative">
+                                    @Html.TextBoxFor(m => m.Party, new { @readonly = "true" })
+                                    <span class="input_icon" id="ShippingLineSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ReferenceModal"></i></span>
+                                    @Html.ValidationMessageFor(m => m.Party, "", new { @class = "Error_Msg" })                                    
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 col-md-offset-6">
+                            <div class="form-group">
+                                <label>Auction Date:</label>
+                                <div class="position-relative Date_Img">
+                                    @Html.TextBoxFor(m => m.AuctionDate, new { placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.AuctionDate, "", new { @class = "Error_Msg", Value = DateTime.Today.ToString("dd/MM/yyyy") })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <span style="color:red;">*</span>
+                                <label>Address:</label>
+                                @Html.TextBoxFor(m => m.Address, new { @readonly = "true", @style = "height:75px;" })
+                                @Html.ValidationMessageFor(m => m.Address, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <span style="color:red;">*</span>
+                                <label>GST No.:</label>
+                                @Html.TextBoxFor(m => m.GstNo, new { @readonly = "true" })
+                                @Html.ValidationMessageFor(m => m.GstNo, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <span style="color:red;">*</span>
+                                <label>Bid Amount:</label>
+                                @Html.TextBoxFor(m => m.BidAmount, new { @class = "numeric", @maxlength = "11", @onblur = "ChekAmount()" })
+                                @Html.ValidationMessageFor(m => m.BidAmount, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 col-md-offset-6">
+                            <div class="form-group">
+                                <span style="color:red;">*</span>
+                                <label>EMD Amount:</label>
+                                @Html.TextBoxFor(m => m.EmdAmount, new { @class = "numeric", @maxlength = "11", @readonly = "true" })
+                                @Html.ValidationMessageFor(m => m.EmdAmount, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-left">
+                        <input type="submit" id="BitFinalizationSave" class="btn btn-primary mr-1 btn-100px" value="Save">
+                        <input type="button" id="BitFinalizationExit" class="btn btn-primary-border btn-100px" value="Exit" onclick="ReloadPage()">
+                    </div>
+
+
+                    <div class="row">
+                        <div class="logSuccMsg SignUp_space_bottom2" style="background-color:transparent">
+                            <div id="DivBidFinalizationMsg" style="background-color:transparent"></div>
+                        </div>
+                    </div>
+
+                    <div class="row SignUp_space_bottom2 SignUp_space_top2">
+                        <div class="col-md-12">
+                            <div class="stoke"></div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div id="list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    @Html.HiddenFor(x => x.RefDate)
+    @Html.HiddenFor(x => x.Area)
+    @Html.HiddenFor(x => x.Fob)
+    @Html.HiddenFor(x => x.CFSCode)
+    @Html.HiddenFor(x => x.Duty)
+    @Html.HiddenFor(x => x.CommodityID)
+    @Html.HiddenFor(x => x.Noofpkg)
+    @Html.HiddenFor(x => x.EntryDate)
+    @Html.HiddenFor(x => x.Refid)
+    @Html.HiddenFor(x => x.CIF)
+    @Html.HiddenFor(x => x.Size)
+    @Html.HiddenFor(x => x.Weight)
+    @Html.HiddenFor(x => x.ShippingId)
+    @Html.HiddenFor(x => x.ImporterID)
+    @Html.HiddenFor(x => x.GodownID)
+}
+<div id="OBLShipBillModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">Ref No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="txtRefNoForSearch" type="text" />
+                <ul class="navList" id="lstRefNoFor"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="ReferenceModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">Party Name</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="ReferenceNobox" type="text" />
+                <ul class="navList" id="lstReferenceNo">
+                    @*@{
+                            if (@ViewBag.ViewBag.lstReferenceNumberList != null)
+                            {
+                                foreach (var item in @ViewBag.ViewBag.lstReferenceNumberList)
+                                {
+                                    <li id="@item.CartingAppId">@item.CartingNo</li>
+                                }
+                            }
+                        }*@
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="NoticeNoModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">Notice Number</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="NoticeNobox" type="text" />
+                <ul class="navList" id="lstNoticeNo"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    var TableArray = [];
+
+    function GetBidList() {
+        debugger;
+
+        $('#list').load('/Auction/Bid/BidFinalizationList?id=0');
+    }
+
+    $(document).ready(function () {
+        $('.numeric').ForceNumeric();
+        $('#BidIdHdr').val(0);
+        GetBidList();
+        GenerateLstReferenceNumber();
+    });
+    $("#AuctionDate").datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+    $("#AuctionDate").datepicker().datepicker("setDate", new Date());
+    $("#BidDate").datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+    $("#BidDate").datepicker().datepicker("setDate", new Date());
+    var TimeInSeconds = 3000;
+    function BidFinalizationOnSuccess(data) {
+
+        debugger;
+        if (data.Status == 1 || data.Status == 2) {
+            $('#BitFinalizationSave').attr("disabled", true);
+            TableArray = [];
+            if ($('#DivBidFinalizationMsg').hasClass('logErrMsg'))
+                $('#DivBidFinalizationMsg').removeClass('logErrMsg').addClass('logSuccMsg text-center');
+            $('#DivBidFinalizationMsg').html(data.Message);
+            setTimeout(LoadBiFinalization, TimeInSeconds);
+
+            //GetExitThroughGateList();
+        }
+
+        else {
+            if ($('#DivBidFinalizationMsg').hasClass('logSuccMsg'))
+                $('#DivBidFinalizationMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivBidFinalizationMsg').html(data.Message);
+        }
+    }
+    function BidFinalizationFailure() {
+        //alert("Error");
+        LoadBiFinalization(0);
+    }
+
+    function LoadBiFinalization(id) {
+        $('#DivBody').load('/Auction/Bid/BidFinalization?id=' + id + '');
+    }
+
+    function GenerateLstReferenceNumber() {
+        debugger;
+        var parties = JSON.parse($('#JsonParty').val());
+        var html = '';
+        $.each(parties, function (i, item) {
+            html += '<li id="' + item.PartyId + '" " onclick="GetPayByDetails(this)">' + item.Party + '</li>';
+        });
+        debugger;
+        $('#lstReferenceNo').html(html);
+
+        //var shippingLine = JSON.parse($('#lstShippingLine').val()); //JSON.parse('#lstShippingLine').val();
+        var html1 = '';
+        var lotlist = JSON.parse($('#JsonRef').val());
+        $.each(lotlist, function (i, item) {
+            debugger;
+            html1 += '<li id="' + lotlist[i].RefDate + '" data-CFS="' + lotlist[i].CFSCode + '" data-comm="' + lotlist[i].CommodityID + '" data-Fob="' + lotlist[i].Fob + '" data-Duty="' + lotlist[i].Duty + '" data-CIF="' + lotlist[i].CIF + '" data-Area="' + lotlist[i].Area + '" data-RefId="' + lotlist[i].Refid + '" data-Size="' + lotlist[i].Size + '" data-NoofPkg="' + lotlist[i].Noofpkg + '" data-EntryDate="' + lotlist[i].EntryDate + '" data-GodownID="' + lotlist[i].GodownID + '" data-Weight="' + lotlist[i].Weight + '" data-PartyID="' + lotlist[i].ImporterID + '" data-ShippingLineID="' + lotlist[i].ShippingId + '" onclick="GetAuctionDetails(this)">' + lotlist[i].RefNo + '</li>';
+        });
+        $('#lstRefNoFor').html(html1);
+    }
+    function GetPayByDetails(elem) {
+        debugger;
+        var partyName = $(elem).text().split(': ')[0];
+        $('#Party').val(partyName);
+        debugger;
+        $('#PartyId').val($(elem).attr('id'));
+        var selectedReference = $('#PartyId').val();
+        $("#ReferenceModal").modal("hide");
+        var partyDtls = JSON.parse($('#JsonParty').val());
+        var GetSelectedPArty = $.grep(partyDtls, function (item) { return item.PartyId == $(elem).attr('id'); })[0];
+        $("#NoticeNo").val('');
+        $("#NoticeList tbody").html('');
+        debugger;
+
+
+        $('#Address').val(GetSelectedPArty.Address);
+
+        $('#GstNo').val(GetSelectedPArty.GstNo);
+
+        $('#Pan').val(GetSelectedPArty.Pan);
+        //$('#NoOfPackages').val('');
+        //$('#ShippingLineName').val('');
+        //$('#Size').val('');
+        //$('#ContainerNo1').val('');
+        //$('#ShippingLine').val('');
+        //$('#ShippingLineId').val('');
+    }
+
+
+    function GetAuctionDetails(elem) {
+        debugger;
+        //  var Party = $('#PartyId').val();
+
+
+        $('#RefNo').val($(elem).text());
+        $('#RefDate').val($(elem).attr('id'));
+        $('#CFSCode').val($(elem).attr('data-CFS'));
+        $('#CommodityID').val($(elem).attr('data-comm'));
+        $('#Fob').val($(elem).attr('data-Fob'));
+        $('#Duty').val($(elem).attr('data-Duty'));
+        $('#CIF').val($(elem).attr('data-CIF'));
+        $('#Area').val($(elem).attr('data-Area'));
+        $('#Refid').val($(elem).attr('data-RefId'));
+        $('#Size').val($(elem).attr('data-Size'));
+        $('#Noofpkg').val($(elem).attr('data-NoofPkg'));
+        $('#EntryDate').val($(elem).attr('data-EntryDate'));
+
+        $('#Weight').val($(elem).attr('data-Weight'));
+        $('#ShippingId').val($(elem).attr('data-ShippingLineID'));
+        $('#ImporterID').val($(elem).attr('data-PartyID'));
+        $('#GodownID').val($(elem).attr('data-GodownID'));
+
+
+        $("#OBLShipBillModal").modal("hide");
+
+
+    }
+
+    function populateList(data) {
+
+        debugger;
+
+        //var ObjList = JSON.stringify($("#noticeDtls").val());//JSON.parse(
+        var list = JSON.parse(data);
+        if (list != null && list != undefined) {
+            var html1 = '';
+            $.each(list.Data, function (i, item) {
+                html1 += '<tr><td class="text-left">' + item.Commodity + '</td><td class="text-right">' + item.Weight + '</td><td class="text-right">' + item.cum + '</td><td class="text-right">' + item.sqm + '</td><td class="text-right">' + item.BOLNo + '</td><td class="text-right">' + item.ShipBillNo + '</td></tr>';
+                var itemSize = item.Size;
+                var itemContainerNo = item.ContainerNo;
+                var itemBoe = item.Boe;
+                var itemCommodity = item.Commodity;
+                var itemWeight = item.Weight;
+                var itemcum = item.cum;
+                var itemsqm = item.sqm;
+                var itemBOl = item.BOLNo;
+                var itemBolDate = item.BolDate;
+                var itemShipBillNo = item.ShipBillNo;
+                var itemShipBillDate = item.ShipBillDate;
+                var AuctionNoticeId = item.NoticeID;
+
+                if (itemSize == null || itemSize == "" || itemSize == undefined) {
+                    itemSize = "0";
+                }
+                if (itemContainerNo == null || itemContainerNo == "" || itemContainerNo == undefined) {
+                    itemContainerNo = "0";
+                }
+                if (itemBoe == null || itemBoe == "" || itemBoe == undefined) {
+                    itemBoe = "0";
+                }
+                if (itemCommodity == null || itemCommodity == "" || itemCommodity == undefined) {
+                    itemCommodity = "0";
+                }
+                if (itemWeight == null || itemWeight == "" || itemWeight == undefined) {
+                    itemWeight = 0;
+                }
+                if (itemcum == null || itemcum == "" || itemcum == undefined) {
+                    itemcum = 0;
+                }
+                if (itemsqm == null || itemsqm == "" || itemsqm == undefined) {
+                    itemsqm = 0;
+                }
+                if (AuctionNoticeId == null || AuctionNoticeId == 0 || AuctionNoticeId == undefined) {
+                    AuctionNoticeId = 0;
+                }
+                var createJson = {
+                    Size: itemSize,
+                    ContainerNo: itemContainerNo,
+                    Boe: itemBoe,
+                    Commodity: itemCommodity,
+                    Weight: itemWeight,
+                    cum: itemcum,
+                    sqm: itemsqm,
+                    NoticeID: AuctionNoticeId,
+                    BolNo: itemBOl,
+                    BolDate: itemBolDate,
+                    ShipBillNo: itemShipBillNo,
+                    ShipBillDate: itemShipBillDate
+                };
+                TableArray.push(createJson);
+                //
+                itemSize = "";
+                itemContainerNo = "";
+                itemBoe = "";
+                itemCommodity = "";
+                itemWeight = 0;
+                itemcum = 0;
+                itemsqm = 0;
+                itemShipBillDate = "";
+                itemShipBillNo = "";
+                itemBolDate = "";
+                itemBOl = "";
+
+
+                //
+
+            });
+            debugger;
+            console.log(TableArray);
+            $("#StrTableDtls").val(JSON.stringify(TableArray));
+            console.log($("#StrTableDtls").val());
+            createJson = "";
+            $('#noticeTbody').html(html1);
+        }
+    }
+
+
+    function ReloadPage() {
+        // alert("Exit");
+        $('#DivBody').load('/Auction/Bid/BidFinalization');
+    }
+
+    function ChekAmount() {
+
+        if ($('#BidAmount').val() > 0) {
+
+            var BidAm = $('#BidAmount').val() == "" ? 0 : $('#BidAmount').val();
+            var emd = (parseFloat(BidAm) * 20) / 100;
+            $('#EmdAmount').val(parseFloat(emd));
+
+        }
+        else {
+            alert('Bid amount should be greater than zero');
+            return;
+        }
+
+
+        //if ($('#BidAmount').val() != '' && $('#EmdAmount').val() != '') {
+        //    if (parseFloat($('#BidAmount').val()) < parseFloat($('#EmdAmount').val())) {
+        //        $('[data-valmsg-for="EmdAmount"]').html('<span>Emd Amount should not be greater than Bid Amount.</span>');
+        //        return false;
+        //    }
+        //    else {
+        //        $('[data-valmsg-for="EmdAmount"]').html('<span></span>');
+        //    }
+        //}
+
+    }
+
+
+
+
+    function ChekAmountExtra() {
+
+        if ($('#Extraprice').val() > 0) {
+
+
+
+        }
+        else {
+            alert('Extra Price should be greater than zero');
+            $('#Extraprice').val('');
+            return;
+        }
+
+    }
+
+
+    function ChangeRefType() {
+        debugger;
+        if ($('#txtShipbill').is(":checked")) {
+
+            PopulateData(2);
+        }
+        else if ($('#txtOBL').is(":checked")) {
+
+            PopulateData(1);
+        }
+        else {
+            PopulateData(3);
+        }
+
+    }
+
+
+    function PopulateData(flag) {
+
+        $.ajax({
+            type: 'GET',
+            url: '/Auction/Bid/GetDataByFlag?Flag=' + flag + '',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+
+                var jsonData = '';
+                $('#lstRefNoFor').html('');
+                if (data != null && data.length > 0) {
+
+                    for (var i = 0; i < data.length; i++) {
+                        jsonData = jsonData + '<li id="' + data[i].RefDate + '" data-CFS="' + data[i].CFSCode + '" data-comm="' + data[i].CommodityID + '" data-Fob="' + data[i].Fob + '" data-Duty="' + data[i].Duty + '" data-CIF="' + data[i].CIF + '" data-Area="' + data[i].Area + '" data-RefId="' + data[i].Refid + '" data-Size="' + data[i].Size + '" data-NoofPkg="' + data[i].Noofpkg + '" data-EntryDate="' + data[i].EntryDate + '"  data-GodownID="' + data[i].GodownID + '" data-Weight="' + data[i].Weight + '" data-PartyID="' + data[i].ImporterID + '" data-ShippingLineID="' + data[i].ShippingId + '" onclick="GetAuctionDetails(this)">' + data[i].RefNo + '</li>';
+                    }
+                    $('#lstRefNoFor').html(jsonData);
+                }
+                else {
+                    $('#lstRefNoFor').html('');
+                }
+
+            }
+        });
+    }
+
+
+
+
+    function checkPage() {
+        //var Status = true;
+        // alert(($("#txtContainerNo").val()));
+        if ($('#BidDate').val() == "") {
+            $('[data-valmsg-for="BidDate"]').html('<span>Fill Out This Field</span>');
+            //Status = false;
+            return false;
+        }
+        if ($('#Party').val() == "") {
+            $('[data-valmsg-for="Party"]').html('<span>Fill Out This Field</span>');
+            // Status = false;
+            return false;
+        }
+
+
+
+        if ($('#BidAmount').val() == "") {
+            $('[data-valmsg-for="BidAmount"]').html('<span>Fill Out This Field</span>');
+            //Status = false;
+            return false;
+        }
+
+
+        if ($('#BidAmount').val() != '' && $('#EmdAmount').val() != '') {
+            if (parseFloat($('#BidAmount').val()) < parseFloat($('#EmdAmount').val())) {
+                //alert("Bid Amount should be greater than Emd Amount.");
+                return false;
+            }
+        }
+    }
+
+    $('#ReferenceNobox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstReferenceNo > li').show();
+        else {
+            $('#lstReferenceNo > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    $('#txtRefNoForSearch').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstRefNoFor > li').show();
+        else {
+            $('#lstRefNoFor > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+
+    function EditBIDData(id) {
+        $.ajax({
+            type: 'GET',
+            url: '/Auction/Bid/GetBidDataByID?id=' + id + '',
+            dataType: 'JSON',
+            success: function (data) {
+                //LoadBiFinalization(0);
+                if (data.length > 0) {
+
+                    $('#BidIdHdr').val(data[0].BidIdHdr);
+                    $('#RefNo').val(data[0].RefNo);
+                    $('#BidNo').val(data[0].BidNo);
+                    $('#BidDate').val(data[0].BidDate);
+                    $('#Party').val(data[0].Party);
+                    $('#AuctionDate').val(data[0].AuctionDate);
+                    $('#Address').val(data[0].Address);
+                    $('#GstNo').val(data[0].GstNo);
+                    $('#BidAmount').val(data[0].BidAmount);
+                    $('#EmdAmount').val(data[0].EmdAmount);
+
+                    $('#RefDate').val(data[0].RefDate);
+                    $('#PartyId').val(data[0].PartyId);
+
+
+
+                    $('#CFSCode').val(data[0].CFSCode);
+                    $('#CommodityID').val(data[0].CommodityID);
+                    $('#Fob').val(data[0].Fob);
+                    $('#Duty').val(data[0].Duty);
+                    $('#CIF').val(data[0].CIF);
+                    $('#Area').val(data[0].Area);
+                    $('#Refid').val(data[0].Refid);
+                    $('#Size').val(data[0].Size);
+                    $('#Noofpkg').val(data[0].Noofpkg);
+                    $('#EntryDate').val(data[0].EntryDate);
+
+                    $('#Weight').val(data[0].Weight);
+                    $('#ShippingId').val(data[0].ShippingId);
+                    $('#ImporterID').val(data[0].ImporterID);
+                    $('#GodownID').val(data[0].GodownID);
+
+
+
+
+                    if (data[0].RefFlag == 1) {
+                        $('#txtOBL').prop('checked', true);
+
+                    }
+                    else if (data[0].RefFlag == 2) {
+                        $('#txtShipbill').prop('checked', true);
+
+                    }
+                    else {
+                        $('#txtContainer').prop('checked', true);
+
+                    }
+
+
+                }
+
+
+
+
+            }
+        });
+    }
+
+    function ViewBIDData(id) {
+
+        $.ajax({
+            type: 'GET',
+            url: '/Auction/Bid/GetBidDataByID?id=' + id + '',
+            dataType: 'JSON',
+            success: function (data) {
+                $('#BitFinalizationSave').addClass('hidden');
+                LoadBiFinalization(0);
+                //debugger;
+                if (data.length > 0) {
+
+                    $('#BidIdHdr').val(data[0].BidIdHdr);
+                    $('#RefNo').val(data[0].RefNo);
+                    $('#BidNo').val(data[0].BidNo);
+                    $('#BidDate').val(data[0].BidDate);
+                    $('#Party').val(data[0].Party);
+                    $('#AuctionDate').val(data[0].AuctionDate);
+                    $('#Address').val(data[0].Address);
+                    $('#GstNo').val(data[0].GstNo);
+                    $('#BidAmount').val(data[0].BidAmount);
+                    $('#EmdAmount').val(data[0].EmdAmount);
+
+                    $('#RefDate').val(data[0].RefDate);
+                    $('#PartyId').val(data[0].PartyId);
+
+                    if (data[0].RefFlag == 1) {
+                        $('#txtOBL').prop('checked', true);
+
+                    }
+                    else {
+                        $('#txtShipbill').prop('checked', true);
+
+                    }
+
+
+
+                }
+
+
+
+
+            }
+        });
+    }
+
+    function DeleteBIDData(id) {
+        var r = confirm("Are You Sure You Want To Delete?");
+        if (r == true) {
+            $.ajax({
+                type: 'GET',
+                url: '/Auction/Bid/DeleteBidDataByID?id=' + id + '',
+                dataType: 'JSON',
+                success: function (data) {
+                    $('#DivBidFinalizationMsg').html(data.Message);
+                    setTimeout(LoadBiFinalization, TimeInSeconds);
+                }
+            });
+        }
+    }
+
+
+
+
+
+
+</script>

@@ -1,0 +1,129 @@
+﻿@model IEnumerable <CwcExim.Areas.Bond.Models.ListOfWOunloading>
+
+<table class="table table-striped table-bordered" id="tblWOUnloading" style="width:100%;">
+    <thead>
+        <tr>
+            <th style="width:5%;" class="text-center">@Html.DisplayName("SL No")</th>
+            <th style="width:15%;">@Html.DisplayNameFor(m => m.BondBOENo)</th>
+            <th style="width:15%;">@Html.DisplayNameFor(m => m.BondBOEDate)</th>
+            <th style="width:15%;">@Html.DisplayName("Deposit No")</th>
+            <th style="width:10%;">@Html.DisplayName("Deposit Date")</th>
+            <th style="width:15%;">@Html.DisplayName("SAC No")</th>
+            <th style="width:10%;">@Html.DisplayName("SAC Date")</th>
+            <th style="width:5%;" class="text-center">@Html.DisplayName("Edit")</th>
+            <th style="width:5%;" class="text-center">@Html.DisplayName("View")</th>
+            <th style="width:5%;" class="text-center">@Html.DisplayName("Print")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{ var SerialNo = 1;
+            foreach (var data in Model)
+            {
+                <tr>
+                    <td style="width:5%;"  class="text-center">@SerialNo.ToString()</td>
+                    <td style="width:15%;">@data.BondBOENo</td>
+                    <td style="width:15%;">@data.BondBOEDate</td>
+                    <td style="width:15%;">@data.DepositNo</td>
+                    <td style="width:10%;">@data.DepositDate</td>
+                    <td style="width:15%;">@data.SACNo</td>
+                    <td style="width:10%;">@data.SACDate</td>
+                    <td style="width:5%;" class="text-center"><a href="#" onclick="EditBondWO(@data.UnloadingId)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td style="width:5%;" class="text-center"><a href="#" onclick="ViewBondWO(@data.UnloadingId)"><i class="fa fa-search-plus Edit"></i></a></td>
+                    <td style="width:5%;" class="text-center"><a href="#" onclick="PrintBondWO(@data.UnloadingId)"><i class="fa fa-file-pdf-o Edit" aria-hidden="true"></i></a></td>
+                </tr>   
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+<script>
+    $(document).ready(function () {
+        var tblWOUnloading = $('#tblWOUnloading').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns": [
+                       { "sName": "SL No","width": "5%" },
+                       { "sName": "BondNo", "bSortable": false ,"width": "15%" },
+                       { "sName": "BondDate", "bSortable": false,"width": "15%" },
+                       { "sName": "Deposite No", "bSortable": false ,"width": "15%" },
+                       { "sName": "Deposite Date", "bSortable": false ,"width": "10%" },
+                       { "sName": "SAC No", "bSortable": false ,"width": "15%" },
+                       { "sName": "SAC Date", "bSortable": false ,"width": "10%" },
+                       { "sName": "Edit", "bSortable": false, "width": "5%" },
+                       { "sName": "View", "bSortable": false, "width": "5%" },
+                       { "sName": "Print", "bSortable": false, "width": "5%" },
+
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0),td:eq(7),td:eq(8),td:eq(9)', nRow).addClass("text-center");
+                $('td:eq(0),td:eq(7),td:eq(8),td:eq(9)', nRow).css("width", "5%");
+                $('td:eq(1),td:eq(2),td:eq(3),td:eq(5)', nRow).css("width", "15%");
+                $('td:eq(4),td:eq(6)', nRow).css("width", "10%");
+            }
+        });
+        new $.fn.dataTable.FixedHeader(tblWOUnloading);
+    });
+    function EditBondWO(UnloadingId)
+    {
+        $('#DivBody').load('/Bond/VLDABond/EditWOUnloading?UnloadingId=' + UnloadingId);
+    }
+    function ViewBondWO(BondWODeliId)
+    {
+        $('#DivBody').load('/Bond/VLDABond/ViewWOUnloading?UnloadingId=' + BondWODeliId);
+    }
+
+    function PrintBondWO(UnloadingId) {
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/Bond/VLDABond/PrintWOUnloading',
+            type: 'POST',
+            data: { UnloadingId: UnloadingId },
+            dataType: 'JSON',
+            headers: { "__RequestVerificationToken": Token },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+            }
+        });
+    }
+    var Page = 0;
+    function LoadMoreListData() {
+        //debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Bond/VLDABond/LoadMoreListOfWOUnloading',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                //debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblWOUnloading').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        //debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.BondBOENo],
+        [item.BondBOEDate],
+        [item.DepositNo],
+        [item.DepositDate],
+        [item.SACNo],
+        [item.SACDate],
+        ['<a href="#" onclick=EditBondWO(' + [item.UnloadingId] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#" onclick=ViewBondWO(' + [item.UnloadingId] + ')><i class="fa fa-search-plus Edit"></i></a>'],
+        ['<a href="#" onclick=PrintBondWO(' + [item.UnloadingId] + ')><i class="fa fa-file-pdf-o Edit"></i></a>'],
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+</script>
+

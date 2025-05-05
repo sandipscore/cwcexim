@@ -1,0 +1,164 @@
+﻿@model IEnumerable<CwcExim.Areas.Master.Models.PPGCommodity>
+<script>
+        var Page = 0;
+        $(document).ready(function(){
+            var TblCommodity = $('#TblCommodity').DataTable({
+                "bFilter":false,
+                "bInfo": false,
+                "autoWidth": false,
+                "pageLength": 50,
+                "aoColumns":[
+                        { "sName": "View", "bSortable": false, "width": "3%" },
+                        { "sName": "Edit", "bSortable": false, "width": "3%" },
+                        { "sName": "Delete", "bSortable": false, "width": "3%" },
+                        { "sName": "SL No" ,"width": "5%"},
+                        { "sName": "Commodity Name","width": "20%" },
+                        { "sName": "Commodity Alias", "bSortable": false,"width": "10%" },                        
+                ],
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $('td:eq(0)', nRow).addClass("text-center");
+                    $('td:eq(3),td:eq(4),td:eq(5)', nRow).addClass("text-center");
+                    $('td:eq(0)', nRow).css("width", "3%");
+                    $('td:eq(1)', nRow).css("width", "3%");
+                    $('td:eq(2)', nRow).css("width", "3%");
+                    $('td:eq(3)', nRow).css("width", "5%");
+                    $('td:eq(4)', nRow).css("width", "5%");
+                    $('td:eq(5)', nRow).css("width", "5%");
+                }
+            });
+            new $.fn.dataTable.FixedHeader(TblCommodity);
+        });
+        function LoadCommodityPage(){
+
+            $('#DivBody').load('/Master/PPGCommodity/CreateCommodity');
+        }
+        function ViewCommodity(CommodityId){
+            $('#DivBody').load('/Master/PPGCommodity/ViewCommodity?CommodityId='+CommodityId);
+        }
+        function EditCommodity(CommodityId){
+            $('#DivBody').load('/Master/PPGCommodity/EditCommodity?CommodityId='+CommodityId);
+        }
+
+        function DeleteCommodity(CommodityId) {
+            var Confirm = confirm("Are You Sure You Want To Delete?");
+            if (Confirm == true) {
+                var Token = $('input[name="__RequestVerificationToken"]').val();
+                $.ajax({
+                    url: '/Master/PPGCommodity/DeleteCommodityDetail',
+                    headers: { '__RequestVerificationToken': Token },
+                    data: { CommodityId: CommodityId },
+                    type: 'POST',
+                    dataType: 'JSON',
+                    async: false,
+                    success: function (data) {
+                        if (data.Status == 1) {
+                            LoadCommodityPage();
+                        }
+                        else if (data.Status == 2 || data.Status == 3 || data.Status == 4) {
+                            alert(data.Message);
+                        }
+                    }
+                });
+            }
+        }
+
+        function LoadMoreListData() {
+            debugger;
+            //Page = Page + 1;
+            $.ajax({
+                url: '/Master/PPGCommodity/LoadListMoreData',
+                type: 'GET',
+                dataType: 'JSON',
+                data: { Page: Page + 1 },
+                success: function (data) {
+                    debugger;
+                    if (data != null && data != '' && data != undefined && data.length > 0) {
+                        Page++;
+                        var html = '';
+                        var dt = $('#TblCommodity').dataTable();
+                        var len = dt.fnGetData().length;
+                        $.each(data, function (i, item) {
+                            debugger;
+                            len++;
+                            dt.fnAddData([
+            ['<div class="table_icon"><a href="#" onclick=ViewCommodity(' + [item.CommodityId] + ')><i class="fa fa-eye"></i></a></div>'],
+            ['<div class="table_icon"><a href="#" onclick=EditCommodity(' + [item.CommodityId] + ')><i class="fa fa-pencil"></i></a></div>'],
+            ['<div class="table_icon"><a href="#" onclick=DeleteCommodity(' + [item.CommodityId] + ')><i class="fa fa-trash-o"></i></a></div>'],
+             len,
+            [item.CommodityName],
+            [item.CommodityAlias],            
+                            ]);
+                        });
+                    }
+                    else alert('No more data available');
+                }
+            });
+        }
+
+</script>
+<table id="TblCommodity" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+    <thead>
+        <tr>
+            <th style="text-align:center;">@Html.DisplayName("View")</th>
+            <th style="text-align:center;">@Html.DisplayName("Edit")</th>
+            <th style="text-align:center;">@Html.DisplayName("Delete")</th>
+            <th style="text-align:center;">@Html.DisplayName("SL No")</th>
+            <th style="text-align:center; width:20%;">@Html.DisplayNameFor(m => m.CommodityName)</th>
+            <th style="text-align:center; width:10%;">@Html.DisplayNameFor(m => m.CommodityAlias)</th>            
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td style="text-align:center;"><div class="table_icon"><a href="#" onclick="ViewCommodity(@item.CommodityId)"><i class="fa fa-eye"></i></a></div></td>
+                    <td style="text-align:center;"><div class="table_icon"><a href="#" onclick="EditCommodity(@item.CommodityId)"><i class="fa fa-pencil"></i></a></div></td>
+                    <td style="text-align:center;"><div class="table_icon"><a href="#" onclick="DeleteCommodity(@item.CommodityId)"><i class="fa fa-trash-o"></i></a></div></td>
+                    <td style="text-align:center;">@SerialNo</td>
+                    <td style="width:20%;">@Html.DisplayFor(m => item.CommodityName)</td>
+                    <td style="width:10%;">@Html.DisplayFor(m => item.CommodityAlias)</td>                    
+                </tr>
+                SerialNo += 1;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn btn-primary pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

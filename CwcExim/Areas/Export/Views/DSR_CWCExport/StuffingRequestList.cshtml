@@ -1,0 +1,161 @@
+﻿@model IEnumerable<CwcExim.Areas.Export.Models.DSR_StuffingRequest>
+
+<script>
+    var Page = 0;
+    $(function(){
+        var TblStuffingRequest=$('#TblStuffingRequest').DataTable({
+            "bFilter":false,
+            "bInfo":false,
+            "aoColumns":[
+                       {"sName":"SL No","width":"8%"},
+                       {"sName":"StuffingNo"},
+                       {"sName":"RequestDate","width":"15%"},                    
+                       {"sName":"Shipping Line"},
+                       {"sName":"Forwarder"},
+                       {"sName":"Total Packet"},
+                       {"sName":"Total Weight"},
+                       {"sName":"Total Value"},
+                       {"sName":"Edit","bSortable":false,"width":"10%"},
+                       {"sName":"View","bSortable":false,"width":"10%"},
+                       {"sName":"Delete","bSortable":false,"width":"10%"}
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0)', nRow).addClass("text-center");
+                $('td:eq(8),td:eq(9),td:eq(10)', nRow).addClass("text-center");
+                $('td:eq(0)', nRow).css("width", "8%");
+                $('td:eq(2)', nRow).css("width", "15%");
+
+               
+                $('td:eq(8)', nRow).css("width", "10%");
+                $('td:eq(9)', nRow).css("width", "10%");
+                $('td:eq(10)', nRow).css("width", "10%");
+
+            }
+        });
+        new $.fn.dataTable.FixedHeader(TblStuffingRequest);
+    });
+    function LoadStuffingReqPage(){
+        $('#DivBody').load('/Export/DSR_CWCExport/CreateStuffingRequest');
+    }
+    function EditStuffingRequest(StuffinfgReqId){
+        debugger;
+        $('#DivBody').load('/Export/DSR_CWCExport/EditStuffingRequest?StuffinfgReqId=' + StuffinfgReqId);
+    }
+    function ViewStuffingRequest(StuffinfgReqId){
+        debugger;
+        $('#DivBody').load('/Export/DSR_CWCExport/ViewStuffingRequest?StuffinfgReqId=' + StuffinfgReqId);
+    }
+    function DeleteStuffingRequest(StuffinfgReqId){
+        var Confirm=confirm("Are You Sure You Want To Delete?");
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        if(Confirm==true){
+            $.ajax({
+                url: '/Export/DSR_CWCExport/DeleteStuffingRequest',
+                type:'POST',
+                headers:{'__RequestVerificationToken':Token},
+                data:{StuffinfgReqId:StuffinfgReqId},
+                dataType:'JSON',
+                async:false,
+                success:function(data){
+                    if(data.Status==1)
+                    {
+                        alert("Stuffing Request Record has been deleted");
+                        LoadStuffingReqPage();
+                    }
+                    else{
+                        alert(data.Message);
+                    }
+                }
+            });
+        }
+    }
+    
+    function LoadMoreListData() {
+        debugger; 
+        var ShippbillNo = $('#SearchShippbillNo').val();
+        if (ShippbillNo != '' && ShippbillNo != null) {
+            var URL = '/Export/DSR_CWCExport/GetLoadMoreStuffingReqList?ShippbillNo=' + ShippbillNo;
+        }
+        else {
+            var URL = '/Export/DSR_CWCExport/GetLoadMoreStuffingReqList?ShippbillNo=' + "";
+        }       
+        $.ajax({
+            url: URL,
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1, ShippbillNo: ShippbillNo },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#TblStuffingRequest').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.StuffingReqNo],
+        [item.RequestDate],
+        [item.ShippingHdrLine],
+        [item.Forwarder],
+        [item.NoOfUnits],
+        [item.StuffWeight],
+        [item.Fob],
+        ['<a href="#" onclick=EditStuffingRequest(' + [item.StuffingReqId] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#" onclick=ViewStuffingRequest(' + [item.StuffingReqId] + ')><i class="fa fa-search-plus View"></i></a>'],
+        ['<a href="#" onclick=DeleteStuffingRequest(' + [item.StuffingReqId] + ')><i class="fa fa-window-close-o Delete"></i></a>'],
+       
+                        ]);
+                    });
+                }
+                else alert('No more data available');                
+            }
+        });
+    }
+</script>
+
+<table id="TblStuffingRequest" class="table table-striped table-bordered nowrap" cellspacing="0" style="width:100%">
+    <thead>
+        <tr>
+            <th class="text-center">SL No</th>
+            <th>Stuffing No</th>
+            <th>Request Date</th>
+            @*<th>CHA</th>*@
+            <th>Shipping Line</th>
+            <th>Forwarder</th>
+            <th>Total Packet</th>
+            <th>Total Weight</th>
+            <th>Total Value</th>
+            <th class="text-center">Edit</th>
+            <th class="text-center">View</th>
+            <th class="text-center">Delete</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center">@SerialNo.ToString()</td>
+                    <td>@item.StuffingReqNo</td>
+                    <td>@item.RequestDate</td>
+                    <td>@item.ShippingHdrLine</td>
+                    <td>@item.Forwarder</td>
+                    <td>@item.NoOfUnits</td>
+                    <td>@item.StuffWeight</td>
+                    <td>@item.Fob</td>
+                    <td class="text-center"><a href="#" onclick="EditStuffingRequest(@item.StuffingReqId)"><i class="fa fa-pencil-square Edit" aria-hidden="true"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="ViewStuffingRequest(@item.StuffingReqId)"><i class="fa fa-search-plus Edit" aria-hidden="true"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="DeleteStuffingRequest(@item.StuffingReqId)"><i class="fa fa-window-close-o Delete" aria-hidden="true"></i></a></td>
+                </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+

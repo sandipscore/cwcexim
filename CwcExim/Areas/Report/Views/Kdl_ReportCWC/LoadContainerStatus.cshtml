@@ -1,0 +1,377 @@
+﻿@model CwcExim.Areas.Report.Models.ContainerStatus
+
+<script>
+    var ContainerDet = [];
+
+    $(function () {
+        debugger;
+        $('#TblContainerDetail').hide();
+        if( Number(@Model.ShippingLineId) > 0){
+            debugger;
+            var ShippingLineName='@Model.ShippingLineName';
+            var ShippingLineId=@Model.ShippingLineId;
+            $('#ShippingLineId').val(ShippingLineId);
+            $('#ShippingLineName').val(ShippingLineName);
+        }
+    });
+
+    $('#ShippingLineBox').keyup(function () {
+        debugger;
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#ShippingLineModal .navList > li').show();
+        } else {
+            $('#ShippingLineModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('#ShippingLineList li').on("click", function () {
+        debugger;
+        $('#ShippingLineName').val($(this).text());
+        $('#ShippingLineId').val($(this).attr('id'));
+        $("#ShippingLineModal").modal("hide");
+        var ShippingLineId=$(this).attr('id');
+        $('#ContainerNo').val('');
+        $('#ContainerModal #ContainerList').html('');
+        ResetStuffingReq();
+        GetContainerNoList(ShippingLineId);
+    });
+    $('#ContainerBox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#ContainerModal .navList > li').show();
+        } else {
+            $('#ContainerModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+    function FillContainerTxtbox(ContainerNo) {
+        debugger;
+        $('#ContainerNo').val(ContainerNo.id);
+        $("#ContainerModal").modal("hide");
+        ResetStuffingReq();
+    }
+
+
+    function GetContainerNoList(ShippingLineId) {
+        debugger;
+        if (ShippingLineId > 0) {
+            $.ajax({
+                url: "/Report/ReportCWC/GetContainerNoList",
+                type: "GET",
+                dataType: "JSON",
+                data: { ShippingLineId: ShippingLineId },
+                async: false,
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        var Html = '';
+                        $.each(data.Data, function (i, item) {
+                            debugger;
+                            Html += '<li id=' + item.ContainerNo +' onclick="FillContainerTxtbox(' + item.ContainerNo + ')">'+item.ContainerNo+'</li>';
+                           // Html += "<li id=" + item.ContainerNo + " onclick='FillContainerTxtbox("  +  item.ContainerNo + ")'>"+ item.ContainerNo +"</li>";
+                        });
+                        $('#ContainerModal #ContainerList').html(Html);
+                    }
+                }
+
+            });
+        }
+    }
+
+
+    function ResetStuffingReq() {
+        debugger;
+            $('#LineNo').val('');
+            $('#AppraisementDate').val('');
+            $('#DestuffingDate').val('');
+            $('#StuffingDate').val('');
+            $('#GatePassDate').val('');
+            $('#GatePassNo').val('');
+            $('#GateExitDate').val('');
+            $('#GateEntryDate').val('');
+            $('#Rotation').val('');
+            $('#TblContainerDetail >tbody').html('');
+            $('#TblContainerDetail').hide();
+    }
+
+        $("#btnContainerStatus").on("click",function(){
+            debugger;
+            var ShippingLineId= Number($('#ShippingLineId').val());
+            var ContainerNo = $('#ContainerNo').val();
+            if(!ShippingLineId >0){
+                alert("Select Shipping Line");
+                return false;
+            }
+            if(ContainerNo==""){
+                alert("Select Container No");
+                return false;
+            }
+
+            $.ajax({
+                url: "/Report/ReportCWC/GetContainerStatusDetail",
+                type: "GET",
+                dataType: "JSON",
+                data: { ShippingLineId: ShippingLineId, ContainerNo: ContainerNo },
+                async: false,
+                success: function (data) {
+                    if (data.Status == 1) {
+                        ContainerDet = data.Data;
+                        GenerateTable();
+                    }
+                }
+            });
+        });
+
+    function GenerateTable() {
+        debugger;
+        $('#TblContainerDetail >tbody').html('');
+        var Html = "";
+        if (ContainerDet.length > 1) {
+            $.each(ContainerDet, function (i, item) {
+                Html += '<tr><td class="text-center">' + (i + 1) + '</td><td>' + item.GateEntryDate + '</td><td>' + item.LineNo + '</td><td>' + item.Rotation + '</td><td class="text-center"><a href="#" onclick="ViewContainerDet(' + i + ')"><i class="fa fa-search-plus Edit"></i></a></td></tr>';
+            });
+            $('#TblContainerDetail >tbody').html(Html);
+            $('#TblContainerDetail').show();
+        }
+        else {
+            $('#TblContainerDetail').hide();
+            $('#LineNo').val(ContainerDet[0].LineNo);
+            $('#AppraisementDate').val(ContainerDet[0].AppraisementDate);
+            $('#DestuffingDate').val(ContainerDet[0].DestuffingDate);
+            $('#StuffingDate').val(ContainerDet[0].StuffingDate);
+            $('#GatePassDate').val(ContainerDet[0].GatePassDate);
+            $('#GatePassNo').val(ContainerDet[0].GatePassNo);
+            $('#GateExitDate').val(ContainerDet[0].GateExitDate);
+            $('#GateEntryDate').val(ContainerDet[0].GateEntryDate);
+            $('#Rotation').val(ContainerDet[0].Rotation);
+        }
+    }
+
+    function ViewContainerDet(Index) {
+        $('#LineNo').val(ContainerDet[Index].LineNo);
+        $('#AppraisementDate').val(ContainerDet[Index].AppraisementDate);
+        $('#DestuffingDate').val(ContainerDet[Index].DestuffingDate);
+        $('#StuffingDate').val(ContainerDet[Index].StuffingDate);
+        $('#GatePassDate').val(ContainerDet[Index].GatePassDate);
+        $('#GatePassNo').val(ContainerDet[Index].GatePassNo);
+        $('#GateExitDate').val(ContainerDet[Index].GateExitDate);
+        $('#GateEntryDate').val(ContainerDet[Index].GateEntryDate);
+        $('#Rotation').val(ContainerDet[Index].Rotation);
+    }
+
+</script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "StuffingReqOnSuccess";
+    options.OnFailure = "StuffingReqOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="Head_h4">
+            <div class="row">
+                <div class="col-md-12">
+                    <h4>Container Status</h4>
+                </div>
+            </div>
+            <div class="content_wrp">
+                @Html.HiddenFor(m => m.ShippingLineId)
+
+                <div class="row Form_Space_top">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="InputLabel">Shipping Line</label><span class="LabelColon">:</span>
+                        </div>
+                        <div class="position-relative">
+                            @Html.TextBoxFor(m => m.ShippingLineName, new { @readonly = true })
+                            <span class="input_icon"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ShippingLineModal"></i></span>
+                            @Html.ValidationMessageFor(m => m.ShippingLineName, "", new { @class = "Error_Msg" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Container No:</label>
+                        </div>
+                        <div class="position-relative">
+                            @Html.TextBoxFor(m => m.ContainerNo, new { @readonly = true })
+                            <span class="input_icon"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerModal"></i></span>
+                            @Html.ValidationMessageFor(m => m.ContainerNo, "", new { @class = "Error_Msg" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-left Form_Space_top">
+                    <input type="submit" value="Generate Report" class="btn btn-primary btn-100px" id="btnContainerStatus" />
+                </div>
+                <div class="row">
+                    <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                </div>
+
+                <div class="row Form_Space_top">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Line No:</label>
+                        </div>
+                        @Html.TextBox("LineNo", "", new { @readonly = true })
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Rotation:</label>
+                        </div>
+                        @Html.TextBox("Rotation", "", new { @readonly = true })
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Gate Entry Date & Time:</label>
+                        </div>
+                        @Html.TextBox("GateEntryDate", "", new { @readonly = true })
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Appraisement Date:</label>
+                        </div>
+                        @Html.TextBox("AppraisementDate", "", new { @readonly = true })
+                    </div>
+                </div>
+
+                <div class="row Form_Space_top">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Destuffing Date:</label>
+                        </div>
+                        @Html.TextBox("DestuffingDate", "", new { @readonly = true })
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Stuffing Date:</label>
+                        </div>
+                        @Html.TextBox("StuffingDate", "", new { @readonly = true })
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Gate Pass Date & Time:</label>
+                        </div>
+                        @Html.TextBox("GatePassDate", "", new { @readonly = true })
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Gate Pass No:</label>
+                        </div>
+                        @Html.TextBox("GatePassNo", "", new { @readonly = true })
+                    </div>
+                </div>
+
+                <div class="row Form_Space_top">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Gate Exit Date & Time:</label>
+                        </div>
+                        @Html.TextBox("GateExitDate", "", new { @readonly = true })
+                    </div>
+                </div>
+
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                    </div>
+                    <div class="row Form_Space_top" id="DivTblConatiner">
+                        <div class="col-md-12">
+                            <table id="TblContainerDetail" class="table table-striped table-bordered nowrap dataTable bigger_table" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center" style="width:8%;">@Html.DisplayName("SL No")</th>
+                                        <th>@Html.DisplayName("Gate In Date")</th>
+                                        <th>Line No</th>
+                                        <th>@Html.DisplayName("Rotation")</th>
+                                        <th>@Html.DisplayName("View")</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="logSuccMsg Form_Space_top" id="DivContMsg" style="background-color:transparent"></div>
+                    <div class="logErrMsg Form_Space_bottom" id="DivContErrMsg" style="background-color:transparent"></div>
+                </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ShippingLineModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Shipping Line</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="ShippingLineBox" type="text" />
+                <ul class="navList" id="ShippingLineList">
+                    @{
+                        if (ViewBag.ShippingLineList != null)
+                        {
+                            foreach (var item in ViewBag.ShippingLineList)
+                            {
+                    <li id="@item.Value">@item.Text</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn btn-primary-border btn-100px" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ContainerModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Container No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="ContainerBox" type="text" />
+                <ul class="navList" id="ContainerList">
+                    @{
+                        if (ViewBag.ContainerList != null)
+                        {
+                            foreach (var item in ViewBag.ContainerList)
+                            {
+                    <li id="@item.Value" onclick="FillContainerTxtbox(@item.Value)">@item.Text</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn btn-primary-border btn-100px" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+@Scripts.Render("~/bundles/jqueryval")

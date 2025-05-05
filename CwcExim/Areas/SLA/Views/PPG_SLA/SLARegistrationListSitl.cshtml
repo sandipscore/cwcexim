@@ -1,0 +1,149 @@
+﻿@model IEnumerable<CwcExim.Areas.SLA.Models.PPGSLARegistrationList>
+<script>
+        var Page = 0;
+        $(document).ready(function(){
+            var TblRegistration = $('#TblRegistration').DataTable({
+                "bFilter":false,
+                "bInfo": false,
+                "pageLength": 50,
+                "aoColumns":[
+                         { "sName": "SL No" ,"width": "5%"},
+                        { "sName": "Ticket No","width": "10%" },
+                        { "sName": "Raised On", "bSortable": false,"width": "10%" },
+                        { "sName": "Issue Description", "bSortable": false,"width": "20%" },
+                        { "sName": "Resolution Level", "bSortable": false,"width": "10%" },
+                        { "sName": "Resolve Date Time", "bSortable": false,"width": "15%" },
+                        { "sName": "Select", "bSortable": false, "width": "5%" }                        
+                ],
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $('td:eq(0)', nRow).addClass("text-center");
+                    $('td:eq(1),td:eq(2),td:eq(3),td:eq(4),td:eq(5)', nRow).addClass("text-center");
+                    $('td:eq(0)', nRow).css("width", "5%");
+                    $('td:eq(1)', nRow).css("width", "10%");
+                    $('td:eq(2)', nRow).css("width", "10%");
+                    $('td:eq(3)', nRow).css("width", "20%");
+                    $('td:eq(4)', nRow).css("width", "10%");
+                    $('td:eq(5)', nRow).css("width", "15%");
+                    $('td:eq(6)', nRow).css("width", "5%");                    
+                }
+            });
+            new $.fn.dataTable.FixedHeader(TblRegistration);
+        });
+        function LoadRegistrationPage(){
+
+            $('#DivBody').load('/SLA/PPG_SLA/TicketGeneration');
+        }
+        function SelectRegistration(TicketId){
+            $('#DivBody').load('/SLA/PPG_SLA/SLARegistrationSitl?TicketId='+TicketId);
+        }
+        
+        function OpenRegistration(TicketId) {                      
+            $('#DivBody').load('/SLA/PPG_SLA/OpenSLARegistration?TicketId='+TicketId);    
+        }
+
+        function LoadMoreListData() {
+            debugger;
+            //Page = Page + 1;
+            $.ajax({
+                url: '/SLA/PPG_SLA/LoadListMoreDataSitl',
+                type: 'GET',
+                dataType: 'JSON',
+                data: { Page: Page + 1 },
+                success: function (data) {
+                    debugger;
+                    if (data != null && data != '' && data != undefined && data.length > 0) {
+                        Page++;
+                        var html = '';
+                        var dt = $('#TblRegistration').dataTable();
+                        var len = dt.fnGetData().length;
+                        $.each(data, function (i, item) {
+                            debugger;
+                            len++;
+                            dt.fnAddData([
+             len,
+            [item.TicketNo],
+            [item.RaisedOn],
+            [item.IssueDescription],
+            [item.ResolutionLevel],
+            [item.FileName],                        
+            ['<a href="#" onclick=OpenRegistration(' + [item.TicketId] + ')><i class="fa fa-paper-plane"></i></a>'],
+                            ]);
+                        });
+                    }
+                    else alert('No more data available');
+                }
+            });
+        }
+
+        function SearchByTicketNo() {
+            debugger;            
+            if ($('#SearchTicketNo').val().trim() == '') {
+                alert('Enter Token No for searching');
+                return;
+            }
+            var TicketNo = encodeURI($('#SearchTicketNo').val().trim());
+            //alert(party);
+            $('#DivBody').load('/SLA/PPG_SLA/GetRegistrationSearchListSitl?SearchValue=' + encodeURIComponent(TicketNo));//$('#PartyCode').val().replace(' ', '+')
+        }
+
+</script>
+
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                <div class="row SignUp_space_bottom">
+                    <div class="col-md-12">
+                        <h4>SLA Resolution List</h4>
+                    </div>
+                </div>
+                <div class="row Form_Space_top Form_Space_bottom">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-offset-5 col-md-4" style="text-align:right;">
+                            <label>Ticket No:</label>
+                        </div>
+                        <div class="col-md-3">
+                            @Html.TextBox("SearchTicketNo")
+                            @*<input id="PartyCode" name="PartyCode" type="text" value="gfh gf">*@
+                            <span class="search"><i class="fa fa-search" aria-hidden="true" onclick="SearchByTicketNo()"></i></span>
+                        </div>
+                    </div>
+                </div>
+
+                <table id="TblRegistration" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+                    <thead>
+                        <tr>
+                            <th style="text-align:center; width:5%;">@Html.DisplayName("SL No")</th>
+                            <th style="width:10%;">@Html.DisplayNameFor(m => m.TicketNo)</th>
+                            <th style="width:10%;">@Html.DisplayNameFor(m => m.RaisedOn)</th>
+                            <th style="width:20%;">@Html.DisplayNameFor(m => m.IssueDescription)</th>
+                            <th style="width:10%;">@Html.DisplayNameFor(m => m.ResolutionLevel)</th>
+                            <th style="width:10%;">@Html.DisplayNameFor(m => m.ResolveDate)</th>
+                            <th style="text-align:center; width:5%;">@Html.DisplayName("Select")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            var SerialNo = 1;
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td style="text-align:center; width:5%;">@SerialNo</td>
+                                    <td style="width:10%;">@Html.DisplayFor(m => item.TicketNo)</td>
+                                    <td style="width:10%;">@Html.DisplayFor(m => item.RaisedOn)</td>
+                                    <td style="width:20%;">@Html.DisplayFor(m => item.IssueDescription)</td>
+                                    <td style="width:10%;">@Html.DisplayFor(m => item.ResolutionLevel)</td>
+                                    <td style="width:10%;">@Html.DisplayFor(m => item.ResolveDate)</td>
+                                    <td style="text-align:center; width:5%;"><a href="#" onclick="OpenRegistration(@item.TicketId)"><i class="fa fa-paper-plane"></i></a></td>
+                                </tr>
+                                SerialNo += 1;
+                            }
+                        }
+                    </tbody>
+                </table>
+                <div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+            </div>
+        </div>
+    </div>
+</div>

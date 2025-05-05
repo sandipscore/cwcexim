@@ -1,0 +1,1743 @@
+﻿@model  CwcExim.Areas.Import.Models.DSRInvoiceYard
+@if (ViewBag.StuffingReqList != null)
+{
+    <input type="hidden" id="hdnStuffingReq" value="@ViewBag.StuffingReqList" />
+}
+else
+{
+    <input type="hidden" id="hdnStuffingReq" value="" />
+}
+@*@if (ViewBag.PaymentParty != null)
+    {
+        <input type="hidden" id="hdnPartyPayee" value="@ViewBag.PaymentParty" />
+    }
+    else
+    {
+        <input type="hidden" id="hdnPartyPayee" value="" />
+    }*@
+
+@if (ViewBag.RightsList != null)
+{
+    <input type="hidden" id="hdnRights" value="@ViewBag.RightsList" />
+}
+else
+{
+    <input type="hidden" id="hdnRights" value="" />
+}
+
+<input type="hidden" id="hdnBOL" value="" />
+
+@*<script src="~/Scripts/AngularScript/App.js"></script>*@
+<script src="~/Areas/Import/Scripts/App/Services/DSRAssessmentYardInvoiceService.js"></script>
+<script src="~/Areas/Import/Scripts/App/Controllers/DSRAssessmentYardInvoiceCtrl.js"></script>
+<style>
+    #tbleParty.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    #tblePayee.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .slimScrollDiv {
+        height: 300px;
+    }
+
+    .table.tblhd {
+        border-bottom: 0;
+    }
+
+    #Containerdtl .modal-body {
+        Max-height: 300px !important;
+        overflow-y: auto !important;
+    }
+
+    .disable_cls {
+        background-color: rgb(235, 235, 228);
+        border: 1px solid #c7c7cc;
+        height: 25px;
+        padding: 3px 10px;
+        border-radius: 2px;
+    }
+
+
+    #Containerdtl .modal-content {
+        width: 100%;
+    }
+</style>
+<script>
+
+
+    angular.bootstrap(document.getElementById('YardAppDiv'), ['CWCApp']);
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+    document.getElementById('SearchPartyText').addEventListener('keyup', debounce(function () {
+        if (document.getElementById('SearchPartyText').value != "")
+            angular.element('#YardInvoiceController').scope().SearchPartyList();
+        else
+            angular.element('#YardInvoiceController').scope().LoadPartyList();
+    }, 800));
+    document.getElementById('SearchPayeeText').addEventListener('keyup', debounce(function () {
+        if (document.getElementById('SearchPayeeText').value != "")
+            angular.element('#YardInvoiceController').scope().SearchPayeeList();
+        else
+            angular.element('#YardInvoiceController').scope().LoadPayeeList();
+    }, 800));
+
+    document.getElementById('SearchCHAText').addEventListener('keyup', debounce(function () {
+        if (document.getElementById('SearchCHAText').value != "")
+            angular.element('#YardInvoiceController').scope().SearchCHAList();
+        else
+            angular.element('#YardInvoiceController').scope().LoadCHAList();
+    }, 800));
+
+
+    $('#InvoiceDate').datepicker({
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        dateFormat: "dd/mm/yy",
+        altField: "#slider_example_4andHalf_alt",
+        altFieldTimeOnly: false,
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+    $('#DeliveryDate').datetimepicker({
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        dateFormat: "dd/mm/yy",
+        altField: "#slider_example_4andHalf_alt",
+        altFieldTimeOnly: false,
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+    function PaymentOnSuccess(data) {
+        debugger;
+        if (data.Status == 1 || data.Status == 2) {
+            if ($('#DivPaySheetCargoMsg').hasClass('logErrMsg'))
+                $('#DivPaySheetCargoMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            var InvSupplyData = data.Data.InvoiceNo.split('-');
+            $('#InvoiceNo').val(InvSupplyData[0]);
+            $('#PaymentSheetModelJson').val(JSON.stringify(data.Data));
+            $('#btnGeneratedIRN').removeAttr('disabled');
+            $('#DivPaySheetCargoMsg').html(data.Message);
+            $('#btnPrint').removeAttr('disabled');
+            //setTimeout(ResetField, TimeInSeconds);
+        }
+        else {
+            if ($('#DivPaySheetCargoMsg').hasClass('logSuccMsg')) {
+                $('#DivPaySheetCargoMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+                $('#btnSave').removeAttr('disabled');
+            }
+            $('#DivPaySheetCargoMsg').html(data.Message);
+        }
+    }
+    function PaymentOnFailure() {
+        alert("Error");
+    }
+    function ResetField() {
+        debugger;
+        $('#DivBody').load('/Import/DSR_CWCImport/ReassessmentYardPaymentSheet');
+    }
+
+    var TaxType = '@ViewData["InvType"].ToString()';
+    function IVType(Type) {
+        debugger;
+        TaxType = Type;
+        $('#DivBody').load('/Import/DSR_CWCImport/ReassessmentYardPaymentSheet?type=' + Type);
+    }
+    if (TaxType == 'Tax')
+        $('#Tax').prop('checked', true);
+    else
+        $('#Bill').prop('checked', true);
+
+    function Movement(Type) {
+
+        if (Type == 'Private') {
+            $('#PrivateMovement').prop('checked', true);
+            $('#CWCMovement').prop('checked', false);
+        }
+
+        else {
+            $('#PrivateMovement').prop('checked', false);
+            $('#CWCMovement').prop('checked', true);
+        }
+
+    }
+
+
+    /* function checkyard() {
+
+         if ($('#CustApprove').prop('checked') == true) {
+             $('#Approved').prop('checked', false);
+             $('#CustApprove').prop('checked', true);
+         }
+
+
+     }*/
+    /*  function check()
+      {
+          //  $('#Approve').prop('checked', true);
+          debugger;
+          // alert($('#Approved').prop('checked'));
+
+
+          // if ($('#Approved').prop('checked') == true) {
+          //  $('#CustApprove').prop('checked', false);
+          //  $('#Approved').prop('checked', true);
+          // }
+          if ($('#Approved').prop('checked') == true) {
+              $('#Approved').prop('checked', true);
+              $('#CustApprove').prop('checked', false);
+          }
+
+         else if ($('#CustApprove').prop('checked') == true) {
+              $('#CustApprove').prop('checked', true);
+              $('#Approved').prop('checked', false);
+          }
+
+
+          else
+              $('#CustApprove').prop('checked', true);
+
+
+      }*/
+
+    function PrintInvoice() {
+        debugger;
+        var invoiceno = $('#InvoiceNo').val();
+
+        //if (invoiceno == '')
+        //{
+        //    alert('No Invoice No');
+        //    return;
+        //}
+
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            /*url: 'Url.Action("YardInvoicePrint", "DSR_CWCImport", new { Area = "Import" }) ',*/
+            url: '@Url.Action("GetBulkInvoiceReport", "DSR_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                InvoiceNumber: invoiceno,
+                InvoiceModule: 'IMPYard',
+                PartyId: $('#PartyId').val(),
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                InvoiceModuleName: 'RE-ASSESSMENT SHEET YARD',
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }
+
+
+
+</script>
+
+
+
+@using (Ajax.BeginForm("AddEditYardReassessmentPaymentSheet", "DSR_CWCImport", new AjaxOptions { HttpMethod = "POST", OnSuccess = "PaymentOnSuccess", OnFailure = "PaymentOnFailure" }, new { @Id = "PaymentSheetForm" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.Hidden("ContainerJson")
+    @*@Html.Hidden("IsPartyStateInCompState")*@
+    @Html.HiddenFor(m => m.lstContWiseAmountXML)
+    @Html.HiddenFor(m => m.lstOperationCFSCodeWiseAmountXML)
+    @Html.HiddenFor(m => m.lstPostPaymentChrgXML)
+    @Html.HiddenFor(m => m.lstPostPaymentChrgBreakupXML)
+    @Html.HiddenFor(m => m.lstPostPaymentContXML)
+    @Html.HiddenFor(m => m.lstPrePaymentContXML)
+
+    <input type="hidden" id="IsPartyStateInCompState" ng-model="IsPartyStateInCompState" />
+    <input type="hidden" id="hdnAddress" ng-model="hdnAddress" />
+    <input type="hidden" id="hdnState" ng-model="hdnState" />
+    <input type="hidden" id="hdnStateCode" ng-model="hdnStateCode" />
+    <input type="hidden" id="hdnDeliveryType" ng-model="hdnDeliveryType" />
+
+    @Html.Hidden("PaymentSheetModelJson")
+    <div id="YardAppDiv">
+        <div ng-controller="DSRYardInvoiceCtrl" id="YardInvoiceController" style="overflow-x: hidden;">
+
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-offset-0-5 col-md-11">
+                        <div class="Head_h4">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h4>Re-Assessment Yard Invoice (FCL)</h4>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div style="float:left; margin-left: 14%;">
+                                        <div class="boolean-container" style="width: auto;">
+                                            @Html.RadioButton("InvoiceType", "Tax", new { id = "Tax", @checked = true, @onclick = "IVType('Tax')" })
+                                            <label style="padding:0;" for="Tax"><i class="circle"></i><span>Tax Invoice</span></label>
+                                        </div>
+                                    </div>
+                                    <div style="float:left; margin: 0 0 0 30px;">
+                                        <div class="boolean-container" style="width: auto;">
+                                            @Html.RadioButton("InvoiceType", "Bill", new { id = "Bill", @onclick = "IVType('Bill')" })
+                                            <label style="padding:0;" for="Bill"><i class="circle"></i><span>Bill Of Supply</span></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Invoice No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        <input name="InvoiceNo" id="InvoiceNo" type="text" ng-model="InvoiceNo" readonly />
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-0-5">
+                                        <label>Invoice Date:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img Error_Msg">
+                                        @Html.TextBox("InvoiceDate", "", new { @placeholder = "dd/mm/yyyy", @onblur = "checkdate('InvoiceDate')", Value = DateTime.Now.ToString("dd/MM/yyyy"), @tabindex = 1 })
+                                        @Html.ValidationMessageFor(m => m.InvoiceDate, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-0-5">
+                                        <label>Delivery Date:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img Error_Msg">
+                                        @Html.TextBox("DeliveryDate", "", new { @placeholder = "dd/mm/yyyy HH:mm", @onblur = "checkdateTime('DeliveryDate')", Value = DateTime.Now.ToString("dd/MM/yyyy HH:mm"), @tabindex = 2 })
+                                        @Html.ValidationMessageFor(m => m.DeliveryDate, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Application No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        <input type="hidden" id="StuffingReqId" ng-model="StuffingReqId" />
+                                        <span class="ReQSimbol">*</span>
+                                        <input type="text" id="StuffingReqNo" ng-model="StuffingReqNo" tabindex="2" autofocus readonly onkeypress="CallApplicationNomodal()" />
+                                        <span class="search" id="stuffingsearch" ng-show="!IsContSelected"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="CallApplicationNomodal()"></i></span>
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4-5 col_cus_offset_3 col_cus_2">
+                                        <label>Date:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5">
+                                        <input type="text" id="StuffingReqDate" tabindex="3" ng-model="StuffingReqDate" readonly />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>CHA Name:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        <input type="hidden" id="CHAId" ng-model="CHAId" />
+                                        <input type="text" id="CHAName" ng-model="CHAName" readonly="True" ng-keypress="LoadCHAList()" tabindex="4" />
+                                        <span class="search" id="CHASearch" ng-show="!IsContSelected"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" ng-click="LoadCHAList();" data-target="#CHAModal"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Party Name:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        <input type="hidden" id="PartyId" ng-model="PartyId" />
+                                        <input type="text" id="PartyName" ng-model="PartyName" readonly="True" tabindex="5" ng-keypress="LoadPartyList();" />
+                                        <span class="search" id="PartySearch" ng-show="!IsContSelected"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" ng-click="LoadPartyList();" data-target="#PartyModal"></i></span>
+                                        @*@Html.ValidationMessageFor(m => m.PartyName)*@
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Payer Name:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        <input type="hidden" id="PayeeId" ng-model="PayeeId" />
+                                        <input type="text" id="PayeeName" ng-model="PayeeName" readonly="True" tabindex="6" ng-keypress="LoadPayeeList();" />
+                                        <span class="search" id="PayeeSearch" ng-show="!IsContSelected"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" ng-click="LoadPayeeList();" data-target="#PayeeModal"></i></span>
+                                        @*@Html.ValidationMessageFor(m => m.PayeeName)*@
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label> GST No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        <input type="text" id="GSTNo" ng-model="GSTNo" readonly="true" />
+                                    </div>
+
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>SEZ:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.DropDownList("SEZ", new List<SelectListItem>
+                                        {
+                                        new SelectListItem { Text="SEZWP",Value="SEZWP"},
+                                        new SelectListItem {Text="SEZWOP",Value="SEZWOP" }
+
+                                        }, "---Select---", new { @class = "form-control input-sm dropdown" })
+                                        @Html.ValidationMessage("SEZ", new { @class = "Error_Msg" })
+                                    </div>
+
+                                    <div class="col-md-1-5 col-md-offset-4-5 padding_rt">
+                                        <label>Payment Mode:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2">
+                                        <div class="disable_cls">{{InvoiceObj.PaymentMode}}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div style="float: left;  margin: 0 16px;">
+                                        <div class="boolean-container">
+                                            @Html.RadioButton("Approvetype", "Factory", new { id = "Factory", @checked = true })
+                                            <label style="padding:0;" tabindex="7" for="Factory"><i class="circle"></i><span>Factory Destuffing</span></label>
+                                        </div>
+                                    </div>
+                                    <div style="float: left; margin: 0 51px 0 0;">
+                                        <div class="boolean-container">
+                                            @*@Html.RadioButtonFor(m => m.InvoiceType, "Bill", new { id = "Bill", @onclick = "IVType('Bill')" })*@
+                                            @Html.RadioButton("Approvetype", "Direct", new { id = "Direct" })
+                                            <label style="padding:0;" tabindex="8" for="Direct"><i class="circle"></i><span>Direct Destuffing</span></label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4-5 padding_rt">
+                                        <label>Distance (KM):</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2">
+                                        <input name="Distance" id="Distance" type="text" tabindex="9" ng-model="Distance" value="0" onkeypress="return isDecimalNumber(event)" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2" style="display:none;">
+                                        <label> OT Hours:</label>
+                                    </div>
+                                    <div class="col-md-2" style="display:none;">
+                                        <input type="text" id="OTHours" ng-model="OTHours" />
+                                    </div>
+
+                                    <div class="col-md-1-5 padding_rt" style="display:none;">
+                                        <label>No of Vehicles:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2" style="display:none;">
+                                        <input name="NoOfVehicles" id="NoOfVehicles" type="text" ng-model="NoOfVehicles" value="1" />
+                                    </div>
+
+                                    <div style="float:left; margin: 0 21px 0 15px;">
+                                        @Html.CheckBox("Amendment", false, new { id = "Amendment", @checked = false })
+                                        <label style="padding:0;" tabindex="10" for="Amendment"><i class="square"></i><span> Amendment</span></label>
+                                        @*<input name="InsuredParty" id="InsuredParty" type="checkbox" ng-model="InsuredParty"  />*@
+                                    </div>
+
+                                    <div style="float:left; margin: 0 22px 0 19px;">
+                                        @Html.CheckBox("InsuredParty", false, new { id = "InsuredParty", @checked = false })
+                                        <label style="padding:0;" tabindex="11" for="InsuredParty"><i class="square"></i><span> Insured Party</span></label>
+                                        @*<input name="InsuredParty" id="InsuredParty" type="checkbox" ng-model="InsuredParty"  />*@
+                                    </div>
+
+                                    <div class="col-md-1-5 col-md-offset-0-5">
+                                        <label>Empty Port</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2">
+                                        @Html.TextBox("PortName", "", new { @Readonly = "true", @tabindex = 12, onkeypress = "CallPortmodal();" })
+                                        <span class="search" id="SrchInvoiceNo"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="CallPortmodal()" data-target="#PortModal"></i></span>
+                                        <input type="hidden" id="PortId" value="0" />
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5">
+                                        <label>Movement Type:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+
+                                        @Html.DropDownList("MovementType", new List<SelectListItem>{
+                                        new SelectListItem {Text="CWC Movement",Value="CWCMovement" },
+                                        new SelectListItem {Text="Private",Value="Private" }
+                                      }, new { @class = "form-control input-sm dropdown", @tabindex = 13 })
+                                        @Html.ValidationMessage("MovementType", "", new { @class = "Error_Msg" })
+
+
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                        <label>Exam Type:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.DropDownList("RMSValue", new List<SelectListItem>{
+                                        new SelectListItem {Text="Upto 25%",Value="1" },
+                                        new SelectListItem {Text="Beyond 25% ",Value="2" },
+                                        new SelectListItem {Text="RMS Non Exim",Value="3" }
+                                      }, new { @class = "form-control input-sm dropdown", @tabindex = 14 })
+                                        @Html.ValidationMessage("RMSValue", "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top SignUp_space_top SignUp_space_bottom">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-3-5 col-md-offset-4 col_cus_2">
+                                        <input class="btn log_Btn_sm" aria-hidden="true" data-toggle="modal" data-target="#Containerdtl" tabindex="15" type="button" value="Container / CBT Details" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row Form_Space_top Form_Space_bottom">
+                                <div class="col-md-12">
+                                    <table id="tblContainer" class="table table-bordered table-striped dataTable">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:8%;" class="text-center">Sl No</th>
+                                                <th>ICD No</th>
+                                                <th>Container / CBT No</th>
+                                                <th>Size</th>
+                                                <th>Reefer</th>
+                                                <th>Insured</th>
+                                                <th>Is ODC</th>
+                                                <th>Cargo Type</th>
+                                                <th>OBL No</th>
+                                                <th>No Of Pkg</th>
+                                                <th>Gr Weight(Kg)</th>
+                                                @*<th>Seal Cutting Date</th>
+                                                    <th>DO Date</th>*@
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="c in InvoiceObj.lstPostPaymentCont">
+                                                <td>{{$index+1}}</td>
+                                                <td>{{c.CFSCode}}</td>
+                                                <td>{{c.ContainerNo}}</td>
+                                                <td>{{c.Size}}</td>
+                                                <td>
+                                                    <span ng-if="c.Reefer==1">Yes</span>
+                                                    <span ng-if="c.Reefer==0">No</span>
+                                                </td>
+                                                <td>
+                                                    <span ng-if="c.Insured==1">Yes</span>
+                                                    <span ng-if="c.Insured==0">No</span>
+                                                </td>
+                                                <td>
+                                                    <span ng-if="c.ISODC != 0">Yes</span>
+                                                    <span ng-if="c.ISODC==0">No</span>
+                                                </td>
+                                                <td>
+                                                    <span ng-if="c.CargoType==1">Haz</span>
+                                                    <span ng-if="c.CargoType==2">Non Haz</span>
+                                                </td>
+                                                <td>{{c.OBLNo}}</td>
+                                                <td>{{c.NoOfPackages}}</td>
+                                                <td>{{c.GrossWt}}</td>
+                                                @*<td>{{c.SealCutDate}}</td>
+                                                    <td></td>*@
+
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Importers:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        <textarea id="Importers" ng-model="InvoiceObj.ImporterExporter" readonly />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="Head_h5">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h5>CWC Charges</h5>
+                                    </div>
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="col-md-12">
+                                        <table id="tblCWCCharges" class="table table-bordered table-striped dataTable Table_center">
+                                            <thead>
+                                                <tr>
+                                                    <th rowspan="2">Charges</th>
+                                                    <th rowspan="2">Value</th>
+                                                    <th colspan="2" class="text-center">IGST</th>
+                                                    <th colspan="2" class="text-center">CGST</th>
+                                                    <th colspan="2" class="text-center">SGST</th>
+                                                    <th rowspan="2" style="width:15%;">Total</th>
+                                                </tr>
+                                                <tr>
+                                                    <th>%</th>
+                                                    <th>Amt</th>
+                                                    <th>%</th>
+                                                    <th>Amt</th>
+                                                    <th>%</th>
+                                                    <th style="border-right:1px solid #ddd;">Amt</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                               
+                                            </tbody>
+                                            <tfoot>
+                                                <tr>
+                                                    <td colspan="8" class="text-right">Total:</td>
+                                                    <td style="font-weight:bold;">
+                                                        <input style="text-align:right;" type="text" id="TOTCWCChrg" value="0" readonly>
+                                                        @*{{InvoiceObj.AllTotal | number : 2}}*@
+                                                </tr>
+                                                @*<tr>
+                                                        <td colspan="8" style="text-align:right;">TDS:</td>
+                                                        <td><input type="text" id="TOTCWCTDS" value="0" onblur="CalcInvoice()"></td>
+                                                    </tr>*@
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <div class="row SignUp_space_bottom2 SignUp_space_top2">
+                                <div class="col-md-offset-2 col-md-4">
+                                    <button type="button" id="btnShowHT" class="btn log_Btn_sm" data-toggle="modal" data-target="#HnTModal">
+                                        <span class="glyphicon glyphicon-search" aria-hidden="true"></span> Show H&amp;T Charges
+                                    </button>
+                                    @*<input class="btn log_Btn_sm" aria-hidden="true" data-toggle="modal" data-target="#HnTModal" type="button" value="Show H&amp;T Charges" />*@
+                                </div>
+                                <div class="col-md-4">
+                                    <button id="btnAddExtraHT" type="button" class="btn log_Btn_sm" data-toggle="modal" data-target="#NewHnTModal" disabled>
+                                        <span class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span> Add Extra H&amp;T
+                                    </button>
+                                    @*<input class="btn log_Btn_sm" aria-hidden="true" data-toggle="modal" data-target="#NewHnTModal" type="button" value="Add Extra H&amp;T" disabled />*@
+                                </div>
+                            </div>
+                            @*HT Charges*@
+                            <div class="Head_h5 hide" id="rest-charge-details">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h5>H &amp; T Charges</h5>
+                                    </div>
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="col-md-12">
+                                        <table id="tblHTCharges" class="table table-bordered table-striped dataTable Table_center">
+                                            <thead>
+                                                <tr>
+                                                    <th rowspan="2">Charges</th>
+                                                    <th rowspan="2">Value</th>
+                                                    <th colspan="2" class="text-center">IGST</th>
+                                                    <th colspan="2" class="text-center">CGST</th>
+                                                    <th colspan="2" class="text-center">SGST</th>
+                                                    <th rowspan="2" style="width:15%;">Total</th>
+                                                    <th rowspan="2" class="text-center" style="width:15px;"></th>
+                                                </tr>
+                                                <tr>
+                                                    <th>%</th>
+                                                    <th>Amt</th>
+                                                    <th>%</th>
+                                                    <th>Amt</th>
+                                                    <th>%</th>
+                                                    <th style="border-right:1px solid #ddd;">Amt</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                   
+                                            </tbody>
+                                            <tfoot>
+                                                <tr>
+                                                    <td colspan="8" class="text-right">Total:</td>
+                                                    <td><input type="text" id="TOTHTChrg" value="0" class="text-right"></td>
+                                                    <td></td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            @*HT Charges*@
+                            @*Total Charges*@
+                            <div class="Head_h5">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h5>Total Charges</h5>
+                                    </div>
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="col-md-12">
+                                        <table class="table table-bordered table-striped dataTable Table_center">
+                                            <tfoot>
+                                                <tr>
+                                                    <td colspan="8" class="text-right">Total Value:</td>
+                                                    <td style="font-weight:bold; text-align:right;">
+                                                        @*{{InvoiceObj.AllTotal | number : 2}}*@
+                                                        @Html.TextBox("AllTotal", "0", new { @readonly = true, @style = "text-align:right;" })
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="8" class="text-right">Round Up:</td>
+                                                    <td style="font-weight:bold; text-align:right;">
+                                                        @*{{InvoiceObj.RoundUp | number : 2}}*@
+                                                        @Html.TextBox("RoundUp", "0", new { @style = "text-align:right;" })
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="8" class="text-right">Total Invoice Amount:</td>
+                                                    <td style="font-weight:bold; text-align:right;">
+                                                        @*{{InvoiceObj.InvoiceAmt | number : 2}}*@
+                                                        @Html.TextBox("InvoiceValue", "0", new { @readonly = true, @style = "text-align:right;" })
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            @*Total Charges*@
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5">
+                                        <label>Remarks:</label>
+                                    </div>
+                                    <div class="col-md-10-5">
+                                        <textarea id="Remarks" ng-model="Remarks" style="height:75px;" maxlength="500"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row SignUp_space_bottom SignUp_space_top">
+                                <div class="stoke"></div>
+                            </div>
+                            <div class="logSuccMsg Form_Space_bottom" id="DivPaySheetCargoMsg" style="background-color:transparent">{{Message}}</div>
+                            <div class="row SignUp_space_bottom2">
+                                <div class="col-md-offset-1 col-md-2">
+                                    <input type="button" id="btnSave" value="Save" ng-click="SubmitInvoice()" class="btn log_Btn_sm" disabled />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="button" value="Reset" class="btn log_Btn_sm" onclick="ResetField()" />
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="button" value="Generate IRN" class="btn log_Btn_sm" ng-click="GenerateIRN()" id="btnGeneratedIRN" disabled />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="button" value="Print" class="btn log_Btn_sm" onclick="PrintInvoice()" id="btnPrint" disabled />
+                                </div>
+                            </div>
+
+                            <div class="row SignUp_space_bottom SignUp_space_top">
+                                <div class="stoke"></div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-2">
+                                        <input type="button" value="Show List" onclick="ShowList()" class="btn log_Btn_sm" />
+                                    </div>
+                                    <div class="col-md-offset-4 col-md-2">
+                                        <input type="text" placeholder="Search by Invoice No" id="SearchInvoiceNo" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="text" placeholder="Date (dd/mm/yyyy)" id="SearchInvoiceDate" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="button" value="Search" onclick="SearchInvoice()" class="btn log_Btn_sm" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-12" id="DivListOfInvoice">
+                                        <table class="table table-bordered table-striped dataTable">
+                                            <thead>
+                                                <tr>
+                                                    <td>Sl No</td>
+                                                    <td>Invoice No</td>
+                                                    <td>Invoice Date</td>
+                                                    <td>Party Name</td>
+                                                    <td>Print</td>
+                                                </tr>
+                                            </thead>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="DivDeliveryAppList"></div>
+                </div>
+            </div>
+
+
+            <div id="stuffingModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of Custom Appraisement No</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <input placeholder="Search Me" id="stuffingbox" type="text" ng-model="searchText" tabindex="99" />
+                            <ul class="navList" id="lststuffing">
+                             
+                                <li tabindex="{{r.rows}}" ng-repeat="r in ReqNos | filter:{StuffingReqNo:searchText} " ng-click="SelectReqNo(r)" ng-keypress="SelectReqNo(r)">{{r.StuffingReqNo}} <div style="display:none;"> {{r.ContainerList}}{{r.OBLList}}</div></li>
+
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="CHAModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal" ng-click="LoadCHAList()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of CHA</h4>
+                        </div>
+                        <div class="modal-body popup_body" style="position:relative;">
+                            <input placeholder="Search By CHA Name Or CHA Code" type="text" ng-model="SearchCHAText" id="SearchCHAText" tabindex="99" />
+                            <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" ng-click="SearchCHAList()"></i></span>
+                            <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                                <thead>
+                                    <tr>
+                                        <th colspan="8" width="80%">CHA Name</th>
+                                        <th colspan="4" width="20%">CHA Code</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div id="slim_scroll">
+                                <table class="table dataTable table-bordered table-striped slim_tble" id="tbleParty">
+                                    <tbody>
+                                        <tr ng-repeat="item in CHAList" ng-click="SelectCHA(item)" tabindex="{{item.rows}}" ng-keypress="SelectCHA(item)">
+                                            <td colspan="8" width="80%" class="txt_wrp">{{item.CHAName}}</td>
+                                            <td colspan="4" width="20%" class="txt_wrp">{{item.CHACode}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <button type="button" style="width:100%; margin-left:0;" ng-click="LoadMoreCHAList()" class="btn log_Btn_sm" ng-disabled="!btnCHA">Load More Data</button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal" ng-click="LoadCHAList()">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="PartyModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal" ng-click="LoadPartyList()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of Party</h4>
+                        </div>
+                        <div class="modal-body popup_body" style="position:relative;">
+                            <input placeholder="Search By Party Name Or Party Code" type="text" ng-model="SearchPartyText" id="SearchPartyText" tabindex="99" />
+                            <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" ng-click="SearchPartyList()"></i></span>
+                            <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                                <thead>
+                                    <tr>
+                                        <th colspan="8" width="80%">Party Name</th>
+                                        <th colspan="4" width="20%">Party Code</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div id="slim_scroll">
+                                <table class="table dataTable table-bordered table-striped slim_tble" id="tbleParty">
+                                    <tbody>
+                                        <tr ng-repeat="item in PartyList" ng-click="SelectParty(item)" ng-keypress="SelectParty(item)" tabindex="{{item.rows}}">
+                                            <td colspan="8" width="80%" class="txt_wrp">{{item.PartyName}}</td>
+                                            <td colspan="4" width="20%" class="txt_wrp">{{item.PartyCode}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <button type="button" style="width:100%; margin-left:0;" ng-click="LoadMorePartyList()" class="btn log_Btn_sm" ng-disabled="!btnParty">Load More Data</button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal" ng-click="LoadPartyList()">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="PayeeModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal" ng-click="LoadPayeeList()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of Payer</h4>
+                        </div>
+                        <div class="modal-body popup_body" style="position:relative;">
+                            <input placeholder="Search By Party Name Or Party Code" type="text" ng-model="SearchPayeeText" id="SearchPayeeText" tabindex="99" />
+                            <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" ng-click="SearchPayeeList()"></i></span>
+                            <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                                <thead>
+                                    <tr>
+                                        <th colspan="8" width="80%">Party Name</th>
+                                        <th colspan="4" width="20%">Party Code</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div id="slim_scroll_1">
+                                <table class="table dataTable table-bordered table-striped slim_tble" id="tblePayee">
+                                    <tbody>
+                                        <tr ng-repeat="item in PayeeList" ng-click="SelectPayee(item)" ng-keypress="SelectPayee(item)" tabindex="{{item.rows}}">
+                                            <td colspan="8" width="80%" class="txt_wrp">{{item.PartyName}}</td>
+                                            <td colspan="4" width="20%" class="txt_wrp">{{item.PartyCode}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <button type="button" style="width:100%; margin-left:0;" ng-click="LoadMorePayeeList()" class="btn log_Btn_sm" ng-disabled="!btnPayee">Load More Data</button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal" ng-click="LoadPayeeList()">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="Containerdtl" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal modal-lg">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true" ng-click="ContainerSelect()"></i></button>
+                            <h4 class="modal-title">List of Container / CBT</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+
+                            <table id="lstcfsCode" class="table table-bordered table-striped dataTable">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>CFS Code</th>
+                                        <th>Container No</th>
+                                        <th width="3%">INS</th>
+                                        <th width="3%">LIN</th>
+                                        <th width="3%">LIO</th>
+                                        <th width="3%">REW</th>
+                                        <th width="3%">WET</th>
+                                    </tr>
+
+
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="item in conatiners">
+                                        <td>
+                                            <div class="boolean-container">
+                                                <input type="checkbox" onchange='clickme(this.id);' ng-model="item.Selected" id={{item.CFSCode}} /><label for={{item.CFSCode}}>
+                                                    <i class="square" style="margin-left:10px;"></i>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td>{{item.CFSCode}} </td>
+                                        <td>{{item.ContainerNo}}</td>
+                                        <td>
+                                            <div class="boolean-container">
+                                                <input type="checkbox" ng-model="item.INS" id="InterShifting{{$index}}" tabindex="22_{{$index}}"><label for=InterShifting{{$index}}>
+                                                    <i class="square" style="margin-left:10px;"></i>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="boolean-container">
+                                                <input type="checkbox" ng-model="item.LIN" id="LiftOn{{$index}}" tabindex="22_{{$index}}"><label for=LiftOn{{$index}}>
+                                                    <i class="square" style="margin-left:10px;"></i>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="boolean-container">
+                                                <input type="checkbox" ng-model="item.LIO" id="LiftOff{{$index}}" tabindex="22_{{$index}}"><label for=LiftOff{{$index}}>
+                                                    <i class="square" style="margin-left:10px;"></i>
+                                                </label>
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <div class="boolean-container">
+                                                <input type="checkbox" ng-model="item.REW" id="Reworking{{$index}}" tabindex="22_{{$index}}"><label for=Reworking{{$index}}>
+                                                    <i class="square" style="margin-left:10px;"></i>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="boolean-container">
+                                                <input type="checkbox" ng-model="item.WET" id="Weighment{{$index}}" tabindex="22_{{$index}}"><label for=Weighment{{$index}}>
+                                                    <i class="square" style="margin-left:10px;"></i>
+                                                </label>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal" ng-click="ContainerSelect()">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="HnTModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of H&amp;T Charges</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <input placeholder="Search Me" id="stuffingbox" type="text" />
+                            <ul class="navList" id="lstHT">
+                               
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal" onclick="BindHnTCharges()">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="NewHnTModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title">List of H&amp;T Charges</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                           <input placeholder="Search Me" id="stuffingbox" type="text" />
+                            <ul class="navList" id="lstNewHT">
+                               
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal" onclick="AddHnTCharges()">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade" id="PortModal" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <div class="modal-content popup_modal">
+                        <div class="modal-header popup_header">
+                            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <h4 class="modal-title"> Choose Port Name</h4>
+                        </div>
+                        <div class="modal-body popup_body">
+                            <input placeholder="Search Me" id="Portbox" type="text" tabindex="99" />
+                            <ul class="navList" id="lstPort"></ul>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="row">
+                                <div class="col-md-offset-6 col-md-6">
+                                    <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script>
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+        GetPortList();
+
+        $('#InvoiceDate').focus();
+    });
+
+    function checkdate(id) {
+        //debugger;
+        var result = moment($('#' + id).val(), "DD/MM/YYYY", true).isValid();
+        if (!result) {
+            $('span[data-valmsg-for="' + id + '"]').text('Incorrect Date')
+            //setTimeout(function () { $('#ErrddlValidType').html(''); }, 5000);
+            $('#' + id).val('').focus();
+        }
+        else {
+            $('span[data-valmsg-for="' + id + '"]').text('');
+            return true;
+        }
+    }
+
+    function checkdateTime(id) {
+        debugger;
+        var result = moment($('#' + id).val(), "DD/MM/YYYY HH:mm", true).isValid();
+        if (!result) {
+            $('span[data-valmsg-for="' + id + '"]').text('Incorrect Date')
+            //setTimeout(function () { $('#ErrddlValidType').html(''); }, 5000);
+            $('#' + id).val('').focus();
+        }
+        else {
+            $('span[data-valmsg-for="' + id + '"]').text('');
+            return true;
+        }
+    }
+
+    function CallApplicationNomodal() {
+
+            debugger;
+
+            $("#stuffingModal").modal('show');
+            $('#stuffingModal').on('shown.bs.modal', function () {
+                $('#stuffingbox').focus();
+            })
+
+
+
+    }
+
+
+
+    function CallPayeemodal() {
+
+        debugger;
+
+        $("#PayeeModal").modal('show');
+        $('#PayeeModal').on('shown.bs.modal', function () {
+            $('#SearchPayeeText').focus();
+        })
+    }
+
+
+    function CallPortmodal() {
+
+        debugger;
+
+        $("#PortModal").modal('show');
+        $('#PortModal').on('shown.bs.modal', function () {
+            $('#Portbox').focus();
+        })
+    }
+
+
+
+    function selectPort(id, portName) {
+        debugger;
+        $('#PortName').val(portName);
+        $('#PortId').val(id);
+        $("#PortModal").modal("hide");
+        $('#MovementType').focus();
+    }
+
+    $('#Portbox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#lstPort > li').show();
+        } else {
+            $('#lstPort > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    function GetPortList() {
+        $.ajax({
+            type: 'GET',
+            url: '/Import/DSR_CWCImport/GetPortList',
+            dataType: 'JSON',
+            success: function (data) {
+                var html = '';
+                if (data != null) {
+                    var a = 100;
+                    for (var i = 0; i < data.length; i++) {
+                        a = a + i;
+                        html += '<li id="' + data[i].PortId + '" tabindex=' + a + ' onclick="selectPort(' + data[i].PortId + ',\'' + data[i].PortName + '\');" onkeypress="selectPort(' + data[i].PortId + ',\'' + data[i].PortName + '\');">' + data[i].PortName + '</li>';
+                    }
+                }
+                else {
+                    html = '<li></li>';
+                }
+
+                $('#lstPort').html(html);
+            }
+        });
+    }
+    $(function () {
+        $('#slim_scroll_1').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+    function PopupActivate() {
+        debugger;
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+
+        if (CharCode == 32) {
+           // $scope.GetOBLList();
+            $('#OBLNoModal').modal('show');
+
+        }
+    }
+
+    function AllowOnlyDecimal(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || (CharCode == 46) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+    function BindHnTCharges() {
+        debugger;
+        try {
+            var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+            rawJson.lstPostPaymentChrg = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeType == "CWC"; });
+            var rowCount = rawJson.lstPostPaymentChrg.length;
+            var html = '';
+            var TotalHT = 0;
+            var htWithOutTax = 0;
+            var TaxId = 1;
+            //var htcharge = [];
+            for (var i = 0; i < $("#lstHT li").length; i++) {
+                if ($('#chkAHT' + i).prop("checked")) {
+                    var item = JSON.parse(atob($('#chkAHT' + i).attr('data-val')));
+                    //htcharge.push(item);
+                    // item.ChargeId = item.ChargeId + indx;
+                    //TaxId = item.ChargeId;
+                    rawJson.lstPostPaymentChrg.push(item);
+                    TotalHT += item.Total;
+                    htWithOutTax += item.Amount;
+                    html += '<tr><td>' + item.Clause + '. ' + item.ChargeName + '</td>'
+                                        + '<td><input class="text-right" onkeypress = "return AllowOnlyDecimal(event)" id="' + item.ChargeId + '" type="text" value="' + item.Amount.toFixed(2) + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)" readonly /></td>'
+                                        + '<td><input class="text-right" id="IGSTP' + item.ChargeId + '" type="text" value="' + item.IGSTPer + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)" readonly /></td>'
+                                        + '<td><input class="text-right" id="IGSTA' + item.ChargeId + '" type="text" value="' + item.IGSTAmt.toFixed(2) + '" readonly /></td>'
+                                        + '<td><input class="text-right" id="CGSTP' + item.ChargeId + '" type="text" value="' + item.CGSTPer + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)" readonly /></td>'
+                                        + '<td><input class="text-right" id="CGSTA' + item.ChargeId + '" type="text" value="' + item.CGSTAmt.toFixed(2) + '" readonly /></td>'
+                                        + '<td><input class="text-right" id="SGSTP' + item.ChargeId + '" type="text" value="' + item.SGSTPer + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)" readonly /></td>'
+                                        + '<td><input class="text-right" id="SGSTA' + item.ChargeId + '" type="text" value="' + item.SGSTAmt.toFixed(2) + '" readonly /></td>'
+                                        + '<td><input class="text-right" id="TOT' + item.ChargeId + '" type="text" value="' + item.Total.toFixed(2) + '" readonly /></td>'
+                                        + '<td class="text-center" onclick="RemoveHT(' + rowCount + ',' + item.ChargeId + ')"><i class="fa fa-times Delete"></i></td></tr>';
+                    rowCount += 1;
+                    indx += 1;
+                }
+            }
+            $('#tblHTCharges tbody').html(html);
+            $('#TOTHTChrg').val((TotalHT).toFixed(2));
+            $('#rest-charge-details').removeClass('hide');
+            $('#btnSave').removeAttr('disabled');
+            rawJson.HTTotal = TotalHT;
+            rawJson.TotalAmt = rawJson.CWCAmtTotal + htWithOutTax;
+            rawJson.HTAmtTotal = htWithOutTax;
+            $('#PaymentSheetModelJson').val(JSON.stringify(rawJson));
+            $('#btnAddExtraHT').removeAttr('disabled');
+            $('#btnShowHT').prop('disabled', true);
+            $('#btnsave').removeAttr('disabled');
+            CalcTax(1);
+        }
+        catch (e) { console.log('BindHnTCharges : ' + e.message); }
+    }
+    var indx = 0;
+    var hazidx = 0;
+    function AddHnTCharges() {
+        debugger;
+        var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+        var rowCount = rawJson.lstPostPaymentChrg.length;
+        var html = '';
+        // var TaxId = 1;
+        var TotalHT = 0;
+        var htWithOutTax = 0;
+        var hazamt = 0;
+        var haztotal = 0;
+        var hazIGSTAmt = 0;
+        var hazCGSTAmt = 0;
+        var hazSGSTAmt = 0;
+        // indx = 0;
+        for (var i = 0; i < $("#lstNewHT li").length; i++) {
+            if ($('#chkNHT' + i).prop("checked")) {
+                $('#chkNHT' + i).removeAttr('checked');
+                var item = JSON.parse(atob($('#chkAHT' + i).attr('data-val')));
+              //  item.ChargeId = item.ChargeId  + indx;
+                //TaxId = item.ChargeId;
+                rawJson.lstPostPaymentChrg.push(item);
+                hazamt += item.HazAmt;
+                haztotal += item.HazTotal;
+
+                hazIGSTAmt += item.HAZIGSTAmt;
+                hazCGSTAmt += item.HAZCGSTAmt;
+                hazSGSTAmt += item.HAZSGSTAmt;
+
+                TotalHT += item.Total;
+                htWithOutTax += item.Amount;
+
+                html += '<tr><td>' + item.Clause + '. ' + item.ChargeName + '</td>'
+                                    + '<td><input class="text-right" onkeypress = "return AllowOnlyDecimal(event)" id="' + item.ChargeId + '" type="text" value="' + item.Amount.toFixed(2) + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)" readonly /></td>'
+                                    + '<td><input class="text-right" id="IGSTP' + item.ChargeId + '" type="text" value="' + item.IGSTPer + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)" readonly /></td>'
+                                    + '<td><input class="text-right" id="IGSTA' + item.ChargeId + '" type="text" value="' + item.IGSTAmt.toFixed(2) + '" readonly /></td>'
+                                    + '<td><input class="text-right" id="CGSTP' + item.ChargeId + '" type="text" value="' + item.CGSTPer + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)" readonly /></td>'
+                                    + '<td><input class="text-right" id="CGSTA' + item.ChargeId + '" type="text" value="' + item.CGSTAmt.toFixed(2) + '" readonly /></td>'
+                                    + '<td><input class="text-right" id="SGSTP' + item.ChargeId + '" type="text" value="' + item.SGSTPer + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)" readonly /></td>'
+                                    + '<td><input class="text-right" id="SGSTA' + item.ChargeId + '" type="text" value="' + item.SGSTAmt.toFixed(2) + '" readonly /></td>'
+                                    + '<td><input class="text-right" id="TOT' + item.ChargeId + '" type="text" value="' + item.Total.toFixed(2) + '" readonly /></td>'
+                                    + '<td class="text-center" onclick="RemoveHT(' + rowCount + ',' + item.ChargeId + ')"><i class="fa fa-times Delete"></i></td></tr>';
+
+
+                rowCount += 1;
+                indx += 1;
+            }
+        }
+        $('#tblHTCharges tbody').append(html);
+
+        var HTCharge = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeType == "HT"; });
+        if (HTCharge.length > 0) {
+            debugger;
+            for (var i = 0; i < HTCharge.length; i++) {
+                if (HTCharge[i].Clause == 'Haz') {
+                    hazidx = HTCharge[i].ChargeId;
+                }
+            }
+        }
+        var htpcharge = rawJson.lstPostPaymentChrg.length;
+        var htClause = '';
+        var hthcharge = 0;
+        var hthgst = 0;
+        var httot = 0;
+        if (htpcharge > 0) {
+            for (var i = 0; i < htpcharge; i++) {
+                htClause = rawJson.lstPostPaymentChrg[i].Clause;
+                if (htClause === 'Haz') {
+                    rawJson.lstPostPaymentChrg[i].Amount = rawJson.lstPostPaymentChrg[i].Amount + hazamt;
+                    rawJson.lstPostPaymentChrg[i].Taxable = rawJson.lstPostPaymentChrg[i].Taxable + hazamt;
+                    hthcharge = rawJson.lstPostPaymentChrg[i].Taxable;
+                    $('#' + hazidx).val(hthcharge.toFixed(2));
+                    if (rawJson.IsPartyStateInCompState == false) {
+                        rawJson.lstPostPaymentChrg[i].IGSTAmt = rawJson.lstPostPaymentChrg[i].IGSTAmt + hazIGSTAmt;
+                        hthgst = rawJson.lstPostPaymentChrg[i].IGSTAmt;
+                        $('#IGSTA' + hazidx).val(hthgst.toFixed(2));
+                        rawJson.lstPostPaymentChrg[i].Total = hthcharge + hthgst;
+                        httot = rawJson.lstPostPaymentChrg[i].Total;
+                        $('#TOT' + hazidx).val(httot.toFixed(2));
+                        break;
+                    }
+                    else {
+                        var hsgst = 0;
+                        var hcgst = 0;
+                        var hthscgst = 0;                       
+                        rawJson.lstPostPaymentChrg[i].CGSTAmt = rawJson.lstPostPaymentChrg[i].CGSTAmt + hazCGSTAmt;
+                        rawJson.lstPostPaymentChrg[i].SGSTAmt = rawJson.lstPostPaymentChrg[i].SGSTAmt + hazSGSTAmt;
+
+                        hcgst = rawJson.lstPostPaymentChrg[i].CGSTAmt;
+                        hsgst = rawJson.lstPostPaymentChrg[i].SGSTAmt;
+                        hthgst = rawJson.lstPostPaymentChrg[i].CGSTAmt + rawJson.lstPostPaymentChrg[i].SGSTAmt;
+                        $('#CGSTA' + hazidx).val(hcgst.toFixed(2));
+                        $('#SGSTA' + hazidx).val(hsgst.toFixed(2));
+                        rawJson.lstPostPaymentChrg[i].Total = hthcharge + hthgst;
+                        httot = rawJson.lstPostPaymentChrg[i].Total;
+                        $('#TOT' + hazidx).val(httot.toFixed(2));
+                        break;
+                    }
+
+                }
+            }
+        }
+
+        rawJson.HTTotal += TotalHT + haztotal;
+        rawJson.TotalAmt = rawJson.CWCAmtTotal + htWithOutTax + haztotal;
+        rawJson.HTAmtTotal += htWithOutTax + hazamt;
+
+        $('#PaymentSheetModelJson').val(JSON.stringify(rawJson));
+        CalcTax(1);
+    }
+
+    function RemoveHT(idx, chargeid) {
+        debugger;
+
+
+        var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+        var removeJson=rawJson.lstPostPaymentChrg.splice(idx, 1);
+        //var rowCount = rawJson.lstPostPaymentChrg.length;
+        var rowCount = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeType == "CWC"; }).length;
+        var html = '';
+
+        var TotalHT = 0;
+        var htWithOutTax = 0;
+
+        var hazamt = 0;
+        var haztotal = 0;
+        var hazIGSTAmt = 0;
+        var hazCGSTAmt = 0;
+        var hazSGSTAmt = 0;
+
+        hazamt = removeJson[0].HazAmt;
+        haztotal = removeJson[0].HazTotal;
+        hazIGSTAmt = removeJson[0].HAZIGSTAmt;
+        hazCGSTAmt = removeJson[0].HAZCGSTAmt;
+        hazSGSTAmt = removeJson[0].HAZSGSTAmt;
+
+        var HTCharge = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeType == "HT"; });
+        if (HTCharge.length > 0) {
+            debugger;
+            for (var i = 0; i < HTCharge.length; i++) {
+                if (HTCharge[i].Clause == 'Haz') {
+                    hazidx = HTCharge[i].ChargeId;
+                }
+            }
+        }
+
+        var HTCharge = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeType == "HT"; });
+        $.each(HTCharge, function (i, item) {
+            TotalHT += item.Total;
+            // item.ChargeId = item.ChargeId;
+            // TaxId = item.ChargeId;
+            htWithOutTax += item.Amount;
+            html += '<tr><td>' + item.Clause + '. ' + item.ChargeName + '</td>'
+                                + '<td><input class="text-right" onkeypress = "return AllowOnlyDecimal(event)" id="' + item.ChargeId + '" type="text" value="' + item.Amount.toFixed(2) + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)" readonly /></td>'
+                                + '<td><input class="text-right" id="IGSTP' + item.ChargeId + '" type="text" value="' + item.IGSTPer + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)" readonly /></td>'
+                                + '<td><input class="text-right" id="IGSTA' + item.ChargeId + '" type="text" value="' + item.IGSTAmt.toFixed(2) + '" readonly /></td>'
+                                + '<td><input class="text-right" id="CGSTP' + item.ChargeId + '" type="text" value="' + item.CGSTPer + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)" readonly /></td>'
+                                + '<td><input class="text-right" id="CGSTA' + item.ChargeId + '" type="text" value="' + item.CGSTAmt.toFixed(2) + '" readonly /></td>'
+                                + '<td><input class="text-right" id="SGSTP' + item.ChargeId + '" type="text" value="' + item.SGSTPer + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)" readonly /></td>'
+                                + '<td><input class="text-right" id="SGSTA' + item.ChargeId + '" type="text" value="' + item.SGSTAmt.toFixed(2) + '" readonly /></td>'
+                                + '<td><input class="text-right" id="TOT' + item.ChargeId + '" type="text" value="' + item.Total.toFixed(2) + '" readonly /></td>'
+                                + '<td class="text-center" onclick="RemoveHT(' + rowCount + ',' + item.ChargeId + ')"><i class="fa fa-times Delete"></i></td></tr>';
+            rowCount += 1;
+        });
+        var rowLength = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeType == "HT"; }).length;
+        if (rowLength <= 0) {
+            $('#tblHTCharges tbody').html('');
+            rawJson.HTTotal = 0;
+        }
+        else {
+            $('#tblHTCharges tbody').html(html);
+            rawJson.HTTotal = TotalHT;
+        }
+
+        var htpcharge = rawJson.lstPostPaymentChrg.length;
+        var htClause = '';
+        var hthcharge = 0;
+        var hthgst = 0;
+        var httot = 0;
+        if (htpcharge > 0) {
+            for (var i = 0; i < htpcharge; i++) {
+                htClause = rawJson.lstPostPaymentChrg[i].Clause;
+                if (htClause === 'Haz') {
+                    rawJson.lstPostPaymentChrg[i].Amount = rawJson.lstPostPaymentChrg[i].Amount - hazamt;
+                    rawJson.lstPostPaymentChrg[i].Taxable = rawJson.lstPostPaymentChrg[i].Taxable - hazamt;
+                    hthcharge = rawJson.lstPostPaymentChrg[i].Taxable;
+                    $('#' + hazidx).val(hthcharge.toFixed(2));
+                    debugger;
+                    if (rawJson.IsPartyStateInCompState == false) {
+                        rawJson.lstPostPaymentChrg[i].IGSTAmt = rawJson.lstPostPaymentChrg[i].IGSTAmt - hazIGSTAmt;
+                        hthgst = rawJson.lstPostPaymentChrg[i].IGSTAmt;
+                        $('#IGSTA' + hazidx).val(hthgst.toFixed(2));
+                        rawJson.lstPostPaymentChrg[i].Total = hthcharge + hthgst;
+                        httot = rawJson.lstPostPaymentChrg[i].Total;
+                        $('#TOT' + hazidx).val(httot.toFixed(2));
+                        break;
+                    }
+                    else {
+                        var hsgst = 0;
+                        var hcgst = 0;
+                        rawJson.lstPostPaymentChrg[i].CGSTAmt = rawJson.lstPostPaymentChrg[i].CGSTAmt - hazCGSTAmt;
+                        rawJson.lstPostPaymentChrg[i].SGSTAmt = rawJson.lstPostPaymentChrg[i].SGSTAmt - hazSGSTAmt;
+                        hcgst = rawJson.lstPostPaymentChrg[i].CGSTAmt;
+                        hsgst = rawJson.lstPostPaymentChrg[i].SGSTAmt;
+                        hthgst = rawJson.lstPostPaymentChrg[i].CGSTAmt + rawJson.lstPostPaymentChrg[i].SGSTAmt;
+                        $('#CGSTA' + hazidx).val(hcgst.toFixed(2));
+                        $('#SGSTA' + hazidx).val(hsgst.toFixed(2));
+                        rawJson.lstPostPaymentChrg[i].Total = hthcharge + hthgst;
+                        httot = rawJson.lstPostPaymentChrg[i].Total;
+                        $('#TOT' + hazidx).val(httot.toFixed(2));
+                        break;
+                    }
+
+                }
+            }
+        }
+
+        rawJson.HTTotal = TotalHT - haztotal;
+        rawJson.TotalAmt = rawJson.CWCAmtTotal + htWithOutTax - haztotal;
+        rawJson.HTAmtTotal = htWithOutTax - hazamt;
+
+        //rawJson.TotalAmt = rawJson.CWCAmtTotal + htWithOutTax;
+        //rawJson.HTAmtTotal = htWithOutTax;
+        $('#PaymentSheetModelJson').val(JSON.stringify(rawJson));
+        CalcTax(chargeid);
+    }
+
+
+    function CalcTax(elem) {
+        debugger;
+        var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+        //var MAmt = Number($('#' + elem).val());
+        //var IP = 0;
+        //var CP = 0;
+        //var SP = 0;
+        ////if (rawJson.InvoiceType == "Tax") {
+        //if (TaxType == "Tax") {
+        //    /*if (rawJson.PartyStateCode == rawJson.CompStateCode) {
+        //        CP = Number($('#CGSTP' + elem).val());
+        //        SP = Number($('#SGSTP' + elem).val());
+        //    }
+        //    else {
+        //        IP = Number($('#IGSTP' + elem).val());
+        //    }*/
+        //    /*  if (parseFloat(rawJson.lstPostPaymentChrg[0].CGSTAmt) > 0 || parseFloat(rawJson.lstPostPaymentChrg[0].SGSTAmt) > 0) {
+        //          CP = Number($('#CGSTP' + elem).val());
+        //          SP = Number($('#SGSTP' + elem).val());
+        //      }
+        //      else if (parseFloat(rawJson.lstPostPaymentChrg[0].IGSTAmt) > 0) {
+        //          IP = Number($('#IGSTP' + elem).val());
+        //      }*/
+        //    var a = $('#IsPartyStateInCompState').val();
+
+        //    if ($('#IsPartyStateInCompState').val() == "true") {
+        //        CP = Number($('#CGSTP' + elem).val());
+        //        SP = Number($('#SGSTP' + elem).val());
+        //    }
+        //    else {
+        //        IP = Number($('#IGSTP' + elem).val());
+        //    }
+        //}
+        var CWCCharge = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeType == "CWC"; });
+        //var selectedItem = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeId == elem; })[0];
+        //if (selectedItem == undefined)
+        //    selectedItem = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeId + '_' + (indx - 1) == elem; })[0];
+
+        //if (selectedItem != undefined) {
+        //    $('#IGSTA' + elem).val((MAmt * (IP / 100)).toFixed(2));
+        //    $('#CGSTA' + elem).val((MAmt * (CP / 100)).toFixed(2));
+        //    $('#SGSTA' + elem).val((MAmt * (SP / 100)).toFixed(2));
+        //    $('#TOT' + elem).val((MAmt + (MAmt * (IP / 100)) + (MAmt * (CP / 100)) + (MAmt * (SP / 100))).toFixed(2));
+
+        //    selectedItem.Amount = MAmt;
+        //    selectedItem.Taxable = MAmt;
+        //    //selectedItem.IGSTPer = IP;
+        //    selectedItem.IGSTAmt = MAmt * (IP / 100);
+        //    //selectedItem.CGSTPer = CP;
+        //    selectedItem.CGSTAmt = MAmt * (CP / 100);
+        //    //selectedItem.SGSTPer = SP;
+        //    selectedItem.SGSTAmt = MAmt * (SP / 100);
+        //    selectedItem.Total = (MAmt + (MAmt * (IP / 100)) + (MAmt * (CP / 100)) + (MAmt * (SP / 100)));
+        //}
+        //else {
+        //    $('#IGSTA' + elem).val(0);
+        //    $('#CGSTA' + elem).val(0);
+        //    $('#SGSTA' + elem).val(0);
+        //    $('#TOT' + elem).val(0);
+
+        //}
+
+        var TotalCWC = 0;
+        //var CWCCharge = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeType == "CWC"; });
+
+        rawJson.TotalCGST = 0;
+        rawJson.TotalSGST = 0;
+        rawJson.TotalIGST = 0;
+        rawJson.TotalAmt = 0;
+
+        $.each(CWCCharge, function (i, item) {
+            rawJson.TotalAmt += item.Amount;
+            rawJson.TotalCGST += item.CGSTAmt;
+            rawJson.TotalSGST += item.SGSTAmt;
+            rawJson.TotalIGST += item.IGSTAmt;
+            TotalCWC += item.Total;
+        });
+        $('#TOTCWCChrg').val((TotalCWC).toFixed(2));
+        //$('#TOTCWCTDS').val(((TotalCWC * 10) / 100).toFixed(2));
+        rawJson.CWCTotal = TotalCWC;
+        var TotalHT = 0;
+        var HTCharge = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeType == "HT"; });
+
+        $.each(HTCharge, function (i, item) {
+            rawJson.TotalAmt += item.Amount;
+            rawJson.TotalCGST += item.CGSTAmt;
+            rawJson.TotalSGST += item.SGSTAmt;
+            rawJson.TotalIGST += item.IGSTAmt;
+            TotalHT += item.Total;
+        });
+        $('#TOTHTChrg').val((TotalHT).toFixed(2));
+        //$('#TOTHTTDS').val(((TotalHT * 2) / 100).toFixed(2));
+        rawJson.HTTotal = TotalHT;
+        $('#AllTotal').val((TotalCWC + TotalHT).toFixed(2));
+        rawJson.AllTotal = (TotalCWC + TotalHT);
+        $('#PaymentSheetModelJson').val(JSON.stringify(rawJson));
+        CalcInvoice();
+    }
+    function CalcInvoice() {
+        debugger;
+        var Total = Number($('#AllTotal').val());
+        var cwcTDS = 0;// Number($('#TOTCWCTDS').val());
+        var htTDS = 0;//Number($('#TOTHTTDS').val());
+        var grandTDS = 0;//cwcTDS + htTDS;
+        //$('#TotalTDS').val(grandTDS.toFixed(2));
+        var RoundUp = Number($('#RoundUp').val());
+        $('#InvoiceValue').val((Total - (grandTDS + RoundUp)).toFixed(2));
+        var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+        //console.clear();
+        //console.log(JSON.stringify(rawJson));
+        //rawJson.AllTotal = Total;
+        rawJson.CWCTDS = cwcTDS;
+        rawJson.HTTDS = htTDS;
+        rawJson.TDS = grandTDS;
+        rawJson.RoundUp = RoundUp;
+        rawJson.InvoiceAmt = rawJson.AllTotal - (rawJson.TDS + rawJson.RoundUp);
+
+        rawJson.AllTotal = (rawJson.CWCTotal + rawJson.HTTotal);
+        var round = Math.ceil(rawJson.AllTotal) - rawJson.AllTotal;
+        rawJson.InvoiceAmt = Math.ceil(rawJson.AllTotal);
+        console.log(rawJson.AllTotal.toFixed(2));
+        console.log(round.toFixed(2));
+        $('#AllTotal').val(rawJson.AllTotal.toFixed(2));
+        $('#RoundUp').val(round.toFixed(2));
+        $('#InvoiceValue').val(rawJson.InvoiceAmt.toFixed(2));
+        $('#PaymentSheetModelJson').val(JSON.stringify(rawJson));
+        //$('#rest-charge-details').removeClass('hide');
+        debugger;
+
+
+        // $('#DeliApp_DeliveryAppDtlXml').val(JSON.stringify(ArrayOfDeliveryApp));
+        //$('#lstContWiseAmount').push(JSON.stringify(rawJson.lstContWiseAmount));
+
+
+
+
+        $('#lstContWiseAmountXML').val(JSON.stringify(rawJson.lstContWiseAmount));
+        $('#lstOperationCFSCodeWiseAmountXML').val(JSON.stringify(rawJson.lstOperationCFSCodeWiseAmount));
+        $('#lstPostPaymentChrgXML').val(JSON.stringify(rawJson.lstPostPaymentChrg));
+        $('#lstPostPaymentChrgBreakupXML').val(JSON.stringify(rawJson.lstPostPaymentChrgBreakup));
+        $('#lstPostPaymentContXML').val(JSON.stringify(rawJson.lstPostPaymentCont));
+        $('#lstPrePaymentContXML').val(JSON.stringify(rawJson.lstPrePaymentCont));
+    }
+    function ShowList() {
+        $('#SearchInvoiceNo').val("");
+        $('#SearchInvoiceDate').val("");
+        $('#DivListOfInvoice').load('/Import/DSR_CWCImport/ListOfImpYardReassessmentInvoice?Module=IMPYard');
+    }
+    function SearchInvoice() {
+        var InvoiceNo = $('#SearchInvoiceNo').val().trim();
+        var InvoiceDate = $('#SearchInvoiceDate').val().trim();
+        if ($('#SearchInvoiceNo').val() == "" && $('#SearchInvoiceDate').val() == "")
+            alert("Enter Invoice No. or Invoice Date to Search");
+        else if ($('#SearchInvoiceNo').val() != "" && $('#SearchInvoiceDate').val() != "" && Validate() == true)
+            $('#DivListOfInvoice').load('/Import/DSR_CWCImport/ListOfImpYardReassessmentInvoice?InvoiceNo=' + InvoiceNo + '&InvoiceDate=' + InvoiceDate + "&Module=IMPYard");
+        else if ($('#SearchInvoiceNo').val() != "")
+            $('#DivListOfInvoice').load('/Import/DSR_CWCImport/ListOfImpYardReassessmentInvoice?InvoiceNo=' + InvoiceNo + "&Module=IMPYard");
+        else if (Validate() == true)
+            $('#DivListOfInvoice').load('/Import/DSR_CWCImport/ListOfImpYardReassessmentInvoice?InvoiceDate=' + InvoiceDate + "&Module=IMPYard");
+    }
+    function Validate() {
+        debugger;
+        var date = document.getElementById("SearchInvoiceDate").value.split("/");
+        var day = date[0];
+        var month = date[1];
+        var dateString = document.getElementById("SearchInvoiceDate").value;
+        var regex = /^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/;
+
+        if (day > 31) {
+            alert("Please enter correct date");
+            return false;
+        }
+        else
+            if (month > 12) {
+                alert("Please enter correct Month");
+                return false;
+            }
+        return true;
+    }
+
+    function isDecimalNumber(event) {
+        let charCode = (event.which) ? event.which : event.keyCode;
+        if (charCode != 46 && charCode > 31
+            && (charCode < 48 || charCode > 57))
+            return false;
+        return true;
+    }
+</script>

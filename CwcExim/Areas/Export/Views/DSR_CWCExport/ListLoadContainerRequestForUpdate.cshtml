@@ -1,0 +1,146 @@
+﻿@model IEnumerable<CwcExim.Areas.Export.Models.DSRListLoadContReq>
+<table class="table table-bordered table-striped" id="tblContReq" style="width:100%">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("SL No")</th>
+            <th>@Html.DisplayName("Container Request No")</th>
+            <th>@Html.DisplayName("Container Request Date ")</th>
+            <th>@Html.DisplayName("CHA")</th>           
+            <th class="text-center">@Html.DisplayName("Print")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center">@SerialNo</td>
+                    <td>@item.LoadContReqNo</td>
+                    <td>@item.LoadContReqDate</td>
+                    <td>@item.CHAName</td>            
+                    <td class="text-center"><a href="#" onclick="PrintContReq(@item.LoadContReqId)"><i class="fa fa-file-pdf-o Edit" aria-hidden="true"></i></a></td>
+                </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+<script>
+    $(document).ready(function () {
+        debugger;
+      
+
+        var tblContReq = $('#tblContReq').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                       { "sName": "SL No","width": "8%" },
+                       { "sName": "LoadContReqNo", "bSortable": false },
+                       { "sName": "LoadContReqDate", "bSortable": false },
+                       { "sName": "CHAName" },                      
+                       { "sName": "Print", "bSortable": false, "width": "10%" },
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0)', nRow).addClass("text-center");
+                $('td:eq(4)', nRow).addClass("text-center");
+                $('td:eq(0)', nRow).css("width", "8%");
+                $('td:eq(4)', nRow).css("width", "10%");
+               
+
+            }
+           
+        });
+        new $.fn.dataTable.FixedHeader(tblContReq);
+    });
+    //function EditContReq(LoadContReqId)
+    //{
+    //    $('#DivBody').load('/Export/DSR_CWCExport/EditLoadContainerRequest?LoadContReqId=' + LoadContReqId);
+    //}
+    //function ViewContReq(LoadContReqId)
+    //{
+    //    $('#DivBody').load('/Export/DSR_CWCExport/ViewLoadContainerRequest?LoadContReqId=' + LoadContReqId);
+    //}
+
+    @*function DelContReq(LoadContReqId) {
+        var Confirm = confirm("Are you sure you want to Delete?");
+        if (Confirm == true) {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("DeleteLoadContReq", "DSR_CWCExport", new { areas="Export"}) ',
+                type: 'POST',
+                data: { LoadContReqId: LoadContReqId },
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                success: function (data) {
+                    alert(data.Message);
+                    if (data.Status == 1)
+                        $('#DivLoadContList').load('/Export/DSR_CWCExport/ListLoadContainerRequest');
+                }
+            });
+        }
+    }*@
+
+
+    function PrintContReq(LoadContReqId) {
+        debugger;
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: "/Export/DSR_CWCExport/PrintContainerRequest",
+            type: "POST",
+            dataType: "JSON",
+            data: { LoadContReqId: LoadContReqId },
+            headers: { "__RequestVerificationToken": Token },
+            async: false,
+            success: function (data) {
+                if (data.Status == 1) {
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                }
+                else {
+                    alert(data.Message);
+                }
+            }
+        });
+    }
+    var Page = 0;
+    function LoadMoreListData() {
+        debugger;
+        var ShippbillNo=$('#SearchShippbillNo').val();
+        if(ShippbillNo!='' && ShippbillNo!=null){
+            var URL='/Export/DSR_CWCExport/ListLoadMoreLoadContainerRequest?ShippbillNo='+ ShippbillNo;
+        }
+        else{
+            var URL='/Export/DSR_CWCExport/ListLoadMoreLoadContainerRequest?ShippbillNo='+ "";
+        }
+        $.ajax({
+            url: URL,
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1, ShippbillNo:ShippbillNo },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblContReq').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.LoadContReqNo],
+        [item.LoadContReqDate],
+        [item.CHAName],
+      
+        ['<a href="#" onclick=PrintContReq(' + [item.LoadContReqId] + ')><i class="fa fa-file-pdf-o Edit"></i></a>'],
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+
+</script>
+

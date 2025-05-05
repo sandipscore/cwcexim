@@ -1,0 +1,968 @@
+﻿@model CwcExim.Areas.Import.Models.PPG_JobOrder
+
+<script src="~/Areas/Import/Scripts/App/Services/JobOrderService.js"></script>
+<script src="~/Areas/Import/Scripts/App/Controllers/JobOrderCtrl.js"></script>
+<script>
+    angular.bootstrap(document.getElementById('JobOrderAppDiv'), ['CWCApp']);
+</script>
+<style>
+    #DivFormOneDet {
+        height: 500px;
+        overflow-x: hidden;
+    }
+
+    #tbleSline.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .slim_tble {
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .txt_wrp {
+        overflow: hidden;
+        word-wrap: break-word;
+    }
+</style>
+
+@if (ViewBag.jdate != null)
+{
+    <input type="hidden" id="jdt" value="@ViewBag.jdate" />
+}
+else
+{
+    <input type="hidden" id="jdt" value="" />
+}
+
+
+@Html.AntiForgeryToken()
+@Html.HiddenFor(m => m.StringifyXML)
+@Html.HiddenFor(m => m.deleteXML)
+@Html.HiddenFor(m => m.ImpJobOrderId)
+
+
+<div id="JobOrderAppDiv" ng-controller="JobOrderCtrl">
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-offset-0-5 col-md-11">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Job Order</h4>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top" style="padding:0 10px;">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Pickup Location:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @if (Model.lstpickup.Count > 0)
+                                {
+                                    @Html.DropDownListFor(m => m.PickUpLocation, new SelectList(Model.lstpickup, "pickup_location", "pickup_location"), "---Select---", new { @class = "form-control input-sm dropdown" })
+                                }
+                                else
+                                {
+                                    @Html.DropDownListFor(m => m.PickUpLocation, Enumerable.Empty<SelectListItem>(), "----Select----", new { @class = "form-control input-sm dropdown" })
+                                }
+                                @Html.ValidationMessageFor(m => m.PickUpLocation, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Job Order No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.JobOrderNo, new { @class = "form-control input-sm", @readonly = true })
+                                @Html.HiddenFor(m => m.ImpJobOrderId)
+                            </div>
+
+                            <div class="col-md-offset-0-5 col-md-1-5 col_cus_2 padding_rt">
+                                <label>Job Order Date:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+
+                                @*@Html.TextBoxFor(m => m.JobOrderDate, new { @class = "form-control input-sm", @readonly = true })*@
+                                <input type="text" id="JobOrderDate"
+                                       name="date"
+                                       placeholder="dd/mm/yyyy"
+                                       onkeyup="var v = this.value;
+                                                if (v.match(/^\d{2}$/) !== null) {
+                                                this.value = v + '/';
+                                                } else if (v.match(/^\d{2}\/\d{2}$/) !== null) {
+                                                this.value = v + '/';
+                                                }"
+                                       maxlength="10" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top" style="padding:0 10px;">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Job Order For:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                <div class="boolean-container">
+                                    @Html.RadioButtonFor(m => m.JobOrderFor, "2", new { @id = "rbLC", @checked = true })
+                                    <label for="rbLC"><i class="circle"></i><span>Loaded Container / CBT</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top" style="padding:0 10px;">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Transport By:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                <div class="boolean-container">
+                                    @Html.RadioButtonFor(m => m.TransportBy, "2", new { @id = "Rail", @checked = true })
+                                    <label for="Rail"><i class="circle"></i><span>Rail</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top" style="padding:0 10px;">
+                        <div class="form-group Form_Input">
+                            @Html.HiddenFor(m => m.TrainSummaryID)
+                            @Html.Hidden("FormOneDetailId")
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Train No.:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.Hidden("TNo")
+                                @Html.TextBoxFor(m => m.TrainNo, new { @class = "form-control input-sm", @readonly = true })
+                                @*<span class="search"><i class="fa fa-search" ng-click="GetTrainDetails()"></i></span>*@
+                                @Html.ValidationMessageFor(m => m.TrainNo, "", new { @class = "Error_Msg" })
+                            </div>
+
+                            <div class="col-md-2-5 padding_lt">
+                                <input style="width:100%; margin:0;" type="submit" id="BtnSearch" value="Add New Container / CBT" class="btn log_Btn_sm" ng-click="GetTrainDetails()" ng-hide="true" />
+                            </div>
+
+                            <div class="col-md-offset-2 col-md-1-5 col_cus_offset_3 col_cus_2 padding_rt">
+                                <label>Train Date:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                @Html.Hidden("TrainDt")
+                                @*@Html.TextBoxFor(m => m.TrainDate, new { @class = "form-control input-sm", @readonly = true })*@
+                                <input type="text" id="TrainDate"
+                                       name="date"
+                                       placeholder="dd/mm/yyyy"
+                                       onkeyup="var v = this.value;
+                                                if (v.match(/^\d{2}$/) !== null) {
+                                                this.value = v + '/';
+                                                } else if (v.match(/^\d{2}\/\d{2}$/) !== null) {
+                                                this.value = v + '/';
+                                                }"
+                                       maxlength="10" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="SignUp_space_bottom SignUp_space_top"><div class="clearfix"></div></div>
+                    </div>
+
+                    <div class="brdr_sec">
+                        <div ng-hide="true">
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label class="InputLabel" for="CNNo">Container / CBT No.</label><span class="LabelColon">:</span>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2_5">
+                                        <input class="form-control input-sm" id="CNNo" name="CNNo" type="text" value="" readonly autocomplete="off">
+                                    </div>
+
+                                    <div class="col-md-offset-4 col-md-1-5 col_cus_offset_3 col_cus_2 padding_rt">
+                                        <label>Size:</label>
+                                        @Html.Hidden("TrainSummarySerial")
+                                        @Html.Hidden("TrainSummaryID")
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.DropDownList("size", new List<SelectListItem>{
+                                        new SelectListItem {Text="20",Value="20" },
+                                        new SelectListItem {Text="40",Value="40" }
+                                        }, "---Select---", new { @class = "form-control input-sm dropdown", @disabled = "disabled" })
+                                        @Html.ValidationMessage("size", "", new { @class = "Error_Msg" })
+
+
+
+                                    </div>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label class="InputLabel" for="CSNo">Custom Seal No.</label>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2_5">
+                                        <input class="form-control input-sm" id="CSNo" name="CSNo" type="text" value="" autocomplete="off">
+                                    </div>
+
+                                    <div class="col-md-offset-4 col-md-1-5 col_cus_offset_3 col_cus_2 padding_rt">
+                                        <label class="InputLabel" for="SLNo">Shipping Line No:</label>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2_5">
+                                        <input class="form-control input-sm" id="SLNo" name="SLNo" type="text" value="" autocomplete="off">
+                                    </div>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label class="InputLabel" for="SLine">Shipping Line:</label>
+                                    </div>
+                                    <div class="col-md-10-5">
+                                        @Html.Hidden("SlineId")
+                                        <input class="form-control input-sm" id="SLine" name="SLine" type="text" value="" readonly>
+                                        <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#slmodal"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label class="InputLabel" for="CrType">Cargo Type</label><span class="LabelColon">:</span>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2_5">
+                                        @Html.DropDownList("CrType", new List<SelectListItem>{
+                                        new SelectListItem {Text="HAZ",Value="HAZ" },
+                                        new SelectListItem {Text="Non HAZ",Value="Non HAZ" }
+                                        }, "---Select---", new { @class = "form-control input-sm dropdown" })
+                                        @Html.ValidationMessage("CrType", "", new { @class = "Error_Msg" })
+
+
+                                    </div>
+
+                                    <div class="col-md-offset-4 col-md-1-5 col_cus_offset_3 col_cus_2 padding_rt">
+                                        <label class="InputLabel" for="CLType">Container / CBT Load Type:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+
+                                        @Html.DropDownList("CLType", new List<SelectListItem>{
+                                        new SelectListItem {Text="FCL",Value="FCL" },
+                                        new SelectListItem {Text="LCL",Value="LCL" }
+                                        ,
+                                        new SelectListItem {Text="DD",Value="DD" }
+                                        }, "---Select---", new { @class = "form-control input-sm dropdown" })
+                                        @Html.ValidationMessage("CLType", "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label class="InputLabel" for="TForm">Transport Form</label><span class="LabelColon">:</span>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2_5">
+                                        @Html.Hidden("PortID")
+                                        @if (Model.lstPort.Count > 0)
+                                        {
+                                            @Html.DropDownList("TransportForm", new SelectList(Model.lstPort, "PortName", "PortName"), "---Select---", new { @class = "form-control input-sm dropdown" })
+                                        }
+                                        else
+                                        {
+                                            @Html.DropDownList("TransportForm", Enumerable.Empty<SelectListItem>(), "----Select----", new { @class = "form-control input-sm dropdown" })
+                                        }
+                                        @Html.ValidationMessage("TransportForm", "", new { @class = "Error_Msg" })
+
+
+                                    </div>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label class="InputLabel" for="NPckg">No of Packages</label><span class="LabelColon">:</span>
+                                        @Html.Hidden("Wagon_No")
+                                        @Html.Hidden("Line_Seal_No")
+                                        @Html.Hidden("Cont_Commodity")
+                                        @Html.Hidden("Ct_Tare")
+                                        @Html.Hidden("Cargo_Wt")
+                                        @Html.Hidden("Ct_Status")
+                                        @Html.Hidden("Destination")
+                                        @Html.Hidden("Smtp_No")
+                                        @Html.Hidden("Received_Date")
+                                        @Html.Hidden("Genhaz")
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2_5">
+                                        <input class="form-control input-sm" id="NPckg" name="NPckg" type="text" value="" autocomplete="off">
+                                    </div>
+                                    <div class="col-md-offset-4 col-md-1-5 col_cus_offset_3 col_cus_2 padding_rt">
+                                        <label class="InputLabel" for="GWeg">Gross Weight(Kg)</label><span class="LabelColon">:</span>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2_5">
+                                        <input class="form-control input-sm" id="GWeg" name="GWeg" type="text" value="" autocomplete="off">
+                                    </div>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        @Html.Label("Remarks", new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        @Html.TextArea("Remarks", new { @class = "InputLabel", @style = "width:100%;height:100px;", @onchange = "checklenrem();" })
+                                    </div>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label class="InputLabel" for="CargoDescription">Cargo Description:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        <textarea cols="20" id="CargoDescription" name="CargoDescription" rows="2" style="width:100%;height:100px" onchange="checklencar();"></textarea>
+                                    </div>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="SignUp_space_bottom SignUp_space_top"><div class="clearfix"></div></div>
+                        </div>
+
+                        @*<div class="row">
+                            <div class="col-md-offset-4 col-md-2" style="text-align:center">
+                            <input type="button" id="AddJobOrd" value="Add" onclick="AddJoborder()" disabled class="btn log_Btn_sm" />
+                            </div>
+                            <div class="col-md-2" style="text-align:center">
+                            <input type="button" id="RsetJobOrd" value="Reset" onclick="ResetJobOrder()" class="btn log_Btn_sm" />
+                            </div>
+                            </div>*@
+
+                        <div class="Form_Space_top">
+                            <div id="DivFormOneDet">
+                                <table class="table table-striped table-bordered dataTable" style="width:100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>Sl No</th>
+                                            <th width="10%">Container / CBT No.</th>
+                                            <th width="5%">Size</th>
+                                            <th width="10%">Shipping Line No</th>
+                                            <th>Shipping Line</th>
+                                            <th>Cargo Type</th>
+                                            <th width="8%">Container / CBT Load Type</th>
+                                            <th>Transport From</th>
+                                            <th width="8%">Gross Wt.</th>
+                                            <th>Remarks</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="j in JODetails">
+                                            <td>{{$index+1}}</td>
+                                            <td width="10%"><input type="text" ng-model="j.Container_No" ng-disabled="true" /></td>
+                                            <td width="5%"><input type="text" ng-model="j.CT_Size" ng-disabled="true" /></td>
+                                            <td width="10%"><input type="text" ng-model="j.S_Line" /></td>
+                                            <td style="position:relative;">
+                                                <input type="text" ng-model="j.ShippingLineName" id="ShippingLineName_{{$index}}" ng-disabled="true" required />
+                                                <span class="search" style="top: 5px; right: 15px;"><i class="fa fa-search" aria-hidden="true" ng-model="j.Slmodal" ng-click="onShippingLineChange($index)" data-toggle="modal" data-target="#slmodal"></i></span>
+                                                <input type="text" ng-hide="true" ng-model="j.ShippingLineId" />
+                                            </td>
+                                            <td>
+                                                <select ng-model="j.CargoType" required>
+                                                    <option value="">--Select--</option>
+                                                    <option value="{{s.id}}" ng-repeat="s in CargoTypeList">{{s.CargoType}}</option>
+                                                </select>
+
+                                            </td>
+                                            <td width="8%">
+                                                <select ng-model="j.Ct_Status">
+                                                    <option value="">--Select--</option>
+                                                    <option value="{{t.id}}" ng-repeat="t in ContainerLoadTypeList">{{t.ContainerLoadType}}</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                @*<select ng-model="j.PortId">
+                                                    <option value="">--Select--</option>
+                                                    <option value="{{p.PortId}}" ng-repeat="p in TransportFromList">{{p.PortName}}</option>
+                                                    </select>*@
+                                                <select ng-model="j.PortId" ng-options="p.PortId as p.PortName for p in TransportFromList"></select>
+                                            </td>
+                                            <td width="8%"><input type="text" ng-model="j.Gross_Wt" /></td>
+                                            <td><input type="text" ng-model="j.Remarks" /></td>
+                                            <td style="text-align:center;"><a href="#" ng-hide="!JODetails.length" ng-click="Delete($index)"><i class="fa fa-window-close-o Delete" aria-hidden="true"></i></a></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="SignUp_space_bottom SignUp_space_top"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-offset-4 col-md-2" style="text-align:center">
+                            <input type="submit" id="BtnYardSubmit" value="Save" class="btn log_Btn_sm" ng-click="OnJobOrderSave()" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" id="btnCancel" class="btn log_Btn_sm" value="Cancel" onclick="LoadImpJO()" />
+                        </div>
+                    </div>
+                    <div class="logSuccMsg" style="background-color:transparent" id="DivJobOrder"></div>
+                    <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivJobOrderErrMsg"></div>
+
+
+                    <div class="row">
+                        <div class="col-md-12 SignUp_space_bottom">
+                            <div id="DivYardList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="blNomodal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Train No.</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="TrainNobox" type="text" />
+                    <ul class="navList" id="lstTrainNoNo">
+                        @{
+                            if (ViewBag.ListOfTrain != null)
+                            {
+                                foreach (var item in ViewBag.ListOfTrain)
+                                {
+                                    <li id="@item.TrainSummaryID">@item.TrainNo</li>
+                                }
+                            }
+                        }
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @*<div id="slmodal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+
+        <div class="modal-content popup_modal">
+        <div class="modal-header popup_header">
+        <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+        <h4 class="modal-title">List of Shipping Line</h4>
+        </div>
+        <div class="modal-body popup_body">
+        <input placeholder="Search Me" id="ShpngLinebox" type="text" />
+        <ul class="navList" id="lstsline">
+        @{
+        if (ViewBag.ListOfShippingLine != null)
+        {
+        foreach (var item in ViewBag.ListOfShippingLine)
+        {
+        <li id="@item.ShippingLineId">@item.ShippingLineName</li>
+        }
+        }
+        }
+        </ul>
+        </div>
+        <div class="modal-footer">
+        <div class="row">
+        <div class="col-md-offset-6 col-md-6">
+        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>*@
+
+    <div id="slmodal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" onclick="CloseEximTrader()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Shipping Line</h4>
+                </div>
+                <div class="modal-body popup_body" style="position:relative;">
+                    <input placeholder="Search By Shipping Line Or Party Code" id="ShpngLinebox" type="text" />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByPartyCode()"></i></span>
+
+                    <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="8" width="80%">Shipping Line Name</th>
+                                <th colspan="4" width="20%">Party Code</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div id="slim_scroll">
+                        <table class="table dataTable table-bordered table-striped slim_tble" id="tbleSline">
+                            @{
+                                if (ViewBag.lstShippingLine != null)
+                                {
+                                    foreach (var item in ViewBag.lstShippingLine)
+                                    {
+                                        <tr ng-click="SelectShippingLine(@item.ShippingLineId,'@item.ShippingLineName')">
+                                            <td colspan="8" width="80%" class="txt_wrp">@item.ShippingLineName</td>
+                                            <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+                            }
+                            else
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" onclick="CloseEximTrader()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+    var FormOneDetails = [];
+    var DeleteOneDetails = [];
+    var dt;
+    $(function () {
+        debugger;
+
+        var dt1 = $('#jdt').val();
+        var yr = dt1.split("/");
+        var yr1 = yr[2].substring(0, 4);
+        var tt = yr[2].substring(5, 10);
+
+        var dtt = yr1 + "-" + yr[1] + "-" + yr[0] + "T" + tt;
+
+
+        dt = new Date(dtt);
+
+        $('#JobOrderDate').val('@Model.JobOrderDate.ToString("dd/MM/yyyy")');
+        $('#TrainDate').val('@Model.TrainDate.ToString("dd/MM/yyyy")');
+        FormOneDetails = $.parseJSON(@Html.Raw(Json.Encode(Model.StringifyXML)));
+        DeleteOneDetails = $.parseJSON(@Html.Raw(Json.Encode(Model.deleteXML)));
+        //GenerateTable();
+    });
+
+    //$('#JobOrderDate').datetimepicker({
+    //    dateFormat: "dd/MM/yy",
+    //    showOn: "button",
+    //    buttonImage: "/Content/images/calendar.png",
+    //    buttonImageOnly: true,
+    //    buttonText: "Select date",
+    //    changeMonth: true,
+    //    changeYear: true,
+    //    showAnima: "fadein",
+    //    timeFormat: 'hh:mm',
+    //    onClose: function () {
+    //    }
+    //}).datetimepicker("setDate", dt);;
+
+    //$('#TrainDate').datepicker({
+    //    dateFormat: "dd/MM/yy",
+    //    showOn: "button",
+    //    buttonImage: "/Content/images/calendar.png",
+    //    buttonImageOnly: true,
+    //    buttonText: "Select date",
+    //    changeMonth: true,
+    //    changeYear: true,
+    //    showAnima: "fadein",
+    //    onClose: function () {
+    //    }
+    //});
+    $('#TrainNobox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstTrainNoNo > li').show();
+        else {
+            $('#lstTrainNoNo > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    $('#lstTrainNoNo > li').on("click", function () {
+        debugger;
+        $('#TrainNo').val($(this).text().split('(')[0]);
+        $('#TrainSummaryID').val($(this).attr('id'));
+        $("#blNomodal").modal("hide");
+        //GetTrainDetails();
+        angular.element('#JobOrderAppDiv').scope().GetTrainDetails();
+        angular.element('#JobOrderAppDiv').scope().$apply();
+    });
+
+    $('#ShpngLinebox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstsline > li').show();
+        else {
+            $('#lstsline > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    $('#lstsline > li').on("click", function () {
+        debugger;
+        $('#SLine').val($(this).text().split('(')[0]);
+        $('#SlineId').val($(this).attr('id'));
+        $("#slmodal").modal("hide");
+        //  GetTrainDetails();
+    });
+
+    function AddJoborder() {
+        debugger;
+        $('#AddJobOrd').prop("disabled", "disabled");
+
+        var TrainDetail = {
+            "TrainSummarySerial": $('#TrainSummarySerial').val(),
+            "TrainSummaryID": $('#TrainSummaryID').val(),
+            "TrainNo": $('#TNo').val(),
+            "TrainDate": $('#TrainDt').val(),
+            "PortId": $('#PortID').val(),
+            "Wagon_No": $('#Wagon_No').val(),
+            "Container_No": $('#CNNo').val(),
+            "CT_Size": $('#size').val(),
+            "CustomSealNo": $('#CSNo').val(),
+            "ShippingLineNo": $('#SLNo').val(),
+            "ShippingLineId": $('#SlineId').val(),
+            "ShippingLineName": $('#SLine').val(),
+            "CargoType": $('#CrType').val(),
+            "ContainerLoadType": $('#CLType').val(),
+            "TransportForm": $('#TransportForm').val(),
+            "NoOfPackages": $('#NPckg').val(),
+            "Line_Seal_No": $('#Line_Seal_No').val(),
+            "Cont_Commodity": $('#Cont_Commodity').val(),
+            "S_Line": $('#Line_Seal_No').val(),
+            "Ct_Tare": $('#Ct_Tare').val(),
+            "Cargo_Wt": $('#Cargo_Wt').val(),
+            "Gross_Wt": $('#GWeg').val(),
+            "Ct_Status": $('#Ct_Status').val(),
+            "Destination": $('#Destination').val(),
+            "Smtp_No": $('#Smtp_No').val(),
+            "Received_Date": $('#Received_Date').val(),
+            "Genhaz": $('#Genhaz').val(),
+            "Remarks": $('#Remarks').val(),
+            "CargoDescription": $('#CargoDescription').val()
+        }
+
+        flagg = 0;
+        FormOneDetails.push(TrainDetail);
+
+        GenerateTable();
+        ResetJobOrder();
+        // ResetFormOneDetPartial();
+
+    }
+
+
+    function ResetJobOrder() {
+        $('#CNNo, #size, #CSNo, #SLNo,#SLine,#Remarks,#CargoDescription').val('');
+        $('#GWeg,#NPckg').val('0');
+        //  $('#IsReefer, #IsFlatReck').attr('checked', false)
+        $('#CrType, #CLType,#TransportForm').prop('selectedIndex', 0);
+        //   $('#btnAddFormOneDet').prop("disabled", false);
+    }
+    //function GetTrainDetails() {
+    //    debugger;
+    //    var TSumId = $('#TrainSummaryID').val();
+    //    $.ajax({
+    //        url: '/Import/Ppg_CWCImport/GetTrainDetl',
+    //        dataType: 'JSON',
+    //        type: 'GET',
+    //        data: { TrainSumId: TSumId },
+    //        success: function (data) {
+    //            if (data != null) {
+    //                var html = '';
+    //                FormOneDetails = [];
+    //                $.each(data, function (i, elem) {
+    //                    $('#TrainNo').val(elem.TrainNo);
+    //                    $('#TrainDate').val(elem.TrainDate).toString("dd/MMM/yyyy hh:mm");
+
+    //                    //   html += '<li id="' + elem.YardId + '" onclick="SelectYard(this)">' + elem.YardName + '</li>';
+
+    //                    //  $('#lstYard').html(html);
+    //                    var flag = 0;
+    //                    $.each(FormOneDetails, function (i1, elem1) {
+
+    //                        if (elem.Container_No == elem1.Container_No) {
+
+    //                            flag = 1;
+
+    //                        }
+    //                    });
+
+    //                    debugger;
+    //                    var TransFormname = "";
+    //                    if (flag == 0) {
+
+
+
+    //                        var TrainDetail = {
+    //                            "TrainSummarySerial": elem.TrainSummarySerial,
+    //                            "TrainSummaryID": elem.TrainSummaryID,
+    //                            "TrainNo": elem.TrainNo,
+    //                            "TrainDate": elem.TrainDate,
+    //                            "PortId": elem.PortId,
+    //                            "Wagon_No": elem.Wagon_No,
+    //                            "Container_No": elem.Container_No,
+    //                            "CT_Size": elem.CT_Size,
+    //                            "CustomSealNo": elem.Line_Seal_No,
+    //                            "ShippingLineNo": elem.S_Line,
+    //                            "ShippingLineId": 0,
+    //                            "ShippingLineName": elem.ShippingLineName,
+    //                            "CargoType": "",
+    //                            "ContainerLoadType": "",
+    //                            "TransportForm": elem.TransportName,
+    //                            "NoOfPackages": 0,
+    //                            "Line_Seal_No": elem.Line_Seal_No,
+    //                            "Cont_Commodity": elem.Cont_Commodity,
+    //                            "S_Line": elem.S_Line,
+    //                            "Ct_Tare": elem.Ct_Tare,
+    //                            "Cargo_Wt": elem.Cargo_Wt,
+    //                            "Gross_Wt": elem.Gross_Wt,
+    //                            "Ct_Status": elem.Ct_Status,
+    //                            "Destination": elem.Destination,
+    //                            "Smtp_No": elem.Smtp_No,
+    //                            "Received_Date": elem.Received_Date,
+    //                            "Genhaz": elem.Genhaz,
+    //                            "Remarks": "",
+    //                            "CargoDescription": ""
+    //                        }
+    //                        FormOneDetails.push(TrainDetail);
+    //                    }
+
+    //                });
+    //                ResetJobOrder();
+    //                GenerateTable();
+    //            }
+    //        }
+    //    });
+    //}
+
+
+
+    function checklenrem() {
+        if ($('#Remarks').val().length > 200) {
+            $('#ErrRemarks').html('Exceed Max langth 200 characters');
+            return false;
+        }
+        else {
+            $('#ErrRemarks').html('');
+        }
+    }
+
+    function checklencar() {
+        if ($('#CargoDescription').val().length > 200) {
+            $('#ErrCargoDescription').html('Exceed Max langth 200 characters');
+            return false;
+        }
+        else {
+            $('#ErrCargoDescription').html('');
+        }
+    }
+
+    function GenerateTable() {
+        var html = '';
+        $('#StringifyXML').val(JSON.stringify(FormOneDetails));
+        if (FormOneDetails != null) {
+            html = '<table class="table table-bordered table-striped dataTable"><thead><tr><th class="text-center" style="width:10%;">SL No</th><th>Container / CBT No</th><th>Container / CBT Size</th><th>Custom Seal No</th><th style="width:15%;">Cargo Type</th><th>Commodity</th><th style="text-align:center; width:10%;">Edit</th></tr></thead><tbody>';
+            $.each(FormOneDetails, function (i, elem) {
+                html += '<tr><td class="text-center" style="width:10%;">' + (i + 1) + '</td><td>' + elem.Container_No + '</td><td>' + elem.CT_Size + '</td><td>' + elem.CustomSealNo + '</td><td>' + elem.CargoType + '</td><td>' + elem.Cont_Commodity + '</td><td class="text-center"><a href="#" onclick="EditContainerDet(' + i + ')"><i class="fa fa-pencil-square Edit" aria-hidden="true"></i></a></td></tr>';
+            });
+            html += '</tbody></table>';
+            $('#DivFormOneDet').html('');
+            $('#DivFormOneDet').html(html);
+        }
+        else {
+            $('#DivDeliveryAppTblErrMsg').html('Container / CBT details data is not found for this job order');
+        }
+    }
+    var flagg = 0;
+
+    function EditContainerDet(i) {
+        debugger;
+
+        if (flagg == 0) {
+            flagg = 1;
+
+            $('#AddJobOrd').prop("disabled", false);
+            $('#TrainSummarySerial').val(FormOneDetails[i].TrainSummarySerial);
+            $('#TrainSummaryID').val(FormOneDetails[i].TrainSummaryID);
+            $('#TNo').val(FormOneDetails[i].TrainNo);
+            $('#TrainDt').val(FormOneDetails[i].TrainDate);
+            $('#PortID').val(FormOneDetails[i].PortId);
+            $('#TransportForm').val(FormOneDetails[i].TransportForm);
+            $('#CNNo').val(FormOneDetails[i].Container_No);
+            $('#size').val(FormOneDetails[i].CT_Size);
+            $('#CSNo').val(FormOneDetails[i].CustomSealNo);
+            $('#SLNo').val(FormOneDetails[i].ShippingLineNo);
+            $('#SlineId').val(FormOneDetails[i].ShippingLineId);
+            $('#SLine').val(FormOneDetails[i].ShippingLineName);
+            $('#CrType').val(FormOneDetails[i].CargoType);
+            $('#CLType').val(FormOneDetails[i].ContainerLoadType);
+            $('#NPckg').val(FormOneDetails[i].NoOfPackages);
+            $('#GWeg').val(FormOneDetails[i].Gross_Wt);
+            $('#Remarks').val(FormOneDetails[i].Remarks);
+            $('#CargoDescription').val(FormOneDetails[i].CargoDescription);
+            $('#Wagon_No').val(FormOneDetails[i].Wagon_No);
+            $('#Line_Seal_No').val(FormOneDetails[i].Line_Seal_No);
+            $('#Cont_Commodity').val(FormOneDetails[i].Cont_Commodity);
+            $('#Ct_Tare').val(FormOneDetails[i].Ct_Tare);
+            $('#Cargo_Wt').val(FormOneDetails[i].Cargo_Wt);
+            $('#Ct_Status').val(FormOneDetails[i].Ct_Status);
+            $('#Destination').val(FormOneDetails[i].Destination);
+            $('#Smtp_No').val(FormOneDetails[i].Smtp_No);
+            $('#Received_Date').val(FormOneDetails[i].Received_Date);
+            $('#Genhaz').val(FormOneDetails[i].Genhaz);
+            FormOneDetails.splice(i, 1);
+            GenerateTable();
+        }
+        else {
+            alert("Add Current Container / CBT");
+        }
+
+    }
+
+
+    function SaveDetails() {
+        debugger;
+        alert("1");
+        var joborderdt = $('#JobOrderDate').val();
+        var traindate = $('#TrainDate').val();
+
+        if ($('#TrainNo').val() == '') {
+            // $('[data-valmsg-for="PartyName"]').html('<span>Fill Out This Field</span>');
+            //  $('#ErrPartyName').html('Fill Out This Field');
+            return false;
+        }
+        else if (joborderdt < traindate) {
+            alert("Job Order Date should not be less from TrainDate");
+            $('#JobOrderDate').val('');
+            //   $('#ErrJobOrderDate').html('Job Order Date should not be less from TrainDate');
+            return false;
+
+        }
+
+
+        else if (FormOneDetails.length <= 0) {
+            $('#PickUpLocation').val('');
+            alert("Container / CBT should not be blank");
+            return false;
+        }
+        else {
+
+
+
+            $('#StringifyXML').val(JSON.stringify(FormOneDetails));
+            return true;
+        }
+    }
+
+
+    function DeleteContainerDet(FormOneDetailId) {
+        var Confirm = confirm("Are You Sure You Want To Delete?");
+        if (Confirm == true) {
+
+
+            //  LocationDetailArray.splice(Index, 1);
+
+            FormOneDetails.splice(FormOneDetailId, 1);
+            //  FormOneDetails.pop(FormOneDetailId);
+            GenerateTable();
+        }
+
+    }
+
+
+    //function LoadJOList() {
+    //    $('#DivYardList').load('/Import/PpG_CWCImport/ListOfJobOrderDetails');
+    //}
+    function impJOOnSuccess(data) {
+        if (data.Status == 1) {
+
+            $('#DivJobOrder').html(data.Message);
+            ResetImpJODetails();
+            //   LoadJOList();
+        }
+        else {
+            $('#DivJobOrderErrMsg').html(data.Message);
+        }
+        setTimeout(LoadImpJO, 5000);
+    }
+    function impJOOnFailure() { }
+
+    function SaveDetails() {
+        $('#StringifyXML').val(JSON.stringify(FormOneDetails));
+    }
+    function ResetImpJODetails() {
+        $('#lstYard,#lstYardWiseLctn').html('');
+        $('#lstTrainNoNo #' + $('#FormOneId').val()).remove();
+        $('#FormOneId,#FormOneDetailId').val('');
+        $('#PickUpLocation,#Remarks,#TrainNo,#TrainDate,#JobOrderNo').val('');
+        $('#DivFormOneDet').html('');
+        $('.data-valmsg-summary').html('');
+        $('#JobOrderDate').val('@Model.JobOrderDate');
+        FormOneDetails = [];
+    }
+    function LoadImpJO() {
+        $('#DivBody').load('/Import/Ppg_CWCImport/CreateJobOrder');
+    }
+
+
+    function DeleteContainerDet(FormOneDetailId) {
+        debugger;
+        var Confirm = confirm("Are You Sure You Want To Delete?");
+        if (Confirm == true) {
+            //  LocationDetailArray.splice(Index, 1);
+
+            FormOneDetails.splice(FormOneDetailId, 1);
+
+            GenerateTable();
+        }
+
+    }
+</script>
+
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+</script>
+

@@ -1,0 +1,394 @@
+﻿@model CwcExim.Areas.CashManagement.Models.PPGInterBalanceTransfer
+<script>
+
+
+    var TimeInSeconds = 5000;
+    function OnSuccess(data) {
+        var a = data.Message;
+        alert(a);
+        if (data.Status != null && data.Data != "" && data.Data != undefined) {
+          
+            $('#BtnSaveCustomAppraisement').prop('disabled', true);
+            RefreshPage();
+        }
+        else {
+           
+            $('#BtnSaveCustomAppraisement').prop('disabled', false);
+        }
+        //  setTimeout(RefreshPage, TimeInSeconds);
+    }
+    function OnFailure() {
+        alert("Something went wrong , Please check data");
+      
+
+    }
+    //$(document).ready(function () {
+    //    $('#printButton').prop('disabled', true);
+
+    //});
+
+
+    function RefreshPage() {
+        $('#DivBody').load('/CashManagement/Loni_CashManagement/InterBalanceTransferSD');
+    }
+
+
+    GenerateParties();
+    function GenerateParties() {
+        var parties = JSON.parse($('#Parties').val());
+        debugger;
+        var html = '';
+        $.each(parties, function (i, item) {
+            html += '<li id="' + item.FromPartyId + '" onclick="GetPartyDetails(this)">' + item.FromPartyName + '</li>';
+        });
+        $('#lstCHA').html(html);
+        GenerateToParties();
+    }
+
+    function GenerateToParties() {
+        var parties = JSON.parse($('#Parties').val());
+        debugger;
+        var html = '';
+        $.each(parties, function (i, item) {
+            html += '<li id="' + item.FromPartyId + '" onclick="GetToPartyDetails(this)">' + item.FromPartyName + '</li>';
+        });
+        $('#lstPDA').html(html);
+    }
+    function GetPartyDetails(elem) {
+        debugger;
+
+        $('#FromPartyName').val('');
+        $('#FromPDAId').val('');
+        $('#FromPartyBalance').val('');
+        $('#FromPartyId').val('');
+       
+
+        $('#FromPartyName').val($(elem).text());
+        $('#FromPartyId').val($(elem).attr('id'));
+        var parties = JSON.parse($('#Parties').val());
+        var party = $.grep(parties, function (item) { return item.FromPartyId == $(elem).attr('id'); })[0];
+        //$('#FolioNo').val(party.Folio);
+        //$('#Address').val(party.Address);
+        $('#FromPartyBalance').val(party.FromPartyBalance);
+        $('#FromPDAId').val(party.FromPDAId);
+      
+        $("#FromPartyList").modal("hide");
+    }
+    function GetToPartyDetails(elem) {
+        debugger;
+
+        $('#ToPartyName').val('');
+        $('#ToPDAId').val('');
+       
+        $('#ToPartyId').val('');
+
+
+        $('#ToPartyName').val($(elem).text());
+        $('#ToPartyId').val($(elem).attr('id'));
+        var parties = JSON.parse($('#Parties').val());
+        var party = $.grep(parties, function (item) { return item.FromPartyId == $(elem).attr('id'); })[0];
+        //$('#FolioNo').val(party.Folio);
+        //$('#Address').val(party.Address);
+       
+        $('#ToPDAId').val(party.FromPDAId);
+
+        $("#ToPartyList").modal("hide");
+    }
+    function Calculate() {
+        var amt = 0;
+        for (var i = 0; i < 5; i++) {
+            amt += Number($('#Details_' + i + '__Amount').val());
+        }
+        $('#txtTotal').val(amt);
+        $('#txtClosing').val(Number($('#OpBalance').val()) + amt);
+    }
+    var date = new Date();
+    var curDate = date.getDate();
+    function Print() {
+
+
+        debugger;
+        var printTable = "<table style='width:100%;font-size:9pt;font-family:Verdana,Arial,San-serif;border-collapse: collapse;'><thead><tr><th colspan='12' style='text-align:center;vertical-align:bottom;font-size:8pt;'>CENTRAL WAREHOUSING CORPORATION<br />(A GOVT. OF INDIA UNDERTAKING)<br/><span style='border-bottom:1px solid #000;font-weight:600;'>SD Closure<br/><br/></span></th></tr></thead>";
+        printTable += "<tbody><tr><td colspan='12'><table style='width:100%;font-size:9pt;'><tbody><tr><td colspan='6' style='padding:5px 7px;border:1px solid #000;'><b>Receipt No.:</b> <span>" + $('#ReceiptNo').val() + "</span></td><td colspan='6' style='padding:5px 7px;border:1px solid #000;'><b>Dated :</b> <span>" + $("#currentDate").val() + "</span></td>	</tr><tr><td colspan='6' style='padding:5px 7px;border:1px solid #000;'><b>Party Name :</b> <span>" + $('#PName').val() + "</span></td><td colspan='6' style='padding:5px 7px;border:1px solid #000;'><b>Opening Balance :</b> <span>" + $('#OpBalance').val().replace(/\,/g, "<br/>") + "</span></td></tr><tr><td colspan='6' style='padding:5px 7px;border:1px solid #000;'><b>Refund Amount :</b> <span>" + $("#RefundAmount").val() + "</span></td><td colspan='6' style='padding:5px 7px;border:1px solid #000;'><b>Closing Balance :</b> <span>" + $("#closingBalance").val() + "</span></td></tr><tr><td colspan='6' style='padding:5px 7px;border:1px solid #000;'><b>Bank Name :</b> <span>" + $("#Bank").val() + "</span></td><td colspan='6' style='padding:5px 7px;border:1px solid #000;'><b>Branch Name :</b> <span>" + $("#Branch").val() + "</span></td></tr><tr><td colspan='6' style='padding:5px 7px;border:1px solid #000;'><b>Cheque No.:</b> <span>" + $("#ChequeNo").val() + "</span></td><td colspan='6' style='padding:5px 7px;border:1px solid #000;'><b>Cheque Date :</b><span>" + $("#ChequeDate").val() + "</span></td></tr><tr><td colspan='12' style='padding:5px 7px;border:1px solid #000;'><b>Address:</b> <span>" +  $('#PartyAddress').val() +"</span></td></tr></tbody></table></td></tr>";
+        printTable += "<tr><td><span><br/></span></td></tr><tr><th colspan='12'>Note : As per request SD A/c. closed.</th></tr> <tr><td colspan='12' style='text-align: right;'><b>Signature :</b> __________________________ <br/><br/> <b>Name of the signatory :</b> __________________________ <br/><br/> <b>Designation :</b> __________________________ </td></tr>";
+        printTable += "<tr><td><br/><br/><br/><br/><br/></td></tr>  <tr><td colspan='12'> <b>To,</b> <br/> <span>&nbsp;&nbsp;</span> Manager, <br/> <span>&nbsp;&nbsp;</span> Central Warehousing Corporation, <br/> <span>&nbsp;&nbsp;</span> regional office Delhi</td></tr>";
+        printTable += "<tr><td><br/><br/></td></tr>  <tr><th colspan='12'>Copied To :</th></tr>";
+        printTable += "<tr><td colspan='12'><table style='width:100%;font-size:9pt;'><tbody><tr><td><br/></td></tr><tr><td width='3%' valign='top'>1.</td><td colspan='2' width='85%' style='line-height:22px;'>" + $('#PName').val() + "-" + $('#PartyAddress').val() + "</td></tr></tbody></table></td></tr>";
+        printTable += "</tbody></table><br/><br/>";
+        //printTable += "<table style='width:100%; border-style:none;padding:10px;font-size:8pt;border:1px solid #000; '><tr><td style='text-align:left;'>Receipt No. : " + $('#ReceiptNo').val() + "</td><td style='text-align:right;'>Dated : " + curDate + "</td></tr><tr><td colspan='2' style='text-align:left;'><br/><br/>Payee Name : " + $('#PartyName').val() + "<br/><br/>Opening Balance : <span>" + $('#OpBalance').val().replace(/\,/g, "<br/>") + "</span><br/><br/>Refund Amount : <span>" + $('#RefundAmount').val().replace(/\,/g, "<br/>") + "</span><br/><br/>Closing Balance : <span>" + $('#closingBalance').val().replace(/\,/g, "<br/>") + "</span><br/><br/>Bank Name : <span>" + $('#bank').val().replace(/\,/g, "<br/>") + "</span><br/><br/>Branch : <span>" + $('#branch').val().replace(/\,/g, "<br/>") + "</span><br/><br/>Cheque No. : <span>" + $('#chequeNo').val().replace(/\,/g, "<br/>") + "</span><br/><br/>Cheque Date : <span>" + $('#chequeDate').val().replace(/\,/g, "<br/>") + "</span></td></tr></table><br/><br/>";
+        var PostData = new FormData();
+        PostData.append("page", printTable);
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GeneratePDF2", "Loni_CashManagement", new { area = "CashManagement" })',
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                window.open("/Docs/PdaRefundReceipt/" + data.Data + '?t=' + (new Date().getTime()), "_blank", "fullscreen=yes");
+                setTimeout(RefreshPage, TimeInSeconds);
+
+            }
+        });
+    }
+
+    function RemoveMessage() {
+        alert("in");
+        $('[data-valmsg-for="RefundAmount"]').html('Fill Out This Field');
+    }
+    $(window).keypress(function (event) {
+        if (event.which == 13) {
+            $(this).next().focus();
+        }
+    });
+
+    function checkAmount() {
+        var TransferAmount = Number($("#TransferBalance").val());
+        var balance = Number($("#FromPartyBalance").val());
+        debugger;
+        if (TransferAmount == "" || TransferAmount == null || TransferAmount == 0) {
+
+            $('[data-valmsg-for="TransferBalance"]').html('<span>Fill Out This Field</span>');
+            //setTimeout(LoadGateEntryView, TimeInSeconds);
+            return false;
+
+        }
+       
+        else if (balance < TransferAmount) {
+            alert("Insufficient Party SD Balance");
+            $("#BtnSaveCustomAppraisement").attr("disabled", true);
+
+            return false;
+        }
+       
+      else if (balance <= 0 ) {
+            alert("Transfer Balance should not be Zero");
+            $("#BtnSaveCustomAppraisement").attr("disabled", true);
+           
+            return false;
+        }
+        
+      else if ($('#FromPartyName').val()==$('#ToPartyName').val()) {
+          alert("Inter Balance Transfer can not be possible for same party");
+          $("#BtnSaveCustomAppraisement").attr("disabled", true);
+
+          return false;
+      }
+      else {
+          $("#BtnSaveCustomAppraisement").attr("disabled", false);
+          return true;
+          // $("#printButton").attr("disabled", false);
+      }
+    }
+    
+
+    $('#CHAbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstCHA > li').show();
+        else {
+            $('#lstCHA > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    $('#PDAbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstPDA > li').show();
+        else {
+            $('#lstPDA > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+</script>
+<input type="hidden" id="Parties" value="@ViewBag.Parties.ToString()" />
+<div class="container-fluid">
+    <div class="col-md-11 col-md-offset-0-5">
+        <div class="Head_h4">
+            @using (Ajax.BeginForm("SaveInterBalanceTransfer", "Loni_CashManagement", new AjaxOptions { HttpMethod = "POST", Confirm = "Are you sure you want to Save?", OnFailure = "OnFailure", OnSuccess = "OnSuccess", LoadingElementDuration = 1000, LoadingElementId = "divProgress" }))
+            {
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>Inter Balance Transfer From SD Party to another SD Party</h4>
+                    </div>
+                </div>
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.FromPartyId, new { Value = "0000000000" })
+                @Html.HiddenFor(m => m.FromPartyBalance)
+                @Html.HiddenFor(m => m.ToPartyId)
+                @Html.HiddenFor(m => m.FromPDAId)
+                @Html.HiddenFor(m => m.ToPDAId)
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-2">
+
+                                <label>From SD Party Name:</label>
+                               
+                            </div>
+                            <div class="col-md-8">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.FromPartyName, new { @readonly = true })
+                                @Html.ValidationMessageFor(m => m.FromPartyName)
+                                <span class="search" id="FromPDA"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#FromPartyList"></i></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-2">
+
+                                <label>To SD Party Name:</label>
+
+                            </div>
+                            <div class="col-md-8">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.ToPartyName, new { @readonly = true })
+                                @Html.ValidationMessageFor(m => m.ToPartyName)
+                                <span class="search" id="ToPDA"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ToPartyList"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-2">
+                                <label>Transfer Amount:</label>
+                            </div>
+                            <div class="col-md-3">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.TransferBalance)
+                                @Html.ValidationMessageFor(m => m.TransferBalance)
+                            </div>
+                            
+                            <div class="col-md-2 padding_rt">
+                                <label>Transfer Date:</label>
+                            </div>
+                            <div class="col-md-3 Date_Img">
+                                @Html.TextBoxFor(m => m.TransferDate, new { @readonly = true })
+                                @Html.ValidationMessageFor(m => m.TransferDate)
+                            </div>
+                        </div>
+                    </div>
+                   
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-offset-4 col-md-2 SignUp_space_bottom">
+                            <input type="submit" class="btn log_Btn_sm" value="Save" id="BtnSaveCustomAppraisement" onclick="return checkAmount()" />
+                        </div>
+                       
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Reset" id="BtnResetCustomAppraisement" onclick="RefreshPage()" />
+                        </div>
+
+                    </div>
+
+            }
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="DivSDRefundList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="FromPartyList" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of From Party Names</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="CHAbox" type="text" />
+                <ul class="navList" id="lstCHA"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="ToPartyList" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of To Party Names</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="PDAbox" type="text" />
+                <ul class="navList" id="lstPDA"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $('#TransferDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyBpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBXaW5kb3dzIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjg0RThEQzY5NjVFNjExRTY5QkM2QzI0NEJEOEU1MTQ1IiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjg0RThEQzZBNjVFNjExRTY5QkM2QzI0NEJEOEU1MTQ1Ij4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6ODRFOERDNjc2NUU2MTFFNjlCQzZDMjQ0QkQ4RTUxNDUiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6ODRFOERDNjg2NUU2MTFFNjlCQzZDMjQ0QkQ4RTUxNDUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz4K6/yIAAAEK0lEQVR42qRVXWhcRRQ+Z2bu3t3sbrU1qSUSlZJiSbWgYkF9U/CheYnUN4VCUfC1BQUVUUQUHyyIhdLHPPikYH0JpAEVX0RDhYooikTQiAbrT5vs3d37c47f3Lu72WZ/Ijjs7MydOf/fOWdYVSksV2jm0F1UnZqksNkilraJbeU9JZ63lk4S6YckTOonMQWUkNPURCZcJOYFMXpKWN+3GVMpcZSEQlp2dGVlhQztGBlZCAn3E5sFZq5nwo9nYnLhfngVqVqKXbCXmU7gtGaFTpRicHZo+ofr/8D1fpBVSI2FIPiWDzXKZSwzfu/JQNNMrRWbSXGipJylNXXBNL42MTcgTDxz7sFErX6ntfYtjuU3MvIlhM+Cr9XR2xRJ7lNDP2B+41djZNmo3AbB7cIyjimozOPu+zTIfobGC5zK0Z4HB+fueVlEnkQcvMIwKFGcaWEBiTTSaJODPfvApyEVbpSwSWJWbzthiQQrFRFyLPS0NtM7sH8s9yBLkrkuM2hukoxCgPoC2C8aSS64Sv0wdQNW4DDTDJwVpTMq+lG7HJyHaYdvCL7hQ70QeTv779pMZwHgOrO8KkF4P7vgjRuYmUNuZe9A5RoMf8XF2TGj9NwOPAdB3uanOfi+hJ2yz0vSARrk1cO4+tTfIURMTEOHo7GDeeyt/40nGapgE/h+Dpuv9ULIpoC2iwN3nep5Bgi4iosHsd87XoHoOdj1Yr/L0twi4EAG6ZV/J8hOdsQoc+4o4bwe5LSyOdvPO6AAxfht4TZii1WiLcqiBrmJ2nEOygs5UZJcJMtLbINnQXHEnwCGd5X5a7A08F0d7UFHu8e2gshU6jVSzJbwQy3RZ/xdtVrfSEWXYpEn2PCjObmhS/hvDSbDSACZErgjPDJBRvHzrlnUpUgR1wY65O2TwG2rudzabMZ5a6lOfBylKbVb8XnE/lLeI5mvILXvHptFveZWVN4Bn4aJaOuX9fW/xQaXyYbfeYJ/rl+L1DBZ45ZRzR55Xwl/QtnRXV2E0AT/D2BdwlwBwWtBgAwy9iQs/MJPi71h32/pTbB8grkM4cco592lDgxaJYin0Kzv7SjcqJTRrTOdThI96M+CwE0n6Iaa6RFjqBMWnUQEovHvAaxqRRE56yJXKv0FJSHm1TiJId80i4KDrixDC88T4So+fVr67Imo+zqMUmCdoz9+/7Veq9/8wS2Ttx4XyYyPbaOdeWmLCNNnng7p+RNcRcPklwDW23lTN7yKt3Ye6e14lAJBZkwdmH7KuNIq3oe1vLcrW7Jl33pRvvpjEUdf0joLW731171TMHsW/p3y78mAB7DS5LUL1MoTtUew+Qp72c7ond10aHeFfA6GYoCbVSwerJpK/jQE9D+Gb4sienk7RIZeh8FrcOB53O4ZauJ/G0hAbVZK4bl99eqiP/hXgAEAGxXRtLB4dQoAAAAASUVORK5CYII=",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+        }
+    });
+
+
+    $(function () {
+        LoadSDTransferList();
+
+    });
+
+
+    function AllowOnlyDecimal(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || (CharCode == 46) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+
+    function LoadSDTransferList() {
+        debugger;
+        $('#DivSDRefundList').load('/CashManagement/Loni_CashManagement/InterBalanceTransferList');
+    }
+
+</script>
+@Scripts.Render("~/bundles/jqueryval")

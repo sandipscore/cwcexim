@@ -1,0 +1,93 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.ComponentModel.DataAnnotations;
+
+namespace CwcExim.Areas.Bond.Models
+{
+    public class DndBondApp
+    {
+        public int SpaceappId { get; set; }
+        [Display(Name = "Date")]
+        public string ApplicationDate { get; set; }
+        [Display(Name = "Application No")]
+        public string ApplicationNo { get; set; }
+        public int CHAId { get; set; }
+        public int ImporterId { get; set; }
+        [Display(Name = "Importer License No")]
+        public string ImporterLicenseNo { get; set; }
+        [Display(Name = "BOL/AWBNo")]
+        public string BOLAWBNo { get; set; }
+        [Display(Name = "BOE No")]
+        public string BOENo { get; set; }
+
+        [Display(Name = "BOE Date")]
+        public string BOEDate { get; set; }
+        [Display(Name = "Invoice No")]
+        public string InvoiceNo { get; set; }
+
+        [Display(Name = "Invoice Date")]
+        public string InvoiceDate { get; set; }
+        [Required(ErrorMessage = "Fill Out This Field")]
+        [MaxLength(500, ErrorMessage = "Description cannot be greater than 500 Character.")]
+        [Display(Name = "Description of Cargo")]
+        public string CargoDescription { get; set; }
+        [Display(Name = "Nature Of Packages")]
+        public string NatureOfPackages { get; set; }
+        [Required(ErrorMessage = "Fill Out This Field")]
+        [Display(Name = "No of Units")]
+        [RegularExpression(@"^[1-9][0-9]*$",
+        ErrorMessage = "Value must be number greater than 0")]
+        [Range(0, 99999999.99, ErrorMessage = "NoOfUnits Cannot Be More Than 99999999.99")]
+        public int NoOfUnits { get; set; }
+        [Required(ErrorMessage = "Fill Out This Field")]
+        [Display(Name = "Nature of Material")]
+        public int NatureOfMaterial { get; set; }
+        [Display(Name = "Dimension Per Unit")]
+        public decimal DimensionPerUnit { get; set; }
+          [Required(ErrorMessage = "Fill Out This Field")]
+         [RegularExpression(@"^(0*[1-9][0-9]*(\.[0-9]+)?|0+\.[0-9]*[1-9][0-9]*)$",
+         ErrorMessage = "Value must be number greater than 0")]
+        [Range(0, 99999999.99, ErrorMessage = "Weight Cannot Be More Than 99999999.99")]
+        public decimal Weight { get; set; }
+        [Required(ErrorMessage = "Fill Out This Field")]
+        //[Range(3, 1000000000, ErrorMessage = "Minimum space 3 Sq. mts")]
+        [Display(Name = "Requirement Of Space (in sq. mts.)")]
+        public decimal SpaceReq { get; set; }
+        [Display(Name = "Assessable/CIF Value")]
+        public decimal AssessCIFvalue { get; set; }
+        [Display(Name = "Duty Amount")]
+        public decimal DutyAmt { get; set; }
+        //[Required(ErrorMessage = "Fill Out This Field")]
+        [Display(Name = "Expected Date of Warehouse")]
+        public string ExpDateofWarehouse { get; set; }
+        [Display(Name = "CHA")]
+        public string CHAName { get; set; }
+        [Display(Name = "Importer Name")]
+        [Required(ErrorMessage = "Select Importer")]
+        public string ImporterName { get; set; }
+
+        public string StorageType { get; set; }
+        public bool IsInvoiceCopy { get; set; }
+        public bool IsPackingList { get; set; }
+        public bool IsBOLAWB { get; set; }
+        public bool IsBOE { get; set; }
+
+        public string Others { get; set; }
+        public decimal? Length { get; set; }
+        public decimal? Width { get; set; }
+        public decimal? Height { get; set; }
+
+        public string BolAwbDate { get; set; }
+        public string AWBNo { get; set; }
+        public string AWBDate { get; set; }
+        public int GodownId { get; set; }
+        public string GodownName { get; set; }
+        public string CustomSealNo { get; set; }
+        public string DimensionUOM { get; set; }
+        public string WeightUOM { get; set; }
+        public string Clause { get; set; }
+
+    }
+}

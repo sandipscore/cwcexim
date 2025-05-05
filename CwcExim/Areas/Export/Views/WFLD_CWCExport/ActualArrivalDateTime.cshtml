@@ -1,0 +1,364 @@
+﻿@model CwcExim.Areas.Export.Models.Wfld_ActualArrivalDatetime
+
+
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "ActualArrivalDatetimeOnSuccess";
+    options.OnFailure = "ActualArrivalDatetimeOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+
+@using (Ajax.BeginForm("AddEditActualArrivalDatetime", "WFLD_CWCExport", options))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    @Html.HiddenFor(m => m.CFSCode)
+    @Html.HiddenFor(m => m.GatePassNo)
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-offset-0-5 col-md-11">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Actual Arrival Date Time</h4>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Container No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.ContainerNo, new { @class = "form-control input-sm", @readonly = true })
+                                <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ConNoModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.ContainerNo, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-2 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                <label>Actual Arrival Date Time:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @*<input type="datetime" class="form-control input-sm" id="ArrivalDateaTime" />*@
+                                @Html.TextBoxFor(m => m.ArrivalDateTime, new { @class = "form-control input-sm" })
+                                @Html.ValidationMessageFor(m => m.ArrivalDateTime, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+                    <div class="logSuccMsg" id="DivMsg" style="background-color:transparent"></div>
+                    <div class="row SignUp_space_top2 SignUp_space_bottom">
+                        <div class="col-md-offset-2-5 col-md-2">
+                            <input type="submit" id="btnSave" class="btn log_Btn_sm" value="Save" style="width:100%;" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" id="btnReset" class="btn log_Btn_sm" value="Reset" onclick="ResetAllFields()" style="width:100%;" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" id="btnCIMAT" class="btn log_Btn_sm disabled" value="CIM-AT" style="width:100%;" onclick="SendAT()" />
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-2">
+                                <input type="button" id="BtnLoad" value="Show List" class="btn log_Btn_sm" onclick="LoadActualArrivalList()" tabindex=25 />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="col-md-12">
+                            <div id="DivActualArrivalTimeList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade mTabindex" id="ConNoModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal" style="width:100%">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dissmiss="modal"><i class="fa fa-times" aria-hidden="true" onclick="CloseConNoModal()"></i></button>
+                    <h4 class="modal-title">List of Container</h4>
+                </div>
+                <div class="modal-body popup_body" style="position:relative;">
+                    <input placeholder="Search By Container No / CFS Code / Gate Pass No" id="ContainerBoxSearch" type="text" tabindex="200" autofocus />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchContainerBox()"></i></span>
+
+                    <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="5" width="30%">Container No</th>
+                                <th colspan="2" width="40%">CFS Code</th>
+                                <th colspan="5" width="30%">Gate Pass No</th>
+                            </tr>
+                        </thead>
+                    </table>
+
+                    <div id="slim_scroll">
+                        <table tabindex="201" class="table dataTable table-bordered table-striped slim_tble" id="tblActualArrivalDatetime">
+                            <tbody>
+                                @{
+                                    if (ViewBag.ContainerNoList != null)
+                                    {
+                                        foreach (var item in ViewBag.ContainerNoList)
+                                        {
+                                            <tr onclick="SelectContainerNo('@item.ContainerNo','@item.CFSCode','@item.GatePassNo')">
+                                                <td colspan="5" width="30%">@item.ContainerNo</td>
+                                                <td colspan="2" width="40%">@item.CFSCode</td>
+                                                <td colspan="5" width="30%">@item.GatePassNo</td>
+                                            </tr>
+                                        }
+                                    }
+                                }
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            @if (ViewBag.StateCont != null && Convert.ToBoolean(ViewBag.StateCont) == true)
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreArrivalDatetimeContainer()" class="btn log_Btn_sm" id="btnLoaadMoreContainerNo">Load More Data</button>
+                            }
+                            else
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreArrivalDatetimeContainer()" class="btn log_Btn_sm" id="btnLoaadMoreContainerNo" disabled>Load More Data</button>
+
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dissmiss="modal" onclick="CloseConNoModal()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script>
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+        $('#btnCIMAT').prop("disabled",true);
+        $('#btnCIMAT').addClass("disabled");
+    });
+
+    $('#ArrivalDateTime').datetimepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+        }
+    });
+
+
+    function ActualArrivalDatetimeOnSuccess(data) {
+        debugger;
+        if (data.Status == 1 || data.Status == 2) {
+            if ($('#DivMsg').hasClass('logErrMsg'))
+                $('#DivMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivMsg').html(data.Message);
+            ResetAllFields();
+            LoadActualArrivalList();
+            setTimeout(function () { $('#DivMsg').html(''); }, 5000);
+            $('#btnCIMAT').removeProp("disabled");
+            $('#btnCIMAT').removeClass("disabled");
+        }
+        else {
+            if ($('#DivMsg').hasClass('logSuccMsg'))
+                $('#DivMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivMsg').html(data.Message);
+        }
+       
+    }
+    function ActualArrivalDatetimeOnFailure(data) {
+
+        debugger;
+
+    }
+
+    function LoadActualArrivalList() {
+        $('#DivActualArrivalTimeList').load('/Export/WFLD_CWCExport/ListOfArrivalDatetime');
+    }
+
+    function GetCurrentDateTime() {
+        return ("0" + (new Date().getDate())).slice(-2) + "/" + ("0" + (new Date().getMonth() + 1)).slice(-2) + "/" + new Date().getFullYear() + " " + new Date().getHours() + ":" + new Date().getMinutes();
+    }
+
+    function ResetAllFields() {
+        $('#Id').val('0');
+        $('#ContainerNo').val('');
+        //$('#CFSCode').val('');
+        $('#GatePassNo').val('');
+        $('#ArrivalDateTime').val(GetCurrentDateTime());
+        $('#btnCIMAT').prop("disabled", "disabled");
+        $('#btnCIMAT').addClass("disabled");
+    }
+
+    function CloseConNoModal() {
+        $("#ConNoModal").modal("hide");
+    }
+    function SelectContainerNo(ContainerNo, CFSCode, GatePassNo) {
+
+        $('#ContainerNo').val(ContainerNo);
+        $('#CFSCode').val(CFSCode);
+        $('#GatePassNo').val(GatePassNo);
+        $("#ConNoModal").modal("hide");
+        LoadArrivalDatetimeContainer();
+    }
+
+    function LoadArrivalDatetimeContainer() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/LoadArrivalDatetimeContainerList',
+            type: 'GET',
+            data: { cont: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.ContainerList, function (i, item) {
+                        html += '<tr onclick="SelectContainerNo("' + item.ContainerNo + '","' + item.CFSCode + '","' + item.GatePassNo + '")">'
+                            + '               <td colspan="5" width="30%">' + item.ContainerNo + '</td>'
+                            + '               <td colspan="2" width="40%">' + item.CFSCode + '</td>'
+                            + '               <td colspan="5" width="30%">' + item.GatePassNo + '</td>'
+                            + '  </tr>';
+                    });
+
+                    $('#tblActualArrivalDatetime tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoaadMoreContainerNo').prop('disabled', false);
+                    else $('#btnLoaadMoreContainerNo').prop('disabled', true);
+                }
+            }
+        });
+    }
+    // var Page = 0;
+    function LoadMoreArrivalDatetimeContainer() {
+        debugger;
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/LoadArrivalDatetimeContainerList',
+            type: 'GET',
+            data: { cont: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.ContainerList, function (i, item) {
+                        html += '<tr onclick="SelectContainerNo("' + item.ContainerNo + '","' + item.CFSCode + '","' + item.GatePassNo + '")">'
+                            + '               <td colspan="5" width="30%">' + item.ContainerNo + '</td>'
+                            + '               <td colspan="2" width="40%">' + item.CFSCode + '</td>'
+                            + '               <td colspan="5" width="30%">' + item.GatePassNo + '</td>'
+                            + '  </tr>';
+                    });
+
+
+                    if (Page == -1)
+                        $('#tblActualArrivalDatetime tbody').html(html);
+                    else
+                        $('#tblActualArrivalDatetime tbody').append(html);
+                    Page++;
+
+                    debugger;
+                    if (data.Data.State == true)
+                        $('#btnLoaadMoreContainerNo').prop('disabled', false);
+                    else $('#btnLoaadMoreContainerNo').prop('disabled', true);
+                }
+            }
+        });
+    }
+    var Page = 0;
+    function SearchContainerBox() {
+        debugger;
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/SearchContainer',
+            type: 'GET',
+            data: { ContainerBoxSearch: $('#ContainerBoxSearch').val(), Page: 0 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.ContainerList, function (i, item) {
+                        html += '<tr onclick="SelectContainerNo(&quot;' + item.ContainerNo + '&quot;,&quot;' + item.CFSCode + '&quot;,&quot;' + item.GatePassNo + '&quot;)">'
+                            + '               <td colspan="5" width="30%">' + item.ContainerNo + '</td>'
+                            + '               <td colspan="2" width="40%">' + item.CFSCode + '</td>'
+                            + '               <td colspan="5" width="30%">' + item.GatePassNo + '</td>'
+                            + '  </tr>';
+                    });
+
+                    $('#tblActualArrivalDatetime tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoaadMoreContainerNo').prop('disabled', false);
+                    else $('#btnLoaadMoreContainerNo').prop('disabled', true);
+                }
+                else {
+                    $('#tblActualArrivalDatetime tbody').html('');
+                }
+
+            }
+        });
+    }
+
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+
+    document.getElementById('ContainerBoxSearch').addEventListener('keyup', debounce(function () {
+        SearchContainerBox();
+    }, 800));
+
+    function SendAT() {
+        debugger;
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/SendAT',
+            type: 'GET',
+            data: { CFSCode: $('#CFSCode').val() },
+            success: function (data) {
+                if (data.Status == 1) {
+                    $('#btnCIMAT').prop("disabled",true);
+                    $('#btnCIMAT').addClass("disabled");
+                    alert(data.Message);
+                }
+                else {
+                    alert(data.Message);
+                }
+            }
+        });
+    }
+</script>

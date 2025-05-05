@@ -1,0 +1,445 @@
+﻿@model CwcExim.Areas.Master.Models.DndEximTraderFinanceControl
+<style>
+    #tblEximTrader.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+</style>
+
+<script>
+    var TimeInSeconds;
+    var PBalance;
+    var CBalance;
+    $(document).ready(function () {
+        TimeInSeconds = 5000;
+        LoadEximTrader();
+        GetEximFinanceControlList();
+    });
+    function ResetEximFinanceControl() {
+        $('[data-valmsg-for]').html('<span></span>');
+        $('#DivEximFinanceControl #DivFinanceControlErrMsg').html('');
+        $('#DivEximFinanceControl #DivFinanceControlMsg').html('');
+        $('#DivEximFinanceControl #EximTraderName').val('');
+        $('#DivEximFinanceControl #Address').val('');
+        $('#DivEximFinanceControl #Tan').val('');
+        $('#DivEximFinanceControl #GSTNo').val('');
+        $('#DivEximFinanceControl #PreviousBalance').val('');
+        $('#DivEximFinanceControl #CurrentBalance').val('');
+        $('#DivEximFinanceControl #CreditLimit').val('');
+        $('#DivEximFinanceControl #CreditPeriod').val('');
+
+    }
+    function GetEximFinanceControlList() {
+        $('#DivFinanceControlList').load('/Master/DndEximTrader/GetEximTraderFncControlList');
+    }
+    function FinanceControlOnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            $('#DivEximFinanceControl #DivFinanceControlMsg').html(data.Message);
+            setTimeout(ResetEximFinanceControl, TimeInSeconds);
+            $('#cus_list #'+$('#EximTraderId').val()).remove();
+            GetEximFinanceControlList();
+        }
+        else {
+            $('#DivEximFinanceControl #DivFinanceControlErrMsg').html(data.Message);
+        }
+    }
+    function FinanceControlOnFailure() {
+
+    }
+    
+
+    function  GetEximTraderNew(EximTraderId) {
+        debugger;
+        $.ajax({
+            url: '/Master/DndEximTrader/GetEximTraderNew',
+            type: 'GET',
+            dataType: 'JSON',
+            async:false,
+            data: { EximTraderId: EximTraderId},
+            success: function (data) {
+                debugger;
+                $('#PreviousBalance').val(data.Data[0].PreviousBalance);
+                $('#CurrentBalance').val(data.Data[0].CurrentBalance);
+                $('#SDBalance').val(data.Data[0].SDBalance); 
+                CBalance = data.Data[0].CurrentBalance;
+                PBalance = data.Data[0].CurrentBalance;
+            }
+        });
+    }
+
+    function SearchByPartyCode() {
+        if ($('#box').val() != '') {
+            $.ajax({
+                url: '/Master/DndEximTrader/SearchByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#box').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstExim, function (i, elem) {
+                            html += '<tr onclick="SelectEximTrader(' + elem.EximTraderId + ',&quot;' + elem.EximTraderName.replace(/\r?\n|\r/g, "") + '&quot;,&quot;' + elem.Address.replace(/\r?\n|\r/g, "") + '&quot;,&quot;' + elem.GSTNo.replace(/\r?\n|\r/g, "") + '&quot;,&quot;' + elem.Tan.replace(/\r?\n|\r/g, "") + '&quot;)"><td>' + elem.EximTraderName + '</td><td>' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tblEximTrader tbody').html('');
+                        $('#tblEximTrader tbody').html(html);
+                        $('#btnLoadMore').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tblEximTrader tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadEximTrader();
+    }
+
+    function LoadMoreEximTrader() {
+        debugger;
+        $.ajax({
+            url: '/Master/DndEximTrader/LoadEximtradeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page+1 },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.lstExim, function (i, elem) {
+                        html += '<tr onclick="SelectEximTrader(' + elem.EximTraderId + ',&quot;' + elem.EximTraderName.replace(/\r?\n|\r/g, "") + '&quot;,&quot;' + elem.Address.replace(/\r?\n|\r/g, "") + '&quot;,&quot;' + elem.GSTNo.replace(/\r?\n|\r/g, "") + '&quot;,&quot;' + elem.Tan.replace(/\r?\n|\r/g, "") + '&quot;)"><td>' + elem.EximTraderName + '</td><td>' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page==-1)
+                        $('#tblEximTrader tbody').html(html);
+                    else
+                        $('#tblEximTrader tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadEximTrader() {
+        debugger;
+        Page=0;
+        $.ajax({
+            url: '/Master/DndEximTrader/LoadEximtradeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page},
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.lstExim, function (i, elem) {
+                        html += '<tr onclick="SelectEximTrader(' + elem.EximTraderId + ',&quot;' + elem.EximTraderName.replace(/\r?\n|\r/g, "") + '&quot;,&quot;' + elem.Address.replace(/\r?\n|\r/g, "") + '&quot;,&quot;' + elem.GSTNo.replace(/\r?\n|\r/g, "") + '&quot;,&quot;' + elem.Tan.replace(/\r?\n|\r/g, "") + '&quot;)"><td>' + elem.EximTraderName + '</td><td>' + elem.PartyCode + '</td></tr>';
+                    });
+                    $('#tblEximTrader tbody').html(html);
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function CloseEximTrader(){
+        $('#box').val('');
+        $("#myModal").modal("hide");
+        LoadEximTrader();
+    }
+
+    function SelectEximTrader(EximTraderId, EximTraderName,Address,GSTNo,Tan) {
+        debugger;
+        $('#EximTraderName').val(EximTraderName);
+        $('#EximTraderId').val(EximTraderId);
+        $('#Address').val(Address);
+        $('#GSTNo').val(GSTNo);
+        $('#Tan').val(Tan);
+        
+        GetEximTraderNew(EximTraderId);
+        LoadEximTrader();
+        $("#myModal").modal("hide");
+        $('#box').val('');
+    }
+
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+    document.getElementById('box').addEventListener('keyup', debounce(function () {
+        SearchByPartyCode();
+    }, 800));
+
+    function SearchEximTrader() {
+        debugger;
+        if ($('#EximSearch').val().trim() == "" || $('#EximSearch').val().trim() == null) {
+            GetEximFinanceControlList();
+        }
+        else {
+            $('#DivFinanceControlList').load('/Master/DndEximTrader/SearchEximTraderFncCntrl?EximName=' + $('#EximSearch').val().trim());
+
+        }
+    }
+
+</script>
+
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "FinanceControlOnSuccess";
+    options.OnFailure = "FinanceControlOnFailure";
+}
+<div class="container-fluid">
+        <div class="row">
+            <div class="col-md-offset-0-5 col-md-11">
+                <div class="Head_h4">
+                @using (Ajax.BeginForm("AddEditEximTraderFncControl", "DndEximTrader", options))
+                {
+                    @Html.AntiForgeryToken()
+                    <div id="DivEximFinanceControl">
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-12">
+                                <h4>Exim Trader Finance Control</h4>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5">
+                                    @Html.LabelFor(m => m.EximTraderName, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-10-5">
+                                    <span class="ReQSimbol">*</span>
+                                    @Html.TextBoxFor(m => m.EximTraderName, new { @class = "form-control input-sm", @readonly = "readonly" })
+                                    @Html.ValidationMessageFor(m => m.EximTraderName, "", new { @class = "Error_Msg" })
+                                    @Html.HiddenFor(m => m.EximTraderId)
+                                    <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#myModal"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5">
+                                    @Html.LabelFor(m => m.Address, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-10-5">
+                                    @Html.TextAreaFor(m => m.Address, new { @style = "width=100%;height:75px;", @readonly = "readonly" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5">
+                                    @Html.LabelFor(m => m.Tan, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-4">
+                                    @Html.TextBoxFor(m => m.Tan, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.Tan, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-1">
+                                    @Html.LabelFor(m => m.GSTNo, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-4">
+                                    @Html.TextBoxFor(m => m.GSTNo, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.GSTNo, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        @*Added after discussion on 30-12-2019 with PM*@
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>SD Balance:</label>
+                                </div>
+                                <div class="col-md-2">
+                                    @Html.TextBoxFor(m => m.SDBalance, new { @class = "form-control input-sm", @readonly = true })                                   
+                                </div>                               
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>Previous Balance:</label>
+                                </div>
+                                <div class="col-md-2">
+                                    @Html.TextBoxFor(m => m.PreviousBalance, new { @class = "form-control input-sm" , @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.PreviousBalance, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-3 padding_rt">
+                                   <label>Current Balance:</label>
+                                </div>
+                                <div class="col-md-2">
+                                    @Html.TextBoxFor(m => m.CurrentBalance, new { @class = "form-control input-sm" , @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.CurrentBalance, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>Credit Limit:</label>
+                                </div>
+                                <div class="col-md-2">
+                                    <span class="ReQSimbol">*</span>
+                                    @Html.TextBoxFor(m => m.CreditLimit,  new { @class = "form-control input-sm" , onkeypress = "return isNumberKey(this, event)" })
+                                    @Html.ValidationMessageFor(m => m.CreditLimit, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-3 padding_rt" style="display:none;">
+                                   <label>Credit Period:</label>
+                                </div>
+                                <div class="col-md-2" style="display:none;">
+                                    <span class="ReQSimbol">*</span>
+                                    @Html.TextBoxFor(m => m.CreditPeriod,  new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.CreditPeriod, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-4 col-md-2" style="text-align:center">
+                                <input type="submit" class="btn log_Btn_sm" value="Save" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" value="Reset" class="btn log_Btn_sm" onclick="ResetEximFinanceControl()" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg" style="background-color:transparent">
+                            <div id="DivFinanceControlMsg"></div>
+                        </div>
+                        <div id="DivFinanceControlErrMsg" class="logErrMsg" style="background-color:transparent"></div>
+                    </div>
+                }
+                    <div class="row Form_Space_top Form_Space_bottom">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-offset-5 col-md-4" style="text-align:right;">
+                                <label>Exim Trader Name:</label>
+                            </div>
+                            <div class="col-md-3">
+                                @Html.TextBox("EximSearch", "", new { placeholder = "Search Here" })
+                                @*<input id="PartyCode" name="PartyCode" type="text" value="gfh gf">*@
+                                <span class="search"><i class="fa fa-search" aria-hidden="true" onclick="SearchEximTrader()"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                <div class="row">
+                            <div class="col-md-12 SignUp_space_bottom">
+                                <div id="DivFinanceControlList"></div>
+                            </div>
+                        </div>
+                    
+            </div>
+        </div>
+    </div>
+    </div>
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseEximTrader()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List Of Exim Trader</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Exim Trader Name Or Party Code " id="box" type="text" />
+                @*<span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchExpByPartyCode()"></i></span>*@
+
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Exim Trader Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+
+                <div id="slim_scroll">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tblEximTrader">
+                       
+                            @{ 
+                                if (ViewBag.lstExim != null)
+                                {
+                                    foreach (var i in ViewBag.lstExim)
+                                    {
+
+                                    <tr onclick="SelectEximTrader(@i.EximTraderId,'@i.EximTraderName','@i.Address','@i.GSTNo','@i.Tan')">
+                                        <td colspan="8" width="80%" class="txt_wrp">@i.EximTraderName</td>
+                                        <td colspan="4" width="20%" class="txt_wrp">@i.PartyCode</td>
+                                    </tr>
+                                        }
+                                    }
+                                }
+                            
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+                        }
+                        else
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseEximTrader()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script>
+
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+    function isNumberKey(txt, evt) {
+        var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if (charCode == 46) {
+            //Check if the text already contains the . character
+            if (txt.value.indexOf('.') === -1) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            if (charCode > 31 &&
+              (charCode < 48 || charCode > 57))
+                return false;
+        }
+        return true;
+    }
+
+
+    $('#CreditLimit').on('blur', function () {
+        debugger;
+        $('#CurrentBalance').val(Number($('#CreditLimit').val()) + CBalance);
+    })
+</script>

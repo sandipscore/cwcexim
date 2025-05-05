@@ -1,0 +1,133 @@
+﻿@model IEnumerable<CwcExim.Areas.Export.Models.DSR_CCINEntry>
+<table class="table table-bordered table-striped" id="tblCCINEntry" style="width:100%">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("Sl No")</th>
+            <th>CCIN No</th>
+            <th>CCIN Date</th>
+            <th>SB No</th>
+            <th>SB Date</th>
+            <th class="text-center">@Html.DisplayName("Edit")</th>
+            <th class="text-center">@Html.DisplayName("Delete")</th>
+            @*<th class="text-center">@Html.DisplayName("Print")</th>*@
+        </tr>
+    </thead>
+    <tbody>
+        @{var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center">@SerialNo</td>
+                    <td>@item.CCINNo</td>
+                    <td>@item.CCINDate</td>
+                    <td>@item.SBNo</td>
+                    <td>@item.SBDate</td>
+                    <td class="text-center"><a href="#" onclick="EditCCINEntry(@item.Id,@item.PartyId)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="DeleteCCINEntry(@item.Id)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                    @*<td class="text-center"><a href="#" onclick="PrintCCINEntry('@item.InvoiceNo')"><i class="fa fa-file-pdf-o Edit"></i></a></td>*@
+                </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+<script>
+    $(document).ready(function () {
+        var tblCCINEntry = $('#tblCCINEntry').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 10,
+            "aoColumns": [
+                       { "sName": "SL No","width": "10%" },
+                       { "sName": "CCIN No" },
+                       { "sName": "CCIN Date", "bSortable": false },
+                       { "sName": "SB No" },
+                       { "sName": "SB Date", "bSortable": false },
+                       { "sName": "Edit", "bSortable": false, "width": "9%" },
+                       { "sName": "Delete", "bSortable": false, "width": "9%" },
+                     
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0)', nRow).addClass("text-center");
+                $('td:eq(5),td:eq(6)', nRow).addClass("text-center");
+                $('td:eq(0)', nRow).css("width", "10%");
+                
+                $('td:eq(5)', nRow).css("width", "9%");
+                $('td:eq(6)', nRow).css("width", "9%");
+               
+            }
+        });
+        new $.fn.dataTable.FixedHeader(tblCCINEntry);
+    });
+    function EditCCINEntry(Id, PartyId)
+    {
+        $('#DivBody').load( '/Export/DSR_CWCExport/CCINEntry?Id=' + Id+'&PartyId='+PartyId);
+    }
+
+    function DeleteCCINEntry(Id)
+    {
+        var Confirm = confirm("Are you sure you want to delete?");
+        if(Confirm==true)
+        {
+            var Token=$('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Export/DSR_CWCExport/DeleteCCINEntry',
+                type: 'POST',
+                dataType: 'JSON',
+                data: { CCINEntryId: Id },
+                headers:{"__RequestVerificationToken":Token},
+                success: function (data) {
+                    if(data.Status==1)
+                    {
+                        alert(data.Message);
+                        LoadCCINEntryList();
+                        ResetAllField();
+                    }
+                    else
+                    {
+                        alert(data.Message);
+                    }
+                }
+            });
+        }
+    }
+
+    var Page = 0;
+    function LoadMoreListData() {
+        debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Export/DSR_CWCExport/LoadMoreCCINEntryList',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblCCINEntry').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.CCINNo],
+        [item.CCINDate],
+        [item.SBNo],
+        [item.SBDate],
+        ['<a href="#" onclick=EditCCINEntry(' + [item.Id,item.PartyId] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#" onclick=DeleteCCINEntry(' + [item.Id] + ')><i class="fa fa-window-close-o Delete"></i></a>'],
+        ['<a href="#" onclick=PrintCCINEntry(' + [item.Id] + ')><i class="fa fa-file-pdf-o Edit"></i></a>'],
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+
+</script>
+

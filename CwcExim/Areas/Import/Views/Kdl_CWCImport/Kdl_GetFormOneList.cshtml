@@ -1,0 +1,149 @@
+﻿@model IEnumerable<CwcExim.Areas.Import.Models.Kdl_FormOneModel>
+
+<script>
+    $(document).ready(function () {
+        var tblFormOne = $('#tblFormOne').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                    { "sName": "SL No", "width": "10%" },
+                    { "sName": "Form 1 No", "bSortable": false },
+                    { "sName": "Form 1 Date", "bSortable": false },
+                    { "sName": "Shipping Line Name" },
+                    
+                    { "sName": "View", "bSortable": false, "width": "10%" },
+                    { "sName": "Edit", "bSortable": false, "width": "10%" },
+                    { "sName": "Delete", "bSortable": false, "width": "10%" },
+                    { "sName": "Print", "bSortable": false, "width": "10%" }
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(tblFormOne);
+    });
+    function ViewFormOne(FormOneId) {
+        $('#divFormOne').load( '/Import/Kdl_CWCImport/ViewFormOne?FormOneId=' + FormOneId);
+    }
+    function EditFormOne(FormOneId) {
+        $('#divFormOne').load( '/Import/Kdl_CWCImport/EditFormOne?FormOneId=' + FormOneId);
+    }
+    function DeleteFormOne(FormOneId) {
+        var Confirm = confirm("Are you sure you want to Delete?");
+        if (Confirm == true) {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("DeleteFormOne", "Kdl_CWCImport", new { areas= "Import" }) ',
+                type: 'POST',
+                data: { FormOneId: FormOneId },
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                success: function (data) {
+                    alert(data.Message);
+                    if (data.Status == 1) {
+                        GetFormOne();
+                        GetFormOneList();
+                    }
+                }
+            });
+        }
+    }
+    function PrintFormOne(FormOneId) {
+        debugger;
+        $.ajax({
+            url:  '/Import/Kdl_CWCImport/PrintFormOne?FormOneId=' + FormOneId,
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data) {
+                if (data.Status == 1) {
+                    window.open(data.FileUrl + '?t=' + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes');
+                    //GeneratePDF(data.Data);
+                }
+                else {
+                    alert("Error");
+                }
+            }
+        });
+    }
+    function GeneratePDF(data) {
+        var html1 = "<table style='width: 100%;font-size: 9pt;'><thead>"
+        + "<tr><th style='width: 35%;text-align: left;'>Customs Serial No.</th><th style='text-align:center;'><span style='font-size:12pt;margin-bottom: 5px;'>FORM NO. 1</span><br/>"
+        + "<br/><span style='font-size:10pt;border: 1px solid #000;padding: 5px 10px;'>KOPT COPY</span></th><th style='width: 35%;text-align: left;'><br/>"
+        + "C.H.A's Name: " + data.CHAName + "<br/>Address: " + data.CHAAddress + "<br/>Tel. No.(s): " + data.CHAPhoneNo + "</th></tr></thead><tbody><tr><td colspan='3'style='text-decoration: underline;text-align: center;'><br/>"
+        + "APPLICATION FOR MOVEMENT OF CONTAINERS FROM DOCKS TO CWC. C.F.C KOLKATA</td></tr><tr><td colspan='2' style='width: 80%;'>To,<br/>The Assistant Commissioner of Customs (Docks)</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: " + data.FormOneDate + "</td></tr><tr>"
+        + "<td colspan='3'>Kindly allow <strong>M/s. Central Warehousing Corporration,</strong> the C.F.S. operator, to remove the following import load / empty containers to their C.F.S. at 18 Coal Dock Road, Kolkata - 700 043"
+        + " on our behalf for arranging subsequent disposal of the goods/container. This is in terms of customs Public Notice No. 4/94 & 5/94 date 5.01.94 & 91.94 dated 31.05.94. </td></tr>"
+        + "<tr><td colspan='3'><table style='width: 100%;font-size: 9pt;border-collapse: collapse;'><thead><tr><th style='width: 20%;text-align:center;'>1</th><th style='text-align:center;'>2</th><th style='text-align:center;'>3</th><th style='text-align:center;'>4</th><th style='text-align:center;'>5</th><th style='text-align:center;'>6</th><th style='text-align:center;'>7</th><th style='width: 10%;text-align:center;'>8</th></tr>"
+        + "<tr><th style='border: 1px solid #000;'>Name of the Vessel / Voy. No.<br/>Rot No./Shed No.</th><th style='border: 1px solid #000;'>Container No.<br/>& Date</th><th style='border: 1px solid #000;'>Type<br/>Load/<br/>Empty</th>"
+        + "<th style='border: 1px solid #000;'>Line<br/>No.</th><th style='border: 1px solid #000;'>Name of Importer & <br/> Address</th><th style='border: 1px solid #000;'>Description of <br/>Cargo</th>"
+        + "<th style='border: 1px solid #000;'>Date of Landing<br/>of Container in<br/>CPT Premises</th><th style='border: 1px solid #000;border-right: none;'>Remarks</th></tr></thead><tbody>";
+
+        for (var i = 0; i < data.lstFormOnePrintDetail.length; i++) {
+            html1 += "<tr><td style='border: 1px solid #000;border-bottom: none;border-left: none;'>" + data.lstFormOnePrintDetail[i].VesselName + " / " + data.lstFormOnePrintDetail[i].VoyageNo + " / " + data.lstFormOnePrintDetail[i].RotationNo + "</td>"
+                + "<td style='border: 1px solid #000;'>" + data.lstFormOnePrintDetail[i].ContainerNo + " " + data.lstFormOnePrintDetail[i].SealNo + "</td>"
+                + "<td style='border: 1px solid #000;'>" + data.lstFormOnePrintDetail[i].Type + "</td>"
+                + "<td style='border: 1px solid #000;'>" + data.lstFormOnePrintDetail[i].LineNo + "</td>"
+                + "<td style='border: 1px solid #000;'>" + data.lstFormOnePrintDetail[i].ImpName + ", " + data.lstFormOnePrintDetail[i].ImpAddress + "</td>"
+                + "<td style='border: 1px solid #000;'>" + data.lstFormOnePrintDetail[i].CargoDesc + "</td>"
+                + "<td style='border: 1px solid #000;'>" + data.lstFormOnePrintDetail[i].DateOfLanding + "</td>";
+            if (i == 0)
+                html1 += "<td style='border: 1px solid #000;border-right: none;' rowspan='" + data.lstFormOnePrintDetail.length + "'>Jetty Challan Not Filed & Custom Examination not Done at Port</td></tr>";
+            else
+                html1 += "</tr>";
+        }
+        html1 += "<tr><td style='border-right: 1px solid #000;'><div style='border: 1px solid #000;border-radius: 10pt;width: 97.5%;padding: 3px;'><span style='font-weight: 600;text-decoration: underline;'>S.O.NSD/KPD</span>"
+        + "<br/>Please allow removal of _______________ ontainers to CWC, CFS as per P.N. 4/94 & 5/94 dated 5.1.94 and 91/94 dated 31.5.94<br/><br/>"
+        + "<span>_____________________<br/>Asstt. Commissioner NSD / PKD</span></div></td>"
+        + "<td colspan='4'>Checked and found in order. Customs seals are used. Removal of the above containers by M/s. C.W.C. is allowed<br/><br/>Signature of P.O.- C.F.S./Docks</td>"
+        + "<td colspan='3' style='text-align: center;'>_____________________________________________<br/>Signature of Steamer Agent / Container Agent</td></tr></tbody></table></td></tr></tbody></table>";
+
+        var PostData = new FormData();
+        PostData.append("Page1", html1);
+        PostData.append("FormOne", data.FormOneNo);
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GenerateFormOne", "Kdl_CWCImport", new { area = "Import" })',
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + '?t=' + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes');
+                else
+                    alert("Error");
+            }
+        });
+    }
+</script>
+<table id="tblFormOne" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+    <thead>
+        <tr>
+            <th style="text-align:center">@Html.DisplayName("SL No")</th>
+            <th>@Html.DisplayNameFor(m => m.FormOneNo)</th>
+            <th>@Html.DisplayNameFor(m => m.FormOneDate)</th>
+            <th>@Html.DisplayNameFor(m => m.ShippingLineName)</th>
+            
+            <th style="text-align:center;">@Html.DisplayName("View")</th>
+            <th style="text-align:center;">@Html.DisplayName("Edit")</th>
+            <th style="text-align:center;">@Html.DisplayName("Delete")</th>
+            <th style="text-align:center;">@Html.DisplayName("Print")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td style="text-align:center">@SerialNo</td>
+                    <td>@Html.DisplayFor(m => item.FormOneNo)</td>
+                    <td>@Html.DisplayFor(m => item.FormOneDate)</td>
+                    <td>@Html.DisplayFor(m => item.ShippingLineName)</td>
+              
+                    <td style="text-align:center"><a href="#" onclick="ViewFormOne(@item.FormOneId)"><i class="fa fa-search-plus Edit" aria-hidden="true"></i></a></td>
+                    <td style="text-align:center"><a href="#" onclick="EditFormOne(@item.FormOneId)"><i class="fa fa-pencil-square Edit" aria-hidden="true"></i></a></td>
+                    <td style="text-align:center"><a href="#" onclick="DeleteFormOne(@item.FormOneId)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                    <td style="text-align:center"><a href="#" onclick="PrintFormOne(@item.FormOneId)"><i class="fa fa-print Edit" aria-hidden="true"></i></a></td>
+                </tr>
+                SerialNo += 1;
+            }
+        }
+    </tbody>
+</table>

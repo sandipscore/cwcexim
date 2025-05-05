@@ -1,0 +1,2361 @@
+﻿@model CwcExim.Areas.Export.Models.VIZ_CartingRegister
+
+@if (ViewBag.GodownList != null)
+{
+    <input type="hidden" id="hdnGodownList" value="@ViewBag.GodownList" />
+}
+else
+{
+    <input type="hidden" id="hdnGodownList" value="" />
+}
+
+<style>
+    .shrt_cargo {
+        table-layout: fixed;
+        overflow: hidden;
+        word-break: break-word;
+        font-size: 11px;
+    }
+
+    .srch_ico {
+        top: 30px !important;
+    }
+
+    #ShortgodownModal {
+        z-index: 99999 !important;
+    }
+
+    #LocationShortModal {
+        z-index: 99999 !important;
+    }
+</style>
+
+<div id="DivEditCartingRegister" class="container-fluid">
+    <div class="col-md-offset-0-5 col-md-11">
+        <div class="Head_h4">
+            @using (Ajax.BeginForm("AddEditCartingRegister", "VIZ_CWCExport", new AjaxOptions
+            {
+                //Confirm = "Are you sure you want to Save?",
+                HttpMethod = "POST",
+                OnSuccess = "RegisterOnSuccess",
+                OnFailure = "RegisterOnFailure"
+            }, new { @Id = "frmCartingReg" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.CartingRegisterId)
+                @Html.HiddenFor(m => m.CartingAppId)
+                @Html.HiddenFor(m => m.XMLData)
+                @Html.HiddenFor(m => m.ClearLocation)
+                @Html.Hidden("LocationShortDetails")
+                if (ViewBag.check != null)
+                {
+                    <input type="hidden" id="hdnShippingLineList" value="@ViewBag.check" />
+                }
+                else
+                {
+                    <input type="hidden" id="hdnShippingLineList" value="" />
+                }
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4 class="">Carting Register</h4>
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5 col_cus_2">
+                            <label>Carting No:</label>
+                        </div>
+                        <div class="col-md-2-5">
+                            @Html.TextBoxFor(m => m.CartingRegisterNo, new { @class = "form-control input-sm", @readonly = true })
+                        </div>
+                        <div class="col-md-1-5 col-md-offset-2-5 col_cus_offset_3 col_cus_2">
+                            <label>Register Date:</label>
+                        </div>
+                        <div class="col-md-2 col_cus_2_5 Date_Img">
+                            @Html.TextBoxFor(m => m.RegisterDate, new { @class = "form-control input-sm", @onkeyup = "checks()", @onblur = "checkdat()", @maxlength = "10" })
+                            @Html.ValidationMessageFor(m => m.RegisterDate, "", new { @class = "Error_Msg" })
+                            <div class="field-validation-error" id="Msges" style="background-color:transparent"></div>
+                        </div>
+
+                        <div class="col-md-2">
+                            <div class="input-group clockpicker" data-placement="left" data-align="top">
+                                <input type="text" id="time" name="time" class="form-control" value="00:00" readonly="readonly" style="background-color:#fff;z-index:0;" />
+                                <input type="hidden" id="EditTime" name="EditTime" value="@ViewBag.strTime" />
+                                <span class="input-group-addon" style="padding:2px 10px;">
+                                    <span class="glyphicon glyphicon-time"></span>
+                                </span>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5 col_cus_2">
+                            <label>CCIN No:</label>
+                        </div>
+                        <div class="col-md-2-5">
+                            @Html.TextBoxFor(m => m.ApplicationNo, new { @class = "form-control input-sm", @readonly = true })
+                        </div>
+                        <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                            <label>CCIN Date:</label>
+                        </div>
+                        <div class="col-md-2-5 col_cus_2_5">
+                            @Html.TextBoxFor(m => m.ApplicationDate, new { @class = "form-control input-sm", @readonly = true })
+                        </div>
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5 col_cus_2 padding_rt">
+                            <label>Carting Type:</label>
+                        </div>
+                        <div class="col-md-2-5">
+                            @*@Html.DropDownListFor(m => m.CartingType, new List<SelectListItem>
+                                {
+                                    new SelectListItem { Text="Manual",Value="1"},
+                                    new SelectListItem { Text="Mechanical",Value="2"}
+                                }, "----Select----", new { })*@
+                            @Html.DropDownListFor(m => m.CartingType, new List<SelectListItem>
+                                {
+                                    new SelectListItem { Text="Manual",Value="1"},
+                                    //new SelectListItem { Text="Mechanical",Value="2"}
+                                }, new { })
+                            @Html.ValidationMessageFor(m => m.CartingType)
+                        </div>
+                        <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                            <label>Commodity Type:</label>
+                        </div>
+                        <div class="col-md-2-5">
+                            @Html.DropDownListFor(m => m.CommodityType, new List<SelectListItem>
+                                {
+                                    new SelectListItem { Text="General",Value="1"},
+                                    new SelectListItem { Text="Heavy/Scrape",Value="2"}
+                                }, "----Select----", new { })
+                            @Html.ValidationMessageFor(m => m.CommodityType)
+                        </div>
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5 col_cus_2">
+                            @Html.LabelFor(m => m.CHAName, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                        </div>
+                        <div class="col-md-10-5 col_cus_10">
+                            @Html.TextBoxFor(m => m.CHAName, new { @class = "form-control input-sm", @readonly = true, @onkeydown = "PopupActivate('CHAModal');" })
+                            <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CHAModal"></i></span>
+                            @Html.HiddenFor(m => m.CHAId, new { @Id = "hdnCHAId" })
+                        </div>
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5 col_cus_2">
+                            <label>Shipping Line:</label>
+                        </div>
+                        <div class="col-md-10-5 col_cus_10">
+                            @Html.HiddenFor(m => m.ShippingLineId)
+                            @Html.TextBoxFor(m => m.ShippingLineName, new { @class = "form-control input_sm", @readonly = true, @onkeydown = "PopupActivate('ShippingLineModal');" })
+                            <span class="search" id="ShippingLineSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" id="shipping" data-target="#ShippingLineModal"></i></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5 col_cus_2 padding_rt">
+                            <label>Godown Name:</label>
+                        </div>
+                        <div class="col-md-10-5 col_cus_10">
+                            @Html.TextBoxFor(m => m.GodownName, new { @class = "form-control input-sm", @readonly = true })
+                            @*<span class="search" id="SpanGodownSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#godownModal"></i></span>*@
+                            @Html.HiddenFor(m => m.GodownId, new { @Id = "hdnGodownId" })
+                        </div>
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5 col_cus_2 padding_rt">
+                            <label>Location:</label>
+                        </div>
+                        <div class="col-md-10-5 col_cus_10">
+                            @Html.TextBox("Location", "", new { @class = "form-control input-sm", @readonly = true })
+                            @*<span id="LocationSearch" class="search"><i class="fa fa-search" aria-hidden="true"></i></span>*@
+                            @Html.ValidationMessage("Location", new { @class = "Error_Msg" })
+                        </div>
+                    </div>
+                </div>
+                <div class="row Form_Space_top Form_Space_bottom">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-1-5 col_cus_2">
+                            @Html.LabelFor(m => m.Remarks, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                        </div>
+                        <div class="col-md-10-5 col_cus_10">
+                            @Html.TextAreaFor(m => m.Remarks, new { @class = "form-control input-sm", @style = "width:100%;height:100px;" })
+                            @Html.ValidationMessageFor(m => m.Remarks, "", new { @class = "Error_Msg" })
+                        </div>
+                    </div>
+                </div>
+                @*<div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-2 col-md-offset-1-5 col_cus_offset_2 col_cus_2">
+                                <div class="boolean-container">
+                                    @Html.RadioButton("Space", "ReservedSpace", new { id = "ReservedSpace", @onclick = "OnClickSpace('ReservedSpace')" })
+                                    <label for="ReservedSpace"><i class="circle"></i><span>Reserved Space</span></label>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col_cus_3">
+                                <div class="boolean-container">
+                                    @Html.RadioButton("Space", "GeneralSpace", new { id = "GeneralSpace", @onclick = "OnClickSpace('GeneralSpace')" })
+                                    <label for="GeneralSpace"><i class="circle"></i><span>General Space</span></label>
+                                </div>
+                                @Html.HiddenFor(m => m.SpaceType, new { @class = "form-control input-sm", @readonly = true })
+                            </div>
+                        </div>
+                    </div>*@
+                <div id="DivShippingDetails" class="Head_h5">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h5>Carting Details</h5>
+                        </div>
+                    </div>
+                    @Html.Hidden("CartingAppDtlId")
+                    @Html.Hidden("LocationDetails")
+                    @Html.Hidden("CartingRegisterDtlId")
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Shipping Bill No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBox("ShippingBillNo", "", new { @class = "form-control input-sm" })
+                                @Html.ValidationMessage("ShippingBillNo", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                <label>Shipping Bill Date:</label>
+                            </div>
+                            <div class="col-md-2-5 Date_Img col_cus_2_5">
+                                @Html.TextBox("ShippingBillDate", "", new { @class = "form-control input-sm", @onkeyup = "SBchecks()", @onblur = "SBcheckdat()", @maxlength = "10" })
+                                @Html.ValidationMessage("ShippingBillDate", new { @class = "Error_Msg" })
+                                <div class="field-validation-error" id="SBMsges" style="background-color:transparent"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Exporter:</label>
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                @Html.TextBox("Exporter", "", new { @class = "form-control input-sm", @readonly = true, @onkeydown = "PopupActivate('ExporterModal');" })
+                                <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ExporterModal"></i></span>
+                                <input type="hidden" id="hdnExporterId" />
+                                @Html.ValidationMessage("Exporter", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Cargo Description:</label>
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                @Html.TextBox("CargoDescription", "", new { @class = "form-control input-sm" })
+                                @Html.ValidationMessage("CargoDescription", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Commodity:</label>
+                            </div>
+                            <div class="col-md-4">
+                                @Html.TextBox("Commodity", "", new { @class = "form-control input-sm", @readonly = true, @onkeydown = "PopupActivate('CommodityModal');" })
+                                <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CommodityModal"></i></span>
+                                <input type="hidden" id="hdnCommodityId" />
+                                @Html.ValidationMessage("Commodity", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-2-5 col_cus_offset_1_5 col_cus_2 padding_rt">
+                                <label>Cargo Type:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.DropDownList("CargoType", new List<SelectListItem>
+                                {
+
+                                    new SelectListItem { Text="HAZ",Value="1"},
+                                    new SelectListItem { Text="Non HAZ",Value="2"},
+                                     new SelectListItem {Text="ODC",Value="3"}
+                                }, "----Select----", new { @class = "form-control input-sm dropdown", @onblur = "ClearErrMsg(this)" })
+                                @Html.ValidationMessage("CargoType", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Marks & No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBox("MarksAndNo", "", new { @class = "form-control input-sm" })
+                                @Html.ValidationMessage("MarksAndNo", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5">
+                                <label>No of Units:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBox("NoOfUnits", "", new { @class = "form-control input-sm", @maxlength = "9", onkeypress = "return AllowOnlyInteger(event)", @readonly = true })
+                                @Html.ValidationMessage("NoOfUnits", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col_cus_2 col-md-offset-4">
+                                <label>Actual Unit:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBox("ActualQty", "", new { @class = "form-control input-sm", @maxlength = "9", onkeypress = "return AllowOnlyInteger(event)" })
+                                @Html.ValidationMessage("ActualQty", new { @class = "Error_Msg" })
+                                @Html.Hidden("ActualQty1")
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>FOB Value:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBox("FOBValue", "", new { @class = "form-control input-sm", maxlength = "11", @onkeypress = "return AllowOnlyDecimal(event)" })
+                                @Html.ValidationMessage("FOBValue", new { @class = "Error_Msg" })
+                                @Html.Hidden("FOBValue1")
+                            </div>
+                            <div class="col-md-offset-4 col-md-1-5 col_cus_2">
+                                <label>Pkg Type(UOM):</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.DropDownList("PkgType", new List<SelectListItem>
+                                        {
+
+                                          new SelectListItem { Text="Pallets",Value="Pallets"},
+                                        new SelectListItem { Text="Box",Value="Box"},
+                                         new SelectListItem { Text="Rolls",Value="Rolls"},
+                                          new SelectListItem { Text="Drums",Value="Drums"},
+                                           new SelectListItem { Text="Bags",Value="Bags"},
+                                            new SelectListItem { Text="Case",Value="Case"},
+                                              new SelectListItem { Text="Cartoon",Value="Cartoon"}
+                                        }, "----Select----", new { @class = "form-control input-sm dropdown" })
+                                @Html.ValidationMessage("PkgType", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Weight (Kg):</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBox("Weight", "", new { @class = "form-control input-sm", maxlength = "11", @onkeypress = "return AllowOnlyDecimal(event)", @readonly = true })
+                                @Html.ValidationMessage("Weight", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                <label>Gross Weight (Kg):</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBox("ActualWeight", "", new { @class = "form-control input-sm", maxlength = "11", @onkeypress = "return AllowOnlyDecimal()" })
+                                @Html.ValidationMessage("ActualWeight", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 hidden">
+                                <label>Un-Reserved Weight (Kg):</label>
+                            </div>
+                            <div class="col-md-2-5 hidden">
+                                @Html.TextBox("UnReservedWT", "", new { @class = "form-control input-sm", maxlength = "11", @onkeypress = "return AllowOnlyDecimal(event)" })
+                                @Html.ValidationMessage("UnReservedWT", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-0 col_cus_offset_3 col_cus_2 padding_rt">
+                                <label>Un-Reserved CBM:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBox("CUM", "", new { @class = "form-control input-sm", maxlength = "11", @onkeypress = "return AllowOnlyDecimal(event)" })
+                                @Html.ValidationMessage("CUM", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                <label>Reserved CBM:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBox("ReservedCBM", "", new { @class = "form-control input-sm", maxlength = "11", @onkeypress = "return AllowOnlyDecimal(event)" })
+                                @Html.ValidationMessage("ReservedCBM", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Un-Reserved Area (SQM):</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBox("SQM", "", new { @class = "form-control input-sm", maxlength = "11", @onkeypress = "return AllowOnlyDecimal(event)", onchange = "OnChangeArea()" })
+                                @Html.ValidationMessage("SQM", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col_cus_2 col-md-offset-4 col_cus_offset_3 ">
+                                <label>Reserved Area (SQM):</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBox("ReservedSQM", "", new { @class = "form-control input-sm", @maxlength = "11", @onkeypress = "return AllowOnlyInteger(event)", onchange = "OnChangeArea()" })
+                                @Html.ValidationMessage("ReservedSQM", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top hidden">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                <label>Total Area (SQM):</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBox("TotalSQM", "", new { @class = "form-control input-sm", @onkeypress = "return AllowOnlyDecimal(event)", @readonly = "readonly" })
+                                @Html.ValidationMessage("TotalSQM", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    @*<div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                    @*<label>Location:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("Location", "", new { @class = "form-control input-sm", @readonly = true })
+                                        <span id="LocationSearch" class="search"><i class="fa fa-search" aria-hidden="true"></i></span>
+                                        @Html.ValidationMessage("Location", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>*@
+                    @*<div class="row">
+                            <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                        </div>
+                        <div class="row Form_Space_bottom">
+                            <div class="col-md-offset-4 col-md-2">
+                                <input type="button" id="BtnAddCartingReg" class="btn log_Btn_sm" value="Add" onclick="SaveRegDtl()" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" id="BtnResetCartingReg" class="btn log_Btn_sm" value="Reset" />
+                            </div>
+                        </div>*@
+                    <div id="DivCartingRegTblErrMsg" class="logErrMsg" style="background-color:transparent"></div>
+                    <div class="row Form_Space_bottom Form_Space_top hidden">
+                        <div class="col-md-12">
+                            <table class="table table-striped table-bordered dataTable" id="tblShippingDetails" style="width:100%;">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center" style="width:8%;">@Html.DisplayName("SL No")</th>
+                                        <th>@Html.DisplayName("Shipping Bill No")</th>
+                                        <th>@Html.DisplayName("Shipping Bill Date")</th>
+                                        <th>@Html.DisplayName("Exporter")</th>
+                                        <th class="text-center">@Html.DisplayName("Edit")</th>
+                                        <th class="text-center">@Html.DisplayName("View")</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-offset-2-5 col-md-2">
+                        <input type="button" class="btn log_Btn_sm" value="Save" id="BtnSaveCartingReg" onclick="SubmitForm()" />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="button" class="btn log_Btn_sm" value="Cancel" onclick="LoadCartingRegPage()" />
+                    </div>
+                    <div class="col-md-3">
+                        <input type="button" class="btn log_Btn_sm" value="Short Cargo Entry" data-toggle="modal" data-target="#ShortCargoModal" />
+                    </div>
+                </div>
+
+                <div id="DivCartingRegMsg" class="logSuccMsg" style="background-color:transparent"></div>
+                <div id="DivCartingRegErrMsg" class="logErrMsg Form_Space_bottom" style="background-color:transparent"></div>
+
+            }
+        </div>
+    </div>
+</div>
+<div class="modal fade mTabindex" id="ShippingLineModal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="ShippingLineModalClose()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Shipping Line Names</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="ShippingLinebox" type="text" tabindex="401" />
+                <ul class="navList" id="lstShippingLine">
+                    @{
+                        if (ViewBag.ListOfShippingLine != null)
+                        {
+                            var tabvalue = 401;
+                            var tab = 0;
+                            var u = "_";
+                            foreach (var item in ViewBag.ListOfShippingLine)
+                            {
+                                <li tabindex="@tabvalue@u@tab" onkeypress="SelectShippingLine(@item.ShippingLineId,'@item.ShippingLineName')" onclick="SelectShippingLine(@item.ShippingLineId,'@item.ShippingLineName')" id="@item.ShippingLineId">@item.ShippingLineName</li>
+                                tab++;
+                            }
+                        }
+                        else
+                        {
+                            <li></li>
+                        }
+
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="ShippingLineModalClose()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade mTabindex" id="LocationModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="LocationModalClose()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Godown Wise Location</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <div class="row">
+                    <div class="form-group Form_Input" id="DivLocationDet">
+                        @*@{
+                                foreach (var item in Model.lstGdnWiseLctn)
+                                {
+                                    @Html.Label(item.Row + " " + item.Column, new { @for = item.LocationId })
+                                    @Html.CheckBox(@item.LocationId.ToString())
+                                }
+                            }*@
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="LocationModalClose()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade mTabindex" id="LocationShortModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="LocationShortModalClose()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Godown Wise Location</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <div class="row">
+                    <div class="form-group Form_Input" id="DivShortLocationDet">
+                        @*@{
+                                foreach (var item in Model.lstGdnWiseLctn)
+                                {
+                                    @Html.Label(item.Row + " " + item.Column, new { @for = item.LocationId })
+                                    @Html.CheckBox(@item.LocationId.ToString())
+                                }
+                            }*@
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="LocationShortModalClose()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="godownModal" class="modal fade mTabindex" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="GodownModalClose()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Godown</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Godownbox" type="text" tabindex="401" />
+                <ul class="navList" id="lstGodown"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="GodownModalClose()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="ShortgodownModal" class="modal fade mTabindex" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="ShortgodownModalClose()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Godown</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="ShortGodownbox" type="text" tabindex="401" />
+                <ul class="navList" id="lstShortGodown"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="ShortgodownModalClose()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade mTabindex" id="CHAModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CHAModalClose()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of CHA Names</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="CHAbox" type="text" tabindex="401" />
+                <ul class="navList" id="lstCHA">
+                    @{
+                        if (ViewBag.CHAList != null)
+                        {
+                            var tabvalue = 401;
+                            var tab = 0;
+                            var u = "_";
+                            foreach (var item in ViewBag.CHAList)
+                            {
+                                <li tabindex="@tabvalue@u@tab" onkeypress="selectCHA(@item.CHAEximTraderId,'@item.CHAName')" onclick="selectCHA(@item.CHAEximTraderId,'@item.CHAName')" id="@item.CHAEximTraderId">@item.CHAName</li>
+                                tab++;
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CHAModalClose()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade mTabindex" id="ExporterModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="ExporterModalClose()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Exporter</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Exporterbox" type="text" tabindex="401" />
+                <ul class="navList" id="lstExporter">
+                    @{
+                        if (ViewBag.ExporterList != null)
+                        {
+                            var tabvalue = 401;
+                            var tab = 0;
+                            var u = "_";
+                            foreach (var item in ViewBag.ExporterList)
+                            {
+                                <li tabindex="@tabvalue@u@tab" onkeypress="selectExporter(@item.EXPEximTraderId,'@item.ExporterName')" onclick="selectExporter(@item.EXPEximTraderId,'@item.ExporterName')" id="@item.EXPEximTraderId">@item.ExporterName</li>
+                                tab++;
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="ExporterModalClose()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade mTabindex" id="CommodityModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CommodityModalClose()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Commodity</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Commoditybox" type="text" tabindex="401" />
+                <ul class="navList" id="lstCommodity">
+                    @{
+                        if (ViewBag.CommodityList != null)
+                        {
+                            var tabvalue = 401;
+                            var tab = 0;
+                            var u = "_";
+                            foreach (var item in ViewBag.CommodityList)
+                            {
+                                <li tabindex="@tabvalue@u@tab" onkeypress="SelectCommodity(@item.CommodityId,'@item.CommodityName')" onclick="SelectCommodity(@item.CommodityId,'@item.CommodityName')" id="@item.CommodityId">@item.CommodityName</li>
+                                tab++;
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CommodityModalClose()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ShortCargoModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal" style="width:100%;">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">Short Cargo Entry</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <div class="Form_Input Form_Space_bottom">
+                    <div class="col-md-4" style="padding-left:0;">
+                        <label>Carting Date</label>
+                        <div class="col-md-12 Date_Img col_cus_12" style="padding-left: 0;">
+                            <input type="text" id="mdl_CartingDate" readonly class="form-control input-sm" autofocus />
+                        </div>
+                    </div>
+                    <div class="col-md-4" style="padding-left:0;">
+                        <label>Quantity</label>
+                        <input type="text" id="mdl_Qty" class="col-xs-12" value="" onkeypress="return AllowOnlyInteger(event)" maxlength="11" />
+                    </div>
+                    <div class="col-md-4 hidden" style="padding-left:0;">
+                        <label>Weight</label>
+                        <input type="text" id="mdl_Wt" class="col-xs-12" value="0" />
+                    </div>
+                    <div class="col-md-4" style="padding-left:0;">
+                        <label>CBM (Un-Reserved)</label>
+                        <input type="text" id="mdl_CBM" class="col-xs-12" value="" onkeypress="return AllowOnlyDecimal(event)" maxlength="18" />
+                    </div>
+                    <div class="col-md-4" style="padding-left:0;">
+                        <label>CBM (Reserved)</label>
+                        <input type="text" id="mdl_ReservedCBM" class="col-xs-12" value="" onkeypress="return AllowOnlyDecimal(event)" maxlength="18" />
+                    </div>
+                    <div class="col-md-4 " style="padding-left:0;">
+                        <label>SQM (Un-Reserved)</label>
+                        <input type="text" id="mdl_SQM" class="col-xs-12" value="0"onkeypress="return AllowOnlyDecimal(event)"maxlength="18" />
+                    </div>
+                    <div class="col-md-4 " style="padding-left:0;">
+                        <label>SQM (Reserved)</label>
+                        <input type="text" id="mdl_ReservedSQM" class="col-xs-12" value="0" onkeypress="return AllowOnlyDecimal(event)" maxlength="18" />
+                    </div>
+                    <div class="col-md-4 postn_rel" style="padding-left:0;">
+                        <label>Godown Name:</label>
+                        @Html.TextBox("ShortGodownName", "", new { @class = "form-control input-sm", @readonly = true, @onkeydown = "PopupActivate('ShortgodownModal');" })
+                        <span class="search srch_ico" id="SpanShortGodownSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ShortgodownModal"></i></span>
+                        @Html.Hidden("ShortGodownId", new { @Id = "ShortGodownId" })
+                        @Html.ValidationMessage("ShortGodownName", "", new { @class = "Error_Msg" })
+                    </div>
+                    <div class="col-md-4 postn_rel" style="padding-left:0;">
+                        <label>Location Name:</label>
+                        @Html.TextBox("ShortLocationName", "", new { @class = "form-control input-sm", @readonly = true, @onkeydown = "PopupActivate('LocationShortModal');" })
+                        <span class="search srch_ico" id="SpanShortLocationSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#LocationShortModal"></i></span>
+                        @Html.Hidden("ShortLocationId", new { @Id = "ShortLocationId" })
+                        @Html.ValidationMessage("ShortLocationName", "", new { @class = "Error_Msg" })
+                    </div>
+                    <div class="ClearFix"></div>
+                </div>
+
+                <div class="Form_Input Form_Space_bottom">
+                    <div class="col-md-4 hidden" style="padding-left:0;">
+                        <label>Total SQM</label>
+                        <input type="text" id="mdl_TotalSQM" class="col-xs-12" value="" readonly="readonly" />
+                    </div>                                                        
+                    <div class="col-md-4 hidden" style="padding-left:0;">
+                        <label>FOB</label>
+                        <input type="text" id="mdl_FOB" class="col-xs-12" value="0" />
+                    </div>
+                    <div class="col-md-4" style="display:none;">
+                        <label>Pkg Type</label>
+                        <select id="ddlPkgType" class="col-xs-12">
+                            <option value="">----Select----</option>
+                            <option value="Pallets">Pallets</option>
+                            <option value="Cartons">Cartons</option>
+                            <option value="Drums">Drums</option>
+                            <option value="Bags">Bags</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>                    
+
+                    <div class="row SignUp_space_bottom2 SignUp_space_top2"></div>
+
+                    <div class="col-md-2 col-md-offset-5">
+                        <input style="width:100%; margin:0;" type="button" id="BtnSaveShortCargo" class="btn log_Btn_sm" value="Save" style="margin-top: 27px; float: right;" />
+                    </div>
+
+                    <div class="ClearFix"></div>
+                </div>
+                @{
+                    if (Model.lstShortCargoDetails != null)
+                    {
+                        <table id="tblShortCargo" class="table table-bordered table-striped dataTable shrt_cargo" style="margin-top:10px !important;">
+                            <thead>
+                                <tr>
+                                    <th>Carting Date</th>
+                                    <th>Qty</th>
+                                    <th>Weight</th>
+                                    @*<th>SQM(Un-Reserved)</th>
+                                        <th>SQM(Reserved)</th>
+                                        <th>Total SQM</th>*@
+                                    <th>FOB</th>
+                                    <th>CBM(Un-Reserved)</th>
+                                    <th>CBM(Reserved)</th>
+                                    <th>SQM(Un-Reserved)</th>
+                                    <th>SQM(Reserved)</th>
+                                    <th>Godown Name</th>
+                                    <th>Location</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    foreach (var item in Model.lstShortCargoDetails)
+                                    {
+                                        <tr>
+                                            <td>@item.CartingDate</td>
+                                            <td>@item.Qty</td>
+                                            <td>@item.Weight</td>
+                                            @*<td>@item.SQM</td>
+                                                <td>@item.ReservedSQM</td>
+                                                <td>@item.TotalSQM</td>*@
+                                            <td>@item.FOB</td>
+                                            <td>@item.CBM</td>
+                                            <td>@item.ReservedCBM</td>
+                                            <td>@item.SQM</td>
+                                            <td>@item.ReservedSQM</td>
+                                            <td>@item.ShortGodownName</td>
+                                            <td>@item.ShortLocation</td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                                    }
+                }
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-9 col-md-3">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    var ArrayOfCartingRegDtl = [];
+    var LocationDetails = [];
+    var LocationShortDetails = [];
+    $('#SpanGodownSearch').css("display", "none");
+    $(function () {
+        $('#RegisterDate').focus();
+
+        //$('#ReservedSpace').attr("disabled", true);
+        //$('#GeneralSpace').attr("disabled", true);
+        $('#BtnAddCartingReg').prop("disabled",true);
+        ArrayOfCartingRegDtl= @Html.Raw(Json.Encode(Model.lstRegisterDtl));
+        //GenerateCartingRegTable();
+        debugger;
+        $('#ShortGodownId').val($('#hdnGodownId').val());
+        $('#ShortGodownName').val($('#GodownName').val());
+
+        //BindShortLocationDtl($('#ShortGodownId').val());
+
+        LocationDet();
+        populatedEditData();
+        if('@Model.IsShortCargo'=='1')
+            $('#ActualQty,#ActualWeight,#SQM,#ReservedSQM,#TotalSQM,#FOBValue,#CUM,#ReservedCBM').prop('readonly',true);
+        else
+            $('#ActualQty,#ActualWeight,#SQM,#ReservedSQM,#TotalSQM,#FOBValue,#CUM,#ReservedCBM').prop('readonly',false);
+    });
+    $('#RegisterDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='RegisterDate']").html('');
+        },
+        onSelect: function(){
+            $('#time').focus();
+        }
+    });
+    $('#ShippingBillDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='ShippingBillDate']").html('');
+        },
+        onSelect: function(){
+            $('#Exporter').focus();
+        }
+    });
+
+    $('#mdl_CartingDate').datetimepicker({
+        dateFormat: "dd/mm/yy",
+        timeFormat: "HH:mm",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $('#mdl_Qty').focus();
+        }
+    });
+
+    $(document).ready(function(){
+        $("#ShortCargoModal").on('shown.bs.modal', function(){
+            $('#mdl_CartingDate').focus();
+            //$('#mdl_CartingDate,#mdl_Qty,#mdl_Wt,#mdl_SQM,#mdl_ReservedSQM,#mdl_TotalSQM,#mdl_FOB').val('');
+        });
+    });
+
+
+    //*********************************************************************
+    //CWU 315 Point 4
+    /*$('#ActualQty').on('blur', function () {
+        if ($('#NoOfUnits').val() != '' && $('#Weight').val() != '' && $('#ActualQty').val() != '') {
+            var n = $('#NoOfUnits').val();
+            var w = $('#Weight').val();
+            var q = $('#ActualQty').val();
+
+            $('#ActualWeight').val(((w / n) * q).toFixed(2)); //Charge By Request
+        }
+
+
+        if ($('#ActualQty1').val() != '' && $('#FOBValue1').val() != '' && $('#ActualQty').val() != '') {
+            var n = $('#ActualQty1').val();
+            var f = $('#FOBValue1').val();
+            var q = $('#ActualQty').val();
+
+            $('#FOBValue').val(((f / n) * q).toFixed(2)); //Charge By Request
+        }
+
+    })*/
+
+    //*********************************************************************
+    $(document).ready(function () {
+        debugger;
+        //if ( $('#SpaceType').val() == 'ReservedSpace') {
+        //    $('#SQM').attr("disabled", true);
+        //    $('#ReservedSpace').prop("checked", true);
+        //    $('#GeneralSpace').prop("checked", false);
+        //    $('#shipping').prop("disabled", true);
+
+        //}
+        //else if ($('#SpaceType').val() == 'GeneralSpace') {
+        //    $('#SQM').attr("disabled", false);
+        //    $('#ReservedSpace').prop("checked", false);
+        //    $('#GeneralSpace').prop("checked", true);
+        //    $('#shipping').prop("disabled", false);
+        //}
+
+        GodownBinding();
+        var editTime = $("#EditTime").val();
+        //alert(editTime);
+        if (editTime != null && editTime != "") {
+            $("#time").val(editTime);
+        }
+    });
+
+    $('.clockpicker').clockpicker({
+        donetext: 'Done',
+        twelvehour: true
+    });
+
+    $('#ShippingLinebox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstShippingLine > li').show();
+        else {
+            $('#lstShippingLine > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    //var SpaceType = '';
+    //function OnClickSpace(Type) {
+    //    debugger;
+    //    if (Type == 'ReservedSpace') {
+    //        $('#SQM').attr("disabled", true);
+
+    //    }
+    //    else if (Type == 'GeneralSpace') {
+    //        $('#SQM').attr("disabled", false);
+    //    }
+    //    SpaceType = Type;
+    //    $('#SpaceType').val(SpaceType);
+    //}
+
+    //$('#lstShippingLine > li').on("click", function () {
+    //    $('#ShippingLineName').val($(this).text());
+    //    $('#ShippingLineId').val($(this).attr('id'));
+    //    debugger;
+    //    $("#ShippingLineModal").modal("hide");
+    //});
+
+    function SelectShippingLine(ShippingLineId,ShippingLineName){
+        $('#ShippingLineName').val(ShippingLineName);
+        $('#ShippingLineId').val(ShippingLineId);
+        $("#ShippingLineModal").modal("hide");
+        $('#GodownName').focus();
+    }
+
+
+
+    function getSpace() {
+        debugger;
+        var GodownId = 0;
+        if ($('#hdnShippingLineList').val() != '' || $('#hdnShippingLineList').val() != undefined) {
+            var parties = JSON.parse($('#hdnShippingLineList').val());
+            GodownId = $.grep(parties, function (item) { return item.ShippingLineId == $('#ShippingLineId').val(); })[0].GodownId;
+            $('#GodownId').val(GodownId);
+            var GodownName = $.grep(parties, function (item) { return item.ShippingLineId == $('#ShippingLineId').val(); })[0].GodownName;
+            $('#GodownName').val(GodownName);
+
+            if (GodownId > 0) {
+                //$('#ReservedSpace').prop("checked", true);
+                //$('#GeneralSpace').prop("checked", false);
+                //OnClickSpace("ReservedSpace");
+                selectGodown(GodownId);
+            }
+            //else {
+            //    $('#ReservedSpace').prop("checked", false);
+            //    $('#GeneralSpace').prop("checked", true);
+            //    OnClickSpace("GeneralSpace");
+            //}
+        }
+        else {
+            alert("This Shipping Line has no such space so enter godown manually");
+        }
+    }
+
+    $('#box').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#CartingRegList > li').show();
+        } else {
+            $('#CartingRegList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+    $('#Godownbox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#lstGodown > li').show();
+        } else {
+            $('#lstGodown > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+    $('#CHAbox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#lstCHA > li').show();
+        } else {
+            $('#lstCHA > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('#Exporterbox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#lstExporter > li').show();
+        } else {
+            $('#lstExporter > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+    $('#Commoditybox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#lstCommodity > li').show();
+        } else {
+            $('#lstCommodity > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+
+
+
+    function GodownBinding() {
+        if ($('#hdnGodownList').val() != '') {
+            var GodownJson = JSON.parse($('#hdnGodownList').val());
+            var html = '';
+            var tab=401;
+            $.each(GodownJson, function (i, item) {
+                html += '<li tabindex='+ tab + '_' + i +' id="' + item.GodownId + '" onkeypress="selectGodown(' + item.GodownId + ');" onclick="selectGodown(' + item.GodownId + ');">' + item.GodownName + '</li>';
+            });
+            $('#lstGodown').html(html);
+
+
+            var htmlshort = '';
+            var stab=401;
+            $.each(GodownJson, function (i, item) {
+                htmlshort += '<li tabindex='+ stab + '_' + i +' id="' + item.GodownId + '" onkeypress="selectShortGodown(' + item.GodownId + ');" onclick="selectShortGodown(' + item.GodownId + ');">' + item.GodownName + '</li>';
+            });
+            $('#lstShortGodown').html(htmlshort);
+
+        }
+    }
+    function selectGodown(gid) {
+        $('#hdnGodownId').val(gid);
+        var GodownJson = JSON.parse($('#hdnGodownList').val());
+        //console.log(GodownJson);
+        $("#GodownName").val($.grep(GodownJson, function (item) { return item.GodownId == gid; })[0].GodownName);
+        $.ajax({
+            url: '/Export/VIZ_CWCExport/GetLocationDetailsByGodownId',
+            type: 'GET',
+            data: { GodownId: gid },
+            dataType: 'JSON',
+            success: function (data) {
+
+                LocationDetails = data;
+                console.log(data);
+                LocationDet();
+            }
+        });
+
+        $('#godownModal').modal('hide');
+    }
+
+
+    function selectShortGodown(gid) {
+        debugger;
+        $('#ShortGodownId').val(gid);
+        var GodownJson = JSON.parse($('#hdnGodownList').val());
+        //console.log(GodownJson);
+        $("#ShortGodownName").val($.grep(GodownJson, function (item) { return item.GodownId == gid; })[0].GodownName);
+        $.ajax({
+            url: '/Export/VIZ_CWCExport/GetLocationDetailsByGodownId',
+            type: 'GET',
+            data: { GodownId: gid },
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                LocationShortDetails = data;
+                console.log(data);
+                LocationShortDet();
+            }
+        });
+
+        $('#ShortgodownModal').modal('hide');
+        $('#ShortLocationName').focus();
+    }
+
+    function BindShortLocationDtl(gid){
+        $.ajax({
+            url: '/Export/VIZ_CWCExport/GetLocationDetailsByGodownId',
+            type: 'GET',
+            data: { GodownId: gid },
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                LocationShortDetails = data;
+                LocationEditShortDet();
+            }
+        });
+    }
+    function selectCHA(CHAId,CHAName){
+        $('#CHAName').val(CHAName);
+        $('#hdnCHAId').val(CHAId);
+        $('#CHAModal').modal('hide');
+        $('#ShippingLineName').focus();
+    }
+
+    function selectExporter(eid,ename){
+        $('#Exporter').val(ename);
+        $('#hdnExporterId').val(eid);
+        $('#ExporterModal').modal('hide');
+        $('#CargoDescription').focus();
+    }
+    function SelectCommodity(cid,cname){
+        $('#Commodity').val(cname);
+        $('#hdnCommodityId').val(cid);
+        $('#CommodityModal').modal('hide');
+        $('#CargoType').focus();
+    }
+
+    function LoadCartingRegPage(){
+        $('#DivBody').load( '/Export/VIZ_CWCExport/EditCartingRegisterMenu');
+    }
+    function RegisterOnSuccess(data)
+    {
+        debugger;
+        $('#DivCartingRegErrMsg').html('');
+        if(data.Status==2||data.Status==1)
+        {
+            $('#DivCartingRegMsg').html(data.Message);
+            setTimeout(LoadCartingRegPage, 5000);
+
+        }
+        else
+        {
+            $('#DivCartingRegErrMsg').html(data.Message);
+            //setTimeout(function () { $('#DivCartingRegErrMsg').html(''); }, 5000);
+        }
+    }
+    function RegisterOnFailure() {
+
+    }
+    /*
+    $('#BtnSaveCartingReg').on("click", function () {
+        debugger;
+        if (($('#DivShippingDetails #CUM').val() != "" || $('#SQM').val() != "" || $('#ActualQty').val() != "" || $('#ActualWeight').val()!="") && ($('#DivShippingDetails').find('input:text').prop("disabled") == false)) {
+            $('#DivCartingRegErrMsg').html('Please Save The Details Before Submitting');
+            return false;
+        }
+        else
+        {
+            $('#XMLData').val(JSON.stringify(ArrayOfCartingRegDtl));
+        }
+    });
+    */
+    $('#BtnResetCartingReg').on("click", function () {
+        $('#DivAddCartingRegister').find('input:text,textarea').val('');
+        $('#DivCartingRegTblErrMsg').html('');
+        $('#DivCartingRegErrMsg').html('');
+
+        $('[data-valmsg-for="ShippingBillNo"]').html('<span><span>');
+        $('[data-valmsg-for="ShippingBillDate"]').html('<span><span>');
+        $('[data-valmsg-for="Exporter"]').html('<span><span>');
+        $('[data-valmsg-for="Commodity"]').html('<span><span>');
+        $('[data-valmsg-for="CargoType"]').html('<span><span>');
+        $('[data-valmsg-for="MarksAndNo"]').html('<span><span>');
+        $('[data-valmsg-for="NoOfUnits"]').html('<span><span>');
+        $('[data-valmsg-for="Weight"]').html('<span><span>');
+
+
+        $('[data-valmsg-for="CUM"]').html('<span><span>');
+        $('[data-valmsg-for="ActualQty"]').html('<span></span>');
+        $('[data-valmsg-for="SQM"]').html('<span></span>');
+
+        $('[data-valmsg-for="ReservedSQM"]').html('<span></span>');
+        $('[data-valmsg-for="TotalSQM"]').html('<span></span>');
+
+
+        $('[data-valmsg-for="UnReservedWT"]').html('<span></span>');
+        $('[data-valmsg-for="ReservedCBM"]').html('<span></span>');
+
+
+
+
+        $('[data-valmsg-for="FOBValue"]').html('<span></span>');
+
+        $('[data-valmsg-for="ActualWeight"]').html('<span></span>');
+        $('[data-valmsg-for="Location"]').html('<span></span>');
+    });
+
+
+    function ResetCartingRegister() {
+        debugger;
+        var RegisterDate = $('#DivEditCartingRegister #RegisterDate').val();
+        $('#DivEditCartingRegister').find('input:text,textarea').val('');
+        $('#RegisterDate').val(RegisterDate);
+        $('#tblShippingDetails').hide();
+        $('#tblShippingDetails >tbody').html('');
+        $('#DivCartingRegMsg').html('');
+        $('#DivCartingRegErrMsg').html('');
+        $('#DivCartingRegTblErrMsg').html('');
+    }
+    function GenerateCartingRegTable() {
+        debugger;
+        $('#tblShippingDetails').hide();
+        var html = '';
+        $.each(ArrayOfCartingRegDtl, function (i, item) {
+            debugger;
+            html += '<tr><td class="text-center">' + (i + 1) + '</td><td>' + item.ShippingBillNo + '</td><td>' + item.ShippingDate + '</td><td>' + item.Exporter + '</td><td style="text-align:center"><a href="#" onclick="EditCartingReg(' + i + ')"><i class="fa fa-pencil-square Edit" aria-hidden="true"></i></a></td><td style="text-align:center"><a href="#" onclick="ViewCartingReg(' + i + ')"><i class="fa fa-search-plus" aria-hidden="true"></i></a></td></tr>';
+        });
+        $('#tblShippingDetails>tbody').html(html);
+        $('#tblShippingDetails').show();
+    }
+    function SaveRegDtl() {
+        debugger;
+        var Validation = true;
+        $('#DivCartingRegTblErrMsg').html('');
+        $('#DivCartingRegErrMsg').html('');
+
+        $('[data-valmsg-for="ShippingBillNo"]').html('<span><span>');
+        $('[data-valmsg-for="ShippingBillDate"]').html('<span><span>');
+        $('[data-valmsg-for="Exporter"]').html('<span><span>');
+        $('[data-valmsg-for="Commodity"]').html('<span><span>');
+        $('[data-valmsg-for="CargoType"]').html('<span><span>');
+        $('[data-valmsg-for="MarksAndNo"]').html('<span><span>');
+        $('[data-valmsg-for="NoOfUnits"]').html('<span><span>');
+        $('[data-valmsg-for="Weight"]').html('<span><span>');
+
+
+        $('[data-valmsg-for="CUM"]').html('<span><span>');
+        $('[data-valmsg-for="ActualQty"]').html('<span></span>');
+        $('[data-valmsg-for="SQM"]').html('<span></span>');
+
+        $('[data-valmsg-for="ReservedSQM"]').html('<span></span>');
+        $('[data-valmsg-for="TotalSQM"]').html('<span></span>');
+
+        $('[data-valmsg-for="UnReservedWT"]').html('<span></span>');
+        $('[data-valmsg-for="ReservedCBM"]').html('<span></span>');
+
+
+
+
+        $('[data-valmsg-for="FOBValue"]').html('<span></span>');
+
+        $('[data-valmsg-for="ActualWeight"]').html('<span></span>');
+        $('[data-valmsg-for="Location"]').html('<span></span>');
+
+        if($('#ShippingBillNo').val() == "" || $('#ShippingBillNo').val() == null){
+            $('[data-valmsg-for="ShippingBillNo"]').html('<span>Shipping Bill No Required.</span>');
+            Validation = false;
+        }
+        if($('#ShippingBillDate').val() == "" || $('#ShippingBillDate').val() == null){
+            $('[data-valmsg-for="ShippingBillDate"]').html('<span>Shipping Bill Date Required.</span>');
+            Validation = false;
+        }
+
+        if($('#Exporter').val() == "" || $('#Exporter').val() == null || $('#hdnExporterId').val()=="0" || $('#hdnExporterId').val()=="" || $('#hdnExporterId').val()==null){
+            $('[data-valmsg-for="Exporter"]').html('<span>Exporter Required.</span>');
+            Validation = false;
+        }
+
+        if($('#Commodity').val() == "" || $('#Commodity').val() == null || $('#hdnCommodityId').val()=="0" || $('#hdnCommodityId').val()=="" || $('#hdnCommodityId').val()==null){
+            $('[data-valmsg-for="Commodity"]').html('<span>Commodity Required.</span>');
+            Validation = false;
+        }
+
+        if($('#CargoType').val() == "" || $('#CargoType').val() == null){
+            $('[data-valmsg-for="CargoType"]').html('<span>Cargo Type Required.</span>');
+            Validation = false;
+        }
+
+        /*if($('#MarksAndNo').val() == "" || $('#MarksAndNo').val() == null){
+            $('[data-valmsg-for="MarksAndNo"]').html('<span>Marks And No Required.</span>');
+            Validation = false;
+        }*/
+        if((!DecimalValidation("NoOfUnits") && $('#NoOfUnits').val() != "")|| $('#NoOfUnits').val()==""){
+            $('[data-valmsg-for="NoOfUnits"]').html('<span>NoOfUnits Required and Must Be A Number.</span>');
+            Validation = false;
+        }
+        //if((!DecimalValidation("Weight") && $('#Weight').val() != "")|| $('#Weight').val()==""){
+        //    $('[data-valmsg-for="Weight"]').html('<span>Weight Required and Must Be A Decimal.</span>');
+        //    Validation = false;
+        //}
+
+        //if ((!DecimalValidation("CUM") & $('#CUM').val() != "")||$('#CUM').val()=="") {
+        //    $('[data-valmsg-for="CUM"]').html('<span>CUM Required and Must Be A Decimal</span>');
+        //    Validation = false;
+        //}
+
+        if ((!DecimalValidation("ActualQty") & $('#ActualQty').val() != "")||$('#ActualQty').val()=="") {
+            $('[data-valmsg-for="ActualQty"]').html('<span>ActualQty Required and Must Be A Number.</span>');
+            Validation = false;
+        }
+        //if (((!DecimalValidation("SQM") & $('#SQM').val() != "") || $('#SQM').val() == "") && $('#SpaceType').val()=='GeneralSpace') {
+        //if (((!DecimalValidation("SQM") & $('#SQM').val() != "") || $('#SQM').val() == "")) {
+        //    $('[data-valmsg-for="SQM"]').html('<span>SQM Required and Must Be A Decimal.</span>');
+        //    Validation = false;
+        //}
+        if ((!DecimalValidationGW("ActualWeight") & $('#ActualWeight') != "") || $('#ActualWeight') == "") {
+            $('[data-valmsg-for="ActualWeight"]').html('<span>Actual Weight Required and Must Be A Decimal.</span>');
+            Validation = false;
+        }
+
+        /*if ($('#CartingAppDtlId').val() == "" || $('#Exporter').val() == "") {
+            Validation = false;
+        }*/
+    //    if ($('#ReservedCBM').val() == 0 && $('#CUM').val()==0)
+     //   {
+        //    $('#DivCartingRegTblErrMsg').html('<span>CBM Required</span>');
+         //   Validation = false;
+       // }
+        if ($('#SQM').val() <= 0 && $('#CUM').val() <= 0) {
+            alert('SQM or CBM can not be 0');
+            return false;
+        }
+
+        debugger;
+
+        var LctnDet = $('#DivLocationDet').find('input[type="checkbox"]:checked');
+        if (LctnDet != null && LctnDet != undefined) {
+            var Det = '';
+            $(LctnDet).each(function () {
+                if (Det == '')
+                    Det += $(this).prop('id').substring(3);
+                else
+                    Det += ',' + $(this).prop('id').substring(3);
+            });
+            $('#LocationDetails').val(Det);
+        }
+
+        if (!DecimalValidationGW("FOBValue") & $('#FOBValue') != "") {
+            $('[data-valmsg-for="FOBValue"]').html('<span>FOBValue Required and Must Be A Decimal.</span>');
+            Validation = false;
+        }
+        if ( $('#LocationDetails').val() == "") {
+            $('[data-valmsg-for="Location"]').html('<span>LocationDetails Required.</span>');
+            Validation = false;
+        }
+        if ($('#PkgType').val() == "") {
+            $('[data-valmsg-for="PkgType"]').html('<span>PkgType Required.</span>');
+            Validation = false;
+        }
+
+        if (Validation == true) {
+            var RegDtl = {
+                "ShippingBillNo": $('#ShippingBillNo').val(),
+                "ShippingDate": $('#ShippingBillDate').val(),
+                "Exporter": $('#Exporter').val(),
+                "CargoDescription": $('#CargoDescription').val(),
+                "CommodityName": $('#Commodity').val(),
+                "CargoType": $('#CargoType').val(),
+                "MarksAndNo": $('#MarksAndNo').val(),
+                "NoOfUnits": $('#NoOfUnits').val(),
+                "Weight": $('#Weight').val(),
+                "CUM": $('#CUM').val() == "" ? 0 : $('#CUM').val(),
+                "ActualQty": $('#ActualQty').val() == "" ? 0 : $('#ActualQty').val(),
+                "SQM": $('#SQM').val() == "" ? 0 : $('#SQM').val(),
+                "ReservedSQM": $('#ReservedSQM').val() == "" ? 0 : $('#ReservedSQM').val(),
+                "TotalSQM": $('#TotalSQM').val() == "" ? 0 : $('#TotalSQM').val(),
+
+
+                "UnReservedWT": $('#UnReservedWT').val() == "" ? 0 : $('#UnReservedWT').val(),
+                "ReservedCBM": $('#ReservedCBM').val() == "" ? 0 : $('#ReservedCBM').val(),
+
+
+
+                "FoBValue": $('#FOBValue').val(),
+                "ActualWeight": $('#ActualWeight').val() == "" ? 0 : $('#ActualWeight').val(),
+                "CartingAppDtlId": $('#CartingAppDtlId').val(),
+                "LocationDetails": $('#LocationDetails').val(),
+                "Location": $('#Location').val(),
+                "ExporterId": $('#hdnExporterId').val(),
+                "CommodityId": $('#hdnCommodityId').val(),
+                "CartingRegisterDtlId": $('#CartingRegisterDtlId').val(),
+                "FoBValue1": $('#FOBValue1').val(),
+                "PkgType": $('#PkgType').val()
+            }
+
+            for(var i=0;i<ArrayOfCartingRegDtl.length;i++)
+            {
+                if(ArrayOfCartingRegDtl[i].CartingRegisterDtlId==RegDtl.CartingRegisterDtlId)
+                {
+
+                    ArrayOfCartingRegDtl[i].ShippingBillNo=RegDtl.ShippingBillNo;
+                    ArrayOfCartingRegDtl[i].ShippingDate=RegDtl.ShippingDate;
+                    ArrayOfCartingRegDtl[i].CargoType=RegDtl.CargoType;
+                    ArrayOfCartingRegDtl[i].MarksAndNo=RegDtl.MarksAndNo;
+                    ArrayOfCartingRegDtl[i].CommodityName=RegDtl.CommodityName;
+                    ArrayOfCartingRegDtl[i].CargoType=RegDtl.CargoType;
+                    ArrayOfCartingRegDtl[i].MarksAndNo=RegDtl.MarksAndNo;
+                    ArrayOfCartingRegDtl[i].NoOfUnits=RegDtl.NoOfUnits;
+                    ArrayOfCartingRegDtl[i].Weight=RegDtl.Weight;
+                    ArrayOfCartingRegDtl[i].CUM=RegDtl.CUM;
+                    ArrayOfCartingRegDtl[i].ActualQty=RegDtl.ActualQty;
+                    ArrayOfCartingRegDtl[i].SQM=RegDtl.SQM;
+                    ArrayOfCartingRegDtl[i].ReservedSQM=RegDtl.ReservedSQM;
+                    ArrayOfCartingRegDtl[i].TotalSQM=RegDtl.TotalSQM;
+                    ArrayOfCartingRegDtl[i].UnReservedWT=RegDtl.UnReservedWT;
+                    ArrayOfCartingRegDtl[i].ReservedCBM=RegDtl.ReservedCBM;
+                    ArrayOfCartingRegDtl[i].FoBValue=RegDtl.FoBValue;
+                    ArrayOfCartingRegDtl[i].ActualWeight=RegDtl.ActualWeight;
+                    ArrayOfCartingRegDtl[i].CartingAppDtlId=RegDtl.CartingAppDtlId;
+                    ArrayOfCartingRegDtl[i].LocationDetails=RegDtl.LocationDetails;
+                    ArrayOfCartingRegDtl[i].Location=RegDtl.Location;
+                    ArrayOfCartingRegDtl[i].ExporterId=RegDtl.ExporterId;
+                    ArrayOfCartingRegDtl[i].CommodityId=RegDtl.CommodityId;
+                    ArrayOfCartingRegDtl[i].CartingRegisterDtlId=RegDtl.CartingRegisterDtlId;
+                    ArrayOfCartingRegDtl[i].FoBValue1=RegDtl.FoBValue1;
+                    ArrayOfCartingRegDtl[i].PkgType=RegDtl.PkgType;
+
+                }
+            }
+
+
+            //ArrayOfCartingRegDtl.push(RegDtl);
+            //cwu 315 point 3
+            //ResetRegDtl();
+            //GenerateCartingRegTable();
+            //$('#BtnAddCartingReg').prop("disabled",true);
+        }
+        return Validation;
+    }
+    function EditCartingReg(Index) {
+        debugger;
+        if ($('#DivShippingDetails #Exporter').val() == '' || $('#DivShippingDetails #Exporter').prop("disabled") == true)
+        {
+            /*If there is any existing data earlier that needs to be cleared and to show search magnifier*/
+            $('#LocationSearch').css("display", "block");
+            $('#LocationDetails,#LocationDetails').val('');
+            $('#DivLocationDet').find('input[type="checkbox"]:checked').prop("checked",false);
+            $('#BtnAddCartingReg').prop("disabled",false);
+            /**********************************************************************************************/
+            $('#DivShippingDetails').find('input').prop("disabled", false);
+            $('#ShippingBillNo').val(ArrayOfCartingRegDtl[Index].ShippingBillNo);
+            $('#ShippingBillDate').val(ArrayOfCartingRegDtl[Index].ShippingDate);
+            $('#Exporter').val(ArrayOfCartingRegDtl[Index].Exporter);
+            $('#CargoDescription').val(ArrayOfCartingRegDtl[Index].CargoDescription);
+            $('#Commodity').val(ArrayOfCartingRegDtl[Index].CommodityName);
+            $('#CargoType').val(ArrayOfCartingRegDtl[Index].CargoType);
+            $('#MarksAndNo').val(ArrayOfCartingRegDtl[Index].MarksAndNo);
+            $('#NoOfUnits').val(ArrayOfCartingRegDtl[Index].NoOfUnits);
+            $('#Weight').val(ArrayOfCartingRegDtl[Index].Weight);
+            $('#FOBValue').val(ArrayOfCartingRegDtl[Index].FoBValue);
+            $('#FOBValue1').val(ArrayOfCartingRegDtl[Index].FoBValue);
+            $('#CartingAppDtlId').val(ArrayOfCartingRegDtl[Index].CartingAppDtlId);
+            $('#CUM').val(ArrayOfCartingRegDtl[Index].CUM);
+            $('#SQM').val(ArrayOfCartingRegDtl[Index].SQM);
+            $('#ReservedSQM').val(ArrayOfCartingRegDtl[Index].ReservedSQM);
+            $('#TotalSQM').val(ArrayOfCartingRegDtl[Index].TotalSQM);
+
+            $('#UnReservedWT').val(ArrayOfCartingRegDtl[Index].UnReservedWT);
+            $('#ReservedCBM').val(ArrayOfCartingRegDtl[Index].ReservedCBM);
+
+
+            $('#ActualWeight').val(ArrayOfCartingRegDtl[Index].ActualWeight);
+            $('#ActualQty').val(ArrayOfCartingRegDtl[Index].ActualQty);
+            $('#ActualQty1').val(ArrayOfCartingRegDtl[Index].ActualQty);
+            $('#LocationDetails').val(ArrayOfCartingRegDtl[Index].LocationDetails);
+            if (ArrayOfCartingRegDtl[Index].LocationDetails != null && ArrayOfCartingRegDtl[Index].LocationDetails != undefined) {
+                var split = ArrayOfCartingRegDtl[Index].LocationDetails.split(',');
+                $(split).each(function (j, data) {
+                    // $('#' + data).prop('disabled', false);
+                    $('#Loc' + data).prop('checked', true);
+                });
+            }
+            $('#Location').val(ArrayOfCartingRegDtl[Index].Location);
+            $('#hdnExporterId').val(ArrayOfCartingRegDtl[Index].ExporterId);
+            $('#hdnCommodityId').val(ArrayOfCartingRegDtl[Index].CommodityId);
+            $('#CartingRegisterDtlId').val(ArrayOfCartingRegDtl[Index].CartingRegisterDtlId);
+            $('#PkgType').val(ArrayOfCartingRegDtl[Index].PkgType);
+
+            //if ( $('#SpaceType').val() == 'ReservedSpace') {
+            //    $('#SQM').attr("disabled", true);
+
+            //}
+            //else if (SpaceType == 'GeneralSpace') {
+            //    $('#SQM').attr("disabled", false);
+            //}
+            ArrayOfCartingRegDtl.splice(Index, 1);
+            GenerateCartingRegTable();
+            if('@Model.IsShortCargo'=='1')
+                $('#ActualQty,#ActualWeight,#SQM,#ReservedSQM,#TotalSQM,#FOBValue').prop('readonly',true);
+            else
+                $('#ActualQty,#ActualWeight,#SQM,#ReservedSQM,#TotalSQM,#FOBValue').prop('readonly',false);
+        }
+        else {
+            $('#DivCartingRegTblErrMsg').html('Please Add The Records');
+        }
+
+    }
+    function ViewCartingReg(Index) {
+
+        if ($('#DivShippingDetails #Exporter').val() == '' || $('#DivShippingDetails #Exporter').prop("disabled") == true) {
+            $('#DivShippingDetails').find('input').prop("disabled", true);
+            $('#ShippingBillNo').val(ArrayOfCartingRegDtl[Index].ShippingBillNo);
+            $('#ShippingBillDate').val(ArrayOfCartingRegDtl[Index].ShippingDate);
+            $('#Exporter').val(ArrayOfCartingRegDtl[Index].Exporter);
+            $('#CargoDescription').val(ArrayOfCartingRegDtl[Index].CargoDescription);
+            $('#Commodity').val(ArrayOfCartingRegDtl[Index].CommodityName);
+            $('#CargoType').val(ArrayOfCartingRegDtl[Index].CargoType);
+            $('#MarksAndNo').val(ArrayOfCartingRegDtl[Index].MarksAndNo);
+            $('#NoOfUnits').val(ArrayOfCartingRegDtl[Index].NoOfUnits);
+            $('#Weight').val(ArrayOfCartingRegDtl[Index].Weight);
+            $('#FOBValue').val(ArrayOfCartingRegDtl[Index].FoBValue);
+            $('#FOBValue1').val(ArrayOfCartingRegDtl[Index].FoBValue1);
+            $('#CartingAppDtlId').val(ArrayOfCartingRegDtl[Index].CartingAppDtlId);
+            $('#CUM').val(ArrayOfCartingRegDtl[Index].CUM);
+            $('#SQM').val(ArrayOfCartingRegDtl[Index].SQM);
+            $('#ReservedSQM').val(ArrayOfCartingRegDtl[Index].ReservedSQM);
+            $('#TotalSQM').val(ArrayOfCartingRegDtl[Index].TotalSQM);
+
+
+            $('#UnReservedWT').val(ArrayOfCartingRegDtl[Index].UnReservedWT);
+            $('#ReservedCBM').val(ArrayOfCartingRegDtl[Index].ReservedCBM);
+
+
+
+            $('#ActualWeight').val(ArrayOfCartingRegDtl[Index].ActualWeight);
+            $('#ActualQty').val(ArrayOfCartingRegDtl[Index].ActualQty);
+            $('#Location').val(ArrayOfCartingRegDtl[Index].Location);
+
+            $('#hdnExporterId').val(ArrayOfCartingRegDtl[Index].ExporterId);
+            $('#hdnCommodityId').val(ArrayOfCartingRegDtl[Index].CommodityId);
+            $('#CartingRegisterDtlId').val(ArrayOfCartingRegDtl[Index].CartingRegisterDtlId);
+            $('#PkgType').val(ArrayOfCartingRegDtl[Index].PkgType);
+
+            //if ( $('#SpaceType').val() == 'ReservedSpace') {
+            //    $('#SQM').attr("disabled", true);
+
+            //}
+            //else if (SpaceType == 'GeneralSpace') {
+            //    $('#SQM').attr("disabled", false);
+            //}
+        }
+        else {
+            $('#DivCartingRegTblErrMsg').html('Please Add The Records');
+        }
+
+    }
+    function ResetRegDtl() {
+        $('#DivShippingDetails').find('input:text').val('');
+        $('#DivShippingDetails').find('select').val('');
+        $('#DivLocationDet').find('input[type="checkbox"]:checked').each(function () {
+            //$(this).prop("disabled", true);
+            $(this).prop("checked", false);
+        });
+    }
+    function DecimalValidation(Id) {
+        debugger
+        var State = true;
+        // var Id = obj.id;
+        var Value = $('#' + Id).val();
+        if (!Value.match(/^[\d]{1,15}\.\d{0,2}$/) && !Value.match(/^[\d]{1,15}$/))
+        {
+            //$('[data-valmsg-for="' + Id + '"]').html('<span>' + Id + ' Must Be A Decimal Up To 2 Places And Less Then 99999999.99</span>')
+            State = false;
+        }
+        return State;
+    }
+    function DecimalValidationGW(Id) {
+        var State = true;
+        // var Id = obj.id;
+        var Value = $('#' + Id).val();
+        if (!Value.match(/^[\d]{1,15}\.\d{0,2}$/) && !Value.match(/^[\d]{1,15}$/))
+        {
+            //$('[data-valmsg-for="' + Id + '"]').html('<span>' + Id + ' Must Be A Decimal Up To 2 Places And Less Then 99999999.99</span>')
+            State = false;
+        }
+        return State;
+    }
+
+    function OnChangeArea() {
+        //alert('00');
+        debugger;
+        var SQM = $('#SQM').val() == "" ? 0 : $('#SQM').val();
+        var ReservedSQM = $('#ReservedSQM').val() == "" ? 0 : $('#ReservedSQM').val();
+        var TotalSQM = parseFloat(SQM) + parseFloat(ReservedSQM);
+
+        $('#TotalSQM').val(TotalSQM);
+
+    }
+
+    $('#mdl_SQM').on('change', function() {
+        var SQM = $('#mdl_SQM').val() == "" ? 0 : $('#mdl_SQM').val();
+        var ReservedSQM = $('#mdl_ReservedSQM').val() == "" ? 0 : $('#mdl_ReservedSQM').val();
+        var TotalSQM = parseFloat(SQM) + parseFloat(ReservedSQM);
+        $('#mdl_ReservedSQM').val(ReservedSQM);
+        $('#mdl_TotalSQM').val(TotalSQM);
+
+    })
+
+    $('#mdl_ReservedSQM').on('change', function() {
+        var SQM = $('#mdl_SQM').val() == "" ? 0 : $('#mdl_SQM').val();
+        var ReservedSQM = $('#mdl_ReservedSQM').val() == "" ? 0 : $('#mdl_ReservedSQM').val();
+        var TotalSQM = parseFloat(SQM) + parseFloat(ReservedSQM);
+        $('#mdl_SQM').val(SQM);
+        $('#mdl_TotalSQM').val(TotalSQM);
+
+    })
+
+    function AllowOnlyInteger(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+    function AllowOnlyDecimal(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || (CharCode == 46) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+    function LocationDet() {
+        debugger;
+        var htm = '';
+        LocationDetails=@Html.Raw(Json.Encode(Model.lstGdnWiseLctn));
+        $.each(LocationDetails, function (i, data) {
+            //if (data.IsOccupied)
+            //    htm += '<div class="col-md-4"><div class="boolean-container"><input type="checkbox" onclick="CheckBoxChange(this)" disabled id="' + data.LocationId + '"/><label for="' + data.LocationId + '">' + data.Row + ' ' + data.Column + '<i class="square" style="margin-left:10px;"></i></label></div></div>';
+            //else
+            htm += '<div class="col-md-4"><div class="boolean-container"><input type="checkbox" onclick="CheckBoxChange(this)" id="Loc' + data.LocationId + '"/><label for="Loc' + data.LocationId + '">' + data.LocationName +  '<i class="square" style="margin-left:10px;"></i></label></div></div>';
+        });
+        $('#DivLocationDet').html(htm);
+    }
+
+
+    function LocationShortDet() {
+        debugger;
+        var htm = '';
+
+        $.each(LocationShortDetails, function (i, data) {
+
+            htm += '<div class="col-md-4"><div class="boolean-container"><input type="checkbox" onclick="CheckBoxShortChange(this)" id="LocShort' + data.LocationId + '"/><label for="LocShort' + data.LocationId + '">' + data.LocationName +  '<i class="square" style="margin-left:10px;"></i></label></div></div>';
+        });
+        $('#DivShortLocationDet').html(htm);
+
+        $('#ShortLocationName').val("");
+    }
+
+    function LocationEditShortDet() {
+        debugger;
+        var htm = '';
+
+        $.each(LocationShortDetails, function (i, data) {
+
+            htm += '<div class="col-md-4"><div class="boolean-container"><input type="checkbox" onclick="CheckBoxShortChange(this)" id="LocShort' + data.LocationId + '"/><label for="LocShort' + data.LocationId + '">' + data.LocationName +  '<i class="square" style="margin-left:10px;"></i></label></div></div>';
+        });
+        $('#DivShortLocationDet').html(htm);
+
+
+    }
+
+
+    function CheckBoxChange(item)
+    {
+        debugger;
+        /* If existing Godown locations are changed then those Ids added in Clear Location */
+        var Location=$('#ClearLocation').val();
+        if($('#'+item.id).prop("checked")==false)
+        {
+            if(Location==''||Location==null||Location==undefined)
+                Location=item.id;
+            else
+                Location+=','+item.id;
+            $('#ClearLocation').val(Location);
+        }
+        /**********************************************
+         Clear Location contains the Ids which contains
+        the data which is earlier occupied but now it is unoccupied
+        and  needs to be cleared in Godown Wise Location
+        ***********************************************/
+
+
+
+
+
+        var Locationtext = '';
+        $('#DivLocationDet').find('input[type="checkbox"]:checked').each(function () {
+            if (Locationtext == '')
+                Locationtext=$('label[for="' + $(this).prop('id') + '"]').text();
+            else {
+                Locationtext+=',' + $('label[for="' + $(this).prop('id') + '"]').text();
+            }
+        });
+        $('#Location').val(Locationtext);
+    }
+
+
+
+
+    function CheckBoxShortChange(item)
+    {
+        debugger;
+        /* If existing Godown locations are changed then those Ids added in Clear Location */
+        var Location=$('#ClearLocation').val();
+        if($('#'+item.id).prop("checked")==false)
+        {
+            if(Location==''||Location==null||Location==undefined)
+                Location=item.id;
+            else
+                Location+=','+item.id;
+            $('#ClearLocation').val(Location);
+        }
+        /**********************************************
+         Clear Location contains the Ids which contains
+        the data which is earlier occupied but now it is unoccupied
+        and  needs to be cleared in Godown Wise Location
+        ***********************************************/
+        debugger;
+
+        var LctnDet = $('#DivShortLocationDet').find('input[type="checkbox"]:checked');
+        if (LctnDet != null && LctnDet != undefined) {
+            var Det = '';
+            $(LctnDet).each(function () {
+                if (Det == '')
+                    Det += $(this).prop('id').substring(8);
+                else
+                    Det += ',' + $(this).prop('id').substring(8);
+            });
+            $('#LocationShortDetails').val(Det);
+        }
+
+        var Locationtext = '';
+        $('#DivShortLocationDet').find('input[type="checkbox"]:checked').each(function () {
+            debugger;
+            if (Locationtext == '')
+
+            {
+                debugger;
+                Locationtext=$('label[for="' + $(this).prop('id') + '"]').text();
+            }
+            else {
+                Locationtext+=',' + $('label[for="' + $(this).prop('id') + '"]').text();
+            }
+        });
+        $('#ShortLocationName').val(Locationtext);
+    }
+    function SubmitForm(){
+
+        var Validation = true;
+        $('#DivCartingRegTblErrMsg').html('');
+        $('#DivCartingRegErrMsg').html('');
+
+        $('[data-valmsg-for="ShippingBillNo"]').html('<span><span>');
+        $('[data-valmsg-for="ShippingBillDate"]').html('<span><span>');
+
+        if ($('#CartingAppId').val() == '') {
+            $('#CartingAppId').val(0);
+        }
+        if ($('#CartingAppDtlId').val() == '') {
+            $('#CartingAppDtlId').val(0);
+
+
+
+        }
+        if($('#ApplicationNo').val()==''){
+            $('#ApplicationNo').val('0')
+        }
+        if($('#ApplicationDate').val()==''){
+            $('#ApplicationDate').val('@DateTime.Now.ToString("dd/MM/yyyy")')
+        }
+        if (Validation == true)
+        {
+            Validation = SaveRegDtl();
+            if (Validation == false) return false;
+        }
+        //if (($('#DivShippingDetails #CUM').val() != "" || $('#SQM').val() != "" || $('#ActualQty').val() != "" || $('#ActualWeight').val() != "") && ($('#DivShippingDetails').find('input:text').prop("disabled") == false)) {
+        //    $('#DivCartingRegErrMsg').html('Please Save The Details Before Submitting');
+        //    return false;
+        //}
+        //else {
+        //    $.each(ArrayOfCartingRegDtl, function (i, item) {
+        //        if (item.CartingAppDtlId == '') {
+        //            item.CartingAppDtlId = 0;
+        //        }
+        //    });
+        //    $('#XMLData').val(JSON.stringify(ArrayOfCartingRegDtl));
+        //}
+
+        $.each(ArrayOfCartingRegDtl, function (i, item) {
+            if (item.CartingAppDtlId == '') {
+                item.CartingAppDtlId = 0;
+            }
+        });
+        $('#XMLData').val(JSON.stringify(ArrayOfCartingRegDtl));
+
+        var conf = confirm("Do you want to save ?");
+        if (conf) {
+
+            //console.log(ArrayOfCartingRegDtl);
+            $('form#frmCartingReg').submit();
+        }
+    }
+
+    $('#BtnSaveShortCargo').on("click",function()
+    {
+        debugger;
+        if($('#mdl_CartingDate').val()=='')
+        {
+            alert('Select Carting Date');
+            return false;
+        }
+        else if(Number($('#mdl_Qty').val())<=0)
+        {
+            alert('Enter Quantity');
+            return false;
+        }
+
+
+
+        else if(Number($('#mdl_SQM').val())<=0 && Number($('#mdl_ReservedCBM').val())<=0)
+        {
+            alert('Enter CBM OR SQM ');
+            return false;
+        }
+
+        else if($('#ShortGodownName').val()=='')
+        {
+            alert('Please select Godown');
+            return false;
+        }
+
+        else if($('#ShortLocationName').val()=='')
+        {
+            alert('Please Select Location');
+            return false;
+        }
+
+        else
+        {
+            var conf=confirm("Are you sure you want to Save?");
+            if(conf==true)
+            {
+                $('#BtnSaveCartingReg,#BtnSaveShortCargo').prop('disabled',true);
+                var ModelData=
+                    {
+                        "ShortCargoDtlId":0,
+                        "CartingDate":$('#mdl_CartingDate').val(),
+                        "Qty":$('#mdl_Qty').val(),
+                        "Weight":$('#mdl_Wt').val(),
+                        "SQM":$('#mdl_SQM').val(),
+                        "ReservedSQM":$('#mdl_ReservedSQM').val(),
+                        "TotalSQM":$('#mdl_TotalSQM').val()==""? 0 : $('#mdl_TotalSQM').val(),
+                        "CBM":$('#mdl_CBM').val()==""? 0 : $('#mdl_CBM').val(),
+                        "ReservedCBM":$('#mdl_ReservedCBM').val()==""? 0 : $('#mdl_ReservedCBM').val(),
+
+                        "FOB":$('#mdl_FOB').val(),
+                        "PkgType":$('#ddlPkgType').val(),
+                        "ShortGodownId":$('#ShortGodownId').val(),
+                        "ShortLocationIds":$('#LocationShortDetails').val(),
+                        "ShortLocation":$('#ShortLocationName').val(),
+                    };
+
+                console.log(ModelData);
+
+                $.ajax({
+                    url:'/Export/VIZ_CWCExport/AddShortCargoDetail',
+                    type:"POST",
+                    data:{
+                        "objSC":ModelData,
+                        "CartingRegisterId":$('#CartingRegisterId').val(),
+                        "CartingRegisterDtlId":ArrayOfCartingRegDtl[0].CartingRegisterDtlId,
+                        "ShippingBillNo":ArrayOfCartingRegDtl[0].ShippingBillNo,
+                    },
+                    dataType:"JSON",
+                    success:function(data)
+                    {
+                        debugger;
+                        if(data.Status==1 || data.Status==6 || data.Status==4 || data.Status==5)
+                        {
+                            alert(data.Message);
+                            debugger;
+                            if($('#mdl_CBM').val()=="")
+                            {
+                                $('#mdl_CBM').val(0);
+                            }
+                            if($('#mdl_ReservedCBM').val()=="")
+                            {
+                                $('#mdl_ReservedCBM').val(0);
+                            }
+                            if($('#mdl_SQM').val()=="")
+                            {
+                                $('#mdl_SQM').val(0);
+                            }
+                            if($('#mdl_ReservedSQM').val()=="")
+                            {
+                                $('#mdl_ReservedSQM').val(0);
+                            }
+                            //$('#tblShortCargo tbody').append('<tr><td>'+$('#mdl_CartingDate').val()+'</td><td>'+$('#mdl_Qty').val()+'</td><td>'+$('#mdl_Wt').val()+'</td><td>'+$('#mdl_SQM').val()+'</td><td>'+$('#mdl_ReservedSQM').val()+'</td><td>'+$('#mdl_TotalSQM').val()+'</td><td>'+$('#mdl_FOB').val()+'</td><td>'+$('#mdl_CBM').val()+'</td><td>'+$('#mdl_ReservedCBM').val()+'</td></tr>');
+                            $('#tblShortCargo tbody').append('<tr><td>'+$('#mdl_CartingDate').val()+'</td><td>'+$('#mdl_Qty').val()+'</td><td>'+$('#mdl_Wt').val()+'</td><td>'+$('#mdl_FOB').val()+'</td><td>'+$('#mdl_CBM').val()+'</td><td>'+$('#mdl_ReservedCBM').val()+'</td><td>'+$('#mdl_SQM').val()+'</td><td>'+$('#mdl_ReservedSQM').val()+'</td><td>'+$('#ShortGodownName').val()+'</td><td>'+$('#ShortLocationName').val()+'</td></tr>');
+                            $('#mdl_CartingDate,#mdl_Qty,#mdl_SQM,#mdl_ReservedSQM,#mdl_TotalSQM,#mdl_CBM,#mdl_ReservedCBM').val('');
+                            $('#BtnSaveShortCargo').prop('disabled',false);
+                        }
+                        else alert(data.Message);
+
+                    }
+                });
+            }
+            else return false;
+        }
+    });
+
+    //Add Chiranjit
+    function populatedEditData()
+    {
+        debugger;
+        var lstRegisterDtl=@Html.Raw(Json.Encode(Model.lstRegisterDtl));
+
+        $('#LocationDetails,#LocationDetails').val('');
+        $('#DivLocationDet').find('input[type="checkbox"]:checked').prop("checked",false);
+        $('#BtnAddCartingReg').prop("disabled",false);
+        /**********************************************************************************************/
+        $('#DivShippingDetails').find('input').prop("disabled", false);
+        $('#ShippingBillNo').val(lstRegisterDtl[0].ShippingBillNo);
+        $('#ShippingBillDate').val(lstRegisterDtl[0].ShippingDate);
+        $('#Exporter').val(lstRegisterDtl[0].Exporter);
+        $('#CargoDescription').val(lstRegisterDtl[0].CargoDescription);
+        $('#Commodity').val(lstRegisterDtl[0].CommodityName);
+        $('#CargoType').val(lstRegisterDtl[0].CargoType);
+        $('#MarksAndNo').val(lstRegisterDtl[0].MarksAndNo);
+        $('#NoOfUnits').val(lstRegisterDtl[0].NoOfUnits);
+        $('#Weight').val(lstRegisterDtl[0].Weight);
+        $('#FOBValue').val(lstRegisterDtl[0].FoBValue);
+        $('#FOBValue1').val(lstRegisterDtl[0].FoBValue);
+        $('#CartingAppDtlId').val(lstRegisterDtl[0].CartingAppDtlId);
+        $('#CUM').val(lstRegisterDtl[0].CUM);
+        $('#SQM').val(lstRegisterDtl[0].SQM);
+        $('#ReservedSQM').val(lstRegisterDtl[0].ReservedSQM);
+        $('#TotalSQM').val(lstRegisterDtl[0].TotalSQM);
+
+        $('#UnReservedWT').val(lstRegisterDtl[0].UnReservedWT);
+        $('#ReservedCBM').val(lstRegisterDtl[0].ReservedCBM);
+
+
+        $('#ActualWeight').val(lstRegisterDtl[0].ActualWeight);
+        $('#ActualQty').val(lstRegisterDtl[0].ActualQty);
+        $('#ActualQty1').val(lstRegisterDtl[0].ActualQty);
+        $('#LocationDetails').val(lstRegisterDtl[0].LocationDetails);
+        if($('#ShortGodownId').val()>0)
+        {
+            BindShortLocationDtl($('#ShortGodownId').val());
+        }
+
+        if (lstRegisterDtl[0].LocationDetails != null && lstRegisterDtl[0].LocationDetails != undefined) {
+            var split = lstRegisterDtl[0].LocationDetails.split(',');
+            $(split).each(function (j, data) {
+                // $('#' + data).prop('disabled', false);
+                $('#Loc' + data).prop('checked', true);
+            });
+        }
+
+        $('#Location').val(lstRegisterDtl[0].Location);
+        $('#ShortLocationName').val($('#Location').val());
+        $('#LocationShortDetails').val($('#LocationDetails').val());
+        $('#hdnExporterId').val(lstRegisterDtl[0].ExporterId);
+        $('#hdnCommodityId').val(lstRegisterDtl[0].CommodityId);
+        $('#CartingRegisterDtlId').val(lstRegisterDtl[0].CartingRegisterDtlId);
+        $('#PkgType').val(lstRegisterDtl[0].PkgType);
+    }
+
+
+    //$('#ActualQty').blur(function () {
+    //    debugger;
+    //    var s = $(this).val();
+    //    if($(this).val()> $('#NoOfUnits').val())
+    //    {
+    //        $(this).val(0);
+
+    //        alert("Actual Quantity should not Be grater than NoOfUnits ");
+    //        return false;
+    //    }
+    //    else
+    //    {
+    //        return true;
+    //    }
+
+    //});
+    $('#ShortGodownbox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#lstShortGodown > li').show();
+        } else {
+            $('#lstShortGodown > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+
+    function PopupActivate(Id) {
+        //debugger;
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+
+        if (CharCode == 32) {
+
+            $('#' + Id).modal('show');
+
+            if (Id == "ExporterModal") {
+                //debugger;
+                $('#Exporterbox').focus();
+                $('#lstExporter > li').show();
+            }
+
+            if (Id == "ShippingLineModal") {
+                //debugger;
+                $('#ShippingLinebox').focus();
+                $('#lstShippingLine > li').show();
+            }
+
+            if (Id == "CHAModal") {
+                //debugger;
+                $('#CHAbox').focus();
+                $('#lstCHA > li').show();
+            }
+
+            if (Id == "CommodityModal") {
+                //debugger;
+                $('#CommodityBox').focus();
+                $('#lstCommodity > li').show();
+            }
+            if (Id == "ShortgodownModal") {
+                //debugger;
+                $('#lstShortGodown > li').show();
+                $('#ShortGodownbox').focus();
+            }
+            //if (Id == "LocationModal") {
+            //    //debugger;
+            //    if ($('#hdnGodownId').val() == '' || $('#hdnGodownId').val() == 0) {
+            //        $('[data-valmsg-for="Location"]').html('<span>Select Godown.</span>');
+            //    }
+            //    else {
+            //        $('#LocationModal').modal();
+            //    }
+            //}
+
+        }
+
+    }
+
+    $('#ExporterModal').on('shown.bs.modal', function () {
+        $('#Exporterbox').focus();
+
+    });
+
+    $('#ShippingLineModal').on('shown.bs.modal', function () {
+        $('#ShippingLinebox').focus();
+
+    });
+
+    $('#CHAModal').on('shown.bs.modal', function () {
+        $('#CHAbox').focus();
+
+    });
+    $('#ShortgodownModal').on('shown.bs.modal', function () {
+        $('#ShortGodownbox').focus();
+    });
+
+    //$('#godownModal').on('shown.bs.modal', function () {
+    //    $('#Godownbox').focus();
+
+    //});
+
+    $('#CommodityModal').on('shown.bs.modal', function () {
+        $('#Commoditybox').focus();
+
+    });
+    $('#myModal').on('shown.bs.modal', function () {
+        $('#box').focus();
+
+    });
+
+    function MyModalClose() {
+        $('#myModal').modal("hide");
+        $('#ApplicationNo').focus();
+        $('#box').val('');
+        $('#CartingRegList > li').show();
+    }
+    function CHAModalClose() {
+        $('#CHAModal').modal("hide");
+        $('#CHAName').focus();
+        $('#CHAbox').val('');
+        $('#lstCHA > li').show();
+    }
+    function ShippingLineModalClose() {
+        $('#ShippingLineModal').modal("hide");
+        $('#ShippingLineName').focus();
+        $('#ShippingLinebox').val('');
+        $('#lstShippingLine > li').show();
+    }
+    function GodownModalClose() {
+        $('#godownModal').modal("hide");
+        $('#GodownName').focus();
+        $('#Godownbox').val('');
+        $('#lstGodown > li').show();
+    }
+
+    function LocationModalClose() {
+        $('#LocationModal').modal("hide");
+        $('#Remarks').focus();
+    }
+    function LocationShortModalClose() {
+        $('#LocationShortModal').modal("hide");
+        $('#ShortLocationName').focus();
+    }
+    function ExporterModalClose()
+    {
+        $('#ExporterModal').modal("hide");
+        $('#Exporter').focus();
+        $('#Exporterbox').val('');
+        $('#lstExporter > li').show();
+    }
+    function CommodityModalClose(){
+        $('#CommodityModal').modal('hide');
+        $('#Commodity').focus();
+        $('#Commoditybox').val('');
+        $('#lstCommodity > li').show();
+    }
+    function ShortgodownModalClose(){
+
+        $('#ShortgodownModal').modal('hide');
+        $('#ShortGodownName').focus();
+        $('#ShortGodownbox').val('');
+        $('#lstShortGodown > li').show();
+    }
+
+    $('.mTabindex').keydown(function (e) {
+        ////debugger;
+        var $focusable = $(this).find("[tabindex]:not([tabindex='-1'])");
+        if ($focusable.last().is(":focus") && !e.shiftKey && e.key == "Tab") {
+            e.preventDefault();
+            $focusable.first().focus();
+        }
+        else
+            if ($focusable.first().is(":focus") && e.shiftKey && e.key == "Tab") {
+                e.preventDefault();
+                $focusable.last().focus();
+            }
+    });
+
+    function checks() {
+        //debugger;
+        $('#RegisterDate').val($('#RegisterDate').val().replace(/^(\d\d)(\d)$/g, '$1/$2').replace(/^(\d\d\/\d\d)(\d+)$/g, '$1/$2').replace(/[^\d\/]/g, ''));
+
+    }
+    function checkdat() {
+        //debugger;
+        var today = new Date();
+        var dd = today.getDate();
+        var mm = today.getMonth() + 1; //January is 0!
+        var yyyy = today.getFullYear();
+
+        if (dd < 10) {
+            dd = '0' + dd;
+        }
+        if (mm < 10) {
+            mm = '0' + mm;
+        }
+
+        var date = dd + '/' + mm + '/' + yyyy;
+        var dateTime = date;
+
+        if ($('#RegisterDate').val() != '') {
+            var result = moment($('#RegisterDate').val(), "DD/MM/YYYY", true).isValid();
+            if (!result) {
+                $('#Msges').html('Incorrect Date');
+                setTimeout(function () { $('#Msges').html(''); }, 3000);
+                $('#RegisterDate').val(dateTime);
+            }
+        }
+
+    }
+    function SBchecks() {
+        //debugger;
+
+        $('#RegisterDate').val($('#RegisterDate').val().replace(/^(\d\d)(\d)$/g, '$1/$2').replace(/^(\d\d\/\d\d)(\d+)$/g, '$1/$2').replace(/[^\d\/]/g, ''));
+
+    }
+    function SBcheckdat() {
+        //debugger;
+        if ($('#ShippingBillDate').val() != '') {
+            var result = moment($('#ShippingBillDate').val(), "DD/MM/YYYY", true).isValid();
+            if (!result) {
+                $('#SBMsges').html('Incorrect Date');
+                setTimeout(function () { $('#SBMsges').html(''); }, 3000);
+                $('#ShippingBillDate').val('');
+            }
+        }
+
+    }
+</script>

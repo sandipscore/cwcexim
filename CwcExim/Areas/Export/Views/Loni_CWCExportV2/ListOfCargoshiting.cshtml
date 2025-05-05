@@ -1,0 +1,140 @@
+﻿@model IEnumerable<CwcExim.Areas.Export.Models.Ppg_ListOfCargoShiftV2>
+<table class="table table-bordered table-striped" id="tblListOfCargoShiftV2" style="width:100%">
+    <thead>
+        <tr>
+            <th style="width:10px" class="text-center">@Html.DisplayName("Sl No")</th>
+            <th style="width:50px">Shifting No.</th>
+            <th style="width:50px">Shifting Dt</th>
+            <th style="width:100px">From Shipping Line</th>
+            <th style="width:100px">To Shipping Line</th>
+            <th style="width:50px">From Godown</th>
+            <th style="width:50px">To Godown</th>
+            <th style="width:100px">Shifting Type</th>
+            <th style="width:10px">View</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td style="width:10px" class="text-center">@SerialNo</td>
+                    <td style="width:50px">@item.ShiftingNo</td>
+                    <td style="width:50px">@item.ShiftingDt</td>
+                    <td style="width:100px">@item.FromShipping</td>
+                    <td style="width:100px">@item.ToShipping</td>
+                    <td style="width:50px">@item.FromGodown</td>
+                    <td style="width:50px">@item.ToGodown</td>
+                    @{
+                        if (item.ShiftingType == "1")
+                        {
+                            <td style="width:100px">Shipping Line To Shipping Line</td>
+
+                        }
+                        else if (item.ShiftingType == "2")
+                        {
+                            <td style="width:100px">Godown To Godown</td>
+                        }
+                        else if (item.ShiftingType == "3")
+                        {
+                            <td style="width:100px">Both</td>
+                        }
+                        else
+                        {
+                            <td style="width:100px"></td>
+                        }
+                    }
+                    <td style="width:10px" class="text-center"><a href="#" onclick="ViewCargoShifting(@item.CargoShiftingId)"><i class="fa fa-search-plus Edit" aria-hidden="true"></i></a></td>
+                </tr>
+                            SerialNo++;
+                        }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+<script>
+    $(document).ready(function () {
+        var tblListOfCargoShiftV2 = $('#tblListOfCargoShiftV2').DataTable({
+            "autoWidth": false,
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns": [
+                       { "sName": "SL No", "width": "10px" },
+                       { "sName": "Shifting No", "width": "50px" },
+                       { "sName": "Shifting Dt", "width": "50px", "bSortable": false },
+                       { "sName": "From Shipping Line", "width": "100px" },
+                       { "sName": "To Shipping Line", "width": "100px" },
+                       { "sName": "From Godown", "width": "50px" },
+                       { "sName": "To Godown", "width": "50px" },
+                       { "sName": "Shifting Type", "width": "100px" },
+                       { "sName": "View", "width": "10px" , "bSortable": false},
+
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0)', nRow).css("width", "10px");
+                $('td:eq(0)', nRow).css("text-align", "center");
+                $('td:eq(1)', nRow).css("width", "50px");
+                $('td:eq(2)', nRow).css("width", "50px");
+                $('td:eq(3)', nRow).css("width", "100px");
+                $('td:eq(4)', nRow).css("width", "100px");
+                $('td:eq(5)', nRow).css("width", "50px");
+                $('td:eq(6)', nRow).css("width", "50px");
+                $('td:eq(7)', nRow).css("width", "100px");
+                $('td:eq(8)', nRow).css("width", "10px");
+            }
+        });
+        new $.fn.dataTable.FixedHeader(tblListOfCargoShiftV2);
+    });
+
+    var Page = 0;
+    function LoadMoreListData() {
+        $.ajax({
+            url: '/Export/Loni_CWCExportV2/LoadMoreCargoshiting',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblListOfCargoShiftV2').dataTable();
+                    var len = dt.fnGetData().length;
+                    var ShiftingType = ''; 
+                    $.each(data, function (i, item) {
+                        len++;
+                        if (item.ShiftingType == "1") {
+                            ShiftingType = "Shipping Line To Shipping Line";
+                        }
+                        else if (item.ShiftingType == "2") {
+                            ShiftingType = "Godown To Godown"
+                        }
+                        else if (item.ShiftingType == "3") {
+                            ShiftingType = "Both";
+                        }
+                        else
+                        {
+                            ShiftingType = "";
+                        }
+                        dt.fnAddData([
+        len,
+        [item.ShiftingNo],
+        [item.ShiftingDt],
+        [item.FromShipping],
+        [item.ToShipping],
+        [item.FromGodown],
+        [item.ToGodown],
+        [ShiftingType],
+        ['<a href="#" onclick=ViewCargoShifting(' + [item.CargoShiftingId] + ')><i class="fa fa-search-plus Edit"></i></a>'],
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+    function ViewCargoShifting(id)
+    {
+        $('#DivBody').load('/Export/Loni_CWCExportV2/ViewCargoShifting?CargoShiftingId='+id);
+    }
+</script>

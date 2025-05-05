@@ -1,0 +1,203 @@
+﻿<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-4">
+            <div>
+                <div class="row">
+                    <div class="col-md-3 col-md-offset-3">
+                        <div class="boolean-container">
+                            @Html.RadioButton("Status", "N", new { @id = "RbNew", @onchange = "LoadData(false)", @checked = true })
+                            <label for="RbNew"><i class="circle"></i><span>New</span></label>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="boolean-container">
+                            @Html.RadioButton("Status", "I", new { @id = "RbIssue", @onchange = "LoadData(false)" })
+                            <label for="RbIssue"><i class="circle"></i><span>Issued</span></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-8">
+                        <input type="text" class="form-control input-sm" placeholder="Search By AWB No. or SAC No" id="txtSearch" style="width:100%;" />
+                    </div>
+                    <div class="col-md-4">
+                        <button id="btnSearch" class="btn Log_Btn" onclick="SearchAWBNo()">Search</button>
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="col-md-12">
+                        <div class="panel table_bk">
+                            <table class="table1 table-condensed Table_Text_Align Import_custom" style="border:none;">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center" style="width:10%;">Sl No</th>
+                                        <th style="width:30%;">Application No</th>
+                                        <th style="width:30%;">CHA</th>
+                                        <th>Importer</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div class="Left_list">
+                                <div class="div-table-content Left_List_con">
+                                    <table id="TblSpaceAvail" class="table table-condensed Table_Text_Align Table_Hover Import_custom" style="border:none;">
+                                        <tbody>
+                                            @{var Srl = 1;
+                                                if (ViewBag.Pending != null)
+                                                {
+                                                    foreach (var item in ViewBag.Pending)
+                                                    {
+                                                        <tr onclick="LoadSpaceAvailCert(@item.SpaceAvailCertExtId)">
+                                                            <td class="text-center" style="width:9%;">@Srl.ToString()</td>
+                                                            <td style="width:31%;">@item.SacNo</td>
+                                                            <td style="width:30%;">@item.CHAName</td>
+                                                            <td>@item.ImporterName</td>
+                                                        </tr>
+                                                        Srl++;
+                                                    }
+                                                }
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <table style="border:none;width:100%;">
+                                <tfoot>
+                                    <tr>
+                                        @if (ViewBag.State == true)
+                                        {
+                                            <td><button id="btnLoadMore" class="tfoot_load" style="padding:4px;" onclick="LoadMoreData()">Load More</button></td>
+                                        }
+                                        else
+                                        {
+                                            <td><button id="btnLoadMore" class="tfoot_load" style="padding:4px;display:none;" onclick="LoadMoreData()">Load More</button></td>
+                                        }
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-8">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Space Availability Certificate (Extend)</h4>
+                            </div>
+                        </div>
+                        <div class="row" id="DivSpaceAvailCert"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    var Skip = 1;
+    function SearchAWBNo() {
+        var Approval;
+        if ($('#RbNew').is(":checked"))
+            Approval = 'N';
+        else if ($('#RbIssue').is(":checked"))
+            Approval = 'I';
+        $('#DivSpaceAvailCert').html('');
+        var Search=$('#txtSearch').val();
+        if (Search != "") {
+            Skip = 0;
+            $.ajax({
+                url: '/Bond/WljBond/SearchSpcAvailExtend',
+                type: 'GET',
+                data: { "Status": Approval, "Search": Search },
+                dataType: 'JSON',
+                success: function (data) {
+                    var html = '';
+                    if (data.Status == 1) {
+                        $.each(data.Data.List, function (i, item) {
+                            html += '<tr onclick="LoadSpaceAvailCert(' + item.SpaceAvailCertExtId + ')"><td>' + (i + 1) + '</td><td>' + item.SacNo + '</td><td>' + item.CHAName + '</td><td>' + item.ImporterName + '</td></tr>'
+                        });
+                        $('#btnLoadMore').css("display", "none");
+                    }
+                    $('#TblSpaceAvail tbody').html(html);
+                }
+            });
+        }
+        else
+            LoadData(true);
+    }
+    function LoadData(clear) {
+        var Approval;
+        if ($('#RbNew').is(":checked"))
+            Approval = 'N';
+        else if ($('#RbIssue').is(":checked"))
+            Approval = 'I';
+        if (clear == true)
+            $('#DivSpaceAvailCert').html('');
+        Skip = 0;
+        $('#txtSearch').val('');
+        $.ajax({
+            url: '/Bond/WljBond/LoadMoreSpcAvailExtend',
+            type: 'GET',
+            data: { Status: Approval, Skip: 0 },
+            dataType: 'JSON',
+            success: function (data) {
+                var html = '';
+                if (data.Status == 1) {
+                    $.each(data.Data.List, function (i, item) {
+                        html += '<tr onclick="LoadSpaceAvailCert(' + item.SpaceAvailCertExtId + ')"><td>' + (i + 1) + '</td><td>' + item.SacNo + '</td><td>' + item.CHAName + '</td><td>' + item.ImporterName + '</td></tr>'
+                    });
+                    if (data.Data.State == false)
+                        $('#btnLoadMore').css("display", "none");
+                    else
+                        $('#btnLoadMore').css("display", "block");
+                }
+                else {
+                    $('#btnLoadMore').css("display", "none");
+                }
+                $('#TblSpaceAvail tbody').html(html);
+            }
+        });
+    }
+    function LoadMoreData() {
+        if ($.trim($('#TblSpaceAvail>tbody').html()) == '') {
+            $('#btnLoadMore').css("display", "none");
+            return false;
+        }
+        var Approval;
+        if ($('#RbNew').is(":checked"))
+            Approval = 'N';
+        else if ($('#RbIssue').is(":checked"))
+            Approval = 'I';
+        Skip++;
+        $.ajax({
+            url: '/Bond/CWCBond/LoadMoreSpcAvailExtend',
+            type: 'GET',
+            data: { Status: Approval, Skip: Skip },
+            dataType: 'JSON',
+            success: function (data) {
+
+                var html = '';
+                if (data.Status == 1) {
+                    var length = $('#TblSpaceAvail tbody tr').length;
+                    $.each(data.Data.List, function (i, item) {
+                        length++;
+                        html += '<tr onclick="LoadSpaceAvailCert(' + item.SpaceAvailCertExtId + ')"><td>' + (length) + '</td><td>' + item.SacNo + '</td><td>' + item.CHAName + '</td><td>' + item.ImporterName + '</td></tr>'
+                    });
+                    if (data.Data.State == false)
+                        $('#btnLoadMore').css("display", "none");
+                    else
+                        $('#btnLoadMore').css("display", "block");
+                    $('#TblSpaceAvail tbody').append(html);
+                }
+                else {
+                    $('#btnLoadMore').css("display", "none");
+                }
+            }
+        });
+    }
+    function LoadSpaceAvailCert(SpaceAvailCertExtId) {
+        $('#DivSpaceAvailCert').load('/Bond/WljBond/GetSpaceAvailabilityExt?SpaceAvailCertExtId=' + SpaceAvailCertExtId);
+    }
+</script>

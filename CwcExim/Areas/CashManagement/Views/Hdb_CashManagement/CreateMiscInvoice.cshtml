@@ -1,0 +1,1358 @@
+﻿@*@if (ViewBag.PaymentParty != null)
+{
+    <input type="hidden" id="hdnPartyPayee" value="@ViewBag.PaymentParty" />
+}
+else
+{
+    <input type="hidden" id="hdnPartyPayee" value="" />
+}*@
+<style>
+    .slimScrollDiv {
+        height: 300px !important;
+    }
+
+    #slim_scroll {
+        height: 300px !important;
+    }
+
+    #slim_scroll_1 {
+        height: 300px !important;
+    }
+
+    #tbleCommodity.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    #tbleImp.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .table.tblhd {
+        border-bottom: 0;
+    }
+
+    .table.tblhd1 {
+        border-bottom: 0;
+    }
+
+    .modal {
+        padding-top: 70px;
+    }
+</style>
+@using (Ajax.BeginForm("AddEditMiscInvoice", "Hdb_CashManagement", new AjaxOptions { HttpMethod = "POST", OnSuccess = "PaymentOnSuccess", OnFailure = "PaymentOnFailure" }, new { @Id = "MiscInvoice" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.Hidden("MiscInvModelJson")
+    @Html.ValidationSummary()
+    @Html.Hidden("total")
+    @Html.Hidden("hdnSupplyType")
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Misc.Invoice</h4>
+                        </div>
+                    </div>
+                    <div class="content_wrp">
+                        <div class="row Form_Space_top">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label class="Radiocontainer">
+                                        Tax
+                                        @Html.RadioButton("InvoiceType", "Tax", new { id = "Tax", @checked = true, @onclick = "IVType('Tax')" })
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <label class="Radiocontainer">
+                                        Bill
+                                        @Html.RadioButton("InvoiceType", "Bill", new { id = "Bill", @onclick = "IVType('Bill')" })
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    @*<div class="boolean-container">
+                                        @Html.RadioButton("InvoiceType", "Tax", new { id = "Tax", @checked = true, @onclick = "IVType('Tax')" })
+                                        <label for="Tax"><i class="circle"></i><span>Tax Invoice</span></label>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 col_cus_3">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("InvoiceType", "Bill", new { id = "Bill", @onclick = "IVType('Bill')" })
+                                        <label for="Bill"><i class="circle"></i><span>Bill Of Supply</span></label>
+                                    </div>
+                                </div>*@
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Invoice No:</label>
+                                </div>
+                                @Html.TextBox("InvoiceNo", "", new { @readonly = true })
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Delivery Date:</label>
+                                </div>
+                                <div class="position-relative Date_Img">
+                                    @Html.TextBox("DeliveryDate", "", new { @readonly = true, Value = DateTime.Now.ToString("dd/MM/yyyy HH:mm") })
+                                </div>
+                            </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Party Name:</label>
+                            </div>
+                            <div class="position-relative">
+                                @Html.Hidden("PartyId")
+                                @Html.TextBox("PartyName", "", new { @placeholder = "Party Name", @readonly = true })
+                                <span class="input_icon" id="PartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>
+                                <span style="color:red" id="ErrPartyName"></span>
+                            </div>
+                        </div>
+                    </div>
+                        <div class="row Form_Space_top">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Payer Name:</label>
+                                </div>
+                                <div class="position-relative">
+                                    @Html.Hidden("PayeeId")
+                                    @Html.TextBox("PayeeName", "", new { @placeholder = "Payee Name", @readonly = true })
+                                    <span class="input_icon" id="PayerSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PayerModal"></i></span>
+                                    <span style="color:red" id="ErrPayeeName"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label> GST No:</label>
+                                </div>
+                                @Html.TextBox("GSTNo", "", new { @readonly = true })
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Under:</label>
+                                </div>
+                                @Html.DropDownList("ExportUnder", new List<SelectListItem>
+                                        {
+                                        new SelectListItem { Text="SEZWP",Value="SEZWP"},
+                                        new SelectListItem {Text="SEZWOP",Value="SEZWOP" }
+
+                                        }, "---Select---")
+                                @Html.ValidationMessage("ExportUnder", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label> Purpose:</label>
+                                </div>
+                                @Html.DropDownList("Purpose", new List<SelectListItem>
+                                        {
+
+
+                                           new SelectListItem { Text ="Printing",Value= "Printing" },
+                                            new SelectListItem { Text = "Banking", Value = "Banking" },
+                                            new SelectListItem { Text = "Photocopy", Value = "Photocopy" },
+                                            new SelectListItem { Text = "ChequeReturn", Value = "ChequeReturn" },
+                                            new SelectListItem { Text = "Pest Control", Value = "PCS" },
+                                            new SelectListItem { Text = "LWB Charges", Value = "LWB" },
+                                            new SelectListItem { Text = "Ground Rent Empty", Value = "GRE" },
+                                            new SelectListItem { Text = "Ground Rent Loaded", Value = "GRL" },
+                                            new SelectListItem { Text = "Table Space", Value = "TableSpace" },
+                                            new SelectListItem { Text = "Palletization/Packing Charge", Value = "Packing" },
+                                            new SelectListItem { Text = "Labeling(permission) Charge", Value = "Labeling" },
+                                            new SelectListItem { Text = "Dishonoured Cheque Penalty", Value = "Penalty" },
+                                            new SelectListItem { Text = "IGM Filing", Value = "IGMFiling" },
+                                            new SelectListItem { Text = "BE/SB Filing", Value = "SBFiling" },
+                                            new SelectListItem { Text = "Survey Fee", Value = "Survey" },
+
+                                            new SelectListItem { Text = "A-1", Value = "A-1" },
+                                            new SelectListItem { Text = "A-2", Value = "A-2" },
+                                            new SelectListItem { Text = "A-3", Value = "A-3" },
+                                            new SelectListItem { Text = "A-4", Value = "A-4" },
+                                            new SelectListItem { Text = "A-5", Value = "A-5" },
+                                            new SelectListItem { Text = "A-6a", Value = "A-6a" },
+                                            new SelectListItem { Text = "A-7", Value = "A-7" },
+                                            new SelectListItem { Text = "B-8", Value = "B-8" },
+                                            new SelectListItem { Text = "B-9", Value = "B-9" },
+                                            new SelectListItem { Text = "B-10", Value = "B-10" },
+                                            new SelectListItem { Text = "B-11", Value = "B-11" },
+                                            new SelectListItem { Text = "B-12", Value = "B-12" },
+                                            new SelectListItem { Text = "C-13", Value = "C-13" },
+                                            new SelectListItem { Text = "C-14A", Value = "C-14A" },
+                                            new SelectListItem { Text = "C-14B", Value = "C-14B" },
+                                            new SelectListItem { Text = "C-14C", Value = "C-14C" },
+                                            new SelectListItem { Text = "C-15", Value = "C-15" },
+                                            new SelectListItem { Text = "C-16A", Value = "C-16A" },
+                                            new SelectListItem { Text = "C-16B", Value = "C-16B" },
+                                            new SelectListItem { Text = "C-16C", Value = "C-16C" },
+                                            new SelectListItem { Text = "C-17a", Value = "C-17a" },
+                                            new SelectListItem { Text = "C-17-i", Value = "C-17-i" },
+                                            new SelectListItem { Text = "C-17-ii", Value = "C-17-ii" },
+                                            new SelectListItem { Text = "C-17-iii", Value = "C-17-iii" },
+                                            new SelectListItem { Text = "C-17-iv", Value = "C-17-iv" },
+                                            new SelectListItem { Text = "C-17-v", Value = "C-17-v" },
+                                            new SelectListItem { Text = "C-17-vi", Value = "C-17-vi" },
+                                            new SelectListItem { Text = "C-17-vii", Value = "C-17-vii" },
+                                            new SelectListItem { Text = "C-17-viii", Value = "C-17-viii" },
+                                            new SelectListItem { Text = "C-17-1", Value = "C-17-1" },
+                                            new SelectListItem { Text = "C-17-2", Value = "C-17-2" },
+                                            new SelectListItem { Text = "C-18", Value = "C-18" },
+                                            new SelectListItem { Text = "C-19", Value = "C-19" },
+                                            new SelectListItem { Text = "B9", Value = "B9" },
+                                            new SelectListItem { Text = "A-6(b)-(i)", Value = "A-6(b)-(i)" },
+                                            new SelectListItem { Text = "A-6(b)-(ii)", Value = "A-6(b)-(ii)" },
+                                            new SelectListItem { Text = "A-6b", Value = "A-6b" },
+                                             new SelectListItem { Text = "Steel/Iron Scrap", Value = "SteelIronScrap" },
+                                            new SelectListItem { Text = "Plastic Scrap", Value = "PlasticScrap" },
+                                            new SelectListItem { Text = "Wooden Scrap", Value = "WoodenScrap" },
+                                            new SelectListItem { Text = "Waste Paper Scrap", Value = "WastePaperScrap" },
+                                            new SelectListItem { Text = "Aluminium Scrap", Value = "AluminiumScrap" },
+                                             new SelectListItem { Text = "Auction Handling Charges", Value = "Auction Handling Charges" },
+                                              new SelectListItem { Text = " Incidental Charges", Value = "Incidental Charges" },
+                                               new SelectListItem { Text = "Bid Amount-CWC-44", Value = "Bid Amount-CWC-44" },
+                                            new SelectListItem { Text = "Bid Amount-CWC-72", Value = "Bid Amount-CWC-72" },
+                                            new SelectListItem { Text = "Bid Amount-CWC-47", Value = "Bid Amount-CWC-47" },
+                                             new SelectListItem { Text = "Bid Amount-CWC-49", Value = "Bid Amount-CWC-49" },
+                                              new SelectListItem { Text = " Bid Amount-CWC-74", Value = "Bid Amount-CWC-74" },
+                                                new SelectListItem { Text = "Bid Amount-CWC-56", Value = "Bid Amount-CWC-56" },
+                                            new SelectListItem { Text = "Bid Amount-CWC-66", Value ="Bid Amount-CWC-66" },
+                                            new SelectListItem { Text = "Bid Amount-CWC-71", Value = "Bid Amount-CWC-71" },
+                                             new SelectListItem { Text = "Bid Amount-CWC-55", Value = "Bid Amount-CWC-55" },
+                                              new SelectListItem { Text = " Bid Amount-CWC-60", Value = "Bid Amount-CWC-60" },
+                                                new SelectListItem { Text = "Bid Amount-CWC-38", Value = "Bid Amount-CWC-38" },
+                                            new SelectListItem { Text = "Bid Amount-CWC-39", Value = "Bid Amount-CWC-39" },
+                                            new SelectListItem { Text = "Bid Amount-CWC-45", Value = "Bid Amount-CWC-45" },
+                                             new SelectListItem { Text = "Bid Amount-CWC-48", Value = "Bid Amount-CWC-48" },
+                                              new SelectListItem { Text = " Bid Amount-CWC-50", Value = "Bid Amount-CWC-50" },
+                                                new SelectListItem { Text = "Bid Amount-CWC-51", Value = "Bid Amount-CWC-51" },
+                                            new SelectListItem { Text = "Bid Amount-CWC-52", Value ="Bid Amount-CWC-52" },
+                                            new SelectListItem { Text = "Bid Amount-CWC-53", Value = "Bid Amount-CWC-53" },
+                                             new SelectListItem { Text = "Bid Amount-CWC-54", Value = "Bid Amount-CWC-54" },
+                                              new SelectListItem { Text = " Bid Amount-CWC-57", Value = "Bid Amount-CWC-57" },
+                                               new SelectListItem { Text = "Bid Amount-CWC-61", Value = "Bid Amount-CWC-61" },
+                                             new SelectListItem { Text = "Bid Amount-CWC-64", Value = "Bid Amount-CWC-64" },
+                                              new SelectListItem { Text = " Bid Amount-CWC-80", Value = "Bid Amount-CWC-80" },
+                                               new SelectListItem { Text = "Reefer Charge ", Value = "Reefer Charge" },
+                                                new SelectListItem { Text = "Insurance", Value = "Insurance" },
+                                                 new SelectListItem { Text = "Storage", Value = "Storage" },
+                                                  new SelectListItem { Text = "Electricity", Value = "Electricity" },
+                                                  new SelectListItem { Text = "Others", Value = "Others" },
+                                         },
+                               "--Select--")
+                                <span style="color:red" id="ErrPurpose"></span>
+                            </div>
+
+                            @*<div class="col-md-offset-2-5 col-md-1-5">
+                <label>Gate Pass:</label>
+            </div>
+            <div class="col-md-2">
+                @Html.DropDownList("GatePass", new List<SelectListItem>
+                {
+                new SelectListItem { Text = "No", Value = "No" },
+                new SelectListItem { Text = "Yes", Value = "Yes" }
+               }, new { @class = "form-control input-sm" })
+            </div>*@
+                            <div class="col-md-3 col-md-offset-6">
+                                <div class="form-group">
+                                    <label> Amount:</label>
+                                </div>
+                                @Html.TextBox("amount", "", new { @placeholder = "Amount", @onblur = "return caltotal();", onkeypress = "return AllowOnlyDecimal(event)", maxlength = "11" })
+                                <span style="color:red" id="Erramount"></span>
+                            </div>
+
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label> CGST:</label>
+                                </div>
+                                @Html.TextBox("cgst", "", new
+                               { @*@onblur = "return caltax();", onkeypress = "return AllowOnlyDecimal(event)",*@ maxlength = "11"
+                               })
+                            </div>
+                            <div class="col-md-3 col-md-offset-1">
+                                <div class="form-group">
+                                    <label> SGST:</label>
+                                </div>
+                                @Html.TextBox("sgst", "", new
+                               { @*@onblur = "return caltax();",sonkeypress = "return AllowOnlyDecimal(event)",*@ maxlength = "11"
+                               })
+                            </div>
+                            <div class="col-md-3 col-md-offset-2">
+                                <div class="form-group">
+                                    <label> IGST:</label>
+                                </div>
+                                @Html.TextBox("IGST", "", new
+                               { @*@onblur = "return caltax();", onkeypress = "return AllowOnlyDecimal(event)",*@ maxlength = "11"
+                               })
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label> Round Up:</label>
+                                </div>
+                                @Html.TextBox("round_up", "", new { @readonly = true })
+                            </div>
+                            <div class="col-md-3 col-md-offset-6">
+                                <div class="form-group">
+                                    <label> Total:</label>
+                                </div>
+                                @Html.TextBox("NetAmt", "", new { @readonly = true })
+                            </div>
+                        </div>
+                            <div class="row Form_Space_top">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label>Narration:</label>
+                                    </div>
+                                    <div class="position-relative">
+                                        @Html.TextArea("Naration", new { @placeholder = "Enter Narration",@style = "height:75px;", @maxlength = "500" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row SignUp_space_bottom SignUp_space_top">
+                                <div class="stoke"></div>
+                            </div>
+                            <div class="logSuccMsg Form_Space_bottom" id="DivMiscInvMsg" style="background-color:transparent"></div>
+                            <div class="SignUp_space_bottom2">
+                                <div class="d-flex justify-content-left">
+                                    <input type="button" value="Save" onclick="BindJson()" class="btn btn-primary mr-1 btn-100px" id="btnSave" />
+                                    <input type="button" value="Reset" class="btn btn-primary-border mr-1 btn-100px" onclick="ResetField()" />
+                                    <input type="button" id="BtnGenerateIRN" value="Generated IRN" class="btn btn-primary mr-1 btn-100px" onclick="GenerateIRN()" disabled="disabled" />
+                                    <input type="button" value="Print" class="btn btn-primary mr-1 btn-100px" onclick="Print()" id="btnPrint" disabled />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </div>
+
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+    $(function () {
+        $('#slim_scroll_1').slimScroll({
+            allowPageScroll: true
+        });
+    });
+</script>
+@*<div id="PartyModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Party</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Partybox" type="text" />
+                <ul class="navList" id="lstParty">
+                    @{
+                        foreach (var item in Model.lstGodownList)
+                        {
+                        <li id="@item.GodownId">@item.GodownName</li>
+                        }
+                        }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="PayeeModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Payer</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Payeebox" type="text" />
+                <ul class="navList" id="lstPayee">
+                    @{
+                        foreach (var item in Model.lstGodownList)
+                        {
+                        <li id="@item.GodownId">@item.GodownName</li>
+                        }
+                        }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>*@
+<div id="PartyModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal" style="width:100%;">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseParty()" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Party</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Party Name Or Party Address" id="Partybox" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchPartyByPartyCode()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="4" width="40%">Party Name</th>
+                            <th colspan="8" width="60%">Party Address</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tbleParty">
+                        <tbody>
+                            @{
+                                if (ViewBag.lstParty != null)
+                                {
+                                    foreach (var item in ViewBag.lstParty)
+                                    {
+                                        <tr onclick="SelectParty(@item.PartyId,'@item.PartyName','@item.Address','@item.StateName','@item.StateCode','@item.GSTNo')">
+                                            <td colspan="4" width="40%" class="txt_wrp">@item.PartyName</td>
+                                            <td colspan="8" width="60%" class="txt_wrp">@item.PartyCode</td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreParty()" class="btn btn-primary mr-1 btn-100px" id="btnLoadMore">Load More Data</button>
+                        }
+                        else
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreParty()" class="btn btn-primary mr-1 btn-100px" id="btnLoadMore" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-primary-border btn-100px" onclick="CloseParty()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="PayerModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal" style="width:100%;">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="ClosePayer()" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Payer</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Payer Name Or Payer Address" id="Payerbox" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchPayerByPayerCode()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd1" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="4" width="40%">Payer Name</th>
+                            <th colspan="8" width="60%">Payer Address</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll_1">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tblePayer">
+                        <tbody>
+                            @{
+                                if (ViewBag.lstPayer != null)
+                                {
+                                    foreach (var item in ViewBag.lstPayer)
+                                    {
+                                        <tr onclick="SelectPayer(@item.PartyId,'@item.PartyName')">
+                                            <td colspan="4" width="40%" class="txt_wrp">@item.PartyName</td>
+                                            <td colspan="8" width="60%" class="txt_wrp">@item.PartyCode</td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.StatePayer != null && Convert.ToBoolean(ViewBag.StatePayer) == true)
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMorePayer()" class="btn btn-primary mr-1 btn-100px" id="btnPayerLoadMore">Load More Data</button>
+                        }
+                        else
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMorePayer()" class="btn btn-primary mr-1 btn-100px" id="btnPayerLoadMore" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-primary-border btn-100px" onclick="ClosePayer()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var FormOneDetails = [];
+    var Page = 0;
+    var Page1 = 0;
+    var TimeInSeconds;
+    $(document).ready(function () {
+        TimeInSeconds = 5000;
+        $('#DeliveryDate').datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+            }
+        }); 
+        //PartyBinding();
+        //PayeeBinding();
+    });
+    //function PartyBinding() {
+    //    var PartyJson = JSON.parse($('#hdnPartyPayee').val());
+    //    var html = '';
+    //    $.each(PartyJson, function (i, item) {
+    //        html += '<li id="' + item.PartyId + '" onclick="selectParty(' + item.PartyId + ');">' + item.PartyName + '</li>';
+    //    });
+    //    $('#lstParty').html(html);
+    //}
+    //$('#Partybox').keyup(function () {
+    //    var val = $(this).val().toLowerCase();
+    //    if (val == "")
+    //        $('#lstParty > li').show();
+    //    else {
+    //        $('#lstParty > li').each(function () {
+    //            var text = $(this).text().toLowerCase();
+    //            (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+    //        });
+    //    }
+    //});
+    //function selectParty(id) {
+    //    debugger;
+    //    var PartyJson = JSON.parse($('#hdnPartyPayee').val());
+    //    var Party = $.grep(PartyJson, function (item) { return item.PartyId == id; })[0];
+    //    $('#PartyId').val(Party.PartyId);
+    //    $('#PartyName').val(Party.PartyName);
+    //    $('#GSTNo').val(Party.GSTNo);
+    //    $('#hdnAddress').val(Party.Address);
+    //    $('#hdnState').val(Party.State);
+    //    $('#hdnStateCode').val(Party.StateCode);
+    //    if ($('#MiscInvModelJson').val() != null && $('#MiscInvModelJson').val() != '' && $('#MiscInvModelJson').val() != 'undefined') {
+    //        var rawJson = JSON.parse($('#MiscInvModelJson').val());
+
+    //        rawJson.PartyId = $('#PartyId').val();
+    //        rawJson.PartyName = $('#PartyName').val();
+    //        rawJson.PartyGST = $('#GSTNo').val();
+
+    //        $('#MiscInvModelJson').val(JSON.stringify(rawJson));
+    //    }
+    //    document.getElementById("ErrPartyName").innerHTML = "";
+
+    //    $("#PartyModal").modal("hide");
+    //}
+
+    function SelectParty(PartyId, PartyName, Address, StateName, StateCode, GSTNo) {
+        $('#PartyId').val(PartyId);
+        $('#PartyName').val(PartyName);
+        $('#GSTNo').val(GSTNo);
+        $('#hdnAddress').val(Address);
+        $('#hdnState').val(StateName);
+        $('#hdnStateCode').val(StateCode);
+        if ($('#PaymentSheetModelJson').val() != null && $('#PaymentSheetModelJson').val() != '' && $('#PaymentSheetModelJson').val() != 'undefined') {
+            var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+            rawJson.PartyId = $('#PartyId').val();
+            rawJson.PartyName = $('#PartyName').val();
+            rawJson.PartyGST = $('#GSTNo').val();
+            rawJson.PartyAddress = $('#hdnAddress').val();
+            rawJson.PartyState = $('#hdnState').val();
+            rawJson.PartyStateCode = $('#hdnStateCode').val();
+            rawJson.ROAddress = (rawJson.ROAddress).replace(new RegExp('<br/>', "gi"), '|_br_|');
+            $('#PaymentSheetModelJson').val(JSON.stringify(rawJson));
+        }
+        $("#PartyModal").modal("hide");
+        LoadParty();
+    }
+
+
+
+    function LoadParty() {
+
+        Page = 0;
+        $.ajax({
+            url: '/Export/Hdb_CWCExport/LoadPartyList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+
+                    var html = '';
+                    $.each(data.Data.lstParty, function (item, elem) {
+
+                        html += '<tr onclick="SelectParty(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;,&quot;' + elem.Address + '&quot;,&quot;' + elem.State + '&quot;,&quot;' + elem.StateCode + '&quot;,&quot;' + elem.GSTNo + '&quot;)"><td colspan="4" width="40%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="8" width="60%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+
+                    $('#tbleParty tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadMoreParty() {
+
+        $.ajax({
+            url: '/Export/Hdb_CWCExport/LoadPartyList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+
+                    var html = '';
+                    $.each(data.Data.lstParty, function (item, elem) {
+
+                        html += '<tr onclick="SelectParty(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;,&quot;' + elem.Address + '&quot;,&quot;' + elem.State + '&quot;,&quot;' + elem.StateCode + '&quot;,&quot;' + elem.GSTNo + '&quot;)"><td colspan="4" width="40%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="8" width="60%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleParty tbody').html(html);
+                    else
+                        $('#tbleParty tbody').append(html);
+                    Page++;
+
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SearchPartyByPartyCode() {
+
+        if ($('#Partybox').val() != '') {
+            $.ajax({
+                url: '/Export/Hdb_CWCExport/SearchPartyNameByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#Partybox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstParty, function (item, elem) {
+                            html += '<tr onclick="SelectParty(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;,&quot;' + elem.Address + '&quot;,&quot;' + elem.State + '&quot;,&quot;' + elem.StateCode + '&quot;,&quot;' + elem.GSTNo + '&quot;)"><td colspan="8" width="40%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="60%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleParty tbody').html('');
+                        $('#tbleParty tbody').html(html);
+                        $('#btnLoadMore').prop('disabled', true);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleParty tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadParty();
+    }
+
+    function CloseParty() {
+        $('#Partybox').val('');
+        $("#PartyModal").modal("hide");
+        LoadParty();
+    }
+
+    //function PayeeBinding() {
+    //    var PartyJson = JSON.parse($('#hdnPartyPayee').val());
+
+    //    var html = '';
+    //    $.each(PartyJson, function (i, item) {
+    //        html += '<li id="' + item.PartyId + '" onclick="selectPayee(' + item.PartyId + ');">' + item.PartyName + '</li>';
+    //    });
+    //    $('#lstPayee').html(html);
+    //}
+    //$('#Payeebox').keyup(function () {
+    //    var val = $(this).val().toLowerCase();
+    //    if (val == "")
+    //        $('#lstPayee > li').show();
+    //    else {
+    //        $('#lstPayee > li').each(function () {
+    //            var text = $(this).text().toLowerCase();
+    //            (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+    //        });
+    //    }
+    //});
+    //function selectPayee(id) {
+    //    var PartyJson = JSON.parse($('#hdnPartyPayee').val());
+    //    var Party = $.grep(PartyJson, function (item) { return item.PartyId == id; })[0];
+    //    $('#PayeeId').val(Party.PartyId);
+    //    $('#PayeeName').val(Party.PartyName);
+    //    document.getElementById("ErrPayeeName").innerHTML = "";
+
+    //    $("#PayeeModal").modal("hide");
+    //}
+
+    function SelectPayer(PartyId, PartyName) {
+        $('#PayeeId').val(PartyId);
+        $('#PayeeName').val(PartyName);
+        //$('#GSTNo').val(GSTNo);
+        //$('#hdnAddress').val(Address);
+        //$('#hdnState').val(StateName);
+        //$('#hdnStateCode').val(StateCode);
+        if ($('#PaymentSheetModelJson').val() != null && $('#PaymentSheetModelJson').val() != '' && $('#PaymentSheetModelJson').val() != 'undefined') {
+            var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+            rawJson.PartyId = $('#PayeeId').val();
+            rawJson.PartyName = $('#PayeeName').val();
+            //rawJson.PartyGST = $('#GSTNo').val();
+            //rawJson.PartyAddress = $('#hdnAddress').val();
+            //rawJson.PartyState = $('#hdnState').val();
+            //rawJson.PartyStateCode = $('#hdnStateCode').val();
+            //rawJson.ROAddress = (rawJson.ROAddress).replace(new RegExp('<br/>', "gi"), '|_br_|');
+            $('#PaymentSheetModelJson').val(JSON.stringify(rawJson));
+        }
+        document.getElementById("ErrPayeeName").innerHTML = "";
+        $("#PayerModal").modal("hide");
+        LoadPayer();
+    }
+
+    function LoadPayer() {
+        Page1 = 0;
+        $.ajax({
+            url: '/Export/Hdb_CWCExport/LoadPayerList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page1 },
+            success: function (data) {
+                if (data.Status == 1) {
+
+                    var html = '';
+                    $.each(data.Data.lstPayer, function (item, elem) {
+                        html += '<tr onclick="SelectPayer(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;)"><td colspan="4" width="40%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="8" width="60%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+
+                    $('#tblePayer tbody').html(html);
+
+                    if (data.Data.StatePayer == true)
+                        $('#btnPayerLoadMore').prop('disabled', false);
+                    else $('#btnPayerLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadMorePayer() {
+
+        $.ajax({
+            url: '/Export/Hdb_CWCExport/LoadPayerList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page1 + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+
+                    var html = '';
+                    $.each(data.Data.lstPayer, function (item, elem) {
+
+                        html += '<tr onclick="SelectPayer(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;)"><td colspan="4" width="40%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="8" width="60%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tblePayer tbody').html(html);
+                    else
+                        $('#tblePayer tbody').append(html);
+                    Page++;
+
+
+                    if (data.Data.StatePayer == true)
+                        $('#btnPayerLoadMore').prop('disabled', false);
+                    else $('#btnPayerLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SearchPayerByPayerCode() {
+
+        if ($('#Payerbox').val() != '') {
+            $.ajax({
+                url: '/Export/Hdb_CWCExport/SearchPayerNameByPayeeCode',
+                type: 'GET',
+                data: { PartyCode: $('#Payerbox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstPayer, function (item, elem) {
+                            html += '<tr onclick="SelectPayer(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;)"><td colspan="8" width="40%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="60%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tblePayer tbody').html('');
+                        $('#tblePayer tbody').html(html);
+                        $('#btnPayerLoadMore').prop('disabled', true);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tblePayer tbody').html('');
+                        Page = -1;
+                        $('#btnPayerLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadPayer();
+    }
+
+    function ClosePayer() {
+        $('#Payerbox').val('');
+        $("#PayerModal").modal("hide");
+        LoadPayer();
+    }
+  
+
+    var TaxType = '@ViewData["InvType"].ToString()';
+    function IVType(Type) {
+
+        TaxType = Type;
+        $('#DivBody').load('/CashManagement/Hdb_CashManagement/CreateMiscInvoice?type=' + Type);
+    }
+    if (TaxType == 'Tax')
+        $('#Tax').prop('checked', true);
+    else {
+        $('#Bill').prop('checked', true);
+        $('#cgst').val(0);
+        $('#cgst').prop('readonly', true);
+        $('#sgst').val(0);
+        $('#sgst').prop('readonly', true);
+        $('#IGST').val(0);
+        $('#IGST').prop('readonly', true);
+    }
+
+
+
+    $('#Purpose').change(function () {
+        debugger;
+        var val = $('#Purpose').val();
+
+        purpose = $('#Purpose').val();
+        InvoiceType = $("input[name='InvoiceType']:checked").val();;
+        PartyId = $('#PartyId').val();
+        document.getElementById("ErrPurpose").innerHTML = "";
+        //  MiscInvCal(purpose, InvoiceType, PartyId);
+
+        //if(val=="LWB")
+        //{
+        //    $('#GatePass').val('Yes');
+        //}
+        //else
+        //{
+        //    $('#GatePass').val('No');
+        //}
+        
+
+    })
+
+    function MiscInvCal(purpose, InvoiceType, PartyId) {
+
+
+        $.ajax({
+            url: '/CashManagement/Hdb_CashManagement/GetMiscInvoiceAmount',
+            type: 'GET',
+            async: false,
+            datatype: JSON,
+            data: { purpose: purpose, InvoiceType: InvoiceType, PartyId: PartyId, ExportUnder: $('#ExportUnder').val() },
+            success: function (data) {
+                if (data != undefined || data != null) {
+                    populateJsondata(data);
+                    $('#ExportUnder').prop("disabled",true);
+                }
+                else {
+                    alert("fail");
+
+                }
+
+            }
+        });
+
+    }
+
+    function populateJsondata(data) {
+        debugger;
+        $("#amount").val(data.Amount);
+        $("#cgst").val(data.CGST);
+        $("#sgst").val(data.SGST);
+        $("#IGST").val(data.IGST);
+        $("#round_up").val(data.Round_up);
+        $("#total").val(data.Total);
+        $("#NetAmt").val(data.NetAmt);
+    }
+
+
+
+
+
+
+    //calculate total amount
+    function caltotal() {
+        if ($('#amount').val() == ".") {
+            $('#amount').val("0.00");
+        }
+        var amt = $('#amount').val();
+        var round = Math.ceil(amt) - amt;
+        var rounduptot = Math.ceil(amt);
+
+        $('#round_up').val(round.toFixed(2));
+        $('#total').val(rounduptot);
+        $('#cgst').val('0.00');
+        $('#sgst').val('0.00');
+        $('#IGST').val('0.00');
+
+        purpose = $('#Purpose').val();
+        InvoiceType = $("input[name='InvoiceType']:checked").val();;
+        PartyId = $('#PartyId').val();
+        Amount = $('#amount').val();
+
+
+        $.ajax({
+            url: '/CashManagement/Hdb_CashManagement/GetMiscInvoiceAmount',
+            type: 'POST',
+            async: false,
+            datatype: JSON,
+            data: { purpose: purpose, InvoiceType: InvoiceType, PartyId: PartyId, Amount: Amount, ExportUnder: $('#ExportUnder').val() },
+            success: function (data) {
+                debugger;
+                if (data != undefined || data != null) {
+                    $('#ExportUnder').prop("disabled", true);
+                    populateJsondata(data);
+                }
+                else {
+                    alert("fail");
+                }
+
+            }
+        });
+        document.getElementById("Erramount").innerHTML = "";
+    }
+    function populateJsondata(data) {
+        debugger; console.log(data);
+        $("#cgst").val(data.CGST);
+        $("#sgst").val(data.SGST);
+        $("#IGST").val(data.IGST);
+        $("#round_up").val(data.Round_up);
+        $("#total").val(data.Total);
+        $("#NetAmt").val(data.NetAmt);
+        $('#cgst').prop('readonly', true);
+        $('#sgst').prop('readonly', true);
+        $('#IGST').prop('readonly', true);
+        $('#round_up').prop('readonly', true);
+        $('#total').prop('readonly', true);
+    }
+
+    function caltax() {
+        var cgst = $('#cgst').val();
+        var sgst = $('#sgst').val();
+        var igst = $('#IGST').val();
+        var amt = $('#amount').val();
+        if (amt != '') {
+            var totamt = 0;
+            if (cgst == '')
+                cgst = 0;
+
+
+            if (sgst == '')
+                sgst = 0;
+
+            if (igst == '')
+                igst = 0;
+
+
+            totamt = parseFloat(amt) + parseFloat(cgst) + parseFloat(sgst) + parseFloat(igst);
+
+            var round = Math.ceil(totamt) - totamt;
+            var rounduptot = Math.ceil(totamt);
+
+            $('#round_up').val(round.toFixed(2));
+            $('#total').val(rounduptot);
+
+            if (cgst > 0 || sgst > 0) {
+                $('#IGST').prop('readonly', true);
+            }
+
+            if (igst > 0) {
+                cgst = 0;
+                sgst = 0;
+                $('#cgst').prop('readonly', true);
+                $('#sgst').prop('readonly', true);
+            }
+
+        }
+    }
+    function PaymentOnSuccess(data) {
+        if (data.Status == 1 || data.Status == 2) {
+            if ($('#DivMiscInvMsg').hasClass('logErrMsg'))
+                $('#DivMiscInvMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            // $('#InvoiceNo').val(data.Data.InvoiceNo);
+            var InvSupplyData = data.Data.InvoiceNo.split('-');
+            $('#InvoiceNo').val(InvSupplyData[0]);
+            $('#hdnSupplyType').val(InvSupplyData[1]);
+            $('#BtnGenerateIRN').removeAttr('disabled');
+            $('#MiscInvModelJson').val(JSON.stringify(data.Data));
+            $('#DivMiscInvMsg').html(data.Message);
+
+            $('#BtnGenerateIRN').removeAttr('disabled');
+            if (data.Data.InvoiceNo == "")
+                $('#btnPrint').attr('disabled');
+            else
+                $('#btnPrint').removeAttr('disabled');
+
+            //$('#btnSave').attr('disabled', true);
+            //setTimeout(ResetField, TimeInSeconds);
+        }
+        else if (data.Status == 5) {
+            $('#DivMiscInvMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivMiscInvMsg').html(data.Message);
+            $('#btnSave').attr('disabled', false);
+        }
+        else {
+
+            $('#btnPrint').attr('disabled');
+            if ($('#DivMiscInvMsg').hasClass('logSuccMsg'))
+
+                $('#DivMiscInvMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivMiscInvMsg').html(data.Message);
+
+
+        }
+    }
+    function PaymentOnFailure() {
+        alert("Error");
+    }
+    function ResetField() {
+
+        $('#DivBody').load('/CashManagement/Hdb_CashManagement/CreateMiscInvoice');
+    }
+
+    function BindJson() {
+        debugger;
+        if ($('#PartyName').val() == '') {
+            // $('[data-valmsg-for="PartyName"]').html('<span>Fill Out This Field</span>');
+            $('#ErrPartyName').html('Fill Out This Field');
+            return false;
+        }
+        else if ($('#PayeeName').val() == '') {
+            //   $('[data-valmsg-for="PayeeName"]').html('<span>Fill Out This Field</span>');
+            $('#ErrPayeeName').html('Fill Out This Field');
+            return false;
+        }
+        else if ($('#Purpose').val() == '') {
+            $('#ErrPurpose').html('Fill Out This Field');
+            //$('[data-valmsg-for="Purpose"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        else if ($('#amount').val() == '') {
+            //   $('[data-valmsg-for="amount"]').html('<span>Fill Out This Field</span>');
+            $('#Erramount').html('Fill Out This Field');
+            return false;
+        }
+        else {
+            var conf = confirm("Do you want to save ?");
+
+            if (conf) {
+                try {
+                    $('#btnSave').attr('disabled', true);
+
+
+                    var data = {
+                        InvoiceId: 0,
+                        InvoiceDate: $('#DeliveryDate').val(),
+                        DeliveryDate: $('#DeliveryDate').val(),
+                        InvoiceType: TaxType,
+                        PartyId: $('#PartyId').val(),
+                        PartyName: $('#PartyName').val(),
+                        PayeeId: $('#PayeeId').val(),
+                        PayeeName: $('#PayeeName').val(),
+                        PartyGST: $('#GSTNo').val(),
+                        Purpose: $('#Purpose').val(),
+                        Amount: $('#amount').val(),
+                        CGST: $('#cgst').val(),
+                        SGST: $('#sgst').val(),
+                        IGST: $('#IGST').val(),
+                        Round_up: $('#round_up').val(),
+                        Total: $('#total').val(),
+                        Naration: $('#Naration').val(),
+                        NetAmt: $('#NetAmt').val(),
+                        ExportUnder: $('#ExportUnder').val(),
+                      //  GatePass:$('#GatePass').val(),
+                        InvoiceHtml: 0
+                    };
+
+
+                    $('#MiscInvModelJson').val(JSON.stringify(data));
+                    var rawJson = JSON.parse($('#MiscInvModelJson').val());
+
+                    rawJson.InvoiceId = 0;
+                    rawJson.InvoiceType = TaxType;
+                    rawJson.DeliveryDate = $('#DeliveryDate').val();
+                    rawJson.PartyId = $('#PartyId').val();
+                    rawJson.PartyName = $('#PartyName').val();
+                    rawJson.PayeeId = $('#PayeeId').val();
+                    rawJson.PayeeName = $('#PayeeName').val();
+                    rawJson.PartyGST = $('#GSTNo').val();
+                    rawJson.Purpose = $('#Purpose').val();
+                    rawJson.Amount = $('#amount').val();
+                    rawJson.CGST = $('#cgst').val();
+                    rawJson.SGST = $('#sgst').val();
+                    rawJson.IGST = $('#IGST').val();
+                    rawJson.Round_up = $('#round_up').val();
+                    rawJson.Total = $('#total').val();
+                    //  rawJson.RoundUp = Number(rawJson.Round_up.toFixed(2));
+                    //  rawJson.Total = Number(rawJson.Total);
+                    rawJson.Naration = $('#Naration').val();
+                    rawJson.NetAmt = $('#NetAmt').val();
+                    rawJson.HSNCode = GetHSNCode($('#Purpose').val());
+                    rawJson.InvoiceHtml = "";
+
+
+                    $('#MiscInvModelJson').val(JSON.stringify(rawJson));
+
+                    $('form#MiscInvoice').submit();
+
+                }
+                catch (e) {
+                    $('#btnSave').removeAttr('disabled');
+                }
+            }
+        }
+    }
+
+  function GetHSNCode(purpose)
+    {
+      var HNSCode = '';
+      switch (purpose) {         
+          case 'Printing':
+              HNSCode = "998599";
+              break;
+          case 'LWB':
+              HNSCode = "998599";
+              break;
+          case 'PCS':
+              HNSCode = "998531";
+              break;
+          case 'TableSpace':
+              HNSCode = "997212";
+              break;
+          case 'Auction Handling Charges':
+              HNSCode = "996711";
+              break;
+          case 'Incidental Charges':
+              HNSCode = "996729";
+              break;
+          case 'AluminiumScrap':
+              HNSCode = "7602";
+              break;
+          case 'Auction Handling Charges':
+              HNSCode = "996711";
+              break;
+          case 'Bid Amount-CWC-44':
+              HNSCode = "39202020";
+              break;
+          case 'Bid Amount-CWC-72':
+              HNSCode = "84139090";
+              break;
+          case 'Bid Amount-CWC-47':
+              HNSCode = "39202020";
+              break;
+          case 'Bid Amount-CWC-49':
+              HNSCode = "90271000";
+              break;
+          case 'Bid Amount-CWC-74':
+              HNSCode = "84134000";
+              break;
+          case 'Bid Amount-CWC-56':
+              HNSCode = "74182020";
+              break;
+          case 'Bid Amount-CWC-66':
+              HNSCode = "33059030";
+              break;
+          case 'Bid Amount-CWC-71':
+              HNSCode = "85167990";
+              break;
+          case 'Bid Amount-CWC-55':
+              HNSCode = "39202020";
+              break;
+          case 'Bid Amount-CWC-60':
+              HNSCode = "39202020";
+              break;
+          case 'Bid Amount-CWC-38':
+              HNSCode = "84798299";
+              break;
+          case 'Bid Amount-CWC-39':
+              HNSCode = "85291029";
+              break;
+          case 'Bid Amount-CWC-45':
+              HNSCode = "70139990";
+              break;
+          case 'Bid Amount-CWC-48':
+              HNSCode = "85369090";
+              break;
+          case 'Bid Amount-CWC-50':
+              HNSCode = "85371000";
+              break;
+          case 'Bid Amount-CWC-51':
+              HNSCode = "44101120";
+              break;
+          case 'Bid Amount-CWC-52':
+              HNSCode = "40169100";
+              break;
+          case 'Bid Amount-CWC-53':
+              HNSCode = "48191010";
+              break;
+          case 'Bid Amount-CWC-54':
+              HNSCode = "87119091";
+              break;
+          case 'Bid Amount-CWC-57':
+              HNSCode = "32099090";
+              break;
+          case 'Bid Amount-CWC-61':
+              HNSCode = "90212900";
+              break;
+          case 'Bid Amount-CWC-64':
+              HNSCode = "57050090";
+              break;
+          case 'Bid Amount-CWC-80':
+              HNSCode = "84149090";
+              break;
+          case 'ReeferCharge':
+              HNSCode = "996711";
+              break;
+          case 'Plasticscrap':
+              HNSCode = "3915";
+              break;
+          case 'SteelIronScrap':
+              HNSCode = "7204";
+              break;
+          case 'WoodenScrap':
+              HNSCode = "4401";
+              break;
+          case 'WastePaperScrap':
+              HNSCode = "4707";
+              break;
+          case 'Insurance':
+              HNSCode='996729'
+              break;
+          case 'Storage':
+              HNSCode = '996729'
+              break;
+          case 'Electricity':
+              HNSCode = '998599'
+              break;
+          default:
+              HNSCode = "996711";
+      }
+
+      return HNSCode;
+    }
+
+
+
+
+
+
+
+    function Print() {
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GetBulkInvoiceReport", "Hdb_ReportCWC", new { area = "Report" })',
+            headers: { "__RequestVerificationToken": Token },
+            data: {
+                InvoiceNumber: $('#InvoiceNo').val(),
+                InvoiceModule: 'MISCINV',
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                InvoiceModuleName: 'Miscellaneous Invoice',
+            },
+            dataType: 'JSON',
+            success: function (data) {
+                window.open(data.Data + '?t=' + (new Date().getTime()), "_blank", "fullscreen=yes");
+            }
+        });
+    }
+    function AllowOnlyDecimal(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || (CharCode == 46) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+    function GenerateIRN() {
+        debugger;
+
+        var InvoiceNo = $('#InvoiceNo').val();
+        var SupplyType = $('#hdnSupplyType').val();
+        $.ajax({
+            /*url: 'Url.Action("YardInvoicePrint", "Ppg_CWCImport", new { Area = "Import" }) ',*/
+            url: '@Url.Action("GetIRNForYardInvoice", "Hdb_CWCImport", new { Area = "Import" }) ',
+            type: 'POST',
+            data: {
+                InvoiceNo: InvoiceNo,
+                SupplyType: SupplyType
+            },
+            success: function (data) {
+                if (data.Status == 1) {
+                    alert("IRN has been generated sucessfully");
+                    $('#btnPrint').removeAttr("disabled");
+                }
+                else
+                    alert(data.Message);
+                $('#btnPrint').removeAttr("disabled");
+
+            }
+        });
+    };
+</script>

@@ -1,0 +1,119 @@
+﻿@model IEnumerable<CwcExim.Areas.Bond.Models.WfldSACInvoiceList>
+
+<script>
+    $(function () {
+        var TblDepositApp = $('#TblInvoice').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns": [
+                       { "sName": "SL No", "width": "5%" },
+                       { "sName": "Invoice No", "bSortable": false, "width": "15%" },
+                       { "sName": "Invoice Date", "bSortable": false, "width": "10%" },
+                       { "sName": "Sac No", "bSortable": false, "width": "15%" },
+                       { "sName": "Sac Date", "bSortable": false, "width": "10%" },
+                       { "sName": "Party Name", "bSortable": false, "width": "40%" },                       
+                       { "sName": "Print", "bSortable": false, "width": "5%" }
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0),td:eq(6)', nRow).addClass("text-center");
+                $('td:eq(0),td:eq(6)', nRow).css("width", "5%");
+                $('td:eq(1),td:eq(3)', nRow).css("width", "15%");
+                $('td:eq(2),td:eq(4)', nRow).css("width", "10%");
+                $('td:eq(5)', nRow).css("width", "40%");
+            }
+        });
+        new $.fn.dataTable.FixedHeader(TblDepositApp);
+    });
+
+    function PreviewInvoice(invoiceno)
+    {
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetBulkInvoiceReport", "WFLD_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                InvoiceNumber: invoiceno,
+                InvoiceModule: 'BNDAdv',
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                InvoiceModuleName: 'Bond SAC Payment sheet',
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }
+    var Page = 0;
+    function LoadMoreListData() {
+        //debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Bond/WFLDBond/LoadMoreListofSACPaymentSheet',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                //debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#TblInvoice').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        //debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.InvoiceNo],
+        [item.InvoiceDate],
+        [item.SACNo],
+        [item.SACDate],
+        [item.PartyName],
+        ['<a href="#" onclick=PreviewInvoice("' + [item.InvoiceNo] + '")><i class="fa fa-file-pdf-o Edit"></i></a>'],
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+</script>
+
+<table id="TblInvoice" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+    <thead>
+        <tr>
+            <th style="width:5%" class="text-center">@Html.DisplayName("SL No")</th>
+            <th style="width:15%">Invoice No</th>
+            <th style="width:10%">Invoice Date</th>
+            <th style="width:15%">Sac No</th>
+            <th style="width:10%">Sac Date</th>
+            <th style="width:40%">Party Name</th>
+            <th style="width:5%" class="text-center">@Html.DisplayName("Print")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td style="width:5%" class="text-center">@SerialNo</td>
+                    <td style="width:15%">@Html.DisplayFor(m => item.InvoiceNo)</td>
+                    <td style="width:10%">@Html.DisplayFor(m => item.InvoiceDate)</td>
+                    <td style="width:15%">@Html.DisplayFor(m => item.SACNo)</td>
+                    <td style="width:10%">@Html.DisplayFor(m => item.SACDate)</td>
+                    <td style="width:40%">@Html.DisplayFor(m => item.PartyName)</td>
+                    <td style="width:5%" class="text-center"><a href="#" onclick="PreviewInvoice('@item.InvoiceNo')"><i class="fa fa-file-pdf-o Edit" aria-hidden="true"></i></a></td>
+                </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>

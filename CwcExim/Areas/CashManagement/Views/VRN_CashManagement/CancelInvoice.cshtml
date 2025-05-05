@@ -1,0 +1,541 @@
+﻿@model CwcExim.Areas.CashManagement.Models.CancelInvoice
+<style>
+    #tbleInvoice.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    #tbleCha.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .slimScrollDiv {
+        height: 300px;
+    }
+
+    .table.tblhd {
+        border-bottom: 0;
+    }
+</style>
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+      $('#slim_scroll_14').slimScroll({
+          allowPageScroll: true
+      });
+      $('#InvoiceNo').focus();
+    });
+</script>
+  <script>
+ 
+    var TimeInSeconds=3000;
+  
+
+    function ReloadCancelInvoice() {
+        $('#DivBody').load('/cashmanagement/VRN_Cashmanagement/CancelInvoice');
+    }
+    
+
+    function GetInvoiceNoList() {
+        var t='';
+        $('#DivCancelInvoiceList').load('/CashManagement/VRN_CashManagement/LstOfCancleInvoice?InvoiceNo=' + t);
+    }
+    function SearchByInvoiceNo() {
+        var t = $('#InvoiceNoSrch').val();
+        $('#DivCancelInvoiceList').load('/CashManagement/VRN_CashManagement/LstOfCancleInvoice?InvoiceNo=' + t);
+    }
+    
+
+    
+
+    function ResetAllFields() {
+        $('#divCancelInvoice').find('input:hidden').val('');
+        $('#divCancelInvoice').find('input:text,textarea').val('');
+        $('#divCancelInvoice #DivCancelInvoiceMsg').html('');
+        $('#divCancelInvoice #DivCancelInvoiceErrMsg').html('');
+        $('[data-valmsg-for]').html('<span><span>');
+       
+    }
+
+    function CancelInvoiceOnSuccess(data) {
+        //debugger;
+        if (data.Status == 1) {
+            $('#DivCancelInvoiceMsg').html(data.Message);
+            setTimeout(ReloadCancelInvoice, TimeInSeconds);
+            
+        }
+        else {
+            $('#DivCancelInvoiceErrMsg').html(data.Message);
+        }
+    }
+
+    function CancelInvoiceOnFailure() { }
+
+
+    $('#InvoiceBox').keyup(function () {
+        //debugger;
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#InvoiceModal .navList > li').show();
+        } else {
+            $('#InvoiceModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('#InvoiceList li').on("click", function () {
+        //debugger;
+        $('#InvoiceNo').val($(this).text());
+        $('#InvoiceId').val($(this).attr('id'));
+        var InvoiceId = $('#InvoiceId').val();
+        $("#InvoiceModal").modal("hide");
+      
+        GetInvoiceDet(InvoiceId);
+    });
+
+    function GetInvoiceDet(InvoiceId) {
+        //debugger;
+        $.ajax({
+            url: '/CashManagement/VRN_CashManagement/GetInvcDetForCancleInvoice',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { InvoiceId: InvoiceId },
+            success: function (data) {
+                //debugger;
+                if (data != null) {
+                    $('#ErrInvoiceNo').html('');
+                    $('#InvoiceNo').val(data.InvoiceNo);
+                    $('#InvoiceId').val(data.InvoiceId);
+                    $('#InvoiceDate').val(data.InvoiceDate);
+                    $('#Amount').val(data.Amount);
+                    $('#PartyName').val(data.PartyName);
+                    $('#Irn').val(data.Irn);
+                    $('#SupplyType').val(data.SupplyType);
+                    $('#invSearch').css('display', 'none');
+                    $('#InvoiceNobox').val('');
+                    $('#CancelReason').focus();
+                    $("#InvoiceModal").modal("hide");
+                    LoadInvoice();
+                }
+            }
+        });
+    }
+   
+    
+    function LoadInvoice() {
+        //debugger;
+        Page = 0;
+        $.ajax({
+            url: '/CashManagement/VRN_CashManagement/ListOfCancleInvoice',
+            type: 'GET',
+            data: { InvoiceNo: "" },
+            success: function (data) {
+                if (data != null) {
+                    //debugger;
+                    var html = '';
+                    var tab = 401;
+                    $.each(data, function (item, elem) {
+                        //debugger;
+                        html += '<tr tabindex=' + tab + '_' + item + ' onkeypress="SelectInvoice(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;)" onclick="SelectInvoice(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.InvoiceNo + '</td></tr>';
+                    });
+
+                    $('#tbleInvoice tbody').html(html);
+
+                }
+            }
+        });
+    }
+
+    function SelectInvoice(InvoiceId, InvoiceNo) {
+        //debugger;
+        $('#InvoiceNo').val(InvoiceNo);
+        $('#InvoiceId').val(InvoiceId);
+
+        GetInvoiceDet(InvoiceId);
+    }
+
+   
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+    document.getElementById('InvoiceNobox').addEventListener('keyup', debounce(function () {
+        //debugger;
+        var inv = $('#InvoiceNobox').val();
+        SearchInvoice()
+    }, 800));
+
+    function SearchInvoice() {
+        if ($('#InvoiceNobox').val() != '') {
+            $.ajax({
+                url: '/CashManagement/VRN_CashManagement/SearchCancleInvoice',
+                type: 'GET',
+                data: { InvoiceNo: $('#InvoiceNobox').val() },
+                success: function (data) {
+                    //debugger;
+                    if (data!= null) {
+                        var html = '';
+                        var tab = 401;
+                        $.each(data, function (item, elem) {
+                            html += '<tr tabindex=' + tab + '_' + item + ' onkeypress="SelectInvoice(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;)" onclick="SelectInvoice(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.InvoiceNo + '</td></tr>';
+                        });
+                        $('#tbleInvoice tbody').html('');
+                        $('#tbleInvoice tbody').html(html);                       
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleInvoice tbody').html('');                       
+                    }
+
+                }
+            });
+        }
+        else
+            LoadInvoice();
+    }
+
+    function CloseInvoice() {
+        //debugger;
+        $('#InvoiceNobox').val('');
+        $("#InvoiceModal").modal("hide");
+        LoadInvoice();
+    }
+   
+    function CancelInvoice() {
+        //debugger;
+        if ($('#InvoiceNo').val() == '') {
+            $('#ErrInvoiceNo').html('Fill Out This Field');
+            return false;
+        }
+        if ($('#CancelRemarks').val() == '') {
+            $('#ErrCancelRemarks').html('Fill Out This Field');
+            return false;
+        }
+        else {
+            if ($('#Irn').val() != '' && $('#CancelReason').val() != '' && $('#CancelRemarks').val() != '')
+            {
+                if ($('#SupplyType').val() == 'B2C')
+                {
+                    //debugger;
+                    $('#btnCancelInvoice').attr('disabled', true);
+                    $('form#CancelInvoiceForm').submit();
+                }
+                else {
+                    $.ajax({
+                        url: '/CashManagement/VRN_CashManagement/GetCancelIRNForInvoice',
+                        type: 'POST',
+                        data: { Irn: $('#Irn').val(), CancelReason: $('#CancelReason').val(), CancelRemark: $('#CancelRemarks').val() },
+                        dataType: 'JSON',
+                        success: function (data) {
+                            //debugger;
+                            if (data.Status == 1) {
+                                $('#CancelDate').val(data.CancelDate);
+                                try {
+                                    //debugger;
+                                    $('#btnCancelInvoice').attr('disabled', true);
+                                    $('form#CancelInvoiceForm').submit();
+                                }
+                                catch (e) {
+                                    $('#btnCancelInvoice').removeAttr('disabled');
+                                }
+                            }
+                            else {
+                                $('#btnCancelInvoice').removeAttr('disabled');
+                                alert(data.ErrorDetails.ErrorMessage);
+                                // alert("Invoice Canceled failed");
+                            }
+
+                        }
+                    });
+                }
+                
+            }
+            else {
+                //alert("Invoice Canceled failed");
+            }
+
+    }
+  }
+
+    $('#CancelRemarks').on('keydown keyup', function (e) {
+        $('#ErrCancelRemarks').html('');
+        $('#spanCharRemaining').html((500 - $(this).val().length));
+    });
+
+    $('#InvoiceModal').on('shown.bs.modal', function () {
+        $('#InvoiceNobox').focus();
+    });
+
+    $('.mTabindex').keydown(function (e) {
+        //debugger;
+        var $focusable = $(this).find("[tabindex]:not([tabindex='-1'])");
+        if ($focusable.last().is(":focus") && !e.shiftKey && e.key == "Tab") {
+            e.preventDefault();
+            $focusable.first().focus();
+        }
+        else
+            if ($focusable.first().is(":focus") && e.shiftKey && e.key == "Tab") {
+                e.preventDefault();
+                $focusable.last().focus();
+            }
+    });
+
+    function PopupActivate(Id) {
+        //debugger;
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+
+        if (CharCode == 32 || CharCode == 13) {
+
+            $('#' + Id).modal('show');
+
+            if (Id == "InvoiceModal") {
+                //debugger;
+                $('#InvoiceNobox').focus();                
+            }
+        }
+    }
+
+    function BindInvoiceNo() {
+        if ($('#hdnInvoice').val() != '') {
+            var InvoiceJson = JSON.parse($('#hdnInvoice').val());
+            var html = '';
+            var tabvalue = 102;
+            $.each(InvoiceJson, function (i, item) {
+                html += '<li tabindex=' + tabvalue + ' id="' + item.InvoiceId + '" onclick="SelectInvoice(' + item.InvoiceId + ',&quot;' + item.InvoiceNo + '&quot;);" onkeypress="SelectInvoice(' + item.InvoiceId + ',&quot;' + item.InvoiceNo + '&quot;);">' + item.InvoiceNo + '</li>';
+
+                tabvalue++;
+            });
+            $('#lstInvoice').html(html);
+        }
+    }
+
+    //$('#InvoiceNobox').keyup(function () {
+    //    var val = $(this).val().toLowerCase();
+    //    if (val == "")
+    //        $('#lstInvoice > li').show();
+    //    else {
+    //        $('#lstInvoice > li').each(function () {
+    //            var text = $(this).text().toLowerCase();
+    //            (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+    //        });
+    //    }
+    //});
+
+</script>
+@if (ViewBag.InvoiceList != null)
+{
+    <input type="hidden" id="hdnInvoice" value="@ViewBag.InvoiceList" />
+}
+else
+{
+    <input type="hidden" id="hdnInvoice" value="" />
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+@using (Ajax.BeginForm("AddEditCancleInvoice", "VRN_CashManagement", new AjaxOptions { HttpMethod = "POST", OnSuccess = "CancelInvoiceOnSuccess", OnFailure = "CancelInvoiceOnFailure" }, new { @Id = "CancelInvoiceForm" }))
+               
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.CancelDate)
+                    <div id="divCancelInvoice">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Cancel Invoice</h4>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Invoice No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.HiddenFor(m => m.Irn)
+                                    @Html.HiddenFor(m => m.SupplyType)
+                                    @Html.HiddenFor(m => m.InvoiceId)
+                                    @Html.TextBoxFor(m => m.InvoiceNo, new { @class = "form-control input-sm", @readonly = true, @onkeydown = "PopupActivate('InvoiceModal');" })
+                                    <span class="search" id="invSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#InvoiceModal"></i></span>
+                                    <span style="color:red" id="ErrInvoiceNo"></span>
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                    <label>Invoice Date:</label>
+                                </div>
+                                <div class="col-md-2-5 col_cus_2_5">
+                                    @Html.TextBoxFor(m => m.InvoiceDate, new { @class = "form-control input-sm", @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Amount:</label>
+                                </div>
+                                <div class="col-md-2-5">                                
+                                    @Html.TextBoxFor(m => m.Amount, new { @class = "form-control input-sm", @readonly = true })  
+                                </div>
+                                
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5" style="padding-right:0px;">
+                                    <label>Party Name</label>
+                                </div>
+                                <div class="col-md-10-5">                                   
+                                    @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control input-sm", @readonly = true })                                                                    
+                                </div>
+                            </div>                            
+                        </div>   
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Cancel Reason:</label>
+                                </div>
+                                <div class="col-md-2-5">
+
+                               @Html.DropDownListFor(m => m.CancelReason, new List<SelectListItem>
+                               {
+                                new SelectListItem { Text="Duplicate",Value="1"},
+                                new SelectListItem { Text="Data Entry Mistake",Value="2",Selected=true},
+                                new SelectListItem { Text="Order Cancel",Value="3"},
+                                new SelectListItem { Text="Others",Value="3"}
+                                }, new { @class = "form-control input-sm" })
+                                </div>
+
+                            </div>
+                        </div>
+                                            
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Remarks :</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10 Error_Msg">
+                                    @Html.TextAreaFor(m => m.CancelRemarks, new { @style = "height:75px;", @maxlength = "500" })
+                                    <span id="spanCharRemaining" style="float:none;display:inline;">500 </span> <span style="float:none;display:inline;"> character(s) remaining</span>
+                                    <span style="color:red" id="ErrCancelRemarks"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-offset-4 col-md-2 SignUp_space_bottom">
+                            <input type="button" class="btn log_Btn_sm" value="Cancel" id="btnCancelInvoice" onclick="CancelInvoice()" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Exit" onclick="ReloadCancelInvoice()" />
+                        </div>
+
+                    </div>
+                    <div class="logSuccMsg" style="background-color:transparent" id="DivCancelInvoiceMsg"></div>
+                    <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivCancelInvoiceErrMsg"></div>
+                }
+                @Scripts.Render("~/bundles/jqueryval")
+
+                <div class="row Form_Space_top Form_Space_bottom">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-2">
+                            <input type="button" id="BtnGateEntryListLoad" value="Show List" class="btn log_Btn_sm" onclick="GetInvoiceNoList()" />
+                        </div>
+                        <div class="col-md-offset-3 col-md-4" style="text-align:right;">
+                            <label>Invoice No:</label>
+                        </div>
+                        <div class="col-md-3">
+                            @Html.TextBox("InvoiceNoSrch", "", new { placeholder = "Search Here" })
+                            <span class="search"><i class="fa fa-search" aria-hidden="true" onclick="SearchByInvoiceNo()"></i></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="DivCancelInvoiceList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade mTabindex" id="InvoiceModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseInvoice()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Invoice No</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Invoice No" id="InvoiceNobox" type="text" tabindex="401"/>
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchInvoice()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Invoice No</th>
+
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll_14">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tbleInvoice">
+                        @{
+                            if (ViewBag.lstInvoice != null)
+                            {
+                                var tabvalue = 401;
+                                foreach (var item in ViewBag.lstInvoice)
+                                {
+                                    <tr tabindex="@tabvalue" onclick="SelectInvoice(@item.Value,'@item.Text')" onkeypress="SelectInvoice(@item.Value,'@item.Text')">
+                                        <td colspan="8" width="80%" class="txt_wrp">@item.Text</td>
+
+                                    </tr>
+                                }
+                            }
+                        }
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    @*<div class="col-md-6">
+                            @if (ViewBag.CHAState != null && Convert.ToBoolean(ViewBag.CHAState) == true)
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreForwarder()" class="btn log_Btn_sm" id="btnLoadForwarder">Load More Data</button>
+                            }
+                            else
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreForwarder()" class="btn log_Btn_sm" id="btnLoadForwarder" disabled>Load More Data</button>
+                            }
+                        </div>*@
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseInvoice()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

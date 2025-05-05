@@ -1,0 +1,209 @@
+﻿@model CwcExim.Areas.CashManagement.Models.TransactionStatusEnquiry
+
+<div class="container-fluid">
+    <div class="col-md-11 col-md-offset-0-5">
+        <div class="Head_h4">
+            @using (Ajax.BeginForm("GetTransactionStatusEnquiry", "Kol_CashManagement", new AjaxOptions { HttpMethod = "POST", OnFailure = "OnFailure", OnSuccess = "OnSuccess", LoadingElementDuration = 1000, LoadingElementId = "divProgress" }))
+            {
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>Transaction Status Enquiry</h4>
+                    </div>
+                </div>
+                @Html.AntiForgeryToken()
+
+                <div class="row Form_Space_top">
+                    <div class="Form_Input form-group">
+                        <div class="col-md-2">
+                            <label>Invoice No:</label>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="ReQSimbol">*</span>
+                            @Html.HiddenFor(x => x.InvoiceId)
+                            @Html.TextBoxFor(m => m.InvoiceNo, new { @readonly = true })
+                            @Html.ValidationMessageFor(m => m.InvoiceNo)
+                            <span class="search" id="FromINV" onclick="LoadInvoiceNo()"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#FromInvoiceList"></i></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                </div>
+                    <div class="row">
+                        <div class="col-md-offset-3 col-md-4 SignUp_space_bottom">
+                            <input type="submit" class="btn log_Btn_sm" value="Payment Status" id="btnSaveInvoice"  />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Reset" id="btnResetInvoice" onclick="RefreshPage()" />
+                        </div>
+                    </div>
+            }
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="DivSDRefundList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade mTabindex" id="FromInvoiceList" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseEximTrader()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Invoice No</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                @*<input placeholder="Search By Shipping Line Name Or Party Code" id="ShpngLinebox" type="text" tabindex="200" autofocus />*@
+                <input placeholder="Search Me" id="Invoicebox" type="text" />
+                @*<span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByPartyCode()"></i></span>*@
+
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Invoice No</th>
+                        </tr>
+                    </thead>
+                </table>
+
+                <div id="slim_scroll">
+                    <table tabindex="201" class="table dataTable table-bordered table-striped slim_tble" id="tbleSline"></table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+
+                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseEximTrader()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script>
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+
+    });
+    var TimeInSeconds = 5000;
+    
+    function RefreshPage()
+    {
+        $('#InvoiceId').val(0);
+        $('#InvoiceNo').val('');
+    }
+    function LoadInvoiceNo() {
+        debugger;
+        $('#tbleSline').html("");
+        $.ajax({
+            url: '/CashManagement/Kol_CashManagement/GetInvoiceListForTransactionStatusEnquiry',
+            type: 'GET',
+            data: { InvoiceNo: '', Page: 0 },
+            success: function (data) {
+                debugger;
+                var html = '';
+                $.each(data, function (item, elem) {
+
+                    html += '<tr><td onclick="SelectInvoiceNo(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;)">' + elem.InvoiceNo + '</td></tr>';
+                });
+                $('#tbleSline').html(html);
+            }
+        });
+    }
+
+    function SearchInvoiceNo(InvoiceNo) {
+        //debugger;
+        $('#tbleSline').html("");
+        $.ajax({
+            url: '/CashManagement/Kol_CashManagement/GetInvoiceListForTransactionStatusEnquiry',
+            type: 'GET',
+            data: { InvoiceNo: InvoiceNo, Page: 0 },
+            success: function (data) {
+                //debugger;
+                var html = '';
+                $.each(data, function (item, elem) {
+                    html += '<tr><td onclick="SelectInvoiceNo(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;)">' + elem.InvoiceNo + '</td></tr>';
+                });
+                $('#tbleSline').html(html);
+            }
+        });
+    }
+
+    function SelectInvoiceNo(InvoiceId, InvoiceNo)
+    {
+        $('#InvoiceId').val(InvoiceId);
+        $('#InvoiceNo').val(InvoiceNo);
+        $('#FromInvoiceList').modal('hide');
+    }
+
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+    document.getElementById('Invoicebox').addEventListener('keyup', debounce(function () {
+        var InvoiceNo = $('#Invoicebox').val();
+        SearchInvoiceNo(InvoiceNo);
+    }, 800));
+    
+    function OnSuccess(data) {
+        var a = data.Message;
+        alert(a);
+        if (data.Status == 'SUCCESS' ) {
+            $('#btnSaveInvoice').prop('disabled', true);
+            RefreshPage();
+        }
+        else {
+
+            $('#btnSaveInvoice').prop('disabled', false);
+        }        
+    }
+    function OnFailure() {
+        alert("Something went wrong , Please check data");
+    }
+    function CloseEximTrader() {
+        $('#FromInvoiceList').modal('hide');
+    }
+    var page = 0;
+    function LoadMoreEximTrader() {
+        page = page + 1;
+        $.ajax({
+            url: '/CashManagement/Kol_CashManagement/GetInvoiceListForTransactionStatusEnquiry',
+            type: 'GET',
+            data: { InvoiceNo: '', Page: page },
+            success: function (data) {
+                //debugger;
+                var html = '';
+                $.each(data, function (item, elem) {
+                    html += '<tr><td onclick="SelectInvoiceNo(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;)">' + elem.InvoiceNo + '</td></tr>';
+                });
+                $('#tbleSline').append(html);
+            }
+        });
+    }
+</script>
+
+@Scripts.Render("~/bundles/jqueryval")

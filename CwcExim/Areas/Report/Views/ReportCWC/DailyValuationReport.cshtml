@@ -1,0 +1,129 @@
+﻿<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-11 col-md-offset-0-5">
+            <div class="container-fluid">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Daily Valuation Report of Import Cargo</h4>
+                        </div>
+                    </div>
+                    <div class="Form_Space_top" style="padding:5px;">
+                        <div class="row">
+                            <div class="form-group Form_Input">
+
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Container No:</label>
+                                </div>
+                                <div class="col-md-2-5 col_cus_3">
+                                    @Html.TextBox("ContainerNo","",new { @readonly=true})
+                                    <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerModal"></i></span>
+                                </div>
+                                <div class="col-md-1-5 col_cus_1">
+                                    <label>B/L:</label>
+                                </div>
+                                <div class="col-md-2-5 col_cus_2_5">
+                                    @Html.TextBox("BOL")
+                                </div>
+                                <div class="col-md-1-5 col_cus_1">
+                                    <label>BOE:</label>
+                                </div>
+                                <div class="col-md-2-5 col_cus_2_5">
+                                    @Html.TextBox("BOE")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row SignUp_space_top SignUp_space_bottom">
+                        <div class="stoke"></div>
+                    </div>
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-offset-4-5 col-md-3">
+                            <input type="button" value="Get Details" name="Command" class="btn log_Btn_sm" id="BtnDtl" onclick="GetDetails()" />
+                        </div>
+                    </div>
+                    <div id="divResult"></div>
+                    <div class="logErrMsg Form_Space_bottom" id="DivMsg" style="background-color:transparent;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ContainerModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Container No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Containerbox" type="text" />
+                <ul class="navList" id="lstContainer">
+                    @{
+                        if (ViewBag.ContainerList != null)
+                        {
+                            foreach (var item in ViewBag.ContainerList)
+                            {
+                                <li id="@item">@item</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function GetDetails()
+    {
+        if ($('#ContainerNo').val() != '') {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Report/ReportCWC/GetDailyValuationReport',
+                type: 'POST',
+                data: { ContainerNo: $('#ContainerNo').val(), BOL: $('#BOL').val(), BOE: $('#BOE').val() },
+                dataType: 'JSON',
+                headers: { "__RequestVerificationToken": Token },
+                success: function (data) {
+                    $('#DivMsg,#divResult').html('');
+                    if (data.Status == 1) {
+                        var html = '<table id="tbldtl" class="table table-bordered table-striped dataTable"><thead><tr><th class="text-center">Container No.</th><th class="text-center">Size</th><th class="text-center">Party</th><th class="text-center">Commodity</th><th class="text-center">WT</th><th class="text-center">Duty</th><th class="text-center">CIF Value</th></tr></thead><tbody>';
+                        $.each(data.Data, function (i, item) {
+                            html += "<tr><td>" + item.ContainerNo + "</td><td class='text-center'>" + item.Size + "</td><td>" + item.Party + "</td><td>" + item.CommodityName + "</td><td class='text-right'>" + item.GrossWeight + "</td><td class='text-right'>" + item.Duty + "</td><td class='text-right'>" + item.CIFValue + "</td></tr>";
+                        });
+                        html += "</tbody></table>";
+                        $('#divResult').html(html);
+                    }
+                    else
+                        $('#DivMsg').html('No Data');
+                }
+            });
+        }
+        else
+            alert("Enter Container No.");
+    }
+    $('#Containerbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstContainer > li').show();
+        else {
+            $('#lstContainer > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    $('#lstContainer > li').on("click", function () {
+        $('#ContainerNo').val($(this).text());
+        $("#ContainerModal").modal("hide");
+    });
+</script>

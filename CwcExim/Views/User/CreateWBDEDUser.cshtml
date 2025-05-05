@@ -1,0 +1,253 @@
+﻿@model CwcExim.Models.User
+@{
+
+    Layout = null;
+}
+
+<div>
+    <script type="text/javascript">
+        $("#FormWBDED").submit(function (e) {
+            var frmVlalidation = $('#FormWBDED').valid();
+            if (frmVlalidation == true) {
+                if (CheckPasswordPolicy() == true) {
+                    Encrypt();
+                    var self = this;
+                    $.ajax({
+                        processData: false,
+                        contentType: false,
+                        data: new FormData(this),
+                        type: $(this).attr('method'),
+                        url: $(this).attr('action'),
+                        success: function (data) {
+                            OnSuccess(data);
+                        }
+                    });
+                }
+            }
+
+            return (false);
+        });
+    </script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            $('#Password').on('focus', function () {
+                $('#DivPwdErrMsg').html('');
+            });
+
+            $('input[type="Text"]').on('focus', function () {
+                $('#SpnResult').html('');
+
+            });
+
+            Clear();
+
+            $("#divProgress").css("display", "none");
+
+        });
+
+        function OnBegin() {
+        }
+        function OnComplete() {
+        }
+        function OnSuccess(data) {
+            if (data.Status == 1) {
+                Clear();
+                if ($('#SpnResult').hasClass('logErrMsg'))
+                    $('#SpnResult').removeClass('logErrMsg').addClass('logSuccMsg');
+                $('#SpnResult').html("User Created Successfully");
+            }
+            else if (data.Status == -1) {
+                $('#Password').val($('#HdnPassword').val());
+                $('#ConfirmPassword').val($('#HdnPassword').val());
+                if ($('#SpnResult').hasClass('logSuccMsg'))
+                    $('#SpnResult').removeClass('logSuccMsg').addClass('logErrMsg');
+                $('#SpnResult').html("Please fill all the required fields");
+            }
+            else {
+                $('#Password').val($('#HdnPassword').val());
+                $('#ConfirmPassword').val($('#HdnPassword').val());
+                if ($('#SpnResult').hasClass('logSuccMsg'))
+                    $('#SpnResult').removeClass('logSuccMsg').addClass('logErrMsg');
+                $('#SpnResult').html(data.Message);
+            }
+            setTimeout(function () { $('#SpnResult').html(''); }, 5000);
+        }
+        function OnFailure() {
+        }
+
+        function Clear() {
+            $("input[type=text]").val("");
+            $("input[type=password]").val("");
+            $('select').each(function (i) {
+                $('select')[i].childNodes[0].selected = true
+            });
+            $('.field-validation-error').each(function () { $(this).html(''); });
+        }
+
+        function CheckPasswordPolicy() {
+
+            var Password = $('#Password').val();
+            if ($('#LoginId').val().toUpperCase() == Password.toUpperCase()) {
+                $('#DivPwdErrMsg').html('Login ID and Password must not be same.');
+                return false;
+            }
+            else if (!Password.match(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@('@')._$#-]+$/)) {
+                $('#DivPwdErrMsg').html('Password Policy does not match');
+                return false;
+            }
+            else if ((Password.length < 8) || (Password.length > 21)) {
+                $('#DivPwdErrMsg').html('Password must be minimum 8 characters long and maximum 20 characters long.');
+                return false;
+            }
+            else {
+                return true;
+            }
+        }
+
+    </script>
+    <script src="~/Scripts/md5.min.js"></script>
+    <script type="text/javascript">
+
+        function Encrypt() {
+            $('#HdnPassword').val($('#Password').val());
+            $('#Password').val(md5($('#Password').val()));
+            $('#ConfirmPassword').val(md5($('#ConfirmPassword').val()));
+            return true;
+        }
+    </script>
+
+    @{
+
+        AjaxOptions options = new AjaxOptions();
+        options.HttpMethod = "POST";
+        options.Confirm = "Are you sure you want to save?";
+        options.OnBegin = "OnBegin";
+        options.OnComplete = "OnComplete";
+        options.OnFailure = "OnFailure";
+        options.OnSuccess = "OnSuccess";
+        options.LoadingElementDuration = 1000;
+        options.LoadingElementId = "divProgress";
+        options.UpdateTargetId = "divResponse";
+        options.InsertionMode = InsertionMode.InsertAfter;
+
+
+
+    }
+   
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="Head_h4">
+                        @using (Ajax.BeginForm("Create", "User", options, new { id = "FormWBDED" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                            <form class="form-horizontal">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h4>User Management</h4>
+                                    </div>
+                                </div>
+                                <div class="content_wrp">
+                                    <div class="row Form_Space_top">
+                                            <div class="col-md-3">
+                                                <span class="ReQSimbol">*</span>
+                                                @Html.LabelFor(m => m.Name, new { @class = "control-label" })<span class="LabelColon">:</span>
+                                                                                            
+                                                @Html.TextBoxFor(m => m.Name, new { @placeholder = "Name" })
+                                                @Html.ValidationMessageFor(m => m.Name, "", new { @class = "Error_Msg" })
+                                            </div>
+                                            <div class="col-md-3 col-md-offset-6">
+                                                <span class="ReQSimbol">*</span>
+                                                <label>Login Id:</label>
+                                                @Html.TextBoxFor(m => m.LoginId, new { @placeholder = "Login Id" })
+                                                @Html.ValidationMessageFor(m => m.LoginId, "", new { @class = "Error_Msg" })
+                                            </div>
+                                    </div>
+
+                                    <div class="row Form_Space_top">
+                                            <div class="col-md-3">
+                                                <span class="ReQSimbol">*</span>
+                                                <label>Role:</label>                                              
+
+                                                @if (Model.RoleList != null && Model.RoleList.Count() > 0)
+                                                {
+                                                    @Html.DropDownListFor(m => m.RoleId, new SelectList(Model.RoleList, "RoleId", "RoleName"), "----Select----")
+                                                    @Html.ValidationMessageFor(m => m.RoleId, "", new { @class = "Error_Msg" })
+                                                }
+                                                else
+                                                {
+                                                    <select class="form-control" data-val="true" data-val-number="The field District must be a number." data-val-required="Fill Out This Field" id="DistrictId" name="DistrictId">
+                                                        <option value="">-----Select-----</option>
+                                                    </select>
+                                                    <span class="field-validation-valid SignUpErr" data-valmsg-for="RoleId" data-valmsg-replace="true"></span>
+                                                }
+                                            </div>
+                                    </div>
+                                    <div class="row Form_Space_top">
+                                            <div class="col-md-3">
+                                                <span class="ReQSimbol">*</span>
+                                                @Html.LabelFor(m => m.MobileNo, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                                                                            
+                                                @Html.TextBoxFor(m => m.MobileNo, new { @placeholder = "Mobile no" })
+                                                @Html.ValidationMessageFor(m => m.MobileNo, "", new { @class = "Error_Msg" })
+                                            </div>
+                                            <div class="col-md-3 col-md-offset-6">
+                                                <span class="ReQSimbol">*</span>
+                                                @Html.LabelFor(m => m.Email, new { @class = "InputLabel" })<span class="LabelColon">:</span>                                            
+                                                
+                                                @Html.TextBoxFor(m => m.Email, new { @placeholder = "Email", autocomplete = "off" })
+                                                @Html.ValidationMessageFor(m => m.Email, "", new { @class = "Error_Msg" })
+                                            </div>
+                                    </div>
+                                    <div class="row Form_Space_top">
+                                            <div class="col-md-3">
+                                                <span class="ReQSimbol">*</span>
+                                                @Html.LabelFor(m => m.Password, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                            
+                                                @Html.PasswordFor(m => m.Password)
+                                                @Html.HiddenFor(m => m.HdnPassword)
+                                                @Html.ValidationMessageFor(m => m.Password, "", new { @class = "Error_Msg" })
+                                            </div>
+                                            <div class="col-md-3 col-md-offset-6" >
+                                                <span class="ReQSimbol">*</span>
+                                                <label>Confirm Password:</label>                                                
+                                                @Html.PasswordFor(m => m.ConfirmPassword, new { @placeholder = "Confirm Password" })
+                                                @Html.ValidationMessageFor(m => m.ConfirmPassword, "", new { @class = "Error_Msg" })
+                                            </div>
+                                    </div>
+                                    <div class="row SignUp_space_top">
+                                        <div class="stoke"></div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12  col-md-12">
+                                            <p class="SignUp_space_top" style="font-size:12px;color:#000;">
+                                                <b>N.B.:</b>
+                                                * The fields marked with (*) are mandatory
+                                                * Password must contain at least : 1 Lowercase character, 1 Upper Case character and 1 numeric digit. Special Character is optional and only specified ones are allowed : @('@') # . _ - $,
+                                                Password should be minimum 8 characters and maximum 20 characters long.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="SignUp_space_top">
+                                        <div class="d-flex justify-content-left">
+                                            <input type="submit" value="Save" class="btn btn-primary mr-1 btn-100px" />                                        
+                                            <input type="button" value="Reset" onclick="Clear()" class="btn btn-primary-border btn-100px" />
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12 logErrMsg" id="SpnResult" style="text-align:center;background-color:transparent;"></div>
+                                    </div>
+                            </form>
+                            <div id="divMsg"></div>
+                            <div id="divProgress"></div>
+                        }
+                        @Scripts.Render("~/bundles/jqueryval")
+                        <div id="DivPwdErrMsg" class="logErrMsg" style="background-color:transparent;"></div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+</div>
+

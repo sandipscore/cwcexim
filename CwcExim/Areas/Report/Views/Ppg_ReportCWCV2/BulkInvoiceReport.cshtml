@@ -1,0 +1,561 @@
+﻿
+@model CwcExim.Areas.Report.Models.BulkInvoiceReport
+
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "BulkInvoiceReportSuccess";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+
+}
+<script>
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+</script>
+@if (ViewBag.PaymentParty != null)
+{
+    <input type="hidden" id="hdnPartyPayee" value="@ViewBag.PaymentParty" />
+}
+else
+{
+    <input type="hidden" id="hdnPartyPayee" value="" />
+}
+@using (Ajax.BeginForm("GetBulkInvoiceReport", "Ppg_ReportCWCV2", options))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.InvoiceModuleName)
+    <input type="hidden" id="JsonInvoiceLilst" name="JsonInvoiceLilst" />
+        <div class="row">
+            <div class="col-md-12">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Bulk Invoice Report</h4>
+                            </div>
+                        </div>
+                        <div class="content_wrp">
+                            <div class="row Form_Space_top">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Period From:</label>
+                                        <div class="position-relative Date_Img">
+                                            @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                            @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-md-offset-4">
+                                    <label>Period To:</label>
+                                    <div class="position-relative Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodTo, new { @class = "", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                                    <div class="col-md-2 UploadFileBtn">
+                                        <input type="button" id="LoadInvoice" class="btn btn-primary btn-100px" ng-model="btnGet" ng-hide="Action" value="Load Invoice List" />
+                                    </div>
+                            </div>
+
+                            @*<div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 padding_rt">
+                                        <label>Period From:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-0-5">
+                                        <label>Period To:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-3 col_cus_4">
+                                        <a href="#" id="LoadInvoice" class="btn log_Btn_sm">Load Invoice List</a>
+                                    </div>
+                                </div>
+                            </div>*@
+                            <div class="row Form_Space_top">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Invoice Type:</label>
+                                       @Html.DropDownListFor(m => m.InvoiceModule, new List<SelectListItem>
+                                {
+                                   new SelectListItem { Text="All",Value="All"},
+                                   new SelectListItem { Text="SEAL CUTTING",Value="IMPSC"},
+                                 new SelectListItem { Text="ASSESSMENT SHEET FCL",Value="IMPYard"},
+                                 new SelectListItem { Text="ASSESSMENT SHEET LCL",Value="IMPDeli"},
+                                 new SelectListItem { Text="FCL To LCL CONVERSION",Value="IMPFCLLCL"},
+                                 new SelectListItem { Text="MISCELLANEOUS",Value="MiscInv"},
+                                 new SelectListItem { Text="EXPORT CONTAINER STUFFING",Value="EXPCS"},
+                                  new SelectListItem { Text="LOADED CONTAINER PAYMENT SHEET",Value="EXPLod"},
+                                   new SelectListItem { Text="CONTAINER MOVEMENT",Value="EXPMovement"},
+                                 new SelectListItem { Text="BTT",Value="BTT"},
+                                 new SelectListItem { Text="RENT",Value="Rent"},
+                                 new SelectListItem { Text="RESERVATION",Value="RESERV"},
+                                 new SelectListItem { Text="EMPTY CONTAINER PAYMENT SHEET",Value="EC"},
+                                 new SelectListItem { Text="EMPTY CONTAINER TRANSFER",Value="ECTrns"},
+                                 new SelectListItem { Text="FUMIGATION",Value="Fumigation"},
+                                  new SelectListItem { Text="CONTAINER DEBIT INVOICE",Value="INVDEBT"},
+
+                                 new SelectListItem { Text="EXPORT RR CREDIT DEBIT",Value="EXPRRCD"},
+                                 new SelectListItem { Text="GATE ENTRY",Value="EXPGERD"},
+                                 new SelectListItem { Text="Auction",Value="AUC"},
+                                 new SelectListItem { Text="IMPORT TRAIN SUMMARY",Value="IMPTS"},
+                                }, new { @class = "dropdown" })
+                                    @Html.ValidationMessageFor(m => m.InvoiceModule, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Invoice No.:</label>
+                                    <div class="position-relative">
+                                        <span class="input_icon" id="ShippingLineSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#InvoiceModal"></i></span>
+                                        @Html.TextBoxFor(m => m.InvoiceNumber, new { @class = "" })
+                                        @Html.ValidationMessageFor(m => m.InvoiceNumber, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Party Name:</label>
+                                        <div class="position-relative">
+                                            @Html.TextBoxFor(m => m.PartyName, new { @class = "", @readonly = true })
+                                            <span class="input_icon" id="PartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>
+                                            @Html.HiddenFor(m => m.PartyId)
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @*<div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 padding_rt">
+                                        <label>Invoice Type:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.DropDownListFor(m => m.InvoiceModule, new List<SelectListItem>
+                                {
+                                   new SelectListItem { Text="All",Value="All"},
+                                   new SelectListItem { Text="SEAL CUTTING",Value="IMPSC"},
+                                 new SelectListItem { Text="ASSESSMENT SHEET FCL",Value="IMPYard"},
+                                 new SelectListItem { Text="ASSESSMENT SHEET LCL",Value="IMPDeli"},
+                                 new SelectListItem { Text="FCL To LCL CONVERSION",Value="IMPFCLLCL"},
+                                 new SelectListItem { Text="MISCELLANEOUS",Value="MiscInv"},
+                                 new SelectListItem { Text="EXPORT CONTAINER STUFFING",Value="EXPCS"},
+                                  new SelectListItem { Text="LOADED CONTAINER PAYMENT SHEET",Value="EXPLod"},
+                                   new SelectListItem { Text="CONTAINER MOVEMENT",Value="EXPMovement"},
+                                 new SelectListItem { Text="BTT",Value="BTT"},
+                                 new SelectListItem { Text="RENT",Value="Rent"},
+                                 new SelectListItem { Text="RESERVATION",Value="RESERV"},
+                                 new SelectListItem { Text="EMPTY CONTAINER PAYMENT SHEET",Value="EC"},
+                                 new SelectListItem { Text="EMPTY CONTAINER TRANSFER",Value="ECTrns"},
+                                 new SelectListItem { Text="FUMIGATION",Value="Fumigation"},
+                                  new SelectListItem { Text="CONTAINER DEBIT INVOICE",Value="INVDEBT"},
+                                 new SelectListItem { Text="EXPORT RR CREDIT DEBIT",Value="EXPRRCD"},
+                                 new SelectListItem { Text="GATE ENTRY",Value="EXPGERD"},
+                                 new SelectListItem { Text="Auction",Value="AUC"},
+                                 new SelectListItem { Text="IMPORT TRAIN SUMMARY",Value="IMPTS"},
+                                }, new { @class = "form-control input-sm dropdown" })
+                                        @Html.ValidationMessageFor(m => m.InvoiceModule, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 padding_rt">
+                                        <label>Invoice No.:</label>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2_5">
+                                        <span class="search" id="ShippingLineSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#InvoiceModal"></i></span>
+                                        @Html.TextBoxFor(m => m.InvoiceNumber, new { @class = "form-control" })
+                                        @Html.ValidationMessageFor(m => m.InvoiceNumber, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>*@
+                            @*<div class="row Form_Space_top">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label>Party Name:</label>
+                                        <div class="position-relative">
+                                            @Html.TextBoxFor(m => m.PartyName, new { @class = "", @readonly = true })
+                                            <span class="input_icon" id="PartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>
+                                            @Html.HiddenFor(m => m.PartyId)
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>*@
+                            @*<div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 padding_rt">
+                                        <label>Party Name:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_1_5">
+                                        @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control", @readonly = true })
+                                        <span class="search" id="PartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>
+                                        @Html.HiddenFor(m => m.PartyId)
+                                    </div>
+                                </div>
+                            </div>*@
+
+                            <div class="row SignUp_space_top SignUp_space_bottom">
+                                <div class="stoke"></div>
+                            </div>
+                            <div class="d-flex justify-content-left">
+                                <input type="submit" class="btn btn-primary mr-1 btn-100px" name="Command" value="Print" id="BtnPreview">
+                            </div>
+                            @*<div class="row SignUp_space_bottom">
+                                <div class="col-md-offset-5 col-md-2">
+                                    <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                                </div>
+                            </div>*@
+
+                            <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                        </div>
+                </div>
+            </div>
+        </div>
+
+
+    <div id="InvoiceModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">Invoice List</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="InvoiceListBox" type="text" />
+                    <ul class="navList" id="lstInvoiceList"></ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="PartyModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Party</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="Partybox" type="text" />
+                    <ul class="navList" id="lstParty">
+                        @*@{
+                            foreach (var item in Model.lstGodownList)
+                            {
+                            <li id="@item.GodownId">@item.GodownName</li>
+                            }
+                            }*@
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $(document).ready(function () {
+        PartyBinding();
+    });
+    $('#BtnPreview').on("click", function () {
+        //alert("in");
+        //ValidateExitDet();
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+
+        debugger;
+        //CONDITION FOR ALL CONDITION IN MODULE SELECTION
+
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        $('#InvoiceModuleName').val($('#InvoiceModule option:selected').text());
+        if ($('#InvoiceModuleName').val() == 'All') {
+            if ($('#PartyName').val() == '') {
+                $('#DivDwnldWavMsg').html("Please Select Party").removeClass('logSuccMsg').addClass('logErrMsg');
+                return false;
+            }
+            else {
+                $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('');
+            }
+        }
+        return true;
+    });
+
+    function PartyBinding() {
+        debugger;
+        var PartyJson = JSON.parse($('#hdnPartyPayee').val());
+        var html = '';
+        $.each(PartyJson, function (i, item) {
+            html += '<li id="' + item.PartyId + '" onclick="selectParty(' + item.PartyId + ');">' + item.PartyName + '</li>';
+        });
+        $('#lstParty').html(html);
+    }
+    $('#Partybox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstParty > li').show();
+        else {
+            $('#lstParty > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    function selectParty(id) {
+        debugger;
+        var PartyJson = JSON.parse($('#hdnPartyPayee').val());
+        var Party = $.grep(PartyJson, function (item) { return item.PartyId == id; })[0];
+        $('#PartyId').val(Party.PartyId);
+        $('#PartyName').val(Party.PartyName);
+        $("#PartyModal").modal("hide");
+    }
+
+    $('#DebtorBox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstEximTraderWithInvoice > li').show();
+        else {
+            $('#lstEximTraderWithInvoice > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    var SacName = "";
+
+    $('#lstEximTraderWithInvoice > li').on("click", function () {
+        $('#PartyName').val($(this).text());
+        $('#partyNameId').val($(this).attr('id'));
+        $("#ContainerModal").modal("hide");
+        SacName = $('#partyNameId').val();
+        // alert(SacName);
+
+    });
+
+    function RptConsumerListDtlOnFailure() { }
+    function BulkInvoiceReportSuccess(data) {
+        $('#DivDwnldWavMsg').html('')
+        //alert(data);
+        debugger;
+        if (data.Status == 1) {
+            if ($('#InvoiceModuleName').val() == 'All') {
+                //code to call to download all files
+                $.post("/Ppg_ReportCWCV2/Download", function (data, status) {
+                    debugger;
+                    var fName = new Array();
+                    fName = data.Message.split(",");
+                    for (var i = 0; i < fName.length-1; i++) {
+                        window.open(fName[i] , '_blank', 'fullscreen=yes,modal=yes')
+                    }
+                });
+            }
+            else {
+
+                window.open(data.Data + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                //for (var i = 0; i < data.Data.length; i++) {
+                //    window.open(data.Data[i] + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                //}
+            }
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+
+
+    function ValidateExitDet() {
+        var Status = true;
+
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="txtGrossWeight"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+
+        return Status;
+    }
+    function SaveReportPdf(data) {
+        var FormDate = $("#PeriodFrom").val();
+        var ToDate = $("#PeriodTo").val();
+        var PostData = new FormData();
+        var Html = '<div style="text-align: center;border: 1px solid #000;">Bulk Invoice Report' + FormDate + ' To ' + ToDate + '</div>'
+        Html += "<table style='width:100%;font-size:9pt;font-family:Verdana,Arial,San-serif;border: 1px solid #000;border-collapse: collapse;margin-top:10px;'><thead><tr><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Invoice No.</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Date</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>values</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Closing Values</th></tr></thead><tbody>";
+        for (i = 0; i < data.Data.length; i++) {
+            Html += '<tr><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].InvoiceNumber + '</td><td style="text-align: center;border: 1px solid #000;">' + data.Data[i].Date + '</td><td  style="text-align: right;border: 1px solid #000;">' + data.Data[i].Values + '</td><td  style="text-align: right;border: 1px solid #000;">' + data.Data[i].ClosingBalance + '</td></tr>'
+        }
+        Html += "</tbody></table>"
+        PostData.append("Page", Html);
+        // alert("PostData=" + PostData);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GenerateBulkInvoiceReportPDF", "Ppg_ReportCWCV2", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+
+            }
+        });
+    }
+
+    $("#LoadInvoice").click(function () {
+        debugger;
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        $('#InvoiceNumber').val('');
+        if (From == "") {
+            $('[data-valmsg-for="PeriodFrom"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        if (To == "") {
+            $('[data-valmsg-for="PeriodTo"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        $('#DivDwnldWavMsg').html('');
+        loadInvoiceLIst();
+    });
+    function loadInvoiceLIst() {
+        var fromDt = $("#PeriodFrom").val();
+        var toDt = $("#PeriodTo").val();
+        var InvoiceModule = $('#InvoiceModule :selected').val();
+
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/Report/Ppg_ReportCWCV2/ListOfInvoiceDateWise',
+            type: 'GET',
+            headers: { '__RequestVerificationToken': Token },
+            dataType: 'JSON',
+            data: { FromDate: fromDt, ToDate: toDt, invoiceType: InvoiceModule },
+            async: false,
+            success: function (data) {
+                // alert(data);
+                debugger;
+                if (data != null && data != "" && data != undefined) {
+                    $("#JsonInvoiceLilst").val('');
+                    $("#JsonInvoiceLilst").val(data.Data);
+                    populateList();
+                }
+                else {
+                    debugger;
+                    $("#JsonInvoiceLilst").val('');
+
+                }
+            }
+        });
+    }
+    function populateList() {
+        if ($('#JsonInvoiceLilst').val() != '') {
+            var jsonval = JSON.parse($('#JsonInvoiceLilst').val());
+            var html = '';
+            $.each(jsonval, function (i, item) {
+                html += '<li id="' + item.InvoiceNumber + '" " onclick="GetInv(this)">' + item.InvoiceNumber + '</li>';
+            });
+            $('#lstInvoiceList').html(html);
+        }
+    }
+
+    function GetInv(elem) {
+
+        $('#InvoiceNumber').val($(elem).text());
+        //$('#ReferenceNoId').val($(elem).attr('id'));
+        var selectedReference = $('#InvoiceNumber').val();
+        // alert(selectedReference);
+        $("#InvoiceModal").modal("hide");
+        debugger;
+
+    }
+
+    $('#InvoiceListBox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstInvoiceList > li').show();
+        else {
+            $('#lstInvoiceList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    //InvoiceListBox
+    $('#InvoiceModule').on("change", function () {
+        $('#InvoiceNumber').val('');
+        $('#lstInvoiceList').html('');
+        $('#LoadInvoice').click();
+    });
+</script>
+
+
+

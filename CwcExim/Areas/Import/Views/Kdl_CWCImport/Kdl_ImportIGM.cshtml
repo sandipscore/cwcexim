@@ -1,0 +1,238 @@
+﻿@model CwcExim.Areas.Import.Models.Kdl_ImportIGMModel
+
+
+@using (Ajax.BeginForm("Kdl_ImportIGM", "Kdl_CWCImport", new { area = "Import" }, new AjaxOptions
+{
+    Confirm = "Are you sure you want to Save?",
+    HttpMethod = "POST",
+    OnSuccess = "OnSuccess",
+    OnFailure = "OnFailure"
+}))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.FileName)
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="Head_h4">
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-12">
+                            <h4>Import</h4>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5" style="padding-right:0px;">
+                                <label>Shipping Line Name:</label>
+                            </div>
+                            <div class="col-md-4-5">
+                                @Html.HiddenFor(m => m.ShippingLineId, new { @value = "0" })
+                                @Html.TextBoxFor(m => m.ShippingLineName, new { @class = "form-control input-sm", @readonly = true })
+                                <span class="search" id="ShippingLineSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ShippingLineModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.ShippingLineName)
+                            </div>
+                            <div class="col-md-1-5" style="padding-right:0px;">
+                                <label>Rotation No.:</label>
+                            </div>
+                            <div class="col-md-4-5">
+                                @Html.TextBoxFor(m => m.RotationNo, new { @class = "form-control input-sm" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5">
+                                @Html.LabelFor(m => m.VesselNo)
+                            </div>
+                            <div class="col-md-2 Error_Msg">
+                                @Html.TextBoxFor(m => m.VesselNo)
+                                @Html.ValidationMessageFor(m => m.VesselNo)
+                            </div>
+                            <div class="col-md-1-5 padding_rt">
+                                @Html.LabelFor(m => m.VoyageNo)
+                            </div>
+                            <div class="col-md-2 Error_Msg">
+                                @Html.TextBoxFor(m => m.VoyageNo)
+                                @Html.ValidationMessageFor(m => m.VoyageNo)
+                            </div>
+                            <div class="col-md-3">
+                                <input id="uploadFile" placeholder="Choose File" disabled="disabled" />
+                            </div>
+                            <div class="col-md-2">
+                                <div class="fileUpload btn log_Btn_sm">
+                                    <span>Upload</span>
+                                    <input id="IgmFile" type="file" class="upload" name="IgmFile" accept=".xlsx" onchange="uploadIGM(this)" />
+                                </div>
+                                @*<input type="file" id="IgmFile" name="IgmFile" accept=".igm" onchange="uploadIGM(this)" />*@
+                                <span id="FileErrorMessage" class="Error_Msg"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-offset-5 col-md-2">
+                            <button id="btn" type="submit" class="btn log_Btn_sm">Save</button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 logSuccMsg" style="background-color:transparent;">
+                            <div id="message"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="ShippingLineModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Shipping Line</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="Shippingbox" type="text" />
+                    <ul class="navList" id="lstShipping">
+                        @{
+                            foreach (var item in Model.lstShippingLine)
+                            {
+                                <li id="@item.ShippingLineId">@item.ShippingLineName</li>
+                            }
+                        }
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+                            }
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    document.getElementById("IgmFile").onchange = function () {
+        document.getElementById("uploadFile").value = this.value;
+        uploadIGM(this);
+    };
+
+    $('#Shippingbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstShipping > li').show();
+        else {
+            $('#lstShipping > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    $('#lstShipping > li').on("click", function () {
+        $('#ShippingLineName').val($(this).text());
+        $('#ShippingLineId').val($(this).attr('id'));
+        $("#ShippingLineModal").modal("hide");
+    });
+
+    function ValidateDocument(element) {
+        var maxFileSize = 10 * 1024 * 1024;
+        debugger;
+        var ext = element.value.substring(element.value.lastIndexOf('.') + 1).toLowerCase();
+        if ($.inArray(ext, ['xlsx']) == -1) {
+            $('#FileErrorMessage').text("This File Type Is Not Allowed").parent().addClass('logErrMsg').removeClass('logSuccMsg');
+            $("#btn").prop("disabled", true);            
+            $(element).val('');
+            setTimeout(LoadPage, TimeInSeconds);
+
+            return false;
+        }
+        else if (element.files[0].size > maxFileSize) {
+            $('#FileErrorMessage').text("The File Size Exceed 10MB").parent().addClass('logErrMsg').removeClass('logSuccMsg');
+            $(element).val('');
+            return false;
+        }
+        else if (element.files[0].name.length > 50) {
+            $('#FileErrorMessage').text("The File Name Is Too Long").parent().addClass('logErrMsg').removeClass('logSuccMsg');
+            $(element).val('');
+            return false;
+        }
+        else {
+            $('#FileErrorMessage').text('');
+            return true;
+        }
+    }
+
+    function LoadPage() {
+        $('#DivBody').load('/Import/Kdl_CWCImport/Kdl_ImportIGM');
+    }
+
+    function Upload(element) {
+        debugger;
+        var fileData = new FormData();
+        fileData.append("__RequestVerificationToken", $('input[name="__RequestVerificationToken"]').val());
+        //fileData.append("DocType", doctype);
+        //fileData.append("DocId", docid);
+        fileData.append(element.files[0].name, element.files[0]);
+        $.ajax({
+            url: '/Import/Kdl_CWCImport/Kdl_UploadIGM',
+            type: "POST",
+            contentType: false,
+            processData: false,
+            data: fileData,
+            success: function (data) {
+
+                try {
+                    debugger;
+                    if (data.Status != 1) {
+                        alert(data.Message);
+                    }
+                }
+                catch (e) { console.log(e.Message); }
+            }
+        });
+    }
+
+    function uploadIGM(element) {
+        debugger;
+        if (ValidateDocument(element)) {
+            debugger;
+            Upload(element);
+            $('#FileName').val(element.files[0].name);
+        }
+        else {
+            $('#FileName').val('');
+        }
+    }
+    var TimeInSeconds = 5000;
+    function OnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            $('input[type="text"]').val('');
+            $('input[type="file"]').val('');
+            $('#FileName, #uploadFile').val('');
+            if ($('#message').parent().hasClass('logErrMsg')) {
+                $('#message').parent().addClass('logSuccMsg').removeClass('logErrMsg');
+            }
+            $('#message').html(data.Message);
+
+            setTimeout(LoadPage, TimeInSeconds);
+        }
+        else {
+            if ($('#message').parent().hasClass('logSuccMsg')) {
+                $('#message').parent().addClass('logErrMsg').removeClass('logSuccMsg');
+            }
+            $('#message').html(data.Message);
+
+
+            setTimeout(LoadPage, TimeInSeconds);
+        }
+    }
+    function OnFailure(error) {
+        alert(error);
+    }
+</script>

@@ -1,0 +1,236 @@
+﻿@model CwcExim.Areas.Pest.Models.ChemicalStockIn
+<script>
+    var TimeInSeconds;
+    var LocationDetailArray = [];
+    $(document).ready(function () {
+        TimeInSeconds = 5000;
+        $('#DivTblLocation').css("display", "none");
+        GetChemicalList();
+    });
+    function GetChemicalList() {
+        $('#DivYardList').load('/Pest/Pest/GetChemicalStockList');
+    }
+    function ClearValidationMessage() {
+        $('.field-validation-error').each(function () {
+            $(this).html('');
+        });
+        $('.field-validation-valid').each(function () {
+            $(this).html('');
+        });
+    }
+    function ChemicalReset() {
+        LocationDetailArray = [];
+        ClearValidationMessage();
+        $('#ChemicalName').val('');
+        $('#DivYardMsg').html('');
+        $('#DivYardErrMsg').html('');
+    }
+    $('#Date').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select Date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $('[data-valmsg-for="Date"]').html('');
+        }
+    });
+    
+        function ChemicalReset() {
+            ClearValidationMessage();
+            $('#ChemicalName').val('');
+            $('#Date').val('');
+            $('#Quantity').val('');
+            $('#DivYardMsg').html('');
+            $('#DivYardErrMsg').html('');
+      
+
+        }
+        function ClearErrMsg(elem) {
+            $('[data-valmsg-for="' + elem.id + '"]').html('');
+        }
+   
+  
+    function ChemicalOnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            $('#DivYardMsg').html(data.Message);
+            setTimeout(ChemicalReset, 5000);
+            GetChemicalList();
+        }
+        else if (data.Status == 2) {
+         
+            $('#DivYardMsg').html(data.Message);
+            setTimeout(ChemicalReset, 5000);
+        }
+        else {
+            $('#DivYardErrMsg').html(data.Message);
+        }
+    }
+    function ChemicalOnFailure() {
+
+    }
+    function AllowOnlyInteger(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+    $('#box').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('.navList > li').show();
+        } else {
+            $('.navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('.navList li').on("click", function () {
+        debugger;
+        $('#ChemicalName').val($(this).text());
+        $("#myModal").modal("hide");
+    });
+
+</script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "ChemicalOnSuccess";
+    options.OnFailure = "ChemicalOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("AddEditChemicalDetail", "Pest", options))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-12">
+                            <h4>Chemical Stock In</h4>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Date:</label>
+                            </div>
+                            <div class="col-md-2 Date_Img">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.Date, new
+                           {
+                               @class = "form-control input-sm",@id = "Date", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.Date, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Chemical Name:</label>
+                            </div>
+                            <div class="col-md-5">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.ChemicalName, new { @class = "form-control input-sm",@readonly="true" })
+                                <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#myModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.ChemicalName, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Quantity:</label>
+                            </div>
+                            <div class="col-md-5">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.Quantity, "", new { @class = "form-control input-sm", onkeypress = "return AllowOnlyInteger(event)", @onblur = "ClearErrMsg(this)", maxlength = "10" })
+                                @Html.ValidationMessageFor(m => m.Quantity, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                    </div>
+                        <div class="row">
+                            <div class="col-md-offset-4 col-md-2" style="text-align:center">
+                                <input type="submit" id="BtnYardSubmit" value="Save" class="btn log_Btn_sm" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" value="Reset" class="btn log_Btn_sm" onclick="ChemicalReset()" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_top SignUp_space_bottom2" style="background-color:transparent">
+                            <div id="DivYardMsg"></div>
+                        </div>
+
+                }
+                <div class="row">
+                    <div class="col-md-12 SignUp_space_bottom">
+                        <div id="DivYardList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Chemical Name</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="box" type="text" />
+                <ul class="navList" id="PartyList">
+                    @{
+                        if (ViewBag.ListOfChemical != null)
+                        {
+                            foreach (var item in ViewBag.ListOfChemical)
+                            {
+                                <li id="@item">@item</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@Scripts.Render("~/bundles/jqueryval")
+
+
+
+

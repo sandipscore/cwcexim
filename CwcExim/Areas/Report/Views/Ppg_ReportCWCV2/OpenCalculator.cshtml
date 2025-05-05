@@ -1,0 +1,220 @@
+﻿
+@model CwcExim.Areas.Report.Models.OpenCalculator
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "OpenCalculatorOnFailure";
+    options.OnSuccess = "OpenCalculatorSuccess";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+     
+}
+
+
+@using (Ajax.BeginForm("CalculateCharges", "Ppg_ReportCWCV2", options))
+{
+    @Html.AntiForgeryToken()
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Charges Calculator</h4>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Operation Type:</label>
+                                </div>
+                                <div class="col-md-1-5">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("OperationType", "Import", new { @class = "", @id = "Import", @checked = true,@onClick= "onChangeMovementType()" })
+                                        <label for="Import"><i class="circle"></i><span>Import</span></label>
+                                    </div>
+                                </div>
+                                <div class="col-md-1-5">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("OperationType", "Export", new { @class = "", @id = "Export", @onClick = "onChangeMovementType()" })
+                                        <label for="Export"><i class="circle"></i><span>Export</span></label>
+                                    </div>
+                                </div>
+                              
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>Movement Type:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    @Html.DropDownListFor(m => m.MovementType, new List<SelectListItem>
+                                {
+                                      new SelectListItem { Text="LCL",Value="LCL"},
+                                   new SelectListItem { Text="FCL",Value="FCL"},
+
+                                }, new { @class = "form-control input-sm dropdown",@onChange="onChangeMovementType()" })
+                                    @Html.ValidationMessageFor(m => m.MovementType, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-2-5">
+                                 
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                               
+                                </div>
+
+                            </div>
+                        </div>
+                        <div id="divOption">
+
+                        </div>
+
+
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <table class="table table-striped table-bordered" id="tblRegDtl" style="width:100%;">
+                                <thead>
+                                    <tr>
+
+                                        <th style="width:100px">Charge Name</th>
+                                        <th style="width:80px">Amount</th>
+
+                                    </tr>
+
+                                </thead>
+                                <tbody id="tbodyCharge"></tbody>
+                            </table>
+                        </div>
+
+
+
+                     
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Calculate" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+
+
+@Scripts.Render("~/bundles/jqueryval")
+<script src="~/Scripts/Extended.Jquery.Plugins.js"></script>
+<script>
+   
+    $(document).ready(function () {
+        $('#divOption').load('/Report/Ppg_ReportCWCV2/OpenCalculatorLCL')
+
+        var tblRegDtl = $('#tblRegDtl').DataTable({
+            "autoWidth": false,
+            "bFilter": false,
+            "bInfo": false,
+            "bPaginate": false,
+            "aoColumns": [
+                       { "sName": "Charge Name", "bSortable": false, "width": "100px" },
+                       { "sName": "Amount", "bSortable": false, "width": "100px" },                      
+
+            ],
+           
+        });
+        new $.fn.dataTable.FixedHeader(tblRegDtl);
+       
+    });
+    $('#BtnPreview').on("click", function () {
+        //alert("in");
+        //ValidateExitDet();
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#EntryDate').val();
+        var To = $('#DeliveryDate').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+
+        debugger;
+        //CONDITION FOR ALL CONDITION IN MODULE SELECTION
+
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('DeliveryDate Date must be greater than EntryDate Date');
+            return false;
+        }
+       
+        return true;
+    });
+
+  
+    function onChangeMovementType()
+    {
+        debugger;
+        if($('#MovementType').val()=='FCL')
+        {
+            $('#divOption').load('/Report/Ppg_ReportCWCV2/OpenCalculatorFCL');
+        }
+        else if($('#MovementType').val()=='LCL' && $("input[name='OperationType']:checked").val()=='Import')
+        {
+            $('#divOption').load('/Report/Ppg_ReportCWCV2/OpenCalculatorLCL');
+        }
+        else if ($('#MovementType').val() == 'LCL' && $("input[name='OperationType']:checked").val() == 'Export') {
+            $('#divOption').load('/Report/Ppg_ReportCWCV2/OpenCalculatorExportLCL');
+        }
+    }
+    
+
+
+    function OpenCalculatorOnFailure() { }
+    function OpenCalculatorSuccess(data) {
+        $('#DivDwnldWavMsg').html('')
+        //alert(data);
+        debugger;
+        if (data.Status == 1) {
+       
+            $('#tbodyCharge').html('');
+
+            var html = '';
+            $.each(data.Data, function (key, val) {
+                html += '<tr><td>' + val.ChargeName + '</td><td>' + val.Amount + '</td></tr>';
+            });
+            $('#tbodyCharge').html(html);
+        }
+        else {
+          
+        }
+    }
+
+
+    function ValidateExitDet() {
+        var Status = true;
+
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="txtGrossWeight"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+
+        return Status;
+    }
+   
+
+</script>
+
+
+

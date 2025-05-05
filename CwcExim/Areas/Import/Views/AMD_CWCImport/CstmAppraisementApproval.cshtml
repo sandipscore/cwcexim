@@ -1,0 +1,466 @@
+﻿
+@model CwcExim.Areas.Import.Models.VRN_CustomAppraiseApproval
+
+<script>
+    var ArrayOfCustomAppraisement = [];
+    $(function () {debugger;
+       // $('#Seize').click(function() {
+        if ('@Model.IsApproved'=='3') {
+                $('#BtnSaveCstmAppraiseApproval').attr('disabled', 'disabled');
+        }
+        //else {
+            //    $('#BtnSaveCstmAppraiseApproval').removeAttr('disabled');
+            //}
+       // });
+        if(@Model.IsApproved==1){
+            $('#Approved').prop("checked",true);
+        }
+        else if(@Model.IsApproved==2){
+            $('#Hold').prop("checked",true);
+        }
+        else if(@Model.IsApproved==3){
+            $('#Seize').prop("checked",true);
+        }
+        $('#TblCustomAppraisementDet').hide();
+        ArrayOfCustomAppraisement=@Html.Raw(Json.Encode(Model.LstAppraisementDtl));
+        GenerateCstmAppraiseTable();
+    });
+    function ListOfApprsmntAppr() {
+        $('#DivBody').load('/Import/VRN_CWCImport/ListOfApprsmntAppr');
+    }
+
+    function GenerateCstmAppraiseTable() {
+        debugger;
+        $('#TblCustomAppraisementDet').hide();
+        var Html = '';
+        if (ArrayOfCustomAppraisement.length != 0) {
+            $.each(ArrayOfCustomAppraisement, function (i, item) {
+                debugger;
+                Html += '<tr><td class="text-center">' + (i + 1) + '</td><td>' + item.CFSCode + '</td><td>' + item.ContainerNo + '</td><td class="text-center"><a href="#" onclick="ViewCstmAppraise(' + i + ')"><i class="fa fa-search-plus Edit" aria-hidden="true"></i></a></td></tr>';
+            });
+            $('#TblCustomAppraisementDet>tbody').html(Html);
+            $('#TblCustomAppraisementDet').show();
+        }
+    }
+    function ViewCstmAppraise(Index) {
+        debugger;
+        $('#ContainerNo').val(ArrayOfCustomAppraisement[Index].ContainerNo);
+        $('#CFSCode').val(ArrayOfCustomAppraisement[Index].CFSCode);
+        $('#Size').val(ArrayOfCustomAppraisement[Index].Size);
+        $('#LCLFCL').val(ArrayOfCustomAppraisement[Index].LCLFCL);
+        $('#LineNo').val(ArrayOfCustomAppraisement[Index].LineNo);
+        $('#BOENo').val(ArrayOfCustomAppraisement[Index].BOENo);
+        $('#BOEDate').val(ArrayOfCustomAppraisement[Index].BOEDate);
+        $('#CHA').val(ArrayOfCustomAppraisement[Index].CHA);
+        $('#Importer').val(ArrayOfCustomAppraisement[Index].Importer);
+        $('#CargoDescription').val(ArrayOfCustomAppraisement[Index].CargoDescription);
+        $('#NoOfPackages').val(ArrayOfCustomAppraisement[Index].NoOfPackages);
+        $('#GrossWeight').val(ArrayOfCustomAppraisement[Index].GrossWeight);
+      //  $('#Vessel').val(ArrayOfCustomAppraisement[Index].Vessel);
+       // $('#Voyage').val(ArrayOfCustomAppraisement[Index].Voyage);
+        $('#Duty').val(ArrayOfCustomAppraisement[Index].Duty);
+        $('#CIFValue').val(ArrayOfCustomAppraisement[Index].CIFValue);
+        $('#CustomAppraisementDtlId').val(ArrayOfCustomAppraisement[Index].CustomAppraisementDtlId);
+    }
+
+    @*@{
+        AjaxOptions options = new AjaxOptions();
+        options.Confirm = "Are You Sure You Want To Save?";
+        options.OnSuccess = "ApprovalOnSuccess";
+        options.OnFailure = "ApprovalOnFailure";
+        options.InsertionMode = InsertionMode.InsertAfter;
+    }
+    function ApprovalOnFailure(){}
+    function ApprovalOnSuccess(data){
+        if(data.Status==1){
+            $('#DivCstmAppraiseApprovalMsg').html(data.Message);
+        }
+        else{
+            $('#DivCstmAppraiseApprovalErrMsg').html(data.Message);
+        }
+    }*@
+
+    //$(function() {
+    //    $('#Seize').click(function() {
+    //        if ($(this).is(':checked')) {
+    //            $('#BtnSaveCstmAppraiseApproval').attr('disabled', 'disabled');
+    //        } else {
+    //            $('#BtnSaveCstmAppraiseApproval').removeAttr('disabled');
+    //        }
+    //    });
+    //});
+    $('#BtnSaveCstmAppraiseApproval').on("click",function(){
+        debugger;
+        if($('#Hold').prop("checked")==false && $('#Approved').prop("checked")==false && $('#Seize').prop("checked")==false){
+            $('#DivCstmAppraiseApprovalErrMsg').html('One Of The CheckBox Must Be Ticked');
+        }
+
+        else
+        {
+            if($('#Hold').prop("checked")==true){
+                var IsApproved=2
+            }
+            else if($('#Seize').prop("checked")==true){
+                var IsApproved=3
+            }
+            else{
+                var IsApproved=1
+            }
+            //var IsApproved=$('#Hold').prop("checked")==true?2:1;
+            //var IsApproved=$('#Seize').prop("checked")==true?3:1;
+            var CustomAppId =$('#CustomAppraisementId').val();
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            var Confirm=confirm("Are You Sure You Want To Save?");
+            if(Confirm==true){
+                $.ajax({
+                    url:'/Import/VRN_CWCImport/AddCstmAppraiseApproval',
+                    type:'POST',
+                    dataType:'JSON',
+                    data: {CstmAppraiseAppId:CustomAppId, IsApproved: IsApproved },
+                    async:false,
+                    headers:{'__RequestVerificationToken':Token},
+                    success:function(data){
+                        debugger;
+                        if(data.Status==1){
+                            $('#DivCstmAppraiseApprovalMsg').html(data.Message);
+                            $('#BtnSaveCstmAppraiseApproval').attr('disabled', 'disabled');
+                            setTimeout(ListOfApprsmntAppr,5000);
+                            //ListOfApprsmntAppr();
+                        }
+
+
+                        else{
+                            $('#DivCstmAppraiseApprovalErrMsg').html(data.Message);
+                        }
+                    }
+                });
+            }
+        }
+    });
+
+    function CheckBoxChange(Id){
+        debugger;
+        $('#Seize').prop("checked",false);
+        $('#Hold').prop("checked",false);
+        $('#Approved').prop("checked",false);
+        $('#'+Id.name).prop("checked",true);
+
+
+    }
+</script>
+
+
+<div class="col-md-12">
+    @*@using (Ajax.BeginForm("AddCstmAppraiseApproval", "CWCImport", options))
+        {
+        @Html.AntiForgeryToken()*@
+    <div>
+        @*@Html.HiddenFor(m => m.CustomAppraisementXML)*@
+        @Html.HiddenFor(m => m.CustomAppraisementId)
+        @Html.HiddenFor(m => m.CustomAppraisementDtlId)
+        @*<div class="row">
+                <div class="col-md-12">
+                    <h4>Custom Appraisement Approval</h4>
+                </div>
+            </div>*@
+        @*<div class="row Form_Space_top">
+                <div class="form-group Form_Input">
+                    <div class="col-md-2 padding_rt">
+                        <label>Work Order No:</label>
+                    </div>
+                    <div class="col-md-4">
+                        @Html.TextBoxFor(m => m.CstmAppraiseWorkOrderNo, new { @class = "form-control input-sm", @readonly = true })
+                    </div>
+                    <div class="col-md-offset-1 col_cus_offset_0_5 col_cus_3 col-md-2-5 padding_rt">
+                        <label>Work Order Date:</label>
+                    </div>
+                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                        @Html.TextBoxFor(m => m.WorkOrderDate, new { @class = "form-control input-sm", @readonly = true })
+                        @Html.ValidationMessageFor(m => m.WorkOrderDate, "", new { @class = "Error_Msg" })
+                    </div>
+                </div>
+            </div>*@
+        <div class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-2 padding_rt">
+                    <label>Appraisement No:</label>
+                </div>
+                <div class="col-md-4">
+                    @Html.TextBoxFor(m => m.AppraisementNo, new { @class = "form-control input-sm", @readonly = true })
+                    @Html.HiddenFor(m => m.CustomAppraisementId)
+                    @Html.ValidationMessageFor(m => m.AppraisementNo, "", new { @class = "Error_Msg" })
+                </div>
+                <div class="col-md-2-5 col_cus_offset_0_5 col_cus_3 col-md-offset-1 padding_rt">
+                    <label>Appraisement Date:</label>
+                </div>
+                <div class="col-md-2 col_cus_2_5 Date_Img">
+                    @Html.TextBoxFor(m => m.AppraisementDate, new { @class = "form-control input-sm", @readonly = true })
+                    @Html.ValidationMessageFor(m => m.AppraisementDate, "", new { @class = "Error_Msg" })
+                </div>
+            </div>
+        </div>
+
+
+        <div id="DivShippingLine" class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-2 padding_rt">
+                    <label>Shipping Line:</label>
+                </div>
+                <div class="col-md-10">
+                    @Html.TextBoxFor(m => m.ShippingLine, new { @class = "form-control input-sm", @readonly = true })
+                </div>
+            </div>
+        </div>
+
+        <div id="DivShippingLine" class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-2 padding_rt">
+                    <label>Vessel:</label>
+                </div>
+                <div class="col-md-10">
+                    @Html.TextBoxFor(m => m.Vessel, new { @class = "form-control input-sm", @readonly = true })
+                </div>
+            </div>
+        </div>
+        <div id="DivRotation" class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-2 padding_rt">
+                    <label>Rotation:</label>
+                </div>
+                <div class="col-md-4">
+                    @Html.TextBoxFor(m => m.Rotation, new { @class = "form-control input-sm", @readonly = true })
+                </div>
+                <div class="col-md-2-5 col_cus_offset_0_5 col-md-offset-1">
+                    <label>Voyage:</label>
+                </div>
+                <div class="col-md-2-5 col_cus_3">
+                    @Html.TextBoxFor(m => m.Voyage, new { @class = "form-control input-sm", @readonly = true })
+                </div>
+            </div>
+        </div>
+        <div class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-2">
+                    <label>FOB:</label>
+                </div>
+                <div class="col-md-4">
+                    @Html.TextBoxFor(m => m.Fob, new { @class = "form-control input-sm", @readonly = true })
+                </div>
+                <div class="col-md-2-5 col_cus_offset_0_5 col-md-offset-1">
+                    <label>Gross Duty:</label>
+                </div>
+                <div class="col-md-2-5 col_cus_3">
+                    @Html.TextBoxFor(m => m.GrossDuty, new { @class = "form-control input-sm", @readonly = true })
+                </div>
+            </div>
+        </div>
+        <div class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-offset-2 col-md-3 col_cus_4">
+                    <div class="boolean-container">
+                        @Html.RadioButtonFor(m => m.DeliveryType, "1", new { @class = "", @id = "CargoDelivery", @disabled = true })
+                        <label for="CargoDelivery"><i class="circle"></i><span>Cargo Delivery</span></label>
+                    </div>
+                </div>
+                <div class="col-md-4 col_cus_4">
+                    <div class="boolean-container">
+                        @Html.RadioButtonFor(m => m.DeliveryType, "2", new { @class = "", @id = "ContainerDelivery", @disabled = true })
+                        <label for="ContainerDelivery"><i class="circle"></i><span>Container / CBT Delivery</span></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="DivCstmAppraiseWorkOrderDet" class="Head_h5">
+            <div class="row Form_Space_top">
+                <div class="form-group Form_Input">
+                    <div class="col-md-2">
+                        <label>ICD Code:</label>
+                    </div>
+                    <div class="col-md-4">
+                        @Html.TextBox("CFSCode", "", new { @class = "form-control input-sm", @readonly = true })
+                    </div>
+                </div>
+            </div>
+            <div class="row Form_Space_top">
+                <div class="form-group Form_Input">
+                    <div class="col-md-2">
+                        <label>Container / CBT No:</label>
+                    </div>
+                    <div class="col-md-4">
+                        @Html.TextBox("ContainerNo", "", new { @class = "form-control input-sm", @readonly = true })
+                        @*<span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerModal"></i></span>
+                            @Html.ValidationMessage("ContainerNo", new { @class = "Error_Msg" })*@
+                    </div>
+                    <div class="col-md-2-5 col_cus_offset_0_5 col-md-offset-1">
+                        <label>Size:</label>
+                    </div>
+                    <div class="col-md-2-5 col_cus_3">
+                        @Html.DropDownList("Size", new List<SelectListItem> {
+                                       new SelectListItem { Text="20",Value="20"},
+                                       new SelectListItem {Text="40",Value="40" },
+                                       new SelectListItem {Text="ODC",Value="ODC" }
+                                       }, "---Select---", new { @class = "form-control input-sm dropdown", @disabled = true })
+                        @Html.ValidationMessage("Size", new { @class = "Error_Msg" })
+                    </div>
+
+                </div>
+            </div>
+            <div class="row Form_Space_top">
+                <div class="form-group Form_Input">
+
+                    <div class="col-md-2">
+                        <label>Line No:</label>
+                    </div>
+                    <div class="col-md-4">
+                        @Html.TextBox("LineNo", "", new { @class = "form-control input-sm", @readonly = true })
+                        @Html.ValidationMessage("LineNo", "", new { @class = "Error_Msg" })
+                    </div>
+
+                    <div class="col-md-2-5 col_cus_offset_0_5 col-md-offset-1">
+                        <label>FCL / LCL:</label>
+                    </div>
+                    <div class="col-md-2-5 col_cus_3">
+                        @Html.DropDownList("LCLFCL", new List<SelectListItem>{
+                                        new SelectListItem {Text="FCL",Value="FCL" },
+                                        new SelectListItem {Text="LCL",Value="LCL" }
+                                      }, "---Select---", new { @class = "form-control input-sm dropdown", @disabled = true })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row Form_Space_top">
+                <div class="form-group Form_Input">
+                    <div class="col-md-2">
+                        <label>BOE No:</label>
+                    </div>
+                    <div class="col-md-4">
+                        @Html.TextBox("BOENo", "", new { @class = "form-control input-sm", @readonly = true })
+                    </div>
+                    <div class="col-md-2-5 col_cus_offset_0_5 col-md-offset-1">
+                        <label>BOE Date:</label>
+                    </div>
+                    <div class="col-md-2-5 col_cus_3">
+                        @Html.TextBox("BOEDate", "", new { @class = "form-control input-sm", @readonly = true })
+                    </div>
+                </div>
+            </div>
+            <div class="row Form_Space_top">
+                <div class="form-group Form_Input">
+                    <div class="col-md-2">
+                        <label>CHA Name:</label>
+                    </div>
+                    <div class="col-md-10">
+                        @Html.TextBox("CHA", "", new { @class = "form-control input-sm", @readonly = true })
+                    </div>
+                </div>
+            </div>
+            <div class="row Form_Space_top">
+                <div class="form-group Form_Input">
+                    <div class="col-md-2 padding_rt">
+                        <label>Importer Name:</label>
+                    </div>
+                    <div class="col-md-10">
+                        @Html.TextBox("Importer", "", new { @class = "form-control input-sm", @readonly = true })
+                    </div>
+                </div>
+            </div>
+            <div class="row Form_Space_top">
+                <div class="form-group Form_Input">
+                    <div class="col-md-2 padding_rt">
+                        <label>Cargo Description:</label>
+                    </div>
+                    <div class="col-md-10">
+                        @Html.TextArea("CargoDescription", "", new { @style = "width:100%;height:100px", @disabled = true })
+                    </div>
+                </div>
+            </div>
+            <div class="row Form_Space_top">
+                <div class="form-group Form_Input">
+                    <div class="col-md-2 padding_rt">
+                        <label>No of Packages:</label>
+                    </div>
+                    <div class="col-md-2-5">
+                        @Html.TextBox("NoOfPackages", "", new { @class = "form-control input-sm", @readonly = true })
+                    </div>
+                    <div class="col-md-2-5 col_cus_offset_2 col-md-offset-2-5">
+                        <label>Gross Weight(Kg):</label>
+                    </div>
+                    <div class="col-md-2-5 col_cus_3">
+                        @Html.TextBox("GrossWeight", "", new { @class = "form-control input-sm", @readonly = true })
+                    </div>
+                </div>
+            </div>
+            <div class="row Form_Space_top">
+                <div class="form-group Form_Input">
+                    <div class="col-md-2">
+                        <label>CIF Value:</label>
+                    </div>
+                    <div class="col-md-4">
+                        @Html.TextBox("CIFValue", "", new { @class = "form-control input-sm", @readonly = true })
+                    </div>
+                    <div class="col-md-2-5 col_cus_offset_0_5 col-md-offset-1">
+                        <label>Duty:</label>
+                    </div>
+                    <div class="col-md-2-5 col_cus_3">
+                        @Html.TextBox("Duty", "", new { @class = "form-control input-sm", @readonly = true })
+                    </div>
+                </div>
+            </div>
+            <div class="row Form_Space_top">
+                <div class="col-md-12">
+                    <table class="table table-striped table-bordered dataTable" id="TblCustomAppraisementDet" style="width:100%;">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width:8%;">@Html.DisplayName("SL No")</th>
+                                <th>@Html.DisplayName("ICD No")</th>
+                                <th>@Html.DisplayName("Container / CBT No")</th>
+                                <th class="text-center" style="width:10%;">@Html.DisplayName("View")</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="row Form_Space_top">
+                <div class="form-group Form_Input">
+                    <div class="col-md-2-5 padding_rt">
+                        <label>Appraisement Status:</label>
+                    </div>
+                    <div class="col-md-2 col_cus_3">
+                        <div class="boolean-container">
+                            @Html.CheckBox("Approved", new { @onclick = "CheckBoxChange(this)", @id = "Approved" })
+                            <label for="Approved" style="text-align:center;"><span>Approved</span><i class="square"></i></label>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col_cus_3">
+                        <div class="boolean-container">
+                            @Html.CheckBox("Hold", new { @onclick = "CheckBoxChange(this)", @id = "Hold" })
+                            <label for="Hold" style="text-align:center;"><span>Hold</span><i class="square"></i></label>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col_cus_3">
+                        <div class="boolean-container">
+                            @Html.CheckBox("Seize", new { @onclick = "CheckBoxChange(this)", @id = "Seize" })
+                            <label for="Seize" style="text-align:center;"><span>Seize</span><i class="square"></i></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+    </div>
+    <div class="row SignUp_space_bottom">
+        <div class="col-md-offset-4 col-md-2">
+            <input type="submit" class="btn log_Btn_sm" value="Save" id="BtnSaveCstmAppraiseApproval" />
+        </div>
+        <div class="col-md-2">
+            <input type="button" class="btn log_Btn_sm" value="Reset" />
+        </div>
+    </div>
+    <div class="logSuccMsg" style="background-color:transparent" id="DivCstmAppraiseApprovalMsg"></div>
+    <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivCstmAppraiseApprovalErrMsg"></div>
+    @*}*@
+    @Scripts.Render("~/bundles/jqueryval")
+</div>

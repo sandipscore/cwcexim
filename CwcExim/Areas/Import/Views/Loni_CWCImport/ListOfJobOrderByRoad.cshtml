@@ -1,0 +1,142 @@
+﻿@model IEnumerable<CwcExim.Areas.Import.Models.PPG_ImportJobOrderByRoadList>
+
+<table class="table dataTable table-bordered table-striped" id="tblImpJOList" style="width:100%;">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("SL No")</th>
+            <th>Job Order No</th>
+            <th>Job Order Date</th>
+            @*<th>Shipping Line Name</th>*@
+            <th>Container/CBT</th>
+            <th class="text-center">@Html.DisplayName("Edit")</th>
+            <th class="text-center">@Html.DisplayName("View")</th>
+            <th class="text-center">@Html.DisplayName("Delete")</th>
+            <th class="text-center">@Html.DisplayName("Preview")</th>
+
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var Serial = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center">@Serial</td>
+                    <td>@item.FormOneNo</td>
+                    <td>@item.FormOneDate</td>
+                    @*<td>@item.ShippingLineName</td>*@
+                    <td>@item.CONTCBT</td>
+                    <td class="text-center"><a href="#" class="edit" onclick="EditImpJODet(@item.FormOneId)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td class="text-center"><a href="#" class="view" onclick="ViewImpJODet(@item.FormOneId)"><i class="fa fa-search-plus Edit"></i></a></td>
+                    <td class="text-center"><a href="#" class="delete"  onclick="DeleteImpJODet(@item.FormOneId)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="PrintImpJODet(@item.FormOneId)"><i class="fa fa-file-pdf-o Edit"></i></a></td>
+                </tr>
+                Serial++;
+            }
+        }
+    </tbody>
+</table>
+<script>
+
+    var r2 = JSON.parse($("#hdnRights").val());
+    if (r2.lstMenu[0].CanEdit == 1) {
+        //$('.edit').css('display', 'block');      
+        //$('.edit').disabled=false;
+    } else {
+        //$('.edit').css('display', 'none');
+        $('.edit').css('pointer-events','none');
+       // $('.edit').attr('onclick', 'return false');
+    }
+
+    if (r2.lstMenu[0].CanDelete == 1) {
+        //$('.delete').css('display', 'block');
+
+    } else {
+        //$('.delete').css('display', 'none');
+
+     //   $('.delete').removeAttr('onclick');
+        //  $('.delete').attr('onclick', 'return false');
+        $('.delete').css('pointer-events', 'none');
+    }
+
+    if (r2.lstMenu[0].CanView == 1) {
+        //$('.view').css('display', 'block');
+
+    } else {
+        //$('.view').css('display', 'none');
+     //   $('.view').removeAttr('onclick');
+        // $('.view').attr('onclick', 'return false');
+        $('.view').css('pointer-events', 'none');
+    }
+
+    $(document).ready(function () {
+        var tblImpJOList = $('#tblImpJOList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                       { "sName": "Sl No","width": "8%" },
+                       { "sName": "Job Order No", "bSortable": false },
+                       { "sName": "Job Order Date", "bSortable": false },
+                       //{ "sName": "Shipping Line Name", "bSortable": false },
+                       { "sName": "Container/CBT", "bSortable": false },
+                       { "sName": "Edit", "bSortable": false, "width": "10%" },
+                       { "sName": "View", "bSortable": false, "width": "10%" },
+                       { "sName": "Delete", "bSortable": false, "width": "10%" },
+                        { "sName": "Preview", "bSortable": false, "width": "10%" }
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(tblImpJOList);
+    });
+    function EditImpJODet(ImpJobOrderId)
+    {
+        $('#DivBody').load('/Import/Loni_CWCImport/EditJobOrderByRoad?ImpJobOrderId='+ImpJobOrderId);
+    }
+    function ViewImpJODet(ImpJobOrderId)
+    {
+        $('#DivBody').load('/Import/Loni_CWCImport/ViewJobOrderByRoad?ImpJobOrderId=' + ImpJobOrderId);
+    }
+    function DeleteImpJODet(ImpJobOrderId)
+    {
+        var Confirm = confirm("Are you sure you want to delete?");
+        if(Confirm==true)
+        {
+            var Token=$('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Import/Loni_CWCImport/DeleteJobOrderByRoad',
+                type:'POST',
+                data:{ImpJobOrderId:ImpJobOrderId},
+                headers:{"__RequestVerificationToken":Token},
+                dataType:'JSON',
+                success:function(data)
+                {
+                    if(data.Status==1)
+                    {
+                        alert("Job Order By Road has been deleted successfully");
+                        $('#DivBody').load('/Import/Loni_CWCImport/CreateJobOrderByRoad');
+                    }
+                    else
+                        alert(data.Message);
+                }
+            });
+        }
+    }
+    function PrintImpJODet(ImpJobOrderId)
+    {
+        var Token=$('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/Report/Loni_ReportCWC/JobOrderPrint',
+            type:'POST',
+            data:{JobOrderId:ImpJobOrderId},
+            headers:{"__RequestVerificationToken":Token},
+            dataType:'JSON',
+            success:function(data)
+            {
+                if(data.Status==1)
+                    window.open(data.Message+"?_t="+(new Date().getTime()),"_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+
+    }
+</script>

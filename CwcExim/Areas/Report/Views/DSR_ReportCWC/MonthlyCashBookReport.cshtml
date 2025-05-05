@@ -1,0 +1,505 @@
+﻿
+@model CwcExim.Areas.Report.Models.DSR_DailyCashBookCash
+
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "RptMonthlyCashBook";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+
+}
+<script>
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+</script>
+@using (Ajax.BeginForm("GetMonthlyCashBookReport", "DSR_ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Monthly cash Book</h4>
+                            </div>
+                        </div>
+                        <div class="Form_Space_top" style="padding:5px;">
+                            <div class="row">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Period From:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col_cus_2 col_cus_offset_3 col-md-offset-4">
+                                        <label>Period To:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $('#BtnPreview').on("click", function () {
+        //alert("in");
+        //ValidateExitDet();
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        return true;
+    });
+    function RptConsumerListDtlOnFailure() { }
+    function RptMonthlyCashBook(data) {
+        $('#DivDwnldWavMsg').html('')
+        //alert(data);
+        //debugger;
+        if (data.Status == 1) {
+
+            //debugger;
+            SaveReportPdf(data);
+
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+
+
+    function ValidateExitDet() {
+        var Status = true;
+      
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="txtGrossWeight"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+        
+
+        return Status;
+    }
+
+    function SaveReportPdf(data)
+    {
+        
+            //debugger;
+            var TAdvDeposit = 0, TIMPSTO = 0, TIMPINS = 0, TIMPHT = 0, TIMPGRL = 0, TEXPSTO = 0, TEXPINS = 0, TEXPGRE = 0, TEXPHTT = 0, TEXPHTN = 0, TBNDSTO = 0, TBNDINS = 0, TBNDHT = 0,
+             TOTHS = 0, TMISCT = 0, TMISCN = 0, TPCS = 0, TDOC = 0, TADM = 0, TWET = 0, TTaxableAmt = 0, TCGSTAmt = 0, TSGSTAmt = 0, TIGSTAmt = 0, TRoundUp = 0, TGrossAmt = 0, TTDS = 0, TADJ = 0,
+             TRecCash = 0, TRecCheque = 0, TRecOnline = 0, TRecCrNote = 0, TNetAmt = 0,TCount=0, OReStamp=0,StampPur=0,StampUsed=0,StampOUsed=0,OpeningBalance=0,BankDeposit=0;
+
+            var FormDate = $("#PeriodFrom").val();
+            var ToDate = $("#PeriodTo").val();
+            var PostData = new FormData();
+
+            var Html = '<div style="float:left; width:20%;"><img align="right" src="IMGSRC" width="90"/></div>'
+            Html += "<div style='text-align:center; width:80%; float:left;'><h1 style='font-size: 22px; margin: 0; padding: 0;'>CENTRAL WAREHOUSING CORPORATION</h1><label style='font-size: 12px;'>(A Govt. of India Undertaking)</label><br/><span style='font-size:12px;'>Near Indira Nagar Colony, Village - Dashrath Vadodara - 391740.</span><br/><label style='font-size: 14px; font-weight:bold;'>Monthly cash Book From " + FormDate + " To " + ToDate + "</label></div>";
+            Html += "<div><span><br/></span></div>";
+
+            Html += "<table style='width:100%; font-size:5pt; font-family:Verdana,Arial,San-serif; border:1px solid #000; text-align:center; border-collapse:collapse;'>";
+            Html += "<thead>";
+            Html += "<tr><th rowspan='2' style='border-right:1px solid #000; width:40px;'>#</th>";
+            Html += "<th rowspan='2' style='border-right:1px solid #000; width:90px;'>OPR Date</th>";         
+            Html += "<th rowspan='2' style='border-right:1px solid #000; width:100px;'>Adv Deposit</th>";
+            // Start -- //Import Operation // 
+            Html += "<th colspan='4' style='border-right:1px solid #000; border-bottom:1px solid #000; width:400px;'>IMPORT OPERATION</th>";
+            // End -- //Import Operation // 
+
+            // Start -- //Export Operation // 
+            Html += "<th colspan='5' style='border-right:1px solid #000; border-bottom:1px solid #000; width:500px;'>EXPORT OPERATION</th>";
+            // End -- //Export Operation // 
+
+            // Start -- //Bond Operation // 
+            Html += "<th colspan='3' style='border-right:1px solid #000; border-bottom:1px solid #000; width:300px;'>BOND OPERATION</th>";
+            // End -- //Bond Operation // 
+
+            Html += "<th colspan='1' style='border-right:1px solid #000; border-bottom:1px solid #000; width:100px;'></th>";
+
+            Html += "<th colspan='1' style='border-right:1px solid #000; border-bottom:1px solid #000; width:200px;'></th>";
+
+            Html += "<th colspan='1' style='border-right:1px solid #000; border-bottom:1px solid #000; width:100px;'></th>";
+
+            Html += "<th colspan='1' style='border-right:1px solid #000; border-bottom:1px solid #000; width:100px;'></th>";
+
+            Html += "<th colspan='1' style='border-right:1px solid #000; border-bottom:1px solid #000; width:100px;'></th>";
+
+            Html += "<th colspan='1' style='border-right:1px solid #000; border-bottom:1px solid #000; width:100px;'></th>";
+        
+            Html += "<th rowspan='2' style='border-right:1px solid #000; width:150px; text-align:right;'>Taxable Amt.</th>";
+            Html += "<th rowspan='2' style='border-right:1px solid #000; width:80px;'>CGST</th>";
+            Html += "<th rowspan='2' style='border-right:1px solid #000; width:80px;'>SGST</th>";
+            Html += "<th rowspan='2' style='border-right:1px solid #000; width:80px;'>IGST</th>";
+            Html += "<th rowspan='2' style='border-right:1px solid #000; width:80px;'>RoundUp</th>";
+            Html += "<th rowspan='2' style='border-right:1px solid #000; width:80px;'>Gross Amt.</th>";
+            Html += "<th rowspan='2' style='border-right:1px solid #000; width:80px;'>TDS</th>";
+            Html += "<th rowspan='2' style='border-right:1px solid #000; width:80px;'>ADJ.</th>";
+            Html += "<th rowspan='2' style='border-right:1px solid #000; width:80px;'>Cash Amt.</th>";
+            Html += "<th rowspan='2' style='border-right:1px solid #000; width:80px;'>CH/DD Amt.</th>";
+            Html += "<th rowspan='2' style='border-right:1px solid #000; width:80px;'>RTGS/ Pay </th>";
+            Html += "<th rowspan='2' style='border-right:1px solid #000; width:80px;'>Cr. Note </th>";
+            Html += "<th rowspan='2' style='width:80px;'>Net Amt. </th></tr>";
+
+
+
+            Html += "<tr>";
+            // Start -- //Import Operation // 
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>STO</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>T</th></tr>";
+            Html += "</tbody></table></th>";
+
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>INS</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>T</th></tr>";
+            Html += "</tbody></table></th>";
+
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>H & T</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>T</th></tr>";
+            Html += "</tbody></table></th>";
+
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>HRL</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>T</th></tr>";
+            Html += "</tbody></table></th>";
+            // End -- //Import Operation // 
+
+            // Start -- //Export Operation // 
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>STO</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>T</th></tr>";
+            Html += "</tbody></table></th>";
+
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>INS</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>T</th></tr>";
+            Html += "</tbody></table></th>";
+
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>HRE</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>T</th></tr>";
+            Html += "</tbody></table></th>";
+
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>H & T</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>T</th></tr>";
+            Html += "</tbody></table></th>";
+
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>H & T</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>N</th></tr>";
+            Html += "</tbody></table></th>";
+            // End -- //Export Operation // 
+
+            // Start -- //Bond Operation // 
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>STO</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>T</th></tr>";
+            Html += "</tbody></table></th>";
+
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>INS</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>T</th></tr>";
+            Html += "</tbody></table></th>";
+
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>H & T</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>T</th></tr>";
+            Html += "</tbody></table></th>";
+            // End -- //Bond Operation // 
+
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>Other</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>T</th></tr>";
+            Html += "</tbody></table></th>";
+            // Start -- //Misc Operation // 
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>Miscellaneous</th></tr>";
+            Html += "<tr><th colspan='6' cellpadding='2' style='border-right: 1px solid #000; width:100px;'>T</th>";
+            Html += "<th colspan='6' cellpadding='2' style='width:100px;'>N</th></tr>";
+            Html += "</tbody></table></th>";
+            // End -- //Misc Operation // 
+
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>PCS</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>T</th></tr>";
+            Html += "</tbody></table></th>";
+
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>DOC</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>T</th></tr>";
+            Html += "</tbody></table></th>";
+
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>RCT SL</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>N</th></tr>";
+            Html += "</tbody></table></th>";
+
+            Html += "<th style='border-right:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th colspan='12' style='border-bottom:1px solid #000;'>WT</th></tr>";
+            Html += "<tr><th colspan='12' cellpadding='2' style='width:100px;'>T</th></tr>";
+            Html += "</tbody></table></th>";
+            Html += "</tr>";
+
+            Html += "</thead>";
+
+            Html += "<tbody>";
+
+        
+            var j = 0;
+            for (i = 0; i < data.Data.length; i++) {
+             
+                j = j + 1;
+
+                Html += "<tr>";
+                Html += "<td style='border-right: 1px solid #000; border-top:1px solid #000;'>" + j + "</td>";
+                Html += "<td style='border-right: 1px solid #000; border-top:1px solid #000;'>" + data.Data[i].ReceiptDate + "</td>";
+               
+                Html += "<td style='border-right: 1px solid #000; border-top:1px solid #000;'>" + data.Data[i].AdvDeposit + "</td>";
+
+                Html += "<td style='border-right: 1px solid #000; border-top:1px solid #000;'>" + data.Data[i].IMPSTO + "</td>"
+                Html += "<td style='border-right: 1px solid #000; border-top:1px solid #000;'>" + data.Data[i].IMPINS + "</td>";
+                Html += "<td style='border-right: 1px solid #000; border-top:1px solid #000;'>" + data.Data[i].IMPHT + "</td>";
+                Html += "<td style='border-right: 1px solid #000; border-top:1px solid #000;'>" + data.Data[i].IMPGRL + "</td>";
+
+                Html += "<td style='border-right: 1px solid #000; border-top:1px solid #000;'>" + data.Data[i].EXPSTO + "</td>";
+                Html += "<td style='border-right: 1px solid #000; border-top:1px solid #000;'>" + data.Data[i].EXPINS + "</td>";
+                Html += "<td style='border-right: 1px solid #000; border-top:1px solid #000;'>" + data.Data[i].EXPGRE + "</td>";
+                Html += "<td style='border-right: 1px solid #000; border-top:1px solid #000;'>" + data.Data[i].EXPHTT + "</td>";
+                Html += "<td style='border-right: 1px solid #000; border-top:1px solid #000;'>" + data.Data[i].EXPHTN + "</td>";
+
+                Html += "<td style='border-right: 1px solid #000; border-top:1px solid #000;'>" + data.Data[i].BNDSTO + "</td>"
+                Html += "<td style='border-right: 1px solid #000; border-top:1px solid #000;'>" + data.Data[i].BNDINS + "</td>";
+                Html += "<td style='border-right: 1px solid #000; border-top:1px solid #000;'>" + data.Data[i].BNDHT + "</td>";
+
+                Html += "<td style='border-right: 1px solid #000; border-top:1px solid #000;'>" + data.Data[i].OTHS + "</td>";
+
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+                Html += "<tr><td cellpadding='0' style='border-right: 1px solid #000; width:100px; padding:8px 0;'>" + data.Data[i].MISCT + "</td>";
+                Html += "<td cellpadding='0' style='width:100px; padding:8px 0;'>" + data.Data[i].MISCN + "</td></tr>";
+                Html += "</tbody></table></td>";
+
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data[i].PCS + "</td>";
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data[i].DOC + "</td>";
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data[i].ADM + "</td>";
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data[i].WET + "</td>";
+
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + data.Data[i].TaxableAmt + "</td>";
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data[i].CGSTAmt + "</td>";
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data[i].SGSTAmt + "</td>";
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data[i].IGSTAmt + "</td>";
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data[i].RoundUp + "</td>";
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data[i].GrossAmt + "</td>";
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data[i].TDS + "</td>";
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data[i].ADJ + "</td>";
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data[i].RecCash + "</td>";
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data[i].RecCheque + "</td>";
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data[i].RecOnline + "</td>";
+                Html += "<td style='border-right:1px solid #000; border-top:1px solid #000;'>" + data.Data[i].RecCrNote + "</td>";
+                Html += "<td style='border-top:1px solid #000;'>" + data.Data[i].NetAmt + "</td>";           
+
+                Html += "</tr>";
+                TAdvDeposit += Number(data.Data[i].AdvDeposit);
+                TIMPSTO += Number(data.Data[i].IMPSTO);
+                TIMPINS += Number(data.Data[i].IMPINS);
+                TIMPHT += Number(data.Data[i].IMPHT);
+                TIMPGRL += Number(data.Data[i].IMPGRL);
+                TEXPSTO += Number(data.Data[i].EXPSTO);
+                TEXPINS += Number(data.Data[i].EXPINS);
+                TEXPGRE += Number(data.Data[i].EXPGRE);
+                TEXPHTT += Number(data.Data[i].EXPHTT);
+                TEXPHTN += Number(data.Data[i].EXPHTN);
+                TBNDSTO += Number(data.Data[i].BNDSTO);
+                TBNDINS += Number(data.Data[i].BNDINS);
+                TBNDHT += Number(data.Data[i].BNDHT);
+                TOTHS += Number(data.Data[i].OTHS);
+                TMISCT += Number(data.Data[i].MISCT);
+                TMISCN += Number(data.Data[i].MISCN);
+                TPCS += Number(data.Data[i].PCS);
+                TDOC += Number(data.Data[i].DOC);
+                TADM += Number(data.Data[i].ADM);
+                TWET += Number(data.Data[i].WET);
+                TTaxableAmt += Number(data.Data[i].TaxableAmt);
+                TCGSTAmt += Number(data.Data[i].CGSTAmt);
+                TSGSTAmt += Number(data.Data[i].SGSTAmt);
+                TIGSTAmt += Number(data.Data[i].IGSTAmt);
+                TRoundUp += Number(data.Data[i].RoundUp);
+                TGrossAmt += Number(data.Data[i].GrossAmt);
+                TTDS += Number(data.Data[i].TDS);
+                TADJ += Number(data.Data[i].ADJ);
+                TRecCash += Number(data.Data[i].RecCash);
+                TRecCheque += Number(data.Data[i].RecCheque);
+                TRecOnline += Number(data.Data[i].RecOnline);
+                TRecCrNote += Number(data.Data[i].RecCrNote);
+                TNetAmt += Number(data.Data[i].NetAmt);
+                OpeningBalance = Number(data.Data[i].OpeningBalance);
+                BankDeposit = Number(data.Data[i].BankDeposit);
+            }
+            ////debugger;
+            TCount = j;
+            //TOTAL//
+            Html += "<tr>";
+            Html += "<th colspan='2' style='border-right: 1px solid #000; border-top:1px solid #000;'>TOTAL :</th>";
+            Html += "<th style='border-right: 1px solid #000; border-top:1px solid #000;'>" + TAdvDeposit.toFixed(2) + "</th>";
+
+            Html += "<th style='border-right: 1px solid #000; border-top:1px solid #000;'>" + TIMPSTO.toFixed(2) + "</th>"
+            Html += "<th style='border-right: 1px solid #000; border-top:1px solid #000;'>" + TIMPINS.toFixed(2) + "</th>";
+            Html += "<th style='border-right: 1px solid #000; border-top:1px solid #000;'>" + TIMPHT.toFixed(2) + "</th>";
+            Html += "<th style='border-right: 1px solid #000; border-top:1px solid #000;'>" + TIMPGRL.toFixed(2) + "</th>";
+
+            Html += "<th style='border-right: 1px solid #000; border-top:1px solid #000;'>" + TEXPSTO.toFixed(2) + "</th>";
+            Html += "<th style='border-right: 1px solid #000; border-top:1px solid #000;'>" + TEXPINS.toFixed(2) + "</th>";
+            Html += "<th style='border-right: 1px solid #000; border-top:1px solid #000;'>" + TEXPGRE.toFixed(2) + "</th>";
+            Html += "<th style='border-right: 1px solid #000; border-top:1px solid #000;'>" + TEXPHTT.toFixed(2) + "</th>";
+            Html += "<th style='border-right: 1px solid #000; border-top:1px solid #000;'>" + TEXPHTN.toFixed(2) + "</th>";
+
+            Html += "<th style='border-right: 1px solid #000; border-top:1px solid #000;'>" + TBNDSTO.toFixed(2) + "</th>"
+            Html += "<th style='border-right: 1px solid #000; border-top:1px solid #000;'>" + TBNDINS.toFixed(2) + "</th>";
+            Html += "<th style='border-right: 1px solid #000; border-top:1px solid #000;'>" + TBNDHT.toFixed(2) + "</th>";
+
+            Html += "<th style='border-right: 1px solid #000; border-top:1px solid #000;'>" + TOTHS.toFixed(2) + "</th>";
+
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000;'><table style='width:100%; font-size:5pt;'><tbody>";
+            Html += "<tr><th cellpadding='0' style='border-right: 1px solid #000; width:100px; padding:8px 0;'>" + TMISCT.toFixed(2) + "</th>";
+            Html += "<th cellpadding='0' style='width:100px; padding:8px 0;'>" + TMISCN.toFixed(2) + "</th></tr>";
+            Html += "</tbody></table></th>";
+        
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000;'>" + TPCS.toFixed(2) + "</th>";
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000;'>" + TDOC.toFixed(2) + "</th>";
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000;'>" + TADM.toFixed(2) + "</th>";
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000;'>" + TWET.toFixed(2) + "</th>";
+
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000; text-align:right;'>" + TTaxableAmt.toFixed(2) + "</th>";
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000;'>" + TCGSTAmt.toFixed(2) + "</th>";
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000;'>" + TSGSTAmt.toFixed(2) + "</th>";
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000;'>" + TIGSTAmt.toFixed(2) + "</th>";
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000;'>" + TRoundUp.toFixed(2) + "</th>";
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000;'>" + TGrossAmt.toFixed(2) + "</th>";
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000;'>" + TTDS.toFixed(2) + "</th>";
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000;'>" + TADJ.toFixed(2) + "</th>";
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000;'>" + TRecCash.toFixed(2) + "</th>";
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000;'>" + TRecCheque.toFixed(2) + "</th>";
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000;'>" + TRecOnline.toFixed(2) + "</th>";
+            Html += "<th style='border-right:1px solid #000; border-top:1px solid #000;'>" + TRecCrNote.toFixed(2) + "</th>";
+            Html += "<th style='border-top:1px solid #000;'>" + TNetAmt.toFixed(2) + "</th>";
+
+            Html += "</tr>";
+            Html += "</tbody></table>"
+
+
+        PostData.append("Page", Html);
+       // alert("PostData=" + PostData);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GenerateMonthlyCashBookPDF", "DSR_ReportCWC", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+
+                if (data.Status == 1) {
+                    //debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+
+            }
+        });
+    }
+
+    $(function () {
+        debugger;
+        //$("#PeriodTo").datepicker("option", "disabled", true);
+        $("#PeriodFrom").datepicker();
+        $("#PeriodFrom").on("change", function () {
+            var selected = $(this).val();           
+            var dt = selected.split('/');
+            var m = Number(dt[1]);
+            var y = Number(dt[2]);
+            var lastday = function (y, m) {
+                return new Date(y, m, 0).getDate();
+            }           
+            var finaldate = lastday(y, m);                  
+            if (m.toString().length == 1)
+            {
+                var fm='0'+ m;
+            }
+            else {
+                var fm = m;
+            }
+            var ToDt = finaldate + '/' + fm + '/' + y;
+            //$("#PeriodTo").val(ToDt);
+        });
+    });
+
+   
+</script>
+
+
+

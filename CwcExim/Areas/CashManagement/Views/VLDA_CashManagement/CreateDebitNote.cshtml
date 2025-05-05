@@ -1,0 +1,848 @@
+﻿@model CwcExim.Areas.CashManagement.Models.WFLDCreditNote
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>Debit Note</h4>
+                    </div>
+                </div>
+                @using (Ajax.BeginForm("AddDebitNote", "VLDA_CashManagement", new AjaxOptions
+                {
+                  //  Confirm = "Are you sure you want to Save?",
+                    HttpMethod = "POST",
+                    OnSuccess = "DROnSuccess",
+                    OnFailure = "DROnFailure"
+                }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.CRNoteId)
+                    @Html.HiddenFor(m => m.ChargesJson)
+                    @Html.HiddenFor(m => m.PartyId)
+                    @Html.HiddenFor(m => m.PartyState)
+                    @Html.HiddenFor(m => m.SupplyType)
+                    @Html.HiddenFor(m => m.PartyStateCode)
+                    @Html.HiddenFor(m => m.PartyAddress)
+                    @*@Html.HiddenFor(m => m.PartyGSTNo)*@
+                    @Html.HiddenFor(m => m.CRNoteId)
+                    @Html.HiddenFor(m => m.InvoiceId)
+                    @Html.HiddenFor(m => m.Module)
+                    @Html.HiddenFor(m => m.InvoiceType)
+                    @Html.HiddenFor(m => m.InvoiceDate)
+                    @Html.HiddenFor(m => m.PayeeId)
+                    @Html.Hidden("GST")
+
+                    <input id="hdnCharges" type="hidden" value="" />
+
+                    <div id="DivJOHdr" class="Form_Space_bottom">
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5" style="padding-right:0px;">
+                                    <label>Debit Note No:</label>
+
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.CRNoteNo, new { @class = "form-control input_sm", @readonly = true })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-2-5" style="padding-right:0px;">
+                                    <label>Date:</label>
+                                </div>
+                                <div class="col-md-2 Date_Img">
+                                    @Html.TextBoxFor(m => m.CRNoteDate, new { @class = "form-control input_sm", @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5" style="padding-right:0px;">
+                                    <label>Invoice No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.InvoiceNo, new { @class = "form-control input_sm", @readonly = true })
+                                    <span class="search" id="SrchInvoiceNo"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="SearchInvoice();" data-target="#InvoiceNoModal"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5" style="padding-right:0px;">
+                                    <label>Party:</label>
+                                </div>
+                                <div class="col-md-10-5">
+                                    @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control input_sm", @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5" style="padding-right:0px;">
+                                    <label>Payer:</label>
+                                </div>
+                                <div class="col-md-10-5">
+                                    @Html.TextBoxFor(m => m.PayeeName, new { @class = "form-control input_sm", @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5" style="padding-right:0px;">
+                                    <label>Party GST:</label>
+                                </div>
+                                <div class="col-md-4-5">
+                                    @Html.TextBoxFor(m => m.PartyGSTNo, new { @class = "form-control input_sm", @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="col-md-12">
+                                <table id="tblChargesDet" class="table table-striped table-bordered dataTable">
+                                    <thead>
+                                        <tr>
+                                            <th rowspan="2" class="text-center" style="width:8%;">Sl No</th>
+                                            <th rowspan="2" class="text-center">Particulars</th>
+                                            <th rowspan="2" class="text-center">SAC</th>
+                                            <th rowspan="2" class="text-center" style="width:8%;">Value</th>
+                                            <th rowspan="2" class="text-center" style="width:8%;">Debit Value</th>
+                                            <th colspan="2" class="text-center">CGST</th>
+                                            <th colspan="2" class="text-center">SGST</th>
+                                            <th colspan="2" class="text-center">IGST</th>
+                                            <th rowspan="2" class="text-center" style="width:14%;">Total</th>
+                                        </tr>
+                                        <tr>
+                                            <th class="text-center">%</th>
+                                            <th class="text-center">Amount</th>
+                                            <th class="text-center">%</th>
+                                            <th class="text-center">Amount</th>
+                                            <th class="text-center">%</th>
+                                            <th class="text-center">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                    <tfoot>
+
+                                        <tr>
+                                            <td>New Charges</td>
+                                            <td colspan="2">
+                                                <select id="drpChrg"></select>
+                                            </td>
+                                            <td colspan="2">
+                                                <input type="button" value="Add" onclick="AddCharge()" class="btn log_Btn_sm" />
+                                            </td>
+                                            <td colspan="6" class="text-right">Total</td>
+                                            <td class="text-right">@Html.TextBoxFor(m => m.TotalAmt, new { @readonly = true, @id = "Total" })</td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="11" class="text-right">Roundup</td>
+                                            <td class="text-right">@Html.TextBoxFor(m => m.RoundUp, new { @readonly = true, @id = "Roundup" })</td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="11" class="text-right">Grand Total</td>
+                                            <td class="text-right">@Html.TextBoxFor(m => m.GrandTotal, new { @readonly = true })</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5" style="padding-right:0px;">
+                                    <label>Remarks:</label>
+                                </div>
+                                <div class="col-md-10-5">
+                                    @Html.TextAreaFor(m => m.Remarks, new { maxlength = 500, @class = "form-control input_sm", @style = "width:100%;height:100px;" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                        </div>
+                        <div class="row SignUp_space_top2 SignUp_space_bottom2">
+                            <div class="col-md-offset-3 col-md-2">
+                                <input type="submit" id="btnSave" class="btn log_Btn_sm" value="Save" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" id="btnReset" class="btn log_Btn_sm" value="Reset" onclick="LoadPage();" />
+                            </div>
+                            <div class="col-md-3">
+                                <input type="button" id="btnIRN" class="btn log_Btn_sm" value="Generate IRN" onclick="GenerateIRN();" disabled />
+                            </div>
+                            @*<div class="col-md-2">
+                <input type="button" id="btnBack" class="btn log_Btn_sm" value="Back" />
+            </div>*@
+                        </div>
+                    </div>
+                    <div class="logSuccMsg Form_Space_top" id="DivSucMsg" style="background-color:transparent"></div>
+                    <div class="logErrMsg Form_Space_bottom" id="DivErrMsg" style="background-color:transparent"></div>
+                }
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-12">
+                            <div class="col-md-2">
+                                <input type="button" id="ShowList" class="btn log_Btn_sm" value="ShowList" onclick="LoadList()"/> 
+                            </div>
+                            <div class="col-md-offset-5 col-md-3">
+                                <input type="text" placeholder="Search by Debit Note No." id="SearchDebitNo" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" value="Search" onclick="SearchDebitNoteNo()" class="btn log_Btn_sm" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-12">
+                            <div id="DivListofDR"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade mTabindex" id="InvoiceNoModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" onclick="CloseInvoice()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">Choose Invoice No</h4>
+                </div>
+                <div class="modal-body popup_body" style="position:relative;">
+                    <input placeholder="Invoice No search" id="Invoicebox" type="text" tabindex="401" />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchInvoice()"></i></span>
+                    <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="10" width="100%">InvoiceNo</th>
+
+                            </tr>
+                        </thead>
+                    </table>
+                    <div id="slim_scroll">
+                        <table class="table dataTable table-bordered table-striped slim_tble" id="tbleParty">
+                            <tbody>
+                                @{
+                                    if (ViewBag.lstInvcNo != null)
+                                    {
+                                        var tabvalue = 401;
+                                        var tab = 0;
+                                        var u = "_";
+                                        foreach (var item in ViewBag.lstInvcNo)
+                                        {
+                                            <tr tabindex="@tabvalue@u@tab" onkeypress="FillDetails('@item.InvoiceId','@item.InvoiceNo')" onclick="FillDetails('@item.InvoiceId', '@item.InvoiceNo')">
+                                                <td colspan="10" width="100%" class="txt_wrp">@item.InvoiceNo</td>
+
+                                            </tr>
+                                            tab++;
+                                        }
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            @if (ViewBag.StateCr != null && Convert.ToBoolean(ViewBag.StateCr) == true)
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreInvoice()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+                            }
+                            else
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreInvoice()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" onclick="CloseInvoice()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ChargeModel" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">Charge</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="Chargebox" type="text" />
+                    @if (ViewBag.ChargesList != null)
+                    {
+                    <ul class="navList" id="lstCharge">
+                        @foreach (var item in ViewBag.ChargesList)
+                            {
+                            <li id="@item.Clause">@item.ChargeName - @item.SACCode</li>
+                            }
+                    </ul>
+                    }
+                    else
+                    {
+                    <ul class="navList" id="lstInvoice">
+                        <li></li>
+                    </ul>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+    <script type="text/javascript">
+        var old_html = "";
+        $(function () {
+            $('#slim_scroll').slimScroll({
+                allowPageScroll: true
+            });
+
+        });
+
+    </script>
+    <script>
+        $("#CRNoteDate").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+                $('[data-valmsg-for="Data"]').html('<span></span>');
+            }
+        });
+        $(function () {
+            $('#Total,#CRNoteId,#Roundup,#GrandTotal').val('0');
+            $('#CRNoteDate').val('@ViewBag.CurrentDate');
+            //$('#DivListofDR').load('/CashManagement/WFLD_CashManagement/ListOfDRNote');
+        });
+        function LoadList()
+        {
+            $('#SearchDebitNo').val('');
+            $('#DivListofDR').load('/CashManagement/VLDA_CashManagement/ListOfDRNote');
+        }
+        $('#Invoicebox').keyup(function () {
+            var val = $(this).val().toLowerCase();
+            if (val == "")
+                $('#lstInvoice > li').show();
+            else {
+                $('#lstInvoice > li').each(function () {
+                    var text = $(this).text().toLowerCase();
+                    (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+                });
+            }
+        });
+
+        $('#Chargebox').keyup(function () {
+            var val = $(this).val().toLowerCase();
+            if (val == "")
+                $('#lstCharge > li').show();
+            else {
+                $('#lstCharge > li').each(function () {
+                    var text = $(this).text().toLowerCase();
+                    (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+                });
+            }
+        });
+
+        $('#lstInvoice > li').on("click", function () {
+            $('#InvoiceNo').val($(this).text());
+            $('#InvoiceId').val($(this).attr('id'));
+            $("#InvoiceNoModal").modal("hide");
+        //    FillDetails();
+        });
+
+
+
+
+
+
+        function FillDetails(InvoiceId ,InvoiceNo) {
+            debugger;
+
+            $('#InvoiceNo').val(InvoiceNo);
+            $('#InvoiceId').val(InvoiceId);
+
+            $("#InvoiceNoModal").modal("hide");
+
+          //  var InvoiceId = $('#InvoiceId').val();
+            $.ajax({
+                url: '/CashManagement/VLDA_CashManagement/GetInvoiceDetailsForDeditNote',
+                type: 'GET',
+                data: { InvoiceId: InvoiceId },
+                dataType: 'JSON',
+                success: function (data) {
+                    if (data.Status == 1) {
+                        $('#Total,#Roundup,#GrandTotal').val('0');
+                        $('#PartyId').val(data.Data.PartyId);
+                        $('#PartyState').val(data.Data.PartyState);
+                        $('#PartyStateCode').val(data.Data.PartyStateCode);
+                        $('#PartyAddress').val(data.Data.PartyAddress);
+                        $('#PartyGSTNo').val(data.Data.PartyGSTNo);
+                        $('#Module').val(data.Data.Module);
+                        $('#InvoiceType').val(data.Data.InvoiceType);
+                        $('#InvoiceDate').val(data.Data.InvoiceDate);
+                        $('#PartyName').val(data.Data.PartyName);
+                        $('#SupplyType').val(data.Data.SupplyType);
+                        $('#PayeeId').val(data.Data.PayeeId);
+                        $('#PayeeName').val(data.Data.PayeeName);
+                        $('#SupplyType').val(data.Data.SupplyType);
+                        /*
+                        var html = '';
+                        $.each(data.Data.lstInvoiceCarges, function (i, item) {
+                            if ($('#GST').val() == '') {
+                                if (Number(item.Taxable) > 0) {
+                                    if (Number(item.IGSTAmt) > 0) $('#GST').val('IGST');
+                                    else $('#GST').val('CGST/SGST');
+                                }
+                            }
+                            item.IGSTAmt = 0;
+                            item.CGSTAmt = 0;
+                            item.SGSTAmt = 0;
+                            html += '<tr><td>' + (i + 1) + '</td>';
+                            html += '<td>' + item.ChargeName + '</td>';
+                            html += '<td>' + item.SACCode + '</td>';
+                            html += '<td><input type="text" readonly id="txtTaxable' + item.ChargesTypeId + '" value="' + item.Taxable + '" /></td>';
+                            html += '<td><input type="text" id="txtRetValue' + item.ChargesTypeId + '" value="0" onblur="Calculate(' + item.ChargesTypeId + ')" /></td>';
+                            html += '<td><input type="text" readonly id="txtCGSTPer' + item.ChargesTypeId + '" value="' + item.CGSTPer + '" /></td>';
+                            html += '<td><input type="text" readonly id="txtCGSTAmt' + item.ChargesTypeId + '" value="0" /></td>';
+                            html += '<td><input type="text" readonly  id="txtSGSTPer' + item.ChargesTypeId + '" value="' + item.SGSTPer + '" /></td>';
+                            html += '<td><input type="text" readonly id="txtSGSTAmt' + item.ChargesTypeId + '" value="0" /></td>';
+                            html += '<td><input type="text" readonly id="txtIGSTPer' + item.ChargesTypeId + '" value="' + item.IGSTPer + '" /></td>';
+                            html += '<td><input type="text" readonly id="txtIGSTAmt' + item.ChargesTypeId + '" value="0" /></td>';
+                            html += '<td><input type="text" readonly id="txtTotal' + item.ChargesTypeId + '" value="0" /></td></tr>';
+                        });
+                        $('#tblChargesDet tbody').html(html);
+                        */
+
+                        $('#ChargesJson').val(JSON.stringify(data.Data.lstInvoiceCarges));
+                        GenerateTable();
+                        PopulateChargesList();
+                    }
+                    else {
+
+                    }
+                }
+            });
+
+        }
+
+        function PopulateChargesList() {
+            debugger;
+            var html = '';
+            html += '<option value="0">--Select--</option>';
+            var InvoiceId = $('#InvoiceId').val();
+            $.ajax({
+                url: '/CashManagement/VLDA_CashManagement/GetChargesForDeditNote',
+                type: 'GET',
+                data: { InvoiceId: InvoiceId },
+                dataType: 'JSON',
+                success: function (data) {
+                    if (data.Status == 1) {
+                        $('#hdnCharges').val(JSON.stringify(data.Data));
+                        $.each(data.Data, function (i, item) {
+                            html += '<option value=' + item.Sr + '>' + item.Clause + ' - ' + item.ChargeName + '</option>';
+                        });
+                        $('#drpChrg').html(html);
+                    }
+                    else {
+
+                    }
+                }
+            });
+        }
+
+        function AddCharge() {
+            debugger;
+            var Chrgs = JSON.parse($('#hdnCharges').val());
+            var ChrgObj = Chrgs.filter(m=>m.Sr == $('#drpChrg').val())[0];
+            var PushObj = {
+                "ChargesTypeId": JSON.parse($('#ChargesJson').val())[JSON.parse($('#ChargesJson').val()).length - 1].ChargesTypeId + 1,
+                "Clause": ChrgObj.Clause,
+                "ChargeType": ChrgObj.Clause,
+                "ChargeName": ChrgObj.ChargeName,
+                "SACCode": ChrgObj.SACCode,
+                "Quantity": 0,
+                "Rate": 0,
+                "RetValue": 0,
+                "Taxable": 0,
+                "CGSTPer": ChrgObj.CGSTPer,//ChrgObj.IsLocalGST==1 ? ChrgObj.CGSTPer:0,
+                "CGSTAmt": 0,
+                "SGSTPer": ChrgObj.SGSTPer,//ChrgObj.IsLocalGST == 1 ? ChrgObj.SGSTPer : 0,
+                "SGSTAmt": 0,
+                "IGSTPer": ChrgObj.IGSTPer,//ChrgObj.IsLocalGST == 0 ? ChrgObj.IGSTPer : 0,
+                "IGSTAmt": 0,
+                "Total": 0
+
+            }
+
+
+            debugger;
+            var ChargesJson = JSON.parse($('#ChargesJson').val());
+            if (ChargesJson.filter(x=>x.ChargeName == PushObj.ChargeName).length > 0) {
+                alert('This charge already exists.');
+                return;
+            }
+
+            ChargesJson.push(PushObj);
+            $('#ChargesJson').val(JSON.stringify(ChargesJson));
+            $('#drpChrg').val(0);
+            GenerateTable();
+
+        }
+
+        function GenerateTable() {
+            debugger;
+            var ChargesJson = JSON.parse($('#ChargesJson').val());
+            var html = '';
+            $.each(ChargesJson, function (i, item) {
+                if ($('#GST').val() == '') {
+                    if (Number(item.Taxable) > 0) {
+                        if (Number(item.IGSTAmt) > 0) $('#GST').val('IGST');
+                        else $('#GST').val('CGST/SGST');
+                    }
+                }
+                /*item.IGSTAmt = 0;
+                item.CGSTAmt = 0;
+                item.SGSTAmt = 0;*/
+                html += '<tr><td>' + (i + 1) + '</td>';
+                html += '<td>' + item.ChargeName + '</td>';
+                html += '<td>' + item.SACCode + '</td>';
+                html += '<td><input type="text" readonly id="txtTaxable' + item.ChargesTypeId + '" value="' + item.Taxable + '" /></td>';
+                html += '<td><input type="number" step="any" style="width: 100%;padding: 3px;" id="txtRetValue' + item.ChargesTypeId + '" value="' + item.RetValue + '" onblur="Calculate(' + item.ChargesTypeId + ')" /></td>';
+                html += '<td><input type="text" readonly id="txtCGSTPer' + item.ChargesTypeId + '" value="' + item.CGSTPer + '" /></td>';
+                html += '<td><input type="text" readonly id="txtCGSTAmt' + item.ChargesTypeId + '" value="' + item.CGSTAmt + '" /></td>';
+                html += '<td><input type="text" readonly  id="txtSGSTPer' + item.ChargesTypeId + '" value="' + item.SGSTPer + '" /></td>';
+                html += '<td><input type="text" readonly id="txtSGSTAmt' + item.ChargesTypeId + '" value="' + item.SGSTAmt + '" /></td>';
+                html += '<td><input type="text" readonly id="txtIGSTPer' + item.ChargesTypeId + '" value="' + item.IGSTPer + '" /></td>';
+                html += '<td><input type="text" readonly id="txtIGSTAmt' + item.ChargesTypeId + '" value="' + item.IGSTAmt + '" /></td>';
+                html += '<td><input type="text" readonly id="txtTotal' + item.ChargesTypeId + '" value="' + item.Total + '" /></td></tr>';
+            });
+            $('#tblChargesDet tbody').html(html);
+
+        }
+
+        function Calculate(ChargesTypeId) {
+            //debugger;
+            var ChargesJson = JSON.parse($('#ChargesJson').val());
+            var tax = $('#InvoiceType').val();
+            var item = $.grep(ChargesJson, function (elem) { return elem.ChargesTypeId == ChargesTypeId; })[0];
+            var GST = $('#GST').val();
+            var RetValue = Number($('#txtRetValue' + ChargesTypeId).val()).toFixed(2);
+            var Value = Number($('#txtTaxable' + ChargesTypeId).val()).toFixed(2);
+
+            /*if (RetValue <= Value) {*/
+            var Total;
+            if (GST == 'IGST') {
+                var IP = $('#txtIGSTPer' + ChargesTypeId).val();
+
+                if (tax == "Bill")
+                {
+                    IP = 0;
+                }
+                var Amt = Number((Number(RetValue) / 100) * Number(IP)).toFixed(2);
+
+
+
+                $('#txtIGSTAmt' + ChargesTypeId).val(Amt);
+
+
+
+                Total = Number(Number(Amt) + Number(RetValue)).toFixed(2);
+
+                item.IGSTAmt = Amt;
+            }
+            else if (GST == 'CGST/SGST') {
+                var CP = $('#txtCGSTPer' + ChargesTypeId).val();
+
+                if (tax == "Bill") {
+                    CP = 0;
+                }
+                var AmtC =Number((RetValue / 100) * CP).toFixed(2);
+                $('#txtCGSTAmt' + ChargesTypeId).val(AmtC);
+
+             //   var SP = $('#txtSGSTPer' + ChargesTypeId).val();
+               // var AmtS = Math.ceil(Number((RetValue / 100) * SP)).toFixed(2);
+                $('#txtSGSTAmt' + ChargesTypeId).val(AmtC);
+
+                Total = Number(Number(AmtC) + Number(AmtC) + Number(RetValue)).toFixed(2);
+
+                item.CGSTAmt = AmtC;
+                item.SGSTAmt = AmtC;
+            }
+            $('#txtTotal' + ChargesTypeId).val(Total);
+            var TTotal = 0;
+            $('#tblChargesDet tbody tr').each(function (i, item) {
+                TTotal = Number(TTotal) + Number($(item).find('td').eq(11).children('input[type="text"]').val());
+            });
+            $('#Total').val(Number(TTotal).toFixed(2));
+         //   var GrandTotal = Math.ceil(TTotal);
+            $('#GrandTotal').val(TTotal)
+            var Roundup = Number(TTotal) - Number(TTotal);
+            $('#Roundup').val(Number(Roundup).toFixed(2));
+
+            item.RetValue = RetValue;
+            item.Total = Total;
+            $('#ChargesJson').val(JSON.stringify(ChargesJson));
+            /*}
+            else
+            {
+                alert("Return Value should be less than or equal to");
+                $('#txtRetValue').focus();
+
+            }*/
+        }
+        function LoadPage() {
+            $('#DivBody').load('/CashManagement/VLDA_CashManagement/CreateDebitNote');
+        }
+        function DROnFailure() { }
+        function DROnSuccess(data) {
+            if (data.Status == 1) {
+                $('#DivSucMsg').html('Debit Note Saved Successfully');
+                $('#CRNoteNo').val(data.Data);
+                $('#btnIRN').removeAttr("disabled");
+              //  setTimeout(function () { LoadPage(); }, 3000);
+            }
+            else if (data.Status == 3) {
+                $('#DivSucMsg').html('Party SD Balance is low');
+              //  setTimeout(function () { LoadPage(); }, 3000);
+            }
+
+            else {
+                $('#DivErrMsg').html(data.Message);
+            }
+          //  setTimeout(function () { $('#DivSucMsg,#DivErrMsg').html(''); }, 5000);
+        }
+        function SearchDebitNoteNo() {
+            var InvoiceNo = $('#SearchDebitNo').val().trim();
+            if (InvoiceNo == "")
+                alert("Enter Debit Note No. to Search");
+            else
+                $('#DivListofDR').load('/CashManagement/VLDA_CashManagement/SearchDebitNote?Search=' + InvoiceNo);
+            
+        }
+
+        function InvoiceNoSerach()
+        {
+
+           
+                debugger;
+                $.ajax({
+                    url: '/CashManagement/VLDA_CashManagement/GetInvoiceNoForDebitCreditNote',
+                    type: 'GET',
+                    dataType: 'JSON',
+                    data:{CRDR:"D"},
+                    success: function (data) {
+                        debugger;
+                        if (data != '') {
+                          //  $('#hdnShippingBillList').val(data.Data);
+                            //var EcJson = JSON.parse(data.Data);
+                            var html = '';
+                            var TabValue = 51;
+                            $.each(data.Data, function (i, item) {
+                                html += '<li tabindex=' + TabValue + ' id="' + item.InvoiceId + '" onkeypress="FillDetails(' + item.InvoiceId + ',&quot;' + item.InvoiceNo + '&quot;);" onclick="FillDetails(' + item.InvoiceId + ',&quot;' + item.InvoiceNo + '&quot;);">' + item.InvoiceNo + '</li>';
+                                TabValue++;
+                            });
+                            $('#lstInvoice').html(html);
+                        }
+                    }
+                });
+            }
+       
+
+        $('#BtnSave').on('click', function () {
+            if($('#InvoiceNo').val()=="")
+            {
+                alert("Please select Invoice No.");
+                return false;
+            }
+            if($('#GrandTotal').val()=="0" || $('#GrandTotal').val()=="")
+            {
+                alert("Zero Value can not be saved");
+                return false;
+            }
+
+            if (confirm("Are You Sure You Want To Save?")) {
+
+                $('#BtnSave').attr('disabled', true);
+                $('#BtnSave').submit();
+            }
+
+
+           
+        });
+
+        function GenerateIRN() {
+            $('.modalloader').show();
+
+            debugger;
+            $.ajax({
+                url: '/CashManagement/VLDA_CashManagement/GetGenerateIRNCreditNote',
+                type: 'POST',
+                dataType: 'JSON',
+                data: { CrNoteNo: $('#CRNoteNo').val(), SupplyType: $('#SupplyType').val(), Type: "DBN", CRDR: "D" },
+                success: function (data) {
+                    debugger;
+                    if (data != '') {
+                        debugger;
+                        $('.modalloader').hide();
+                        if (data.Status == 1) {
+                            alert("IRN has been generated successfully")
+                          
+
+                            $('#btnIRN').attr('disabled', true);
+                        }
+                        else {
+                            alert(data.Message);
+                            $('#btnIRN').attr('disabled', true);
+                        }
+
+                    }
+                }
+            });
+        }
+        var Page = 0;
+
+        function LoadInvoice() {
+            debugger;
+            Page = 0;
+            $.ajax({
+                url: '/CashManagement/VLDA_CashManagement/LoadInvoicedebitLists',
+                type: 'GET',
+                data: { invoiceno: "", Page: Page },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        debugger;
+                        var html = '';
+                        var tab = 401;
+                        $.each(data.Data.lstInvcNo, function (item, elem) {
+                            debugger;
+                            html += '<tr tabindex=' + tab + '_' + item + ' onkeypress="FillDetails(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;)" onclick="FillDetails(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;)"><td colspan="10" width="100%" class="txt_wrp">' + elem.InvoiceNo + '</td></tr>';
+                            //  html += '<li tabindex=' + TabValue + ' id="' + elem.InvoiceId + '" onkeypress="FillDetails(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;);" onclick="FillDetails(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;);">' + elem.InvoiceNo + '</li>';
+                            //  html += '<li tabindex=' + TabValue + ' id="' + item.InvoiceId + '" onkeypress="FillDetails(' + item.InvoiceId + ',&quot;' + item.InvoiceNo + '&quot;);" onclick="FillDetails(' + item.InvoiceId + ',&quot;' + item.InvoiceNo + '&quot;);">' + item.InvoiceNo + '</li>';
+                        });
+
+                        $('#tbleParty tbody').html(html);
+
+                        if (data.Data.State == true)
+                            $('#btnLoadMore').prop('disabled', false);
+                        else $('#btnLoadMore').prop('disabled', true);
+                    }
+                }
+            });
+        }
+        // var Page = 0;
+        function LoadMoreInvoice() {
+            debugger;
+            $.ajax({
+                url: '/CashManagement/VLDA_CashManagement/LoadInvoicedebitLists',
+                type: 'GET',
+                data: { invoiceno: "", Page: Page + 1 },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        debugger;
+                        var html = '';
+                        var tab = 401;
+                        $.each(data.Data.lstInvcNo, function (item, elem) {
+                            debugger;
+                            html += '<tr tabindex=' + tab + '_' + item + ' onkeypress="FillDetails(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;)" onclick="FillDetails(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;)"><td colspan="10" width="100%" class="txt_wrp">' + elem.InvoiceNo + '</td></tr>';
+                            // html += '<li tabindex=' + TabValue + ' id="' + elem.InvoiceId + '" onkeypress="FillDetails(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;);" onclick="FillDetails(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;);">' + elem.InvoiceNo + '</li>';
+                            // html += '<li tabindex=' + TabValue + ' id="' + item.InvoiceId + '" onkeypress="FillDetails(' + item.InvoiceId + ',&quot;' + item.InvoiceNo + '&quot;);" onclick="FillDetails(' + item.InvoiceId + ',&quot;' + item.InvoiceNo + '&quot;);">' + item.InvoiceNo + '</li>';
+                            // html += '<tr tabindex=' + tab + '_' + item + ' onkeypress="SelectContainer(&quot;' + elem.ContainerNo + '&quot;,&quot;' + elem.CFSCode + '&quot;)" onclick="SelectContainer(&quot;' + elem.ContainerNo + '&quot;,&quot;' + elem.CFSCode + '&quot;)"><td colspan="6" width="50%" class="txt_wrp">' + elem.ContainerNo + '</td><td colspan="6" width="50%" class="txt_wrp">' + elem.CFSCode + '</td></tr>';
+                        });
+                        if (Page == -1)
+                            $('#tbleParty tbody').html(html);
+                        else
+                            $('#tbleParty tbody').append(html);
+                        Page++;
+
+                        debugger;
+                        if (data.Data.State == true)
+                            $('#btnLoadMore').prop('disabled', false);
+                        else $('#btnLoadMore').prop('disabled', true);
+                    }
+                }
+            });
+        }
+        /*$('#Partybox').on('keyup', function (e) {
+        function Partyboxkeyup(e)
+        {
+            if ((e.keyCode >= 97 && e.keyCode <= 122) || (e.keyCode >= 65 && e.keyCode <= 90) || e.keyCode == 13 || e.keyCode == 46 || e.keyCode == 47)
+            {
+                SearchPartyByPartyCode();
+            }
+        }
+        });*/
+        function SearchInvoice() {
+            debugger;
+            if ($('#Containerbox').val() != '') {
+                $.ajax({
+                    url: '/CashManagement/VLDA_CashManagement/SearchdebitInvoice',
+                    type: 'GET',
+                    data: { invoiceno: $('#Invoicebox').val() },
+                    success: function (data) {
+                        if (data.Status == 1) {
+                            var html = '';
+                            var tab = 401;
+                            $.each(data.Data.lstInvcNo, function (item, elem) {
+                                //  html += '<tr tabindex=' + TabValue +'_'+ ' id="' + elem.InvoiceId + '" onkeypress="FillDetails(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;);" onclick="FillDetails(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;);">' + elem.InvoiceNo + '</li>';
+                                html += '<tr tabindex=' + tab + '_' + item + ' onkeypress="FillDetails(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;)" onclick="FillDetails(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;)"><td colspan="10" width="100%" class="txt_wrp">' + elem.InvoiceNo + '</td></tr>';
+                            });
+                            $('#tbleParty tbody').html('');
+                            $('#tbleParty tbody').html(html);
+                            $('#btnLoadMore').prop('disabled', true);
+                            Page = -1;
+                        }
+                        else {
+                            $('#tbleParty tbody').html('');
+                            Page = -1;
+                            $('#btnLoadMore').prop('disabled', false);
+                        }
+
+                    }
+                });
+            }
+            else
+                LoadInvoice();
+        }
+
+        function CloseInvoice() {
+            $('#Invoicebox').val('');
+            $("#InvoiceNoModal").modal("hide");
+            LoadInvoice();
+            // $('#PartyName').focus();
+        }
+        function debounce(func, wait, immediate) {
+            var timeout;
+            return function () {
+                var context = this, args = arguments;
+                var later = function () {
+                    timeout = null;
+                    if (!immediate) func.apply(context, args);
+                };
+                var callNow = immediate && !timeout;
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+                if (callNow) func.apply(context, args);
+            };
+        };
+
+        document.getElementById('Invoicebox').addEventListener('keyup', debounce(function () {
+            SearchInvoice()
+        }, 800));
+    </script>
+

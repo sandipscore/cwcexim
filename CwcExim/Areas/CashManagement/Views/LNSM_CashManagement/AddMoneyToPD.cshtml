@@ -1,0 +1,384 @@
+﻿ @model CwcExim.Areas.CashManagement.Models.LNSM_AddMoneyToPDModel
+
+<input type="hidden" id="Parties" value="@ViewBag.Parties.ToString()" />
+@using (Ajax.BeginForm("AddMoneyToPD", "LNSM_CashManagement", new AjaxOptions { HttpMethod = "POST", OnSuccess = "OnSuccess", LoadingElementDuration = 1000, LoadingElementId = "divProgress" }))
+            {
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Add Money to SD </h4>
+                        </div>
+                    </div>
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.PartyId, new { Value = "0000000000" })
+
+                    @if (ViewBag.RightsList != null)
+                    {
+                        <input type="hidden" id="hdnRights" value="@ViewBag.RightsList" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="hdnRights" value="" />
+                    }
+
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-1-5">
+                                @Html.LabelFor(m => m.ReceiptNo)
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.ReceiptNo, new { Value = "000000", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.ReceiptNo)
+                            </div>
+                            <div class="col-md-offset-4 col-md-1-5">
+                                @Html.LabelFor(m => m.TransDate)
+                            </div>
+                            <div class="col-md-2 Date_Img">
+                                @Html.TextBoxFor(m => m.TransDate, new { Value = DateTime.Today.ToString("dd/MM/yyyy"), @readonly = true })
+                                @Html.ValidationMessageFor(m => m.TransDate)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-1-5">
+                                @Html.LabelFor(m => m.PartyName)
+                            </div>
+                            <div class="col-md-10-5">
+                                @Html.TextBoxFor(m => m.PartyName)
+                                @Html.ValidationMessageFor(m => m.PartyName)
+                                <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyList"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-1-5">
+                                @Html.LabelFor(m => m.Address)
+                            </div>
+                            <div class="col-md-10-5">
+                                @Html.TextAreaFor(m => m.Address)
+                                @Html.ValidationMessageFor(m => m.Address)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-1-5">
+                                @Html.LabelFor(m => m.FolioNo)
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.FolioNo, new { @readonly = true })
+                                @Html.ValidationMessageFor(m => m.FolioNo)
+                            </div>
+                            <div class="col-md-offset-4 col-md-1-5">
+                                @Html.LabelFor(m => m.OpBalance)
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.OpBalance, new { @readonly = true })
+                                @Html.ValidationMessageFor(m => m.OpBalance)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="col-md-12">
+                            <table id="TblPaymentMode" class="table table-bordered table-striped dataTable" cellspacing="0" width="100%">
+                                <thead>
+                                    <tr>
+                                        <th>Mode</th>
+                                        <th>Drawee Bank</th>
+                                        <th>Instrument No.</th>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (var i = 0; i < 5; i++)
+                                    {
+                                        <tr>
+                                            <td>@Html.DropDownListFor(m => m.Details[i].Type, (SelectList)ViewBag.Type)</td>
+                                            <td>@Html.TextBoxFor(m => Model.Details[i].Bank)</td>
+                                            <td>@Html.TextBoxFor(m => Model.Details[i].InstrumentNo)</td>
+                                            <td class="Datetab Datetab_Img">@Html.TextBoxFor(m => Model.Details[i].Date, new { @placeholder = "dd/mm/yyyy" })</td>
+                                            <td>@Html.TextBoxFor(m => Model.Details[i].Amount, new { @onblur = "Calculate()" })</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-offset-8 col-md-1-5">
+                                <label>Total:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                <input type="text" id="txtTotal" value="0" readonly />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-offset-8 col-md-1-5">
+                                <label>Closing:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                <input type="text" id="txtClosing" value="" readonly />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-offset-3 col-md-2 SignUp_space_bottom">
+                            <input type="submit" class="btn log_Btn_sm" value="Save" id="BtnSaveAddMoneyPD" onclick="return ValidateCash()" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Print" id="btnPrint" onclick="AddMoneyPDPrint()" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Reset" id="btnReset" onclick="AddMoneyPDReset()" />
+                        </div>
+                    </div>
+
+
+                   
+
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-12">
+                            <div class="col-md-2">
+                                <input type="button" id="ShowList" class="btn log_Btn_sm" value="ShowList" onclick="GetPDList()">
+                            </div>
+                            <div class="col-md-offset-5 col-md-3 Error_Msg">
+                                <input type="text" placeholder="Search by Receipt No." id="SearchReceiptNo">
+                                @Html.ValidationMessage("SearchReceiptNo")
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" value="Search" onclick="SearchAddMoneyDetails()" class="btn log_Btn_sm">
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group Form_Input">
+                    <div class="col-md-12">
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div id="DivAddMoneyToPDList" class="col-md-12 ClearFix SignUp_space_bottom">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+<div class="modal fade" id="PartyList" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Party Names</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="CHAbox" type="text" />
+                <ul class="navList" id="lstCHA"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    var r = JSON.parse($("#hdnRights").val());
+    if (r.CanAdd == 1) {
+        // $('#btnSave').css('display', 'block');
+        $('#BtnSaveAddMoneyPD').removeAttr("disabled");
+
+    } else {
+        //$('#btnSave').css('display', 'none');
+        $('#BtnSaveAddMoneyPD').attr("disabled", true);
+    }
+    $("#btnPrint").prop("disabled", true);
+
+    function OnSuccess(data) {
+        alert(data.Message);
+        if (data.Status) {
+            $('#ReceiptNo').val(data.Data);
+            $('#BtnPrint').prop('disabled', false);
+            $('#BtnSaveAddMoneyPD').attr('disabled', true);
+            GetPDList();
+        }
+    }
+    //debugger;
+    var curdate = new Date('@ViewBag.ServerDate');
+    var startDate = new Date('2023-04-01');
+    var enddate = new Date('2023-04-06 23:59');
+    if (curdate >= startDate && curdate <= enddate)
+    {
+        $('#TransDate').datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            minDate: new Date('2023-03-31'),
+            maxDate: new Date('2023-03-31'),
+            onClose: function () {
+            }
+        });
+    }
+
+
+    for (var i = 0; i < 5; i++) {
+        $('#Details_' + i + '__Date').datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+            }
+        });
+    }
+    GenerateParties();
+    function GenerateParties() {
+        var parties = JSON.parse($('#Parties').val());
+        //debugger;
+        var html = '';
+        $.each(parties, function (i, item) {
+            html += '<li id="' + item.Id + '" onclick="GetPartyDetails(this)">' + item.Name + '</li>';
+        });
+        $('#lstCHA').html(html);
+    }
+    function GetPartyDetails(elem) {
+        //debugger;
+        var Party = $(elem).text();
+        var PartyName = Party.split('_');
+        $('#PartyName').val(PartyName[0]);
+        $('#PartyId').val($(elem).attr('id'));
+        var parties = JSON.parse($('#Parties').val());
+        var party = $.grep(parties, function (item) { return item.Id == $(elem).attr('id'); })[0];
+        $('#FolioNo').val(party.Folio);
+        $('#Address').val(party.Address);
+        $('#OpBalance').val(party.Balance);
+        $("#PartyList").modal("hide");
+    }
+    $('#CHAbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstCHA > li').show();
+        else {
+            $('#lstCHA > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    function Calculate() {
+        var amt = 0;
+        for (var i = 0; i < 5; i++) {
+            amt += Number($('#Details_' + i + '__Amount').val());
+        }
+        $('#txtTotal').val(amt);
+        $('#txtClosing').val(Number($('#OpBalance').val()) + amt);
+    }
+    function AddMoneyPDPrint() {
+
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetBulkReceiptReport", "LNSM_CashManagement", new { Area = "CashManagement" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                ReceiptNumber: $('#ReceiptNo').val(),
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+    }
+    function AddMoneyPDReset() {
+        $('#DivBody').load('/CashManagement/LNSM_CashManagement/AddMoneyToPD');
+    }
+    $('#BtnSaveAddMoneyPD').click(function () {
+        $("#btnPrint").prop("disabled", false);
+    });
+    function ValidateCash() {
+        var isErrorFound = false;
+        $('#TblPaymentMode tbody tr').each(function (i) {
+            if (!isErrorFound) {
+                var tblAmnt = parseInt($(this).find('td').eq(4).children('input[type="text"]').val());
+                if (tblAmnt > 0) {
+                    var mode = $(this).find('td').eq(0).children('select').val();
+                    var bank = $(this).find('td').eq(1).children('').val();
+                    var instrument = $(this).find('td').eq(2).children('').val();
+                    if (mode == "") {
+                        isErrorFound = true;
+                        alert("Please select the Mode of Payment Details");
+                        return false;
+                    }
+                    if (bank == "" && mode != 'CASH') {
+                        isErrorFound = true;
+                        alert("Please select the Drawee Bank for Payment Details");
+                        return false;
+                    }
+                    if (instrument == "" && mode != 'CASH') {
+                        isErrorFound = true;
+                        alert("Please select Instrument No for Payment Details");
+                        return false;
+                    }
+                }
+            }
+
+        })
+        if (isErrorFound) {
+            return false;
+        }
+    };
+
+
+    function GetPDList() {
+        $('#DivAddMoneyToPDList').load('@Url.Action("AddMoneyToPDList", "LNSM_CashManagement", new { area = "CashManagement" })');
+    }
+
+    function SearchAddMoneyDetails() {
+        //debugger;
+        var ReceiptNo = $('#SearchReceiptNo').val();
+        if (ReceiptNo == '' || ReceiptNo == null) {
+            $("span[data-valmsg-for='SearchReceiptNo']").text('Fill this field');
+        }
+        else {
+            $("span[data-valmsg-for='SearchReceiptNo']").text('');
+            $('#DivAddMoneyToPDList').load('/CashManagement/LNSM_CashManagement/GetAddMoneyToPDListBySearch?ReceiptNo=' + ReceiptNo + '');
+        }
+
+    }
+</script>

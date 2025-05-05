@@ -1,0 +1,112 @@
+﻿@model IEnumerable<CwcExim.Areas.Bond.Models.ListOfWFLDBondWODeli>
+<table class="table table-striped table-bordered" id="tblWODeli" style="width:100%;">
+    <thead>
+        <tr>
+            <th style="width:5%;" class="text-center">@Html.DisplayName("SL No")</th>
+            <th style="width:20%;">@Html.DisplayNameFor(m => m.WorkOrderNo)</th>
+            <th style="width:15%;">@Html.DisplayNameFor(m=>m.WorkOrderDate)</th>
+            <th style="width:20%;">@Html.DisplayName("BondNo")</th>
+            <th style="width:15%;">@Html.DisplayName("BondDate")</th>
+            <th style="width:15%;">@Html.DisplayNameFor(m => m.SacNo)</th>
+            <th style="width:5%;" class="text-center">@Html.DisplayName("Edit")</th>
+            <th style="width:5%;" class="text-center">@Html.DisplayName("View")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{ var SerialNo = 1;
+            foreach (var data in Model)
+            {
+                <tr>
+                    <td style="width:5%;"  class="text-center">@SerialNo.ToString()</td>
+                    <td style="width:20%;">@data.WorkOrderNo</td>
+                    <td style="width:15%;">@data.WorkOrderDate</td>
+                    <td style="width:20%;">@data.BondBOENo</td>
+                    <td style="width:15%;">@data.BondBOEDate</td>
+                    <td style="width:15%;">@data.SacNo</td>
+                    <td style="width:5%;"  class="text-center"><a href="#" onclick="EditBondWO(@data.BondWOId)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td style="width:5%;"  class="text-center"><a href="#" onclick="ViewBondWO(@data.BondWOId)"><i class="fa fa-search-plus Edit"></i></a></td>
+                </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+<script>
+    $(document).ready(function () {
+        var tblWODeli = $('#tblWODeli').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                       { "sName": "SL No","width": "5%" },
+                       { "sName": "WorkOrderNo", "bSortable": false , "width": "20%" },
+                       { "sName": "WorkOrderDate", "bSortable": false , "width": "15%" },
+                       { "sName": "BondBOENo", "bSortable": false , "width": "20%" },
+                       { "sName": "BondBOEDate", "bSortable": false , "width": "15%" },
+                       { "sName": "SacNo", "bSortable": false , "width": "15%" },
+                       { "sName": "Edit", "bSortable": false, "width": "5%" },
+                       { "sName": "View", "bSortable": false, "width": "5%" },
+                       //{ "sName": "PrintPreview", "bSortable": false, "width": "10%" },
+
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0),td:eq(6),td:eq(7)', nRow).addClass("text-center");
+                $('td:eq(0),td:eq(6),td:eq(7)', nRow).css("width", "5%");
+                $('td:eq(1),td:eq(3)', nRow).css("width", "20%");
+                $('td:eq(2),td:eq(4),td:eq(5)', nRow).css("width", "15%");
+            }
+        });
+        new $.fn.dataTable.FixedHeader(tblWODeli);
+    });
+    function EditBondWO(BondWOId)
+    {
+        $('#DivBody').load('/Bond/VLDABond/EditWODeli?BondWOId=' + BondWOId);
+    }
+    function ViewBondWO(BondWOId)
+    {
+        $('#DivBody').load('/Bond/VLDABond/ViewWODeli?BondWOId=' + BondWOId);
+    }
+    var Page = 0;
+    function LoadMoreListData() {
+        debugger;
+        //Page = Page + 1;
+        var dynamicurl = '';
+        if ($('#hdnWoType').val() == 'U')
+        {
+            dynamicurl='/Bond/VLDABond/LoadMoreListWOForUnloading';
+        }
+        if ($('#hdnWoType').val() == 'D') {
+            dynamicurl = '/Bond/VLDABond/LoadMoreListOfWODeli';
+        }
+        $.ajax({
+            url: dynamicurl,
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1, WoType: $('#hdnWoType').val() },
+            success: function (data) {
+                //debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblWODeli').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        //debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.WorkOrderNo],
+        [item.WorkOrderDate],
+        [item.BondBOENo],
+        [item.BondBOEDate],
+        [item.SacNo],
+        ['<a href="#" onclick=EditBondWO(' + [item.BondWOId] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#" onclick=ViewBondWO(' + [item.BondWOId] + ')><i class="fa fa-search-plus Edit"></i></a>'],
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+</script>

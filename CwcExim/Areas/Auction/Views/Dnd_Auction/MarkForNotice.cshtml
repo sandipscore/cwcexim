@@ -1,0 +1,167 @@
+﻿
+<div class="container-fluid">
+    <div style="width:90%;margin-left:auto;margin-right:auto;">
+        <div class="Head_h4">
+            <div class="row">
+                <div class="col-md-12">
+                    <h4>Mark For Auction</h4>
+                </div>
+            </div>
+            <div class="row SignUp_space_top2">
+                <div class="col-md-1-5">
+                    <label>LOT NO <span style="color:red;">*</span></label>
+                </div>
+                <div class="col-md-2-5">
+                    <input id="txtLotNo" type="text" class="form-control input-sm" />
+                    <span id="txtSpan" style="color:red;"></span>
+                </div>
+            </div>
+            <div class="row SignUp_space_top2">
+                <div class="col-md-12">
+                    <table id="TbLImportExport" class="table table-bordered table-responsive dataTable">
+                        <thead>
+                            <tr>
+                                <th>Notice No</th>
+                                <th>Notice Date</th>
+                                <th>Party</th>
+                                <th style="padding:0px 5px;">
+                                    <table class="table nowrap" style="background-color:transparent">
+                                        <thead>
+                                            <tr>
+                                                <th style="border-bottom:none;border-right:1px solid #ddd;font-size:0.98em !important;">Commodity</th>
+                                                <th style="width:30%;border-bottom:none;font-size:0.98em !important;">Weight</th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                </th>
+                                <th style="text-align:center;">Auction</th>
+                            </tr>
+                        </thead>
+                        <tbody id="MarkForNoticeTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+           
+                <div class="row SignUp_space_bottom SignUp_space_top">
+                    <div class="col-md-12">
+                        <div class="stoke"></div>
+                    </div>
+                </div>
+                <div class="logSuccMsg Form_Space_bottom" id="msgDiv" style="background-color:transparent"></div>
+                <div class="row" style="padding-bottom:15px;">
+                    <div class="col-md-offset-4 col-md-2">
+                        <input type="button" value="Save" class="btn log_Btn_sm" id="btnSave" onclick="SaveMarkForNotice()" />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="button" value="Reset" class="btn log_Btn_sm" id="btnReset" onclick="Reset()" />
+                    </div>
+                </div>
+                <div class="row SignUp_space_top2 SignUp_space_bottom2">
+                    <div class="col-md-12">
+                        <div class="stoke"></div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 SignUp_space_bottom">
+                        <div id="DivNoticeList">
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+</div>
+
+
+<script>
+
+    var SelectedIdList = [];
+
+    $(document).ready(function () {
+        PopulateData();
+        LoadMarkedList();
+    });
+   
+
+    function PopulateData() {
+
+        $.ajax({
+            type: 'GET',
+            url: '/Auction/Dnd_Auction/PopulateDataForMarkForNotice',
+            dataType: 'JSON',
+            success: function (data) {
+                if (data != null && data.length > 0) {
+                    $('#MarkForNoticeTbody').html(data);
+                }
+                else {
+                    $('#MarkForNoticeTbody').html('');
+                }
+
+            }
+        });
+    }
+
+    function MarkForNoticeChecked(Id) {
+
+        if ($('#chk_' + Id).is(":checked")) {
+            SelectedIdList.push(Id);
+        } else {
+            for (var i = 0; i < SelectedIdList.length; i++) {
+                if (SelectedIdList[i] == Id) {
+                    SelectedIdList.splice(i, 1);
+                    break;
+                }
+            }
+        }
+    }
+
+    function SaveMarkForNotice() {
+        if ($('#txtLotNo').val() == '' || $('#txtLotNo').val() == null) {
+            $('#txtSpan').text('LOT NO field is required');
+        }
+        else {
+
+            $('#txtSpan').text('');
+
+            if (SelectedIdList.length > 0)
+            {
+                $.ajax({
+                    contentType: 'application/json; charset=utf-8',
+                    type: 'POST',
+                    url: '/Auction/Dnd_Auction/SaveMarkForNotice?lotNo=' + $('#txtLotNo').val() + '',
+                    data: JSON.stringify(SelectedIdList),
+                    dataType: 'JSON',
+                    success: function (data) {
+                        if (data.Status == 1) {
+                            $('#msgDiv').html("Auction has marked successfully.").removeClass('logErrMsg').addClass('logSuccMsg');
+                            SelectedIdList.length = 0;
+                            setTimeout(Reset, 3000);
+                        }
+                        else {
+                            $('#msgDiv').html(data.Message).removeClass('logSuccMsg').addClass('logErrMsg');
+                        }
+                    }
+                });
+            }
+            else
+            {
+                alert('Please Select One Auction No');
+            }
+         
+        }
+       
+
+
+
+    }
+
+    function Reset() {
+        $('#DivBody').load('/Auction/Dnd_Auction/MarkForNotice');
+        PopulateData();
+        LoadMarkedList();
+    }
+
+    function LoadMarkedList() {
+        $('#DivNoticeList').load('/Auction/Dnd_Auction/GetAuctionMarkedNoticeList');
+    }
+
+</script>

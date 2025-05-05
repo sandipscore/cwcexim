@@ -1,0 +1,276 @@
+﻿@model CwcExim.Areas.GateOperation.Models.Weighment
+    <script>
+        $(function () {
+            $('#DivWeighmentList').load('/GateOperation/Weighment/GetWeighmentList');
+        });
+        $('#WeightmentDate').datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $("[data-valmsg-for='WeightmentDate']").html('');
+            }
+        });
+        function LoadWeighmentPage() {
+            $('#DivBody').load('/GateOperation/Weighment/CreateWeighment');
+        }
+        function WeighmentOnSuccess(data) {
+            if (data.Status == 1) {
+                $('#DivWeighmentMsg').html(data.Message);
+                setTimeout(LoadWeighmentPage, 5000);
+            }
+            else {
+                $('#DivWeighmentErrMsg').html(data.Message);
+            }
+        }
+
+        function WeighmentOnFailure() { }
+
+        function WeighmentReset() {
+            $('#DivWeighmentErrMsg').html('');
+            $('#DivWeighmentMsg').html('');
+            $('[data-valmsg-for]').html('<span></span>');
+            $('#DivCreateWeighment').find('input:text').val('');
+            $('#DivCreateWeighment').find('input:hidden').val('');
+        }
+
+        $('#ContainerBox').keyup(function () {
+            var valThis = $(this).val().toLowerCase();
+            if (valThis == "") {
+                $('#ContainerModal .navList > li').show();
+            } else {
+                $('#ContainerModal .navList > li').each(function () {
+                    var text = $(this).text().toLowerCase();
+                    (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+                });
+            };
+        });
+        $('#ContainerList li').on("click", function () {
+            debugger;
+            $('#ContainerNo').val($(this).text());
+            $('#CFSCode').val($(this).attr('id'));
+            var CFSCode = $('#CFSCode').val();
+            $("#ContainerModal").modal("hide");
+        });
+            
+        $('#VehicleBox').keyup(function () {
+            var valThis = $(this).val().toLowerCase();
+            if (valThis == "") {
+                $('#VehicleModal .navList > li').show();
+            } else {
+                $('#VehicleModal .navList > li').each(function () {
+                    var text = $(this).text().toLowerCase();
+                    (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+                });
+            };
+        });
+        $('#VehicleList li').on("click", function () {
+            $('#VehicleNumber').val($(this).text());
+            $('#VehicleMasterId').val($(this).attr('id'));
+            $("#VehicleModal").modal("hide");
+        })
+    </script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "WeighmentOnSuccess";
+    options.OnFailure = "WeighmentOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+<div id="DivCreateWeighment">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("AddWeighmentDet", "Weighment", options))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Weighment</h4>
+                        </div>
+                    </div>
+                    <div class="content_wrp">
+                        <div class="row Form_Space_top">
+
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label class="Radiocontainer">
+                                        Import
+                                       @Html.RadioButtonFor(m => m.OperationType, "Import", new { @class = "", @id = "Import", @checked = true })
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <label class="Radiocontainer">
+                                        Export
+                                       @Html.RadioButtonFor(m => m.OperationType, "Export", new { @class = "", @id = "Export" })
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            @*<div class="form-group Form_Input">
+                                <div class="col-md-1 col_cus_2">
+                                    <div class="boolean-container">
+                                        @Html.RadioButtonFor(m => m.OperationType, "Import", new { @class = "", @id = "Import", @checked = true })
+                                        <label for="Import"><i class="circle"></i><span>Import</span></label>
+                                    </div>
+                                </div>
+                                <div class="col-md-1 col_cus_2">
+                                    <div class="boolean-container">
+                                        @Html.RadioButtonFor(m => m.OperationType, "Export", new { @class = "", @id = "Export" })
+                                        <label for="Export"><i class="circle"></i><span>Export</span></label>
+                                    </div>
+                                </div>
+                            </div>*@
+                        </div>
+
+                            <div class="row Form_Space_top">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        @Html.LabelFor(m => m.ContainerNo, new { @class = "InputLabel" })<label class="LabelColon">:</label>
+                                    </div>
+                                    <div class="position-relative">
+                                        @Html.TextBoxFor(m => m.ContainerNo, "", new { @placeholder = "Container No", @readonly = true })
+                                        <span class="input_icon"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerModal"></i></span>
+                                        @Html.ValidationMessageFor(m => m.ContainerNo, "", new { @class = "Error_Msg" })
+                                        @Html.HiddenFor(m => m.CFSCode)
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-md-offset-6">
+                                    <div class="form-group">
+                                        @Html.LabelFor(m => m.WeightmentDate, new { @class = "InputLabel" })<label class="LabelColon">:</label>
+                                    </div>
+                                    <div class="position-relative Date_Img">
+                                        @Html.TextBoxFor(m => m.WeightmentDate, "", new { @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.WeightmentDate, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        @Html.LabelFor(m => m.VehicleNumber, new { @class = "InputLabel" })<label class="LabelColon">:</label>
+                                    </div>
+                                    <div class="position-relative">
+                                        @Html.TextBoxFor(m => m.VehicleNumber, "", new { @placeholder = "Vehicle No", @readonly = true })
+                                        <span class="input_icon"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#VehicleModal"></i></span>
+                                        @Html.ValidationMessageFor(m => m.VehicleNumber, "", new { @class = "Error_Msg" })
+                                        @Html.HiddenFor(m => m.VehicleMasterId)
+                                    </div>
+                                </div>
+                                    <div class="col-md-3 col-md-offset-6">
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.Weight, new { @class = "InputLabel" })<label class="LabelColon">:</label>
+                                        </div>
+                                        @Html.TextBoxFor(m => m.Weight, "")
+                                        @Html.ValidationMessageFor(m => m.Weight, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            <div class="row Form_Space_top">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        @Html.LabelFor(m => m.EmptyWeight, new { @class = "InputLabel" })<label class="LabelColon">:</label>
+                                    </div>
+                                        @Html.TextBoxFor(m => m.EmptyWeight, "")
+                                        @Html.ValidationMessageFor(m => m.EmptyWeight, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                            </div>
+                            <div class="SignUp_space_bottom">
+                                <div class="d-flex justify-content-left">
+                                    <input type="submit" id="BtnWeighmentSave" value="Save" class="btn btn-primary mr-1 btn-100px" />
+                                    <input type="button" id="BtnWeighmentReset" value="Reset" class="btn btn-primary-border mr-1 btn-100px" onclick="WeighmentReset()" />
+                                </div>
+                            </div>
+                            <div class="logErrMsg" style="background-color:transparent" id="DivWeighmentErrMsg"></div>
+                            <div class="logSuccMsg SignUp_space_bottom2" style="background-color:transparent">
+                                <div id="DivWeighmentMsg"></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12 SignUp_space_bottom">
+                                    <div id="DivWeighmentList">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                }
+                
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="VehicleModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Vehicle</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="VehicleBox" type="text" />
+                <ul class="navList" id="VehicleList">
+                    @{
+                        if (ViewBag.VehicleList != null)
+                        {
+                            foreach (var item in ViewBag.VehicleList)
+                            {
+                                <li id="@item.Value">@item.Text</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn btn-primary-border mr-1 btn-100px" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ContainerModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Container No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="ContainerBox" type="text" />
+                <ul class="navList" id="ContainerList">
+                    @{
+                        if (ViewBag.ContainerList != null)
+                        {
+                            foreach (var item in ViewBag.ContainerList)
+                            {
+                                <li id="@item.Value">@item.Text</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn btn-primary-border mr-1 btn-100px" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@Scripts.Render("~/bundles/jqueryval")

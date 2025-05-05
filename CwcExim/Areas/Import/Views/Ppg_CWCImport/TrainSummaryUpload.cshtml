@@ -1,0 +1,391 @@
+﻿<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-11 col-md-offset-0-5">
+            <div class="container-fluid">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Train Summary Upload</h4>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 padding_rt">
+                                <label>Train No:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                @Html.TextBox("TrainNo", "", new { @class = "form-control", })
+                            </div>
+                            <div class="col-md-1-5">
+                                <label>Train Date:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBox("TrainDate", DateTime.Now.ToString("dd/MM/yyyy HH:mm"), new { @disabled = "disabled" })
+                            </div>
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Port:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBox("PortName", "", new { @disabled = "disabled" })
+                                <span class="search" id="SrchInvoiceNo"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PortModal"></i></span>
+                                <input type="hidden" id="PortId" value="0" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 padding_rt">
+                                <label>Select File:</label>
+                            </div>
+                            <div class="col-md-7">
+                                @Html.TextBox("PostedFile", "", new { type = "file", @class = "form-control" })
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" value="Upload" onclick="Upload()" class="btn log_Btn_sm" id="btnUpload" />
+                            </div>
+                        </div>
+                    </div>
+                    <br /><br />
+                    <div id="divTrainSummaryUpload" class="row Form_Space_top Form_Space_bottom">
+                        <div class="col-md-12">
+                            <table id="tblTrainSummaryUpload" class="table table-bordered table-striped dataTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width:8%;" class="text-center">Sl No</th>
+                                        @*<th>Wagon No</th>*@
+                                        <th>Container / CBT No</th>
+                                        <th>CT Size</th>
+                                        <th>Line Seal No</th>
+                                        <th>Cont Commodity</th>
+                                        <th>S Line</th>
+                                        @*<th>Ct Tare</th>
+                                            <th>Cargo Wt</th>
+                                            <th>Gross Wt</th>
+                                            <th>Ct Status</th>
+                                            <th>Destination</th>
+                                            <th>Smtp No</th>
+                                            <th>Received Date</th>
+                                            <th>Genhaz</th>*@
+                                        <th>Status</th>
+                                        <th>Delete</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="row SignUp_space_top SignUp_space_bottom">
+                        <div class="stoke"></div>
+                    </div>
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-offset-4 col-md-2">
+                            <input type="button" value="Save" onclick="SaveUploadData()" class="btn log_Btn_sm" id="btnSave" disabled />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" id="btnReset" class="btn log_Btn_sm" value="Reset" onclick="ResetAllField()" />
+                        </div>
+                    </div>
+                    <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div id="divTrainSummaryUploadList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="PortModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title"> Choose Port Name</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Portbox" type="text" />
+                <ul class="navList" id="lstPort"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+
+    $(function () {
+
+        $("#TrainNo").keydown(function (e) {
+            // Allow: backspace, delete, tab, escape, enter and .
+            if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 110, 190]) !== -1 ||
+                // Allow: Ctrl+A, Command+A
+                (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+                // Allow: home, end, left, right, down, up
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                // let it happen, don't do anything
+                return;
+            }
+            // Ensure that it is a number or character
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105) && (e.keyCode < 65 || e.keyCode > 90)) {
+                e.preventDefault();
+            }
+        });
+
+        $('#TrainDate').datetimepicker({
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            dateFormat: "dd/mm/yy",
+            altField: "#slider_example_4andHalf_alt",
+            altFieldTimeOnly: false,
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+                $('[data-valmsg-for="Data"]').html('<span></span>');
+            }
+        });
+        GetPortList();
+        ListOfTrainSummary();
+    });
+
+    function GetPortList() {
+        $.ajax({
+            type: 'GET',
+            url: '/Import/Ppg_CWCImport/GetPortList',
+            dataType: 'JSON',
+            success: function (data) {
+                var html = '';
+                if (data != null) {
+                    for (var i = 0; i < data.length; i++) {
+                        html += '<li id="' + data[i].PortId + '" onclick="selectPort(' + data[i].PortId + ',\'' + data[i].PortName + '\');">' + data[i].PortName + '</li>';
+                    }
+                }
+                else {
+                    html = '<li></li>';
+                }
+
+                $('#lstPort').html(html);
+            }
+        });
+    }
+
+    function ResetAllField() {
+        $('#DivBody').load('/Import/Ppg_CWCImport/TrainSummaryUpload');
+    }
+
+    function ListOfTrainSummary() {
+        $('#divTrainSummaryUploadList').load('/Import/Ppg_CWCImport/ListOfTrainSummary');
+    }
+
+    var TrainSummaryUploadListFromXL = [];
+    var CanDelete = true;
+
+    function Upload() {
+        if ($('#TrainNo').val() == null || $('#TrainNo').val() == '') {
+            alert('Please enter Train No.');
+            return false;
+        }
+        if ($('#PortName').val() == null || $('#PortName').val() == '') {
+            alert('Please choose Port Name.');
+            return false;
+        }
+        debugger;
+
+        if ($("#PostedFile")[0].files.length > 0) {
+            var uploadedFile = $("#PostedFile")[0].files[0];
+            var uploadedFileExtentionArray = uploadedFile.name.split('.');
+            var uploadedFileExtention = uploadedFileExtentionArray[uploadedFileExtentionArray.length - 1];
+            if (!(uploadedFileExtention == 'xls' || uploadedFileExtention == 'xlsx')) {
+                alert('Please select only Excel file.');
+                return false;
+            }
+        }
+        else {
+            alert('Please select an Excel file.');
+            return false;
+        }
+
+        var fdata = new FormData();
+        fdata.append('PostedFile', $("#PostedFile")[0].files[0]);
+
+        $.ajax({
+            type: 'POST',
+            url: '/Import/Ppg_CWCImport/CheckUpload?TrainNo=' + $('#TrainNo').val().toString(),
+            data: fdata,
+            dataType: 'JSON',
+            processData: false,
+            contentType: false,
+            enctype: 'multipart/form-data',
+            success: function (data) {
+                $('#DivDwnldWavMsg').html('')
+                debugger;
+                if (data.Status == 1) {
+
+                    if (confirm("This Train No already exist. Do you want to replace the data?")) {
+                        TrainSummaryUploadListFromXL = [];
+                        TrainSummaryUploadListFromXL = data.Data;
+                        PopulateGrid();
+                        $('#btnSave').attr('disabled', false);
+
+                    }
+                }
+                else if (data.Status == 0) {
+                    TrainSummaryUploadListFromXL = [];
+                    TrainSummaryUploadListFromXL = data.Data;
+                    PopulateGrid();
+                    $('#btnSave').attr('disabled', false);
+                }
+                else if (data.Status == 2) {
+                    TrainSummaryUploadListFromXL = [];
+                    TrainSummaryUploadListFromXL = data.Data;
+                    PopulateGrid();
+                    $('#btnSave').attr('disabled', true);
+                }
+                else if (data.Status == -1) {
+                    $('#DivDwnldWavMsg').html("No data in Excel File.").removeClass('logSuccMsg').addClass('logErrMsg');
+                    $('#tblTrainSummaryUpload tbody').html('');
+                    $('#btnSave').attr('disabled', true);
+                }
+                else if (data.Status == -2) {
+                    $('#DivDwnldWavMsg').html("Uploaded Excel file is wrong.").removeClass('logSuccMsg').addClass('logErrMsg');
+                    $('#tblTrainSummaryUpload tbody').html('');
+                    $('#btnSave').attr('disabled', true);
+                }
+                else if (data.Status == -3) {
+                    alert('Please select only Excel file.');
+                    $('#tblTrainSummaryUpload tbody').html('');
+                    $('#btnSave').attr('disabled', true);
+                }
+                else if (data.Status == -4) {
+                    alert('Please select an Excel file.');
+                    $('#tblTrainSummaryUpload tbody').html('');
+                    $('#btnSave').attr('disabled', true);
+                }
+                else if (data.Status == -5) {
+                    alert('Please enter Container / CBT No for all the row in the Excel file.');
+                    $('#tblTrainSummaryUpload tbody').html('');
+                    $('#btnSave').attr('disabled', true);
+                }
+                else {
+                    $('#DivDwnldWavMsg').html("Error in Uploading File.").removeClass('logSuccMsg').addClass('logErrMsg');
+                    $('#tblTrainSummaryUpload tbody').html('');
+                    $('#btnSave').attr('disabled', true);
+                }
+            }
+        });
+
+    }
+
+    function PopulateGrid() {
+        var html = '';
+        $.each(TrainSummaryUploadListFromXL, function (i, item) {
+            html += '<tr><td>' + item.SrNo + '</td>'
+                   // + '<td>' + item.Wagon_No + '</td>'
+                    + '<td>' + item.Container_No + '</td>'
+                    + '<td>' + item.CT_Size + '</td>'
+                    + '<td>' + item.Line_Seal_No + '</td>'
+                    + '<td>' + item.Cont_Commodity + '</td>'
+                    + '<td>' + item.S_Line + '</td>'
+                    //+ '<td>' + item.Ct_Tare + '</td>'
+                    //+ '<td>' + item.Cargo_Wt + '</td>'
+                    //+ '<td>' + item.Gross_Wt + '</td>'
+                    //+ '<td>' + item.Ct_Status + '</td>'
+                    //+ '<td>' + item.Destination + '</td>'
+                    //+ '<td>' + item.Smtp_No + '</td>'
+                    //+ '<td>' + item.Received_Date + '</td>'
+                    //+ '<td>' + item.Genhaz + '</td>'
+                    + '<td>' + item.StatusDesc + '</td>'
+                    + '<td class="text-center"><a href="#" onclick="Delete(' + item.SrNo + ')"><i class="fa fa-window-close-o Delete"></i></a></td></tr>';
+        });
+        $('#tblTrainSummaryUpload tbody').html(html);
+        $('#btnSave').attr('disabled', (TrainSummaryUploadListFromXL.length == 0));
+    }
+
+    function Delete(SrNo) {
+        debugger;
+        if (CanDelete) {
+            var index = 0;
+            for (var i = 0; i < TrainSummaryUploadListFromXL.length; i++) {
+                if (TrainSummaryUploadListFromXL[i].SrNo == SrNo) {
+                    index = i;
+                    break;
+                }
+            }
+            TrainSummaryUploadListFromXL.splice(index, 1);
+            PopulateGrid();
+        }
+    }
+
+    function SaveUploadData() {
+        debugger;
+
+        var TrainSummaryUpload = {
+            TrainNo: $('#TrainNo').val().toString(),
+            TrainDate: $('#TrainDate').val().toString(),
+            PortId: parseInt($('#PortId').val()),
+            TrainSummaryList:JSON.stringify(TrainSummaryUploadListFromXL)
+        };
+
+        $.ajax({
+            url: '/Import/Ppg_CWCImport/SaveUploadData',
+            type: 'POST',
+            dataType: 'JSON',
+            async: false,
+            url: '/Import/Ppg_CWCImport/SaveUploadData',
+         //   url: '/Auction/Auction/SaveAuctionIssueNotice?objTrainSummaryUpload=' + JSON.stringify(Data),
+            data: TrainSummaryUpload,
+         //  data: JSON.stringify(Data),
+            success: function (data) {
+                if (data == 1) {
+
+                    alert('Data Saved successfully.');
+                    $.each(TrainSummaryUploadListFromXL, function (i, item) {
+                        if (item.Status != 2) {
+                            item.StatusDesc = "Saved";
+                        }
+                    });
+                    CanDelete = false;
+                    PopulateGrid();
+                    $('#btnSave').attr('disabled', true);
+                    $('#btnUpload').attr('disabled', true);
+                    setTimeout(ResetAllField, 4000);
+                    //ListOfTrainSummary();
+                }
+                else {
+                    alert('Error');
+                }
+            }
+        });
+    }
+
+    function selectPort(id, portName) {
+        debugger;
+        $('#PortName').val(portName);
+        $('#PortId').val(id);
+        $("#PortModal").modal("hide");
+    }
+
+    $('#Portbox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#lstPort > li').show();
+        } else {
+            $('#lstPort > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+</script>

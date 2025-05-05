@@ -1,0 +1,240 @@
+﻿
+@model CwcExim.Areas.Report.Models.MonthlyCashBook
+
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "RptInvoiceReportDetails";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+
+}
+<script>
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+</script>
+@using (Ajax.BeginForm("GetInsuranceRegisterReport", "VRN_ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Insurance Register</h4>
+                            </div>
+                        </div>
+                        <div class="Form_Space_top" style="padding:5px;">
+                            <div class="row">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Period From:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col_cus_2 col_cus_offset_3 col-md-offset-4">
+                                        <label>Period To:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $('#BtnPreview').on("click", function () {
+        //alert("in");
+        //ValidateExitDet();
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        return true;
+    });
+    function RptConsumerListDtlOnFailure() { }
+    function RptInvoiceReportDetails(data) {
+        $('#DivDwnldWavMsg').html('')
+        //alert(data);
+        debugger;
+        if (data.Status == 1) {
+
+            debugger;
+            SaveReportPdf(data);
+
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+
+
+    function ValidateExitDet() {
+        var Status = true;
+
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="txtGrossWeight"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+
+        return Status;
+    }
+    function SaveReportPdf(data) {
+        debugger;
+        var FormDate = $("#PeriodFrom").val();
+        var ToDate = $("#PeriodTo").val();
+        var PostData = new FormData();
+        //var Html = '<div style="text-align: center;border: 1px solid #000;">Daily cash Book From ' + FormDate + ' To ' + ToDate + '</div>'
+        var Html = "<div style='float:left;'><img align='right' src='IMGSRC' width='90'/></div>";
+        Html += "<div style='text-align:center; float:left; width:100%;'><h1 style='font-size: 22px; margin: 0; padding: 0;'>CENTRAL WAREHOUSING CORPORATION</h1><label style='font-size: 12px;'>(A Govt. of India Undertaking)</label><br/><span style='font-size: 12px; padding-bottom: 10px;'> H-22, M I D C Waluj, Opposite Nilason Corporate</span><br/><span style='font-size: 12px; padding-bottom: 10px;'> Aurangabad,Maharashtra -431136</span><br/><label style='font-size: 12px;'></label>";
+        Html += "<br/><label style='font-size: 14px; font-weight:bold;'>Insurance Register From " + FormDate + " To " + ToDate + "</label></div>";
+        Html += "<div style='float:right;'><img align='right' src='ISO' width='90'/></div>";
+        Html += "<div><br/></div>";
+
+        Html += "<table cellpadding='4' style='margin-bottom:20px;width:100%;font-size:7pt;font-family:Verdana,Arial,San-serif;border:1px solid #000;border-collapse:collapse;'>";
+        Html += "<thead>";
+        Html += "<tr>";
+        Html += "<th rowspan='2' style='border-right:1px solid #000;text-align:center;'>Date</th>";
+        Html += "<th rowspan='2' style='border-right:1px solid #000;text-align:center;'>Commodity</th>";
+        Html += "<th colspan='2' style='border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>Quantity Received</th>";
+        Html += "<th colspan='2' style='border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>Quantity Delivered</th>";
+        Html += "<th colspan='2' style='border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>Closing Balance</th>";
+        Html += "<th rowspan='2' style='border-right:1px solid #000;text-align:center;'>Rate</th>";
+        Html += "<th rowspan='2' style='border-right:1px solid #000;text-align:center;'>Total Value of Commodity</th>";
+        Html += "<th rowspan='2' style='border-right:1px solid #000;text-align:center;'>Value of Empty Bags/Units</th>";
+        Html += "<th rowspan='2' style='border-right:1px solid #000;text-align:center;'>Total Valuation</th>";
+        Html += "<th rowspan='2' style='border-right:1px solid #000;text-align:center;'>Signature of Office Assistant</th>";
+        Html += "<th rowspan='2' style='text-align:center;'>Remarks</th>";
+        Html += "</tr>";
+
+        Html += "<tr>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>No of Bags/Units/Packages</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Weight <br/> (in QHs.)</th>";
+
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>No of Bags/Units/Packages</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Weight <br/> (in QHs.)</th>";
+
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>No of Bags/Units/Packages</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Weight <br/> (in QHs.)</th>";
+        Html += "</tr>";
+
+        Html += "</thead>";
+        Html += "<tbody>";
+
+        for (i = 0; i < data.Data.length; i++) {
+
+            Html += "<tr>";
+       //     if (i == data.Data.lstCashReceipt.length - 1)
+         //       Html += "<td style='text-align: center;border: 1px solid #000;'></td>";
+         //   else
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data[i].TransactionDate + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data[i].Item + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data[i].ReceivedUnit + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data[i].ReceivedWeight + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data[i].DeliveryUnit + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data[i].DeliveryWeight + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data[i].ClosingUnit + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data[i].ClosingWeight + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data[i].Rate + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data[i].CommodityValue + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'> </td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data[i].TotalValue + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'></td>";
+                Html += "<td style='text-align: center;border-top: 1px solid #000;'></td>";
+            Html += "</tr>";
+        }
+        Html += "</tbody></table>"
+
+
+        PostData.append("Page", Html);
+        // alert("PostData=" + PostData);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GenerateInsuranceRegisterPDF", "VRN_ReportCWC", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+
+            }
+        });
+    }
+
+</script>
+
+
+
+

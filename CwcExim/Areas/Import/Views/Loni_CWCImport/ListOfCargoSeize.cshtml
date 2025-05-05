@@ -1,0 +1,108 @@
+﻿@model IEnumerable<CwcExim.Areas.Import.Models.CargoSeize>
+<table class="table table-bordered table-striped" id="tblCargoSeize" style="width:100%">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("Sl No")</th>
+            <th>OBL No</th>
+            <th>OBL Date</th>
+            <th>ICD Code</th>
+            <th>Container / CBT No</th>
+            <th>Size</th>
+            <th>Status</th>
+            <th class="text-center">@Html.DisplayName("Edit")</th>
+            <th class="text-center">@Html.DisplayName("Delete")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                string status = "";
+                if (item.SeizeHoldStatus == 0)
+                {
+                    status = "UnHold";
+                }
+                else if(item.SeizeHoldStatus == 1)
+                {
+                    status = "Hold";
+                }
+                else if (item.SeizeHoldStatus == 2)
+                {
+                    status = "Seize";
+                }
+                <tr>
+                    <td class="text-center">@SerialNo</td>
+                    <td>@item.OBLNo</td>
+                    <td>@item.OBLDate</td>
+                    <td>@item.CFSCode</td>
+                    <td>@item.ContainerNo</td>
+                    <td>@item.ContainerSize</td>
+                    <td>@status</td>
+                    <td class="text-center"><a href="#" onclick="EditCargoSeize(@item.Id)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td class="text-center"><a href="#" onclick="DeleteCargoSeize(@item.Id,'@status')"><i class="fa fa-window-close-o Delete"></i></a></td>
+                </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+<script>
+    $(document).ready(function () {
+        var tblCargoSeize = $('#tblCargoSeize').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                       { "sName": "SL No","width": "10%" },
+                       { "sName": "OBL No" },
+                       { "sName": "OBL Date", "bSortable": false },
+                       { "sName": "ICD Code" },
+                       { "sName": "Container / CBT No" },
+                       { "sName": "Container / CBT Size" },
+                       { "sName": "Status" },
+                       { "sName": "Edit", "bSortable": false, "width": "9%" },
+                       { "sName": "Delete", "bSortable": false, "width": "9%" }
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(tblCargoSeize);
+    });
+    function EditCargoSeize(Id)
+    {
+        $('#DivBody').load( '/Import/Ppg_CWCImport/CargoSeize?Id=' + Id);
+    }
+
+    function DeleteCargoSeize(Id, SeizeHoldStatus)
+    {
+        var Confirm = confirm("Are you sure you want to delete?");
+        if(Confirm==true)
+        {
+            if (SeizeHoldStatus == "Seize") {
+                alert("Cargo Seized application can not be deleted.");
+                return false;
+            }
+            else {
+                var Token = $('input[name="__RequestVerificationToken"]').val();
+                $.ajax({
+                    url: '/Import/Ppg_CWCImport/DeleteCargoSeize',
+                    type: 'POST',
+                    dataType: 'JSON',
+                    data: { CargoSeizeId: Id },
+                    headers: { "__RequestVerificationToken": Token },
+                    success: function (data) {
+                        if (data.Status == 1) {
+                            alert(data.Message);
+                            LoadCargoSeizeList();
+                            ResetAllField();
+                        }
+                        else {
+                            alert(data.Message);
+                        }
+                    }
+                });
+            }
+
+        }
+    }
+
+</script>
+

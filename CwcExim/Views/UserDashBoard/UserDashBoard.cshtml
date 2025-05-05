@@ -1,0 +1,602 @@
+﻿@model CwcExim.Models.EximDashboardMenu
+
+@{
+    ViewBag.Title = "UserDashBoard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.4/Chart.min.js"></script>
+
+<nav class="navbar navbar-inverse navbar-fixed-top" id="sidebar-wrapper" role="navigation">
+    <div id="DivMenu">
+        <ul class="nav sidebar-nav">
+            @*<li class="Menu_txt">
+                <input type="text" class="form-control sideSrchPnl" placeholder="Search Menu e.g. mdm"  style="display:none;"/>
+            </li>*@
+            @{
+                if (Model.lstEModule != null)
+                {
+                    var idx = 0;
+                    var midx = 0;
+                    var mcidx = 0;
+                    foreach (var item in Model.lstEModule)
+                    {
+                        <li class="menu-head" id="module_@idx">
+                            <a class="sign navactive plus_sign" href="#" onclick="ModuleAccordion('@idx')">@item.ModuleName</a>
+
+                            <ul class="hide" id="tgl">
+
+                                @foreach (var itemM in Model.lstEMenu.Where(x => x.ModuleId == item.ModuleId))
+                                {
+                                    if (itemM.ParentMenuId == 0)
+                                    {
+
+                                        if (itemM.ActionUrl != "")
+                                        {
+                                            <li><a href="#" onclick="LoadDashboardView('@itemM.ActionUrl','@itemM.MenuId','@item.ModuleId', '@item.ModuleName')">@itemM.MenuName</a></li>
+                                        }
+                                        else
+                                        {
+                                            <li class="menu-head" id="menu_@midx">
+                                                <a class="sign navactive plus_sign" href="#" onclick="DashboardMenuAccordion('@midx')">@itemM.MenuName</a>
+
+                                                <ul class="hide" id="tgl">
+
+                                                    @foreach (var itemMC in Model.lstEMenu.Where(x => x.ParentMenuId == itemM.MenuId))
+                                                    {
+
+                                                        if (itemMC.ActionUrl != "")
+                                                        {
+                                                            <li><a href="#" onclick="LoadDashboardView('@itemMC.ActionUrl','@itemMC.MenuId','@item.ModuleId', '@item.ModuleName')">@itemMC.MenuName</a></li>
+                                                        }
+                                                        else
+                                                        {
+                                                            <li class="menu-head" id="childmenu_@mcidx">
+                                                                <a class="sign navactive plus_sign" href="#" onclick="DashboardChildMenuAccordion('@mcidx')">@itemMC.MenuName</a>
+                                                                <ul>
+                                                                    @foreach (var itemMCC in Model.lstEMenu.Where(x => x.ParentMenuId == itemMC.MenuId))
+                                                                    {
+
+                                                                        if (itemMCC.ActionUrl != "")
+                                                                        {
+                                                                            <li><a href="#" onclick="LoadDashboardView('@itemMCC.ActionUrl','@itemMCC.MenuId','@item.ModuleId', '@item.ModuleName')">@itemMC.MenuName</a></li>
+                                                                        }
+                                                                        //}
+                                                                    }
+                                                                </ul>
+                                                            </li>
+                                                        }
+                                                        mcidx++;
+
+
+                                                    }
+                                                </ul>
+
+                                            </li>
+                                        }
+
+                                        midx++;
+
+                                    }
+
+                                }
+                            </ul>
+                        </li>
+                        idx++;
+                    }
+
+                }
+
+
+            }
+
+
+        </ul>
+
+
+    </div>
+</nav>
+
+<div id="page-content-wrapper" class="clearfix">
+    <div id="DivBody">
+        <div class="col-sm-12 mt10">
+            <div class="col-md-6 pl-0">
+                <div class="valueHandle_wrp">
+                    <div class="p-10 clearfix">
+                        <h3 class="text-uppercase">Volume/Handle</h3>
+                        <div class="volHandlTbl">
+                            <table id="tblVolumeHandle" class="table table-hover table-centered align-middle table-nowrap mb-0">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="fw-normal"></th>
+                                        <th scope="col" class="fw-normal"></th>
+                                        <th scope="col" class="fw-normal">MT</th>
+                                        <th scope="col" class="fw-normal">TUES</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th>Last Month</th>
+                                        <td><span id="spnLastMonth"></span></td>
+                                        <td><span id="spnLastMonthVolume"></span></td>
+                                        <td><span id="spnLastMonthTues"></span></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Current Month</th>
+                                        <td><span id="spnCurrentMonth"></span></td>
+                                        <td><span id="spnCurrentMonthVolume"></span></td>
+                                        <td><span id="spnCurrentMonthTues"></span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>                  
+                </div>
+            </div>
+
+            <div class="col-md-6 pr-0">
+                <div class="card topContribute_wrp">
+                    <div class="card-header align-items-center d-flex">
+                        <h4 class="card-title mb-0 flex-grow-1">Top 5 Contributor for the month <span id="spnTopFiveMonth"></span></h4>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="table-responsive table-card">
+                            <table id="tblTopFiveContributor" class="table table-hover table-centered align-middle table-nowrap mb-0">
+                                <thead>
+                                    <tr>
+                                        <th width="75%" class="fw-normal">Name</th>
+                                        <th width="25%" class="fw-normal">Amount (lakhs)</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-12 mt10">
+            <div class="card topContribute_wrp">
+                <div class="card-header align-items-center d-flex">
+                    <h4 class="card-title mb-0 flex-grow-1">Business</h4>
+                </div><!-- end card header -->
+
+                <div class="card-body">
+                    <div class="row">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript">
+    $('#fixednav').addClass('Scnav_lock');
+    $('#lang').css("display", "none");
+    //setTimeout(function () {
+    //    var x = document.getElementsByClassName('top-nav')[0].id;
+    //    $('#' + x).addClass('Scnav_lock');
+    //},501);
+
+    $(document).ready(function () {
+        debugger;
+        @*if(@ViewBag.FirstLogin.ToString()==1)
+        {
+            firstLogin();
+        }
+        else
+        {
+            LoadModuleForUser();
+        }*@
+
+
+        $(".navbar").addClass("disabled");
+        LoadCompanyBranchDetails();
+        BindLastMonthVolume();
+        BindTopFiveContributor();
+        BindLastSixmonthCollection();
+
+    });
+
+    function LoadDashboardView(ActionUrl, _menuId, _moduleId, _moduleName) {
+
+        $.ajax({
+            type: 'GET',
+            url: '@Url.Action("SetMenuId", "UserDashBoard")',
+            data: { MenuId: _menuId, ModuleId: _moduleId, ModuleName: _moduleName },
+            cache: false,
+            success: function (result) {
+                // disable express option if delivery type is Electronic
+                $('.sidebar-nav li ul').css('display', 'none');
+                try {
+                    $('#DivBody').html('');
+                    $('#DivBody').load('/' + ActionUrl);
+                } catch (ex) {
+
+
+                }
+            }
+
+        });
+
+    }
+
+
+    @*function LoadModuleForUser()
+    {
+        //$('#DivTopNav').hide();
+        var SubDomain = '@System.Configuration.ConfigurationManager.AppSettings["SubDomain"]';
+
+
+        $('#DivModule').load("/Module/GetModuleForUser");
+        LoadCompanyBranchDetails();
+        //
+    }*@
+
+    function LoadCompanyBranchDetails() {
+
+        $.ajax({
+            url: '/MainDashBoard/LoadCompany',
+            type: 'GET',
+            dataType: 'json',
+            success: function (d) {
+                debugger
+                var $row = $('<p/>');
+
+                $("#LoadBranchAfterLogin").html(d.BranchName);
+            },
+            failure: function () {
+                alert('something wrong happen');
+            }
+        });
+
+    }
+
+    //function firstLogin()
+    //{
+    //    $('#DivChangePassword').load('/User/ChangePassword');
+    //    $('#DivChangePasswordModal').show();
+    //}
+
+    function BindLastMonthVolume() {
+        $.ajax({
+            type: 'GET',
+            url: '/UserDashBoard/GetLastMonthVolume',
+            data: {},
+            dataType: 'json',
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    $('#spnLastMonth').text(data.Data.LastMonth);
+                    $('#spnLastMonthVolume').text(data.Data.LMonthVolume);
+                    $('#spnLastMonthTues').text(data.Data.LastMonthTues);
+                    $('#spnCurrentMonth').text(data.Data.CurrentMonth);
+                    $('#spnCurrentMonthVolume').text(data.Data.CMonthVolume);
+                    $('#spnCurrentMonthTues').text(data.Data.CurrentMonthTues);
+                }
+            },
+            error: function () {
+
+            },
+            complete: function () {
+
+            }
+        });
+    }
+
+    function BindTopFiveContributor() {
+        let arrayFiveCont = [];
+        $.ajax({
+            type: 'GET',
+            url: '/UserDashBoard/GetTopFiveContributor',
+            data: {},
+            dataType: 'json',
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    arrayFiveCont = data.Data;
+                }
+            },
+            complete: function () {
+                var html = "";
+
+                if (arrayFiveCont.length > 0) {
+                    $('#spnTopFiveMonth').text(arrayFiveCont[0].MonthFor)
+                    for (var i = 0; i < arrayFiveCont.length; i++) {
+                        html += '<tr>';
+                        html += '<td>';
+                        html += '<h6 class="fs-14 my-1 fw-normal mt-0 mb-0">' + arrayFiveCont[i].Contributer + '</h6>';
+                        html += '</td>';
+                        html += '<td>';
+                        html += '<h6 class="fs-14 my-1 fw-normal mt-0 mb-0 align-right">₹ ' + arrayFiveCont[i].ContAmount + '</h6>';
+                        html += '</td>';
+                        html += '</tr>';
+                    }
+
+                    $('#tblTopFiveContributor tbody').html('');
+                    $('#tblTopFiveContributor tbody').html(html);
+                }
+            }
+        });
+    }
+
+    let arrayCMthHead = [];
+    let arrayCMthValue = [];
+    let arrayPMthHead = [];
+    let arrayPMthValue = [];
+    let arrayCMthTitle = [];
+    let arrayPMthTitle = [];
+    function BindLastSixmonthCollection() {
+        let arrayLastSixmonthColl = [];
+        arrayCMthHead = [];
+        arrayCMthValue = [];
+        arrayPMthHead = [];
+        arrayPMthValue = [];
+        arrayCMthTitle = [];
+        arrayPMthTitle = [];
+
+        $.ajax({
+            type: 'GET',
+            url: '/UserDashBoard/GetLastSixmonthCollection',
+            data: {},
+            dataType: 'json',
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    arrayLastSixmonthColl = data.Data;
+
+                    if (arrayLastSixmonthColl.length > 0) {
+                        var arrayCurrentMth = arrayLastSixmonthColl.filter(m=>m.ForMonth == 'CMth');                       
+                        if(arrayCurrentMth.length>0){                           
+                            for (var i = 0; i < arrayCurrentMth.length; i++) {
+                                var _value = arrayCurrentMth[i].CValue;
+                                var _head = arrayCurrentMth[i].CText;
+                                var _title = arrayCurrentMth[i].YMText;
+                                arrayCMthHead.push(_head);
+                                arrayCMthValue.push(_value);
+                                arrayCMthTitle.push(_title);
+                            }
+                        }
+
+                        var arrayPreviousMth = arrayLastSixmonthColl.filter(m=>m.ForMonth == 'PMth');
+                        if (arrayPreviousMth.length > 0) {
+                            for (var i = 0; i < arrayPreviousMth.length; i++) {
+                                var _value = arrayPreviousMth[i].CValue;
+                                var _head = arrayPreviousMth[i].CText;
+                                var _title = arrayPreviousMth[i].YMText;
+                                arrayPMthHead.push(_head);
+                                arrayPMthValue.push(_value);
+                                arrayPMthTitle.push(_title);
+                            }
+                        }
+                        
+                    }
+                }
+            },
+            complete: function () {
+                //BindBusinessChart();
+                var ctx = document.getElementById("barChart").getContext('2d');
+                var barChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: arrayCMthHead,                       
+                            datasets: [{
+                                label: 'Previous six month',
+                                data: arrayPMthValue,
+                                backgroundColor: "rgba(54, 162, 235, 1)"
+                            },
+                            {
+                                label: 'Last six month',                                
+                                data: arrayCMthValue,
+                                backgroundColor: "rgba(255, 99, 132, 1)"
+                            }]
+                    },
+                    
+                    options: {
+                        tooltips: {
+                            enabled: true,
+                            mode: 'single',
+                            callbacks: {
+                                title: function (tooltipTitle, data) {
+                                    debugger;
+                                    //var dd = data.datasets[tooltipTitle.datasetIndex].data[tooltipTitle.index];
+                                    return tooltipTitle[0].xLabel;
+                                },
+                                label: function (tooltipItems, data) {
+                                    debugger;
+                                    var text = 'Amt.(lakhs) ₹';
+                                    return text + ' : ' + tooltipItems.yLabel;
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    function BindBusinessChart() {
+        const ctx = document.getElementById('barChart').getContext('2d');
+
+        const data = {
+            labels: arrayCMthHead,
+            datasets: [
+              {
+                  label: 'Previous six month',
+                  data: arrayPMthValue,
+                  backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                  borderColor: 'rgba(255, 99, 132, 1)',
+                  borderWidth: 1
+              },
+              {
+                  label: 'Last six month',
+                  data: arrayCMthValue,
+                  backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                  borderColor: 'rgba(54, 162, 235, 1)',
+                  borderWidth: 1
+              }
+            ]
+        };
+
+        const config = {
+            type: 'bar',
+            data: data,
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Month-to-Month Comparison'
+                    }
+                }
+            }
+        };
+
+        const myChart = new Chart(ctx, config);
+        
+
+    }
+</script>
+
+
+
+<script>
+
+    var trigger = $('.hamburger'),
+    winWidth = $(window).width(),
+    overlay = $('.overlay'),
+   isClosed = true;
+
+    $(document).ready(function () {
+        trigger.click(function () {
+            hamburger_cross();
+        });
+        trigger.click();
+        $('[data-toggle="offcanvas"]').click(function () {
+            $('#wrapper').toggleClass('toggled');
+        });
+        $('[data-toggle="offcanvas"]').click();
+    });
+
+    function hamburger_cross() {
+
+        if (isClosed == true) {
+            overlay.hide();
+            trigger.removeClass('is-open');
+            trigger.addClass('is-closed');
+            $('#page-content-wrapper').css("width", "100%");
+            $('#page-content-wrapper').animate({ left: 0 });
+            //if ($('#Menu_btn').hasClass('fa-chevron-circle-left')) {
+            //    $('#Menu_btn').removeClass('fa-chevron-circle-left');
+            //}
+            $('#Menu_btn').addClass('fa-bars').css("color", "");
+            //$('.hamburger').css("margin-left", "-3px");
+            $('.Menu_txt').css("display", "none");
+            $('.footer').css("width", "100%");
+            $('.alft').css("text-align", "left");
+            $('.arht').css("text-align", "right");
+            isClosed = false;
+        } else {
+            overlay.show();
+            trigger.removeClass('is-closed');
+            trigger.addClass('is-open');
+            $('#page-content-wrapper').width(winWidth - 300);
+            $('#page-content-wrapper').css('left', '220px');
+            //if ($('#Menu_btn').hasClass('fa-bars')) {
+            //    $('#Menu_btn').removeClass('fa-bars');
+            //}
+            //$('#Menu_btn').addClass('fa-chevron-circle-left').css("color", "#fe9b35");
+
+            //$('.hamburger').css("margin-left", "-32px");
+            $('.Menu_txt').css("display", "block");
+            $('.footer').css("width", "calc(100% - 220px)");
+            isClosed = true;
+        }
+    }
+
+    $(function () {
+        $('.sidebar-nav li a').click(function () {
+            $(this).addClass('navactive');
+            $('.sidebar-nav li a').not(this).removeClass('navactive');
+        });
+    });
+    function LoadChildMenu(a) {
+        ActiveteMinus();
+        $('.plus_sign').toggleClass('minus_sign');
+        $('.sidebar-nav li ul').css('display', 'none');
+        $('#' + a.id + ' ul').css('display', 'block');
+    }
+</script>
+
+<script>
+    function ModuleAccordion(elementId) {
+        //alert('ModuleAccordion');
+        debugger;
+        if (document.getElementById('module_' + elementId).children[1] !== undefined) {                       
+            var item = document.getElementById('module_' + elementId).children[0];
+            $(item).toggleClass('plus_sign');
+            $(item).toggleClass('minus_sign');            
+            document.getElementById('module_' + elementId).children[1].classList.toggle('hide');
+            document.getElementById('module_' + elementId).children[1].classList.toggle('show');
+        }
+    }
+    function DashboardMenuAccordion(elementId) {
+        debugger;
+        //alert('DashboardMenuAccordion');
+        if (document.getElementById('menu_' + elementId).children[1] !== undefined) {
+            var item = document.getElementById('menu_' + elementId).children[0];
+            $(item).toggleClass('plus_sign');
+            $(item).toggleClass('minus_sign');           
+            document.getElementById('menu_' + elementId).children[1].classList.toggle('hide');
+            document.getElementById('menu_' + elementId).children[1].classList.toggle('show');
+        }
+    };
+
+    function DashboardChildMenuAccordion(elementId) {
+        debugger;
+        //alert('DashboardChildMenuAccordion');
+        if (document.getElementById('childmenu_' + elementId).children[1] !== undefined) {
+            var item = document.getElementById('childmenu_' + elementId).children[0];
+            $(item).toggleClass('plus_sign');
+            $(item).toggleClass('minus_sign');            
+            document.getElementById('childmenu_' + elementId).children[1].classList.toggle('hide');
+            document.getElementById('childmenu_' + elementId).children[1].classList.toggle('show');
+        }
+    };
+
+    $("ul#tgl li a").click(function (e) {
+        e.stopPropagation();
+    });
+    $("ul#tgl1 li a").click(function (e) {
+        e.stopPropagation();
+    });
+</script>
+
+<script>
+    //var ctx = document.getElementById("barChart").getContext('2d');
+    //var barChart = new Chart(ctx, {
+    //    type: 'bar',
+    //    data: {
+    //        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sst", "Sun"],
+    //        datasets: [{
+    //            label: 'data-1',
+    //            data: [12, 19, 3, 17, 28, 24, 7],
+    //            backgroundColor: "rgba(255,0,0,1)"
+    //        }, {
+    //            label: 'data-2',
+    //            data: [30, 29, 5, 5, 20, 3, 10],
+    //            backgroundColor: "rgba(0,0,255,1)"
+    //        }]
+    //    }
+    //});
+</script>
+
+

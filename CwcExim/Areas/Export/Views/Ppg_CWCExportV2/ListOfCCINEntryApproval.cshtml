@@ -1,0 +1,159 @@
+﻿@model IEnumerable<CwcExim.Areas.Export.Models.CCINEntryV2>
+<table class="table table-bordered table-striped" id="tblCCINEntry" style="width:100%">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("Print")</th>
+            <th class="text-center">@Html.DisplayName("Sl No")</th>
+            <th class="text-center">CCIN No</th>
+            <th class="text-center">CCIN Date</th>
+            <th class="text-center">SB No</th>
+            <th class="text-center">SB Date</th>
+            <th class="text-center">Approve Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center"><div class="table_icon"><a href="#" onclick="PrintCCINEntryApproval('@item.Id')"><i class="fa-file-pdf-o"></i></a></div></td>
+                    <td class="text-center">@SerialNo</td>
+                    <td class="text-center">@item.CCINNo</td>
+                    <td class="text-center">@item.CCINDate</td>
+                    <td class="text-center">@item.SBNo</td>
+                    <td class="text-center">@item.SBDate</td>
+                    <td class="text-center">@(item.IsApproved ? "Yes" : "No")</td>
+                </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="btn btn-primary mr-1 btn-100px" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+<script>
+    $(document).ready(function () {
+        var tblCCINEntry = $('#tblCCINEntry').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 10,
+            "aoColumns": [
+                       { "sName": "Print", "bSortable": false, "width": "9%" },
+                       { "sName": "SL No", "width": "5%" },
+                       { "sName": "CCIN No" },
+                       { "sName": "CCIN Date", "bSortable": false },
+                       { "sName": "SB No" },
+                       { "sName": "SB Date", "bSortable": false },
+                       { "sName": "Approve Status", "bSortable": false },
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0)', nRow).addClass("text-center");
+                $('td:eq(0)', nRow).css("width", "5%");
+                $('td:eq(1)', nRow).css("width", "5%");
+                $('td:eq(2)', nRow).css("width", "10%");
+                $('td:eq(3)', nRow).css("width", "10%");
+                $('td:eq(4)', nRow).css("width", "10%");
+                $('td:eq(5)', nRow).css("width", "5%");
+                $('td:eq(6)', nRow).css("width", "2%");
+                $('td:eq(1),td:eq(2),td:eq(3),td:eq(4),td:eq(5),td:eq(6)', nRow).addClass("text-center");
+            }
+        });
+        new $.fn.dataTable.FixedHeader(tblCCINEntry);
+    });
+    function EditCCINEntry(Id) {
+        $('#DivBody').load('/Export/Ppg_CWCExportV2/CCINEntry?Id=' + Id);
+    }
+
+    //function DeleteCCINEntry(Id)
+    //{
+    //    var Confirm = confirm("Are you sure you want to delete?");
+    //    if(Confirm==true)
+    //    {
+    //        var Token=$('input[name="__RequestVerificationToken"]').val();
+    //        $.ajax({
+    //            url: '/Export/Ppg_CWCExport/DeleteCCINEntry',
+    //            type: 'POST',
+    //            dataType: 'JSON',
+    //            data: { CCINEntryId: Id },
+    //            headers:{"__RequestVerificationToken":Token},
+    //            success: function (data) {
+    //                if(data.Status==1)
+    //                {
+    //                    alert(data.Message);
+    //                    LoadCCINEntryList();
+    //                    ResetAllField();
+    //                }
+    //                else
+    //                {
+    //                    alert(data.Message);
+    //                }
+    //            }
+    //        });
+    //    }
+    //}
+
+    function PrintCCINEntryApproval(id)
+    {
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("PrintCCINEntryApproval", "Ppg_CWCExportV2", new { Area = "Export" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                CCINEntryId: id
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }
+
+    var Page = 0;
+    function LoadMoreListData() {
+        debugger;
+
+        $.ajax({
+            url: '/Export/Ppg_CWCExportV2/LoadMoreCCINEntryApprovalList',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                debugger;
+
+                if (data && data.length > 0) {
+                    Page++;
+                    var dt = $('#tblCCINEntry').dataTable();
+                    var len = dt.fnGetData().length;
+
+                    $.each(data, function (i, item) {
+                        len++;
+
+                        dt.fnAddData([
+                            '<div class="table_icon"><a href="#" onclick="PrintCCINEntryApproval(' + item.Id + ')"><i class="fa-file-pdf-o"></i></a></div>',
+                            len,
+                            item.CCINNo,
+                            item.CCINDate,
+                            item.SBNo,
+                            item.SBDate,
+                            item.IsApproved ? "Yes" : "No"
+                        ]);
+                    });
+                } else {
+                    alert('No more data available');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("Error loading more data: ", error);
+                alert('Failed to load more data.');
+            }
+        });
+    }
+
+
+</script>
+
+
+

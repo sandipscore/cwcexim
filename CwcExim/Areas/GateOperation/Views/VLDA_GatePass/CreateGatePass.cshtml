@@ -1,0 +1,946 @@
+﻿@model CwcExim.Areas.GateOperation.Models.WFLDGatePass
+<script src="~/Areas/GateOperation/Scripts/App/Controllers/GatePassCtrl.js"></script>
+
+<style>
+    .add_btn {
+        background: #fff;
+        padding: 3px 10px;
+        color: #333;
+        border: 1px solid #333;
+    }
+</style>
+
+<div id="gatepass" ng-controller="GatePassCtrl">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-offset-0-5 col-md-11">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Gate Pass</h4>
+                        </div>
+                    </div>
+                    @using (Ajax.BeginForm("AddEditGatePass", "VLDA_GatePass", new AjaxOptions
+                {
+                    Confirm = "Are you sure you want to save?",
+                    HttpMethod = "POST",
+                    OnSuccess = "GatePassOnSuccess",
+                    OnFailure = "GatePassOnFailure",
+                }))
+                {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.StringifyData)
+                        @Html.HiddenFor(m => m.VehicleXml)
+                        @Html.Hidden("Module")
+                        @Html.Hidden("GPID")
+                       
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Gate Pass No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.GatePassNo, new { @class = "form-control input-sm", @readonly = true })
+                                </div>
+                                <div class="col-md-offset-4 col_cus_offset_3 col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Gate Pass Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.GatePassDate, new { @class = "form-control input-sm", @readonly = true, @size = 16, @maxlength = 16, @onkeyup = "check()", @onblur = "checkdate()" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top Form_Space_bottom">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Invoice No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.HiddenFor(m => m.InvoiceId)
+                                    @Html.TextBoxFor(m => m.InvoiceNo, new { @readonly = true , @onkeydown = "PopupActivate('InvoiceModal');" })
+                                    <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="GetInvoiceNoForGatePass();" data-target="#InvoiceModal"></i></span>
+                                    @Html.ValidationMessageFor(m => m.InvoiceNo)
+                                </div>
+                                <div class="col-md-offset-4 col_cus_offset_3 col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Delivery Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.DeliveryDate, new { @class = "form-control input-sm", @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Remarks:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextAreaFor(m => m.Remarks, new { @style = "width:100%;height:50px;" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>CHA Name:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextBoxFor(m => m.CHAName, new { @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Importer / Exporter Name:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextBoxFor(m => m.ImpExpName, new { @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Shipping Line Name:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextBoxFor(m => m.ShippingLineName, new { @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top Form_Space_bottom">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Excepted date and time of departure:</label>
+                                </div>
+                                <div class="col-md-2-5 Date_Img">
+                                    @Html.TextBoxFor(m => m.DepartureDate, new { @class = "form-control input-sm", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.DepartureDate)
+                                </div>
+                                <div class="col-md-offset-4 col_cus_offset_3 col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Expected date and time of arrival at next location:</label>
+                                </div>
+                                <div class="col-md-2-5 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.ArrivalDate, new { @class = "form-control input-sm", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.ArrivalDate)
+                                </div>
+                            </div>
+                        </div>
+                        <div id = "DivDestuffingDet" class="Head_h5">
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Container/OBL No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @*@Html.TextBox("ContainerNo", "", new { @class = "form-control input-sm", @readonly = true })*@
+                                        <input name="ContainerNo" type="text" ng-model="FilterContainer" id="ContainerNo" class="form-control input-sm" readonly />
+                                    </div>
+                                    <div class="col-md-1-5">
+                                        <label>Size:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("Size", "", new { @class = "form-control input-sm", @readonly = true })
+                                    </div>
+                                    <div class="col-md-1-5" style="display:none;">
+                                        <div class="boolean-container">
+                                            @Html.CheckBox("Reefer", false, new { @disabled = true })
+                                            <label><i class="square"></i><span>Reefer</span></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Cargo Description:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        @Html.TextArea("CargoDescription", "", new { @style = "width:100%;height:100px;", @readonly = true })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Cargo Type:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.DropDownList("CargoType", new List<SelectListItem>
+                                        {
+                                            new SelectListItem { Text="HAZ",Value="1"},
+                                            new SelectListItem { Text="Non HAZ",Value="2"},
+                                              new SelectListItem { Text="ODC",Value="3"}
+                                        }, "----Select----", new { @class = "form-control input-sm dropdown" })
+                                    </div>
+                                    <div class="col-md-offset-4 col_cus_offset_3 col_cus_2 col-md-1">
+                                        <label style="display:none;">Vehicle No:</label>
+                                    </div>
+                                    <div class="col-md-3 Date_Img">
+                                        @Html.TextBox("VehicleNo", "", new { @class = "form-control input-sm", @style = "display:none;" })
+                                        <input type="button" id="btnMultiVehicles" class="btn log_Btn_sm" value="Enter Vehicle Nos" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>No of Packages:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("NoOfPackages", "", new { @readonly = true })
+                                    </div>
+                                    <div class="col-md-offset-4 col_cus_offset_3 col_cus_2 col-md-1-5">
+                                        <label>Weight:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("Weight", "", new { @readonly = true })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Location:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("Location", "", new {@readonly = true })
+                                    </div>
+                                    <div class="col-md-offset-4 col_cus_offset_3 col_cus_2 col-md-1-5">
+                                        <label>Port Of Dispatch:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.DropDownList("PortOfDispatch", new List<SelectListItem>
+                                        {
+                                            new SelectListItem { Text="CHENNAI",Value="CHN"},
+                                            new SelectListItem { Text="Chennai Other CFS",Value="CHNO"},
+                                            new SelectListItem { Text="Cochin",Value="CPT"},
+                                            new SelectListItem { Text="ICD - Bangalore",Value="ICD"},
+                                            new SelectListItem { Text="KPATNAM",Value="KAPT"},
+                                            new SelectListItem { Text="TUTICORIN",Value="TPT"},
+                                            new SelectListItem { Text="Virugumbakam",Value="VRG"},
+                                        }, "----Select----", new { @class = "form-control input-sm dropdown" })
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row SignUp_space_bottom">
+                                <div class="col-md-offset-4 col-md-2">
+                                    <input type="button" id="btnAdd" class="btn log_Btn_sm" value="Add" onclick="AddContainer()" />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="button" id="btnDtlReset" class="btn log_Btn_sm" value="Reset" onclick="ResetDtlDetails()" />
+                                </div>
+                            </div>
+                            @Html.Hidden("Index")
+                            
+                            <div class="row">
+                                <div class="col-md-12" id="DivContDet">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-2 col-md-2">
+                                <input type="submit" id="btnSave" class="btn log_Btn_sm" value="Save" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" id="btnDT" class="btn log_Btn_sm" value="CIM DP" disabled onclick="SendDT()" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" id="btnReset" class="btn log_Btn_sm" value="Reset" onclick="ResetDetails()" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" value="Print" class="btn log_Btn_sm" id="BtnPrint" onclick="Print()" disabled />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg" id="DivSucMsg" style="background-color:transparent"></div>
+                        <div class="logErrMsg" id="DivErrMsg" style="background-color:transparent"></div>
+                        <div class="row">
+                           <div class="col-md-2 SignUp_space_bottom">
+                                <input type="button" id="BtnGateEntryByTrainListLoad" value="Show List" class="btn log_Btn_sm" onclick="LoadGPList()" />
+                           </div>
+                        </div>
+                        <div class="row Form_Space_top Form_Space_bottom">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-offset-5 col-md-4" style="text-align:right;">
+                                    <label>GP No/GP Date/Invoice No/Container No/ Vehicle No:</label>
+                                </div>
+                                <div class="col-md-3">
+                                    @Html.TextBox("GPSearch", "", new { placeholder = "Search Here" })
+                                    @*<input id="PartyCode" name="PartyCode" type="text" value="gfh gf">*@
+                                    <span class="search"><i class="fa fa-search" aria-hidden="true" onclick="SearchGatePass()"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                           <div class="col-md-12">
+                                    <div id="tblEntryDet"></div>
+                           </div>
+                        </div>
+                    }
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div id="DivGPList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  @* <div id="InvoiceModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Invoice No.</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="InvoiceNobox" type="text" />
+                    <ul class="navList" id="lstInvoice">
+                        @{
+                            if (ViewBag.InvoiceNoList != null)
+                            {
+                                foreach (var item in ViewBag.InvoiceNoList)
+                                {
+                                    <li id="@item.InvoiceId" onclick="SelectInvoice(this,'@item.Module')">@item.InvoiceNo</li>
+                                }
+                            }
+                        }
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>*@ 
+    <div class="modal fade" id="InvoiceModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" id="btnInvoiceClose"class="close" onclick=CloseInvoice()><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Invoice No.</h4>
+                </div>
+                <div class="modal-body popup_body" style="position:relative;">
+                    <input placeholder="Search By InvoiceNo Or ContainerNo Or ShipBillNo" id="Invoicebox" type="text" tabindex="401" />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick=SearchInvoiceByContainerNo()></i></span>
+                    <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="6" width="50%">Invoice No</th>
+                                <th colspan="6" width="50%">Container/ShipBillNo</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div id="slim_scroll">
+                        <table class="table dataTable table-bordered table-striped slim_tble" id="tbleInvoice">
+                            <tbody></tbody>
+                            @*@{
+                                if (ViewBag.lstInvoice != null)
+                                {
+                                    var tabvalue = 401;
+                                    var tab = 0;
+                                    var u = "_";
+                                    foreach (var item in ViewBag.lstInvoice)
+                                    {
+                                        <tr tabindex="@tabvalue@u@tab" onkeypress="SelectInvoice(@item.InvoiceId,'@item.InvoiceNo','@item.Module')" onclick="SelectInvoice(@item.InvoiceId,'@item.InvoiceNo','@item.Module')">
+                                            <td colspan="6" width="50%" class="txt_wrp">@item.InvoiceNo</td>
+                                            <td colspan="6" width="50%" class="txt_wrp">@item.ContainerNo</td>
+                                        </tr>
+                                    }
+                                }
+                            }*@
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            @if (ViewBag.lstState != null && Convert.ToBoolean(ViewBag.lstState) == true)
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreInvoice()" class="btn log_Btn_sm" id="btnLoadInvoice">Load More Data</button>
+                            }
+                            else
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreInvoice()" class="btn log_Btn_sm" id="btnLoadInvoice" disabled>Load More Data</button>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" onclick="CloseInvoice()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+
+    <!--Vehicle And Packages Modal-->
+    <div id="VehicleModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" ng-click="Close()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">Vehicle And Packages</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    {{FilterContainer}}
+                    <table class="table table-bordered table-striped dataTable">
+                        <thead>
+                            <tr>
+                                <th>Sr</th>
+                                <th>VehicleNo</th>
+                                <th>Packages</th>
+                                <th><a class="add_btn" href="#" ng-click="Add()"><i class="glyphicon glyphicon-plus" aria-hidden="true"></i></a></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="v in Vehicles | filter: { ContainerNo : FilterContainer }">
+                                <td>{{$index+1}}</td>
+                                <td>
+                                    <input type="text" ng-model="v.VehicleNo" />
+                                </td>
+                                <td>
+                                    <input type="number" ng-model="v.Package" />
+                                </td>
+                                <td>
+                                    <button ng-click="Delete(v)"><i class="glyphicon glyphicon-remove" aria-hidden="true"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                        @*<tfoot>
+                                <tr>
+                                    <td></td>
+                                    <td>
+                                        <input type="text" ng-model="Vehicle.VehicleNo" />
+                                    </td>
+                                    <td>
+                                        <input type="number" ng-model="Vehicle.Package" />
+                                    </td>
+                                    <td>
+
+                                        <button ng-click="ok()" value="ok"></button>
+                                    </td>
+                                    <td>
+
+                                    </td>
+                                </tr>
+                            </tfoot>*@
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" ng-click="Close()">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script>
+    var ContainerDetails = [];
+    var Module = '';
+    //******************************************************************************************
+    var VehicleList = [];
+    angular.bootstrap(document.getElementById('gatepass'), ['CWCApp']);
+    $('#btnMultiVehicles').on('click', function () {
+        if ($('#Index').val() != '') {
+            $('#VehicleModal').modal();
+        };
+
+    });
+    //******************************************************************************************
+    $('#GatePassDate').focus();
+    $(function () { GenerateBlankTable(); });
+    $('#GatePassDate').datetimepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+
+    $('#DepartureDate').datetimepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+        }
+    });
+    $('#ArrivalDate').datetimepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+        }
+    });
+    function checkdate() {
+        debugger;
+        var result = moment($('#GatePassDate').val(), "DD/MM/YYYY HH:mm", true).isValid();
+        if (!result) {
+            $('#DivMsgs').html('Incorrect Date');
+            setTimeout(function () { $('#DivMsgs').html(''); }, 5000);
+            $('#GatePassDate').val('');
+        }
+    }
+    function check() {
+        debugger;
+        //alert(elm);
+        $('#GatePassDate').val($('#GatePassDate').val().replace(/^(\d\d)(\d)$/g, '$1/$2').replace(/^(\d\d\/\d\d)(\d+)$/g, '$1/$2').replace(/[^\d\/]/g, ''));
+        //  elm = elm.replace(/^(\d\d)(\d)$/g, '$1/$2').replace(/^(\d\d\/\d\d)(\d+)$/g, '$1/$2').replace(/[^\d\/]/g, '');
+    }
+    function GenerateBlankTable() {
+        tablehtml = '';
+        var tablehtml = '<table class="table table-bordered table-striped dataTable" id="tblEntryDet"><thead><tr><th class="text-center" style="width:10%;">SL No</th><th>Gate Pass No</th><th>Gate Pass Date</th><th style="display:none;">Invoice No</th><th>Is Cancelled</th><th class="text-center" style="width:10%;">Edit</th><th class="text-center" style="width:10%;">View</th><th class="text-center" style="width:10%;">Delete</th><th class="text-center" style="width:10%;">Preview</th><th class="text-center" style="width:10%;">Cancel</th></tr></thead><tbody>';
+        $('#tblEntryDet').html(tablehtml);
+    }
+    function LoadGPList() {
+        $('#tblEntryDet').html('');
+        $('#DivGPList').load('/GateOperation/VLDA_GatePass/ListOfGatePass');
+    }
+    function GatePassOnSuccess(data) {
+        if (data.Status == 1) {
+            debugger;
+            $('#GPID').val(data.Data);
+            $('#DivSucMsg').html(data.Message);
+            var Module = $('#Module').val();
+           // $('#GatepassId').val(data.Data);
+            if (Module.substring(0, 3) == 'EXP') {
+                $('#btnDT').prop('disabled', false);
+            }
+
+            $('#BtnPrint').removeAttr("disabled");
+            //setTimeout(function () { $('#DivBody').load('/GateOperation/WFLD_GatePass/CreateGatePass'); }, 5000);
+        }
+        else {
+            $('#DivErrMsg').html(data.Message);
+            setTimeout(function () { $('#DivSucMsg').html(''); }, 5000);
+        }
+    }
+    function impJOOnFailure() { }
+    $('#InvoiceNobox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstInvoice > li').show();
+        else {
+            $('#lstInvoice > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+  /*  function SelectInvoice(elem, Module) {
+        debugger;
+        var invoice = elem.innerHTML.split('-');
+        var inv=invoice[0]
+        $('#InvoiceId').val(elem.id);
+        $('#InvoiceNo').val(inv);
+        $('#Module').val(Module);
+        $("#InvoiceModal").modal("hide");
+        GetDetailsAgainstInvoiceId(elem.id);
+    }*/
+    
+    function GetDetailsAgainstInvoiceId(InvoiceId) { 
+        $.ajax({
+            url: '/GateOperation/VLDA_GatePass/GetDetAgainstInvoice',
+            type: 'GET',
+            data: { InvoiceId: InvoiceId },
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                $('#DivContDet').html('');
+                if (data.Data != null && data.Data != undefined) {
+                    $('#CHAName').val(data.Data.CHAName);
+                    $('#ImpExpName').val(data.Data.ImpExpName);
+                    $('#ShippingLineName').val(data.Data.ShippingLineName);
+                    $('#DeliveryDate').val(data.Data.DeliveryDate);
+                    Module=data.Data.Module;
+                    ContainerDetails = data.Data.lstContainerDet;
+                    GenerateTable();
+                }
+            }
+        });
+    }
+    function GenerateTable() {
+        var html = '';
+        html = '<table class="table table-bordered table-striped dataTable" id="tblContainer"><thead><tr><th class="text-center" style="width:10%;">SL No</th><th>Container No</th><th>Container Size</th><th style="display:none;">Reefer</th><th>Vehicle No</th><th class="text-center" style="width:10%;">Edit</th></tr></thead><tbody>';
+        $.each(ContainerDetails, function (i, elem) {
+            html += '<tr><td class="text-center" style="width:10%;">' + (i + 1) + '</td><td>' + elem.ContainerNo + '</td><td>' + elem.Size + '</td><td style="display:none;">' + (elem.IsReefer == true ? 'Reefer' : 'Non Reefer') + '</td><td>' + elem.VehicleNo + '</td><td class="text-center" style="width:10%;"><a href="#" onclick="EditContainerDet(' + i + ')"><i class="fa fa-pencil-square Edit"></i></a></td></tr>';
+        });
+        html += '</tbody></table>';
+        $('#DivContDet').html(html);
+    }
+    $('#btnSave').on("click", function () {
+        debugger;
+        var Status = true;
+        var mod = $('#Module').val();
+        if (mod == 'IMPDeli' || mod == 'IMPYard' || mod == 'EC' ||  mod == 'BNDadv' || mod == 'BND') {
+            $("#DepartureDate").rules("remove", "required");
+            $("#ArrivalDate").rules("remove", "required");
+
+        }
+        if ($('#tblContainer tbody tr').length > 0) {
+            //vehicle no mandatory for all gate pass CWU 222
+            //if ($('#Module').val() == 'IMPDeli' || $('#Module').val() == 'BTT')
+            //{
+                $.each(ContainerDetails, function (i, elem) {
+                    if (elem.VehicleNo == '') {
+                        Status = false;
+                        return false;
+                    }
+                });
+
+
+            //}
+            if (Status == true) {
+                $('#DivErrMsg').html('');
+                $('#StringifyData').val(JSON.stringify(ContainerDetails));
+                //return false;
+            }
+            else {
+                $('#DivErrMsg').html('Please Edit the record and Enter vehicle no.');
+                //setTimeout(function(){$('#DivErrMsg').html('');},5000);
+                return false;
+            }
+        }
+    });
+    function ResetDetails() {
+        $('#DivContDet').html('');
+        $('#Remarks,#InvoiceNo,#InvoiceId,#CHAName,#ImpExpName,#ShippingLineName,#DeliveryDate,#DepartureDate,#ArrivalDate').val('');
+        ResetDtlDetails();
+    }
+    function EditContainerDet(i) {
+        $('#ContainerNo,#Size,#CargoDescription,#NoOfPackages').val('');
+        $('#IsReefer').prop('checked', false);
+        $('#ContainerNo').val(ContainerDetails[i].ContainerNo);
+        $('#Size').val(ContainerDetails[i].Size);
+        $('#Location').val(ContainerDetails[i].Location);
+        $('#CargoDescription').val(ContainerDetails[i].CargoDescription);
+        (ContainerDetails[i].CargoType > 0) ? $('#CargoType').val(ContainerDetails[i].CargoType) : $('#CargoType').val('');
+        $('#Weight').val(ContainerDetails[i].Weight);
+        $('#NoOfPackages').val(ContainerDetails[i].NoOfUnits);
+        (ContainerDetails[i].IsReefer) ? $('#Reefer').prop('checked', true) : $('#Reefer').prop('checked', false);
+        ContainerDetails[i].VehicleNo == '' ? '' : $('#VehicleNo').val(ContainerDetails[i].VehicleNo);
+        ContainerDetails[i].Location == '' ? '' : $('#Location').val(ContainerDetails[i].Location);
+        ContainerDetails[i].PortOfDispatch == '' ? '' : $('#PortOfDispatch').val(ContainerDetails[i].PortOfDispatch);
+        $('#Index').val(i);
+
+        $('#ContainerNo').trigger('input'); // Use for Chrome/Firefox/Edge
+        $('#ContainerNo').trigger('change');
+    }
+    function AddContainer() {
+        debugger;
+        var k = $('#Index').val();
+        if (k != '') {
+            ContainerDetails[k].VehicleNo = $('#VehicleNo').val();
+            ContainerDetails[k].CargoType = ($('#CargoType').val() == '') ? 0 : $('#CargoType').val();
+            ContainerDetails[k].Location = $('#Location').val();
+            ContainerDetails[k].PortOfDispatch = $('#PortOfDispatch').val();
+            ResetDtlDetails();
+            GenerateTable();
+            $('#Index').val('');
+        }
+    }
+    function ResetDtlDetails() {
+        $('#ContainerNo,#Size,#CargoDescription,#CargoType,#VehicleNo,#Weight,#NoOfPackages,#Location,#PortOfDispatch').val('');
+        $('#Reefer').prop('checked', false);
+        $('#Index').val('');
+    }
+    Page = 0;
+    function LoadMoreInvoice() {
+        debugger;
+        $.ajax({
+            url: '/GateOperation/VLDA_GatePass/LoadInvoiceList',
+            type: 'GET',
+            data: { Container: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    tabvalue=401
+                    $.each(data.Data.lstInvoice, function (item, elem) {
+                       // debugger;
+                        html += '<tr tabindex=' + tabvalue + '_' + item + ' onclick="SelectInvoice(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;,&quot;' + elem.Module + '&quot;)" onclick="SelectInvoice(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;,&quot;' + elem.Module + '&quot;)"><td colspan="6" width="50%" class="txt_wrp">' + elem.InvoiceNo + '</td><td colspan="6" width="50%" class="txt_wrp">' + elem.ContainerNo + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleInvoice tbody').html(html);
+                    else
+                        $('#tbleInvoice tbody').append(html);
+                    Page++;
+
+                    debugger;
+                    if (data.Data.State == true)
+                        $('#btnLoadInvoice').prop('disabled', false);
+                    else $('#btnLoadInvoice').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadInvoice() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/GateOperation/VLDA_GatePass/LoadInvoiceList',
+            type: 'GET',
+            data: { Container: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    tabvalue = 401
+                    $.each(data.Data.lstInvoice, function (item, elem) {
+                        //debugger;
+                        // html += '<tr onclick="SelectInvoice(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        html += '<tr tabindex=' + tabvalue + '_' + item + ' onclick="SelectInvoice(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;,&quot;' + elem.Module + '&quot;)" onkeypress="SelectInvoice(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;,&quot;' + elem.Module + '&quot;)"><td colspan="6" width="50%" class="txt_wrp">' + elem.InvoiceNo + '</td><td colspan="6" width="50%" class="txt_wrp">' + elem.ContainerNo + '</td></tr>';
+                    });
+
+                    $('#tbleInvoice tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadInvoice').prop('disabled', false);
+                    else $('#btnLoadInvoice').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SelectInvoice(InvoiceId,InvoiceNo,Module) {
+        debugger;
+        $('#InvoiceId').val(InvoiceId);
+        $('#InvoiceNo').val(InvoiceNo);
+        $('#Module').val(Module);
+        $("#InvoiceModal").modal("hide");
+        $('#Invoicebox').val('');
+       
+        GetDetailsAgainstInvoiceId(InvoiceId);
+        $('#Remarks').focus();
+    }
+
+    function SearchInvoiceByContainerNo() {
+        if ($('#Invoicebox').val() != '') {
+            $.ajax({
+                url: '/GateOperation/VLDA_GatePass/InvoiceSearchByContainer',
+                type: 'GET',
+                data: { Container: $('#Invoicebox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        tabvalue = 401
+                        $.each(data.Data.lstInvoice, function (item, elem) {
+                            html += '<tr tabindex=' + tabvalue + '_' + item + ' onclick="SelectInvoice(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;,&quot;' + elem.Module + '&quot;)" onkeypress="SelectInvoice(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;,&quot;' + elem.Module + '&quot;)"><td colspan="6" width="50%" class="txt_wrp">' + elem.InvoiceNo + '</td><td colspan="6" width="50%" class="txt_wrp">' + elem.ContainerNo + '</td></tr>';
+                           // html += '<tr onclick="SelectInvoice(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;' + elem.Module + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.InvoiceNo + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.ContainerNo + '</td></tr>';
+                        });
+                        $('#tbleInvoice tbody').html('');
+                        $('#tbleInvoice tbody').html(html);
+                        $('#btnLoadInvoice').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleInvoice tbody').html('');
+                        Page = -1;
+                        $('#btnLoadInvoice').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadInvoice();
+    }
+
+    function CloseInvoice() {
+        $('#Invoicebox').val('');
+        $("#InvoiceModal").modal("hide");
+        //LoadInvoice();
+    }
+    function SearchGatePass() {
+        $('#tblEntryDet').hide();
+        if ($('#GPSearch').val().trim() == "" || $('#GPSearch').val().trim() == null) {
+            LoadGPList();
+        }
+        else {
+            $('#DivGPList').load('/GateOperation/VLDA_GatePass/SearchGatePass?Value=' + $('#GPSearch').val().trim());
+
+        }
+    }
+    function PopupActivate(Id) {
+        //debugger;
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+
+        
+
+            $('#' + Id).modal('show');
+
+
+            //if (Id == "ContainerOBLModal") {
+            //    SearchOBLWise();
+            //    $('#ContainerOBLBox').focus();
+            //}
+            if (Id == "InvoiceModal") {
+
+                $('#Invoicebox').focus();
+            }
+
+          
+        }
+    
+
+
+    $('#InvoiceModal').on('shown.bs.modal', function () {
+        $('#Invoicebox').focus();
+    });
+
+  
+    $('#btnInvoiceClose').click(function () {
+        $('#Remarks').focus();
+    });
+ 
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+
+    document.getElementById('Invoicebox').addEventListener('keyup', debounce(function () {
+        SearchInvoiceByContainerNo()
+    }, 800));
+
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+
+
+
+
+
+
+    function GetInvoiceNoForGatePass() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/GateOperation/VLDA_GatePass/GetInvNoforGatePass',
+            type: 'GET',
+           
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    tabvalue = 401
+                    $.each(data.Data.lstInvoice, function (item, elem) {
+                        //debugger;
+                        // html += '<tr onclick="SelectInvoice(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        html += '<tr tabindex=' + tabvalue + '_' + item + ' onclick="SelectInvoice(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;,&quot;' + elem.Module + '&quot;)" onkeypress="SelectInvoice(' + elem.InvoiceId + ',&quot;' + elem.InvoiceNo + '&quot;,&quot;' + elem.Module + '&quot;)"><td colspan="6" width="50%" class="txt_wrp">' + elem.InvoiceNo + '</td><td colspan="6" width="50%" class="txt_wrp">' + elem.ContainerNo + '</td></tr>';
+                    });
+
+                    $('#tbleInvoice tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadInvoice').prop('disabled', false);
+                    else $('#btnLoadInvoice').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function Print() {
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        var GPID = $('#GPID').val();
+        $.ajax({
+            url: '/GateOperation/VLDA_GatePass/GatePassPrint',
+            type: 'POST',
+            data: { GatePassId: GPID },
+            dataType: 'JSON',
+            headers: { '__RequestVerificationToken': Token },
+            success: function (data) {
+                if (data.Status == 1) {
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                    setTimeout(function () { $('#DivBody').load('/GateOperation/VLDA_GatePass/CreateGatePass'); }, 5000);
+
+                }
+                else
+                    alert(data.Message);
+            }
+        });
+
+    }
+
+    function SendDT() {
+        var GatePassId = $('#GPID').val();
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: "/GateOperation/VLDA_GatePass/SendDP",
+            type: "POST",
+            dataType: "JSON",
+            data: { GatePassId: GatePassId },
+            headers: { "__RequestVerificationToken": Token },
+            async: false,
+            success: function (data) {
+                if (data.Status == 1) {
+                    $('#btnDT').prop('disabled', true);
+                    alert(data.Message);
+                }
+                else {
+                    alert(data.Message);
+                }
+            }
+        });
+    }
+
+</script>

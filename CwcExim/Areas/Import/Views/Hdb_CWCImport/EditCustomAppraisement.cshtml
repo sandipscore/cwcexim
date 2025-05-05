@@ -1,0 +1,923 @@
+﻿@model CwcExim.Areas.Import.Models.Hdb_CustomAppraisement
+
+<script>
+    var ArrayOfCustomAppraisement = [];
+    var TimeInSeconds;
+    var SubDomain;
+    $(function () {
+        debugger;
+        SubDomain = '@System.Configuration.ConfigurationManager.AppSettings["SubDomain"]';
+        TimeInSeconds = 5000;
+        ArrayOfCustomAppraisement=@Html.Raw(Json.Encode(Model.LstAppraisement));
+        GenerateCstmAppraiseTable();
+    });
+
+    $('#AppraisementDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='AppraisementDate']").html('');
+        }
+    });
+
+    $('#BOEDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='BOEDate']").html('');
+        }
+    });
+
+
+    function ReloadCstmAppraise() {
+        $('#DivBody').load('/Import/Hdb_CWCImport/CreateCustomAppraisement');
+    }
+    function AllowOnlyDecimal(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || (CharCode == 46) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+
+    function CstmAppraiseOnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            $('#DivCustomAppraisementMsg').html(data.Message);
+            setTimeout(ReloadCstmAppraise, TimeInSeconds);
+        }
+        else {
+            $('#DivCustomAppraisementErrMsg').html(data.Message);
+        }
+    }
+
+    function CstmAppraiseOnFailure() { }
+
+    $('#ShippingLineBox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#ShippingLineModal .navList > li').show();
+        } else {
+            $('#ShippingLineModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('#ShippingLineList li').on("click", function () {
+        $('#ShippingLine').val($(this).text());
+        $('#ShippingLineId').val($(this).attr('id'));
+        $("#ShippingLineModal").modal("hide");
+    });
+
+    $('#ListOfCHAHdr li').on("click", function () {
+        debugger;
+        $('#CHAName').val($(this).text());
+        $('#CHAId').val($(this).attr('id'));
+        $("#CHAHdrModal").modal("hide");
+    });
+    $('#SearchCHAHdr').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#CHAHdrModal .navList > li').show();
+        } else {
+            $('#CHAHdrModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('#ListOfCHADtl li').on("click", function () {
+        debugger;
+        $('#CHA').val($(this).text());
+        $('#CHANameId').val($(this).attr('id'));
+        $("#CHADtlModal").modal("hide");
+    });
+    $('#SearchCHADtl').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#CHADtlModal .navList > li').show();
+        } else {
+            $('#CHADtlModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('#ContainerBox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#ContainerModal .navList > li').show();
+        } else {
+            $('#ContainerModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('#ContainerList li').on("click", function () {
+        debugger;
+        $('#ContainerNo').val($(this).text());
+        $('#CFSCode').val($(this).attr('id'));
+        var CFSCode=$('#CFSCode').val();
+        $("#ContainerModal").modal("hide");
+        GetContainerDet(CFSCode);
+    });
+
+    function SaveCstmAppraiseDtl() {
+        debugger;
+        $('#DivCustomAppraisementTblMsg').html('');
+        if ($('#Size').val() == '') {
+            $('[data-valmsg-for="Size"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        if ($('#CargoType').val() == '') {
+            $('[data-valmsg-for="CargoType"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        if ($('#ContainerNo').val() != "") {
+            var CstmAppraiseDtl = {
+                "ContainerNo": $('#ContainerNo').val(),
+                "CFSCode": $('#CFSCode').val(),
+                "Size": $('#Size').val(),
+                "LCLFCL": $('#LCLFCL').val(),
+                "LineNo": $('#LineNo').val(),
+                "BOENo": $('#BOENo').val(),
+                "BOEDate": $('#BOEDate').val(),
+                "IGMNo": $('#IGMNo').val(),
+                "TSANo": $('#TSANo').val(),
+                "CHANameId": $('#CHANameId').val(),
+                "CHA": $('#CHA').val(),
+                "ImporterId": $('#ImporterId').val(),
+                "Importer": $('#Importer').val(),
+                "CargoDescription": $('#CargoDescription').val(),
+                "NoOfPackages": $('#NoOfPackages').val() == "" ? 0 : $('#NoOfPackages').val(),
+                "GrossWeight": $('#GrossWeight').val() == "" ? 0 : $('#GrossWeight').val(),
+                "Duty": $('#Duty').val() == "" ? 0 : $('#Duty').val(),
+                "CIFValue": $('#CIFValue').val() == "" ? 0 : $('#CIFValue').val(),
+                "WithoutDOSealNo": $('#WithoutDOSealNo').val() == "" ? 0 : $('#WithoutDOSealNo').val(),
+                "Vessel": $('#Vessel').val(),
+                "Voyage": $('#Voyage').val(),
+                "CustomAppraisementDtlId" :$('#CustomAppraisementDtlId').val(),
+                "ContainerType": $('#ContainerType').val()==''?0:$('#ContainerType').val(),
+                "CargoType": $('#CargoType').val()==''?0:$('#CargoType').val(),
+                "Reefer":  $('#Reefer').prop("checked")==false?0 : 1,
+                "RMS": $('#RMS').prop("checked") == false ? 0 : 1,
+                "HeavyScrap": $('#HeavyScrap').prop("checked") == false ? 0 : 1,
+                "AppraisementPerct": $('#AppraisementPerct').val() == '' ? 0 : $('#AppraisementPerct').val(),
+                "IsInsured": $('#IsInsured').is(":checked") == false ? 0 : 1,
+                "StorageType": $('#StorageType').val(),
+                "AreaInSqm": $('#AreaInSqm').val() == '' || $('#AreaInSqm').val() == undefined ? 0.00 : $('#AreaInSqm').val(),
+                "TransportMode":$('#TransportMode').val(),
+
+                // "CargoType": $('#CargoType').val()
+            }
+            ArrayOfCustomAppraisement.push(CstmAppraiseDtl);
+            //$('#ContainerList #' + $('#ContainerNo').val()).remove();
+            ResetCstmAppraiseDet();
+            GenerateCstmAppraiseTable();
+        }
+        else {
+            $('#DivCustomAppraisementTblMsg').html('Please Select A Container No In Order To Add Details');
+            // $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+        }
+    }
+
+    function ResetCstmAppraiseDet() {
+        debugger;
+        $('#Reefer').prop("checked", false);
+        $('#RMS').prop("checked", false);
+        $('#DivCustomAppraisementDet').find('input:text,textarea,select').val('');
+        $('#IsInsured').prop("checked", false);
+        $('#ContainerType').val('2');
+    }
+
+    function GenerateCstmAppraiseTable() {
+        debugger;
+        $('#TblCustomAppraisementDet').hide();
+        var Html = '';
+        if (ArrayOfCustomAppraisement.length != 0) {
+            $.each(ArrayOfCustomAppraisement, function (i, item) {
+                debugger;
+                Html += '<tr><td class="text-center">' + (i + 1) + '</td><td>' + item.CFSCode + '</td><td>' + item.ContainerNo + '</td><td class="text-center"><a href="#" onclick="EditCstmAppraise(' + i + ')"><i class="fa fa fa-pencil-square Edit" aria-hidden="true"></i></a></td><td class="text-center"><a href="#" onclick="ViewCstmAppraise(' + i + ')"><i class="fa fa-search-plus Edit" aria-hidden="true"></i></a></td></tr>';
+            });
+            $('#TblCustomAppraisementDet>tbody').html(Html);
+            $('#TblCustomAppraisementDet').show();
+        }
+    }
+
+    function EditCstmAppraise(Index) {
+        debugger;
+        if($('#CFSCode').val()=='')
+        {
+            $('#BtnAddCustomAppraisement').prop("disabled", false);
+            $('#CHADtlSearch').css("display", "block");
+            $('#ContainerNo').val(ArrayOfCustomAppraisement[Index].ContainerNo);
+            $('#CFSCode').val(ArrayOfCustomAppraisement[Index].CFSCode);
+            $('#Size').val(ArrayOfCustomAppraisement[Index].Size);
+            $('#LCLFCL').val(ArrayOfCustomAppraisement[Index].LCLFCL);
+            $('#LineNo').val(ArrayOfCustomAppraisement[Index].LineNo);
+            $('#BOENo').val(ArrayOfCustomAppraisement[Index].BOENo);
+            $('#BOEDate').val(ArrayOfCustomAppraisement[Index].BOEDate);
+            $('#IGMNo').val(ArrayOfCustomAppraisement[Index].IGMNo);
+            $('#TSANo').val(ArrayOfCustomAppraisement[Index].TSANo);
+            $('#CHANameId').val(ArrayOfCustomAppraisement[Index].CHANameId);
+            $('#CHA').val(ArrayOfCustomAppraisement[Index].CHA);
+            $('#ImporterId').val(ArrayOfCustomAppraisement[Index].ImporterId);
+            $('#Importer').val(ArrayOfCustomAppraisement[Index].Importer);
+            $('#CargoDescription').val(ArrayOfCustomAppraisement[Index].CargoDescription);
+            $('#NoOfPackages').val(ArrayOfCustomAppraisement[Index].NoOfPackages);
+            $('#GrossWeight').val(ArrayOfCustomAppraisement[Index].GrossWeight);
+            $('#Duty').val(ArrayOfCustomAppraisement[Index].Duty);
+            $('#CIFValue').val(ArrayOfCustomAppraisement[Index].CIFValue);
+            $('#WithoutDOSealNo').val(ArrayOfCustomAppraisement[Index].WithoutDOSealNo);
+            $('#Vessel').val(ArrayOfCustomAppraisement[Index].Vessel);
+            $('#Voyage').val(ArrayOfCustomAppraisement[Index].Voyage);
+            $('#CustomAppraisementDtlId').val(ArrayOfCustomAppraisement[Index].CustomAppraisementDtlId);
+            ArrayOfCustomAppraisement[Index].ContainerType == 0 ? $('#ContainerType').val('') : $('#ContainerType').val(ArrayOfCustomAppraisement[Index].ContainerType);
+            ArrayOfCustomAppraisement[Index].CargoType == 0 ? $('#CargoType').val('') : $('#CargoType').val(ArrayOfCustomAppraisement[Index].CargoType);
+            ArrayOfCustomAppraisement[Index].Reefer == 0 ? $('#Reefer').prop("checked", false) : $('#Reefer').prop("checked", true);
+            ArrayOfCustomAppraisement[Index].RMS == 0 ? $('#RMS').prop("checked", false) : $('#RMS').prop("checked", true);
+            ArrayOfCustomAppraisement[Index].HeavyScrap == 0 ? $('#HeavyScrap').prop("checked", false) : $('#HeavyScrap').prop("checked", true);
+            ArrayOfCustomAppraisement[Index].AppraisementPerct == 0 ? $('#AppraisementPerct').val('') : $('#AppraisementPerct').val(ArrayOfCustomAppraisement[Index].AppraisementPerct);
+            $('#IsInsured').prop("checked", ArrayOfCustomAppraisement[Index].IsInsured);
+
+            ArrayOfCustomAppraisement[Index].StorageType == 0 ? $('#StorageType').val('') : $('#StorageType').val(ArrayOfCustomAppraisement[Index].StorageType);
+            $('#AreaInSqm').val(ArrayOfCustomAppraisement[Index].AreaInSqm);  
+            $('#TransportMode').val(ArrayOfCustomAppraisement[Index].TransportMode);
+
+            // $('#CargoType').val(ArrayOfCustomAppraisement[Index].CargoType);
+            ArrayOfCustomAppraisement.splice(Index, 1);
+            GenerateCstmAppraiseTable();
+            $('#DivCustomAppraisementTblMsg').html('');
+        }
+        else
+            $('#DivCustomAppraisementTblMsg').html('Please add the above record to edit another');
+    }
+
+    function ViewCstmAppraise(Index) {
+        debugger;
+        $('#BtnAddCustomAppraisement').prop("disabled", true);
+        $('#CHADtlSearch').css("display", "none");
+        $('#ContainerNo').val(ArrayOfCustomAppraisement[Index].ContainerNo);
+        $('#CFSCode').val(ArrayOfCustomAppraisement[Index].CFSCode);
+        $('#Size').val(ArrayOfCustomAppraisement[Index].Size);
+        $('#LCLFCL').val(ArrayOfCustomAppraisement[Index].LCLFCL);
+        $('#LineNo').val(ArrayOfCustomAppraisement[Index].LineNo);
+        $('#BOENo').val(ArrayOfCustomAppraisement[Index].BOENo);
+        $('#BOEDate').val(ArrayOfCustomAppraisement[Index].BOEDate);
+        $('#IGMNo').val(ArrayOfCustomAppraisement[Index].IGMNo);
+        $('#TSANo').val(ArrayOfCustomAppraisement[Index].TSANo);
+        $('#CHANameId').val(ArrayOfCustomAppraisement[Index].CHANameId);
+        $('#CHA').val(ArrayOfCustomAppraisement[Index].CHA);
+        $('#ImporterId').val(ArrayOfCustomAppraisement[Index].ImporterId);
+        $('#Importer').val(ArrayOfCustomAppraisement[Index].Importer);
+        $('#CargoDescription').val(ArrayOfCustomAppraisement[Index].CargoDescription);
+        $('#NoOfPackages').val(ArrayOfCustomAppraisement[Index].NoOfPackages);
+        $('#GrossWeight').val(ArrayOfCustomAppraisement[Index].GrossWeight);
+        $('#Duty').val(ArrayOfCustomAppraisement[Index].Duty);
+        $('#CIFValue').val(ArrayOfCustomAppraisement[Index].CIFValue);
+        $('#WithoutDOSealNo').val(ArrayOfCustomAppraisement[Index].WithoutDOSealNo);
+        $('#Vessel').val(ArrayOfCustomAppraisement[Index].Vessel);
+        $('#Voyage').val(ArrayOfCustomAppraisement[Index].Voyage);
+        $('#CustomAppraisementDtlId').val(ArrayOfCustomAppraisement[Index].CustomAppraisementDtlId);
+        ArrayOfCustomAppraisement[Index].ContainerType == 0 ? $('#ContainerType').val('') : $('#ContainerType').val(ArrayOfCustomAppraisement[Index].ContainerType);
+        ArrayOfCustomAppraisement[Index].CargoType == 0 ? $('#CargoType').val('') : $('#CargoType').val(ArrayOfCustomAppraisement[Index].CargoType);
+        ArrayOfCustomAppraisement[Index].Reefer == 0 ? $('#Reefer').prop("checked", false) : $('#Reefer').prop("checked", true);
+        ArrayOfCustomAppraisement[Index].RMS == 0 ? $('#RMS').prop("checked", false) : $('#RMS').prop("checked", true);
+        ArrayOfCustomAppraisement[Index].HeavyScrap == 0 ? $('#HeavyScrap').prop("checked", false) : $('#HeavyScrap').prop("checked", true);
+        ArrayOfCustomAppraisement[Index].AppraisementPerct == 0 ? $('#AppraisementPerct').val('') : $('#AppraisementPerct').val(ArrayOfCustomAppraisement[Index].AppraisementPerct);
+        $('#IsInsured').prop("checked", ArrayOfCustomAppraisement[Index].IsInsured);
+        ArrayOfCustomAppraisement[Index].StorageType == 0 ? $('#StorageType').val('') : $('#StorageType').val(ArrayOfCustomAppraisement[Index].StorageType);
+        $('#AreaInSqm').val(ArrayOfCustomAppraisement[Index].AreaInSqm);
+        $('#TransportMode').val(ArrayOfCustomAppraisement[Index].TransportMode);
+
+       // $('#CargoType').val(ArrayOfCustomAppraisement[Index].CargoType);
+    }
+
+    $('#BtnSaveCustomAppraisement').on("click", function () {
+        debugger;
+        $('#DivCustomAppraisementTblMsg').html('');
+        if ($('#ContainerNo').val() == "" && $('#TblCustomAppraisementDet >tbody').html() != "") {
+            if (ArrayOfCustomAppraisement.length != 0) {
+                $('#CustomAppraisementXML').val(JSON.stringify(ArrayOfCustomAppraisement));
+            }
+        }
+
+        else if ($('#ContainerNo').val() != "" && $('#BtnAddCustomAppraisement').prop("disabled") == true) {
+            if (ArrayOfCustomAppraisement.length != 0) {
+                $('#CustomAppraisementXML').val(JSON.stringify(ArrayOfCustomAppraisement));
+            }
+        }
+        else {
+            $('#DivCustomAppraisementTblMsg').html('Please Add The Above Records');
+            return false;
+        }
+
+
+    });
+
+
+</script>
+
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "CstmAppraiseOnSuccess";
+    options.OnFailure = "CstmAppraiseOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("AddEditCustomAppraisement", "Hdb_CWCImport", options))
+                {
+                    @Html.AntiForgeryToken()
+                    <div id="DivAddCustomAppraisement">
+                        @Html.HiddenFor(m => m.CustomAppraisementXML)
+                        @Html.HiddenFor(m => m.CustomAppraisementId)
+                        @Html.Hidden("CustomAppraisementDtlId")
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Custom Appraisement Application</h4>
+                            </div>
+                        </div>
+                        @*<div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5">
+                                        <label>Container No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBoxFor(m => m.ContainerNo, new { @class = "form-control input-sm", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.ContainerNo, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>*@
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Appraisement No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.AppraisementNo, new { @class = "form-control input-sm", @readonly = true })
+                                </div>
+                                <div class="col-md-2 col-md-offset-3-5 col_cus_offset_2_5 col_cus_2_5">
+                                    <label>Appraisement Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.AppraisementDate, new { @class = "form-control input-sm", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.AppraisementDate, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div id="DivShippingLine" class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Shipping Line:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextBoxFor(m => m.ShippingLine, "", new { @class = "form-control input-sm", @readonly = true })
+                                    <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ShippingLineModal"></i></span>
+                                    @Html.HiddenFor(m => m.ShippingLineId)
+                                    @Html.ValidationMessageFor(m => m.ShippingLine, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>CHA:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.HiddenFor(m => m.CHAId)
+                                    @Html.TextBoxFor(m => m.CHAName, new { @class = "form-control input-sm", @readonly = true })
+                                    <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CHAHdrModal"></i></span>
+                                    @Html.ValidationMessageFor(m => m.CHAName, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div id="DivRotation" class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Rotation:</label>
+                                </div>
+                                <div class="col-md-4">
+                                    @Html.TextBoxFor(m => m.Rotation, "", new { @class = "form-control input-sm" })
+                                    @*@Html.ValidationMessageFor(m => m.Rotation, "", new { @class = "Error_Msg" })*@
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top" style="display:none">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>FOB:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.Fob, "", new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.Fob, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                    <label>Gross Duty:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.GrossDuty, "", new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.GrossDuty, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2 col-md-offset-1-5 col_cus_offset_2 col_cus_3">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("DeliveryType", "1", new { @class = "", @id = "CargoDelivery", @checked = true })
+                                        <label for="CargoDelivery"><i class="circle"></i><span>Cargo Delivery</span></label>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 col_cus_3">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("DeliveryType", "2", new { @class = "", @id = "ContainerDelivery" })
+                                        <label for="ContainerDelivery"><i class="circle"></i><span>Container/CBT Delivery</span></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2 col-md-offset-1-5 col_cus_offset_2 col_cus_3">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("IsDO", "1", new { @class = "", @id = "WithDo", @checked = true })
+                                        <label for="WithDo"><i class="circle"></i><span>With DO</span></label>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 col_cus_3">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("IsDO", "2", new { @class = "", @id = "WithoutDO" })
+                                        <label for="WithoutDO"><i class="circle"></i><span>Without DO</span></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="DivCustomAppraisementDet" class="Head_h5">
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>CFS Code:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("CFSCode", "", new { @class = "form-control input-sm", @readonly = true })
+                                    </div>
+                                    <div class="col-md-1-5">
+                                        <label>Transport Mode:</label>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2">
+                                        @Html.DropDownList("TransportMode", new List<SelectListItem>
+                               {
+                                new SelectListItem { Text="CWC",Value="CWC"},
+                                new SelectListItem { Text="Private",Value="PVT"}
+                                }, "----Select----", new { @class = "form-control input-sm" })
+                                        @Html.ValidationMessage("TransportMode", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Container/CBT No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("ContainerNo", "", new { @class = "form-control input-sm", @readonly = true })
+                                    </div>
+                                    <div class="col-md-1-5">
+                                        <label>Container/CBT Size:</label>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_2">
+                                        @Html.DropDownList("Size", new List<SelectListItem> {
+                                       new SelectListItem { Text="20",Value="20"},
+                                       new SelectListItem {Text="40",Value="40" },
+                                       new SelectListItem {Text="ODC",Value="ODC" }
+                                       }, "---Select---", new { @class = "form-control input-sm dropdown", @disabled = true })
+                                        @Html.ValidationMessage("Size", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 padding_rt">
+                                        <label>FCL / LCL:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.DropDownList("LCLFCL", new List<SelectListItem>{
+                                        new SelectListItem {Text="FCL",Value="FCL" },
+                                        new SelectListItem {Text="LCL",Value="LCL" }
+                                      }, "---Select---", new { @class = "form-control input-sm dropdown", @disabled = true })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Container/CBT Type:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.DropDownList("ContainerType", new List<SelectListItem> {
+                                       new SelectListItem { Text="Empty Container",Value="1"},
+                                       new SelectListItem {Text="Loaded Container",Value="2" ,Selected=true}
+                                       //new SelectListItem {Text="Cargo",Value="3" },
+                                       //new SelectListItem {Text="RMS",Value="4" },
+                                       //new SelectListItem {Text="Non RMS",Value="5" }
+                                       }, "---Select---", new { @class = "form-control input-sm dropdown", @disabled = true })
+                                        @Html.ValidationMessage("ContainerType", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 padding_rt">
+                                        <label>Cargo Type:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.DropDownList("CargoType", new List<SelectListItem>{
+                                        new SelectListItem {Text="HAZ",Value="1" },
+                                        new SelectListItem {Text="Non HAZ",Value="2" }
+                                      }, "---Select---", new { @class = "form-control input-sm dropdown" })
+                                        @Html.ValidationMessage("CargoType", "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5">
+                                        <div class="boolean-container">
+                                            <input type="checkbox" id="Reefer" />
+                                            <label for="Reefer"><i class="square"></i><span>Reefer</span></label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1-5">
+                                        <div class="boolean-container">
+                                            <input type="checkbox" id="RMS" />
+                                            <label for="RMS"><i class="square"></i><span>RMS</span></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Voyage:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("Voyage", "", new { @class = "form-control input-sm", @readonly = true })
+                                        @Html.ValidationMessage("Voyage", "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                        <label>Line No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("LineNo", "", new { @class = "form-control input-sm", @readonly = true })
+                                        @Html.ValidationMessage("LineNo", "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Heavy Scrap:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        <div class="boolean-container">
+                                            <input type="checkbox" id="HeavyScrap" />
+                                            <label for="HeavyScrap"><i class="square"></i></label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1-5 padding_rt">
+                                        <label>Appraisement Percent:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.DropDownList("AppraisementPerct", new List<SelectListItem>{
+                                         new SelectListItem {Text="100%",Value="2" },
+                                        new SelectListItem {Text="25%",Value="1" }
+                                      }, new { @class = "form-control input-sm dropdown" })
+                                        @Html.ValidationMessage("AppraisementPerct", "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="DivVessel" class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Vessel:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        @Html.TextBox("Vessel", "", new { @class = "form-control input-sm", @readonly = true })
+                                        @Html.ValidationMessage("Vessel", "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>BOE No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("BOENo", "", new { @class = "form-control input-sm", @maxlength = "45" })
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                        <label>BOE Date:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBox("BOEDate", "", new { @class = "form-control input-sm", @readonly = true })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top" >
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>IGM No.:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("IGMNo", "", new { @class = "form-control input-sm" })
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2" style="display:none;">
+                                        <label>TSA No.:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5" style="display:none;">
+                                        @Html.TextBox("TSANo", "", new { @class = "form-control input-sm" })
+                                    </div>
+                                </div>
+                            </div>
+                            @*<div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5" style="padding-right:0px;">
+                                            <label>CHA Name And Address:</label>
+                                        </div>
+                                        <div class="col-md-10-5">
+                                            @Html.TextBox("CHA", "", new { @class = "form-control input-sm", @readonly = true })
+                                            @Html.Hidden("CHANameId")
+                                        </div>
+                                    </div>
+                                </div>*@
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>CHA Name And Address:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        @Html.TextArea("CHA", "", new { @class = "form-control input-sm", @readonly = true })
+                                        <span class="search" id="CHADtlSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CHADtlModal"></i></span>
+                                        @Html.Hidden("CHANameId")
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Importer Name And Address:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        @Html.TextBox("Importer", "", new { @class = "form-control input-sm", @readonly = true })
+                                        @Html.Hidden("ImporterId")
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Cargo Description:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        @Html.TextArea("CargoDescription", "", new { @style = "width:100%;height:100px", @disabled = true })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>No of Packages:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("NoOfPackages", "", new
+                                   {
+                                       @class = "form-control input-sm"@*, @readonly = true*@ })
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                        <label>Gross Weight(Kg):</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("GrossWeight", "", new
+                                   {
+                                       @class = "form-control input-sm"@*, @readonly = true*@ })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>CIF Value:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("CIFValue", "", new { @class = "form-control input-sm", @maxlength = "11", @onkeypress = "return AllowOnlyDecimal(event)" })
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                        <label>Duty:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("Duty", "", new { @class = "form-control input-sm", @maxlength = "11", @onkeypress = "return AllowOnlyDecimal(event)" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Without DO Seal No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("WithoutDOSealNo", "", new { @class = "form-control input-sm", @maxlength = "45" })
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt" style="display:none">
+                                        <label>Storage Type:</label>
+                                    </div>
+                                    <div class="col-md-2-5" style="display:none">
+                                        @Html.DropDownList("StorageType", new List<SelectListItem>{
+                                        new SelectListItem {Text="Open",Value="Open" },
+                                        new SelectListItem {Text="Covered",Value="Covered" }
+                                        }, "---Select---", new { @class = "form-control input-sm dropdown" })
+                                        @*@Html.ValidationMessage("StorageType", "", new { @class = "Error_Msg" })*@
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label for="IsInsured">Is Insured:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.CheckBox("IsInsured")
+                                        <label for="IsInsured"><i class="square"></i></label>
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                        <label>Area In <span style="text-transform:uppercase;">Sqm.</span>.:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBox("AreaInSqm", "", new { @class = "form-control input-sm" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="stoke SignUp_space_top SignUp_space_bottom"></div>
+                            </div>
+                            <div class="row SignUp_space_bottom2">
+                                <div class="col-md-offset-4 col-md-2">
+                                    <input type="button" id="BtnAddCustomAppraisement" class="btn log_Btn_sm" value="Add" onclick="SaveCstmAppraiseDtl()" />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="button" class="btn log_Btn_sm" value="Reset" />
+                                </div>
+                            </div>
+                            <div id="DivCustomAppraisementTblMsg" class="logErrMsg Form_Space_top Form_Space_bottom" style="background-color:transparent"></div>
+                            <div class="row Form_Space_top">
+                                <div class="col-md-12">
+                                    <table class="table table-striped table-bordered dataTable" id="TblCustomAppraisementDet" style="width:100%;">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center" style="width:8%;">@Html.DisplayName("SL No")</th>
+                                                <th>@Html.DisplayName("CFS No")</th>
+                                                <th>@Html.DisplayName("Container/CBT No")</th>
+                                                <th class="text-center" style="width:10%;">@Html.DisplayName("Edit")</th>
+                                                <th class="text-center" style="width:10%;">@Html.DisplayName("View")</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-offset-4 col-md-2 SignUp_space_bottom">
+                            <input type="submit" class="btn log_Btn_sm" value="Save" id="BtnSaveCustomAppraisement" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Cancel" onclick="ReloadCstmAppraise()" />
+                        </div>
+                    </div>
+                    <div class="logSuccMsg" style="background-color:transparent" id="DivCustomAppraisementMsg"></div>
+                    <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivCustomAppraisementErrMsg"></div>
+
+                }
+                @Scripts.Render("~/bundles/jqueryval")
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="modal fade" id="CHAHdrModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List Of CHA</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="SearchCHAHdr" type="text" />
+                <ul class="navList" id="ListOfCHAHdr">
+                    @{
+                        if (ViewBag.CHAList != null)
+                        {
+                            foreach (var data in ViewBag.CHAList)
+                            {
+                                <li id="@data.Value">@data.Text</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ShippingLineModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Shipping Line</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="ShippingLineBox" type="text" />
+                <ul class="navList" id="ShippingLineList">
+                    @{
+                        if (ViewBag.ShippingLineList != null)
+                        {
+                            foreach (var item in ViewBag.ShippingLineList)
+                            {
+                                <li id="@item.Value">@item.Text</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="CHADtlModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List Of CHA</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="SearchCHADtl" type="text" />
+                <ul class="navList" id="ListOfCHADtl">
+                    @{
+                        if (ViewBag.CHAList != null)
+                        {
+                            foreach (var data in ViewBag.CHAList)
+                            {
+                                <li id="@data.Value">@data.Text</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

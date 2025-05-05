@@ -1,0 +1,891 @@
+﻿@model CwcExim.Areas.Export.Models.VIZ_InvContainerStuffing
+
+@{
+    AjaxOptions options = new AjaxOptions();
+    //options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "StuffingOnSuccess";
+    options.OnFailure = "StuffingOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+@using (Ajax.BeginForm("GenerateStuffingInvoice", "VIZ_CWCExport", options))
+{
+    @Html.AntiForgeryToken()
+    @Html.Hidden("Index");
+    @Html.Hidden("Index1");
+    @Html.HiddenFor(m => m.ShippingBillDtlXml);
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-offset-0-5 col-md-11">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Stuffing Invoice</h4>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-2 col_cus_2_5 col_cus_offset_2">
+                                <div class="boolean-container">
+                                    @Html.RadioButton("InvoiceType", "Tax", new { id = "Tax", @checked = true, @onclick = "IVType('Tax')" })
+                                    <label for="Tax"><i class="circle"></i><span>Tax Invoice</span></label>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col_cus_3">
+                                <div class="boolean-container">
+                                    @Html.RadioButton("InvoiceType", "Bill", new { id = "Bill", @onclick = "IVType('Bill')" })
+                                    <label for="Bill"><i class="circle"></i><span>Bill Of Supply</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input SignUp_space_top2 SignUp_space_bottom">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                
+                            </div>
+                            <div class="col-md-2-5">
+                               
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                <label>Invoice Date:</label>
+                            </div>
+                            <div class="col-md-2-5 col_cus_2_5 Date_Img">
+                                @Html.TextBoxFor(m => m.InvoiceDate, new { @class = "form-control input-sm", @readonly = true, Value = DateTime.Now.ToString("dd/MM/yyyy") })
+                                @Html.ValidationMessageFor(m => m.InvoiceDate, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input SignUp_space_top2 SignUp_space_bottom">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Stuffing No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.HiddenFor(m => m.StuffingId)
+                                @Html.TextBoxFor(m => m.StuffingNo, new { @readonly = true, @onkeydown = "PopupActivate('stuffingModal');" })
+                                <span class="search" id="stuffingsearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#stuffingModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.StuffingNo, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                <label>Stuffing Date:</label>
+                            </div>
+                            <div class="col-md-2-5 col_cus_2_5">
+                                @Html.TextBoxFor(m => m.StuffingDate, new { @class = "form-control input-sm", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.StuffingDate, "", new { @class = "Error_Msg" })
+                            </div>
+
+                        </div>
+                    </div>
+                   
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input SignUp_space_top2 SignUp_space_bottom">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>SEZ</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.DropDownListFor(m => m.SEZ, new List<SelectListItem>
+                                        {
+                                        new SelectListItem { Text="SEZWP",Value="SEZWP"},
+                                        new SelectListItem {Text="SEZWOP",Value="SEZWOP" }
+
+                                        }, "---Select---", new { @class = "form-control input-sm dropdown" })
+                                @*@Html.ValidationMessageFor(m => m.SEZ, new { @class = "Error_Msg" })*@
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top Form_Space_bottom">
+                        <div class="col-md-12">
+                            <table id="tblShippingBillDtl" class="table table-bordered dataTable nowrap table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Ship Bill No.</th>
+                                        <th>Ship Bill Date</th>
+                                        <th>CHA</th>                                        
+                                        <th>PKG</th>
+                                        <th>Container No</th>
+                                        <th>CFS Code</th>                                        
+                                        <th>Size</th> 
+                                        <th>Party</th> 
+                                        <th>Payer</th>                                        
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                  
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                  
+                    <div class="row SignUp_space_bottom SignUp_space_top">
+                        <div class="stoke"></div>
+                    </div>
+                    <div class="row SignUp_space_bottom2">
+                        <div class="col-md-3 col-md-offset-1">
+                            <input type="button" id="btnGenerateInvoice" class="btn log_Btn_sm" value="Generate Invoice" onclick="GenerateInvoice()" />
+                            @*<input type="submit" class="btn log_Btn_sm" value="Generate Invoice" id="btnGenerateInvoice" />*@
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" id="btnReset" class="btn log_Btn_sm" value="Reset" onclick="ResetAll()" />
+                        </div>
+                        <div class="col-md-3">
+                            <input type="button" id="BtnGenerateIRN" class="btn log_Btn_sm" value="Generate IRN" onclick="GenerateIRN()" disabled="disabled" />
+                        </div>
+                       
+                        <div class="col-md-2">
+                            <input type="button" tabindex="26" value="Print" class="btn log_Btn_sm" onclick="PrintInvoice()" id="btnPrint" disabled />
+                        </div>                        
+
+                    </div>
+                    <div class="logSuccMsg" style="background-color:transparent" id="DivContainerStuffingMsg"></div>
+                    <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivContainerStuffingErrMsg"></div>
+
+                    <div class="row SignUp_space_bottom SignUp_space_top">
+                        <div class="stoke"></div>
+                    </div>
+                    
+                    <div><br /></div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-2">
+                                <input type="button" value="Show List" onclick="ShowList()" tabindex="27" class="btn log_Btn_sm" />
+                            </div>
+                            <div class="col-md-4-5 col-md-offset-3-5">
+                                <input type="text" placeholder="Search by Shipbill No/Container No/Stuffing No/Invoice No" id="SearchInvoiceNo" maxlength="30" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" value="Search" onclick="SearchInvoice()" tabindex="31" class="btn log_Btn_sm" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row SignUp_space_bottom SignUp_space_top">
+                        <div class="stoke"></div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-12" id="divListOfInvoice">
+                                <table class="table table-bordered table-striped dataTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Stuffing No</th>
+                                            <th>Stuffing Date</th>
+                                            <th width="300px">Container No</th>
+                                            <th width="300px">Invoice No</th>
+                                            <th>Print</th>
+                                        </tr>
+                                    </thead>
+                                    
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                   
+
+                </div>
+            </div>
+        </div>
+    </div>
+    
+ }
+
+<div id="stuffingModal" class="modal fade mTabindex" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="StuffingModalClose()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Stuffing No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="stuffingbox" type="text" tabindex="401" />
+                <ul class="navList" id="lststuffing"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="StuffingModalClose()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade mTabindex" id="PartyModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseParty()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Party</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Party Name Or Party Code" id="Partybox" type="text" tabindex="200" autofocus />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchPartyByPartyCode()"></i></span>
+                <table tabindex="201" class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Party Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tbleParty">
+                        <tbody>
+                            @{
+                                if (ViewBag.lstParty != null)
+                                {
+                                    var tabvalue = 201;
+                                    foreach (var item in ViewBag.lstParty)
+                                    {
+                                        <tr tabindex="@tabvalue" onkeypress="SelectParty(@item.PartyId,'@item.PartyName')" onclick="SelectParty(@item.PartyId,'@item.PartyName')">
+                                            <td colspan="8" width="80%" class="txt_wrp">@item.PartyName</td>
+                                            <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                        </tr>
+                                        tabvalue++;
+                                    }
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreParty()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+                        }
+                        else
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreParty()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseParty()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade mTabindex" id="PayerModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="ClosePayer()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Payer</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Payer Name Or Payer Code" id="Payerbox" type="text" tabindex="200" autofocus />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchPayerByPayerCode()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Payer Name</th>
+                            <th colspan="4" width="20%">Payer Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll_1">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tblePayer">
+                        <tbody>
+                            @{
+                                if (ViewBag.lstPayer != null)
+                                {
+                                    var tabvalue = 201;
+                                    foreach (var item in ViewBag.lstPayer)
+                                    {
+                                        <tr tabindex="@tabvalue" onclick="SelectPayer(@item.PartyId,'@item.PartyName')" onkeypress="SelectPayer(@item.PartyId,'@item.PartyName')">
+                                            <td colspan="8" width="80%" class="txt_wrp">@item.PartyName</td>
+                                            <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                        </tr>
+                                        tabvalue++;
+                                    }
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.StatePayer != null && Convert.ToBoolean(ViewBag.StatePayer) == true)
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMorePayer()" class="btn log_Btn_sm" id="btnPayerLoadMore">Load More Data</button>
+                        }
+                        else
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMorePayer()" class="btn log_Btn_sm" id="btnPayerLoadMore" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="ClosePayer()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script>
+    $(function () {
+        document.getElementById('stuffingsearch').style.display = '';        
+    });
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+    $(function () {
+        $('#slim_scroll_1').slimScroll({
+            allowPageScroll: true
+        });
+    });
+    $('#InvoiceDate').datetimepicker({
+        dateFormat: "dd/mm/yy",
+        timeFormat: "HH:mm",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='StuffingDate']").html('');
+        }
+    });
+
+    function ResetAll() {
+        $('#DivBody').load('/Export/VIZ_CWCExport/ContainerStuffingPaymentSheet');
+    }
+    function ShowList() {
+        $('#SearchInvoiceNo').val("");
+        $('#divListOfInvoice').load('/Export/VIZ_CWCExport/ListofStuffingInvoice?Module=EXPCSI');
+    }
+
+    function SearchInvoice() {
+        debugger;
+        var SearchValue = $('#SearchInvoiceNo').val().replace(/\s/g, '');
+        $('#divListOfInvoice').load('/Export/VIZ_CWCExport/ListofStuffingInvoice?Module=EXPCSI' + '&SearchValue=' + SearchValue);
+    }
+    var TaxType = '@ViewData["InvType"].ToString()';
+    function IVType(Type) {
+        TaxType = Type;
+        $('#DivBody').load('/Export/VIZ_CWCExport/ContainerStuffingPaymentSheet?type=' + Type);
+    }
+    if (TaxType == 'Tax')
+    {
+        $('#Tax').prop('checked', true);
+        $('#InvoiceType').val('Tax');
+    }
+    else
+    {
+        $('#Bill').prop('checked', true);
+        $('#InvoiceType').val('Bill');
+    }
+
+
+    $('#stuffingsearch').on("click", function () {
+        StuffingNoBinding();
+    });
+
+    function StuffingNoBinding() {
+        Page = 0;
+        $('#lststuffing').html('');
+        $.ajax({
+            url: '/Export/VIZ_CWCExport/GetStuffingNoForInvoice',
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                if (data.Data != '' && data.Data != null) {
+                    var html = '';
+                    var tab = 401;
+                    var jsondata = JSON.parse(JSON.stringify(data.Data));
+                    if (jsondata.length > 0) {
+                        $.each(jsondata, function (i, item) {
+                            html += '<li tabindex=' + tab + '_' + i + ' onkeypress="SelectStuffing(' + item.StuffingId + ',&quot;' + item.StuffingNo + '&quot;,&quot;' + item.StuffingDate + '&quot;)" onclick="SelectStuffing(' + item.StuffingId + ',&quot;' + item.StuffingNo + '&quot;,&quot;' + item.StuffingDate + '&quot;)">' + item.StuffingNo + '</li>';
+                        });
+                    }
+                    $('#lststuffing').html(html);
+                }
+
+            }
+        });
+    }
+    
+
+    $('#stuffingbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lststuffing > li').show();
+        else {
+            $('#lststuffing > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    function StuffingModalClose() {
+        $('#stuffingModal').modal("hide");
+        $('#stuffingbox').val('');
+        $('#StuffingReqNo').focus();
+        $('#lststuffing > li').show();
+    }
+
+    function SelectStuffing(StuffingId, StuffingNo, StuffingDate) {
+        $('#StuffingId').val(StuffingId);
+        $('#StuffingNo').val(StuffingNo);
+        $('#StuffingDate').val(StuffingDate);
+        $('#stuffingModal').modal("hide");
+        $('#stuffingbox').val('');
+        document.getElementById('stuffingsearch').style.display = 'none';
+        $('#btnReset').prop("disabled", true);
+        GetStuffingDetails(StuffingId)
+    }
+    ArrayOfShippingBill = [];
+    function GetStuffingDetails(StuffingId) {
+        ArrayOfShippingBill = [];
+        $.ajax({
+            url: '/Export/VIZ_CWCExport/GetContainerStuffingNoDetails',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { StuffingId: StuffingId },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    $.each(data.Data.LstStuffingDtl, function (i, item) {
+                        debugger;
+                        ArrayOfShippingBill.push(item);
+                    });
+
+                    GenerateContainerStuffTable();
+                    $('#tblShippingBillDtl').show();
+                }
+            }
+        });
+    }
+
+
+
+    function GenerateContainerStuffTable() {
+        debugger;
+        $('#tblShippingBillDtl').hide();
+        var Html = '';
+
+        if (ArrayOfShippingBill.length != 0) {
+            $.each(ArrayOfShippingBill, function (i, item) {
+                //debugger;                
+                Html += '<tr><td>' + item.ShippingBillNo + '</td><td>' + item.ShippingBillDate + '</td><td>' + item.CHAName + '</td><td>' + item.StuffingQuantity + '</td><td>' + item.ContainerNo + '</td><td>' + item.CFSCode + '</td><td>' + item.ContainerSize + '</td><td style="position: relative;"><input id="tdPartyId' + i + '" style="padding-right:30px;" class="modal_pad" type="text" readonly value="' + item.PartyName + '"/><span id="PartySearchId' + i + '" onclick=PartySearch(' + i + ') class="search tblSearch" style="top: 8px;right: 13px;"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span></td><td style="position: relative;"><input id="tdPayerId' + i + '" style="padding-right:30px;" class="modal_pad" type="text" readonly value="' + item.PayerName + '"/><span id="PayerSearchId' + i + '" onclick=PayerSearch(' + i + ') class="search tblSearch" style="top: 8px;right: 13px;"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PayerModal"></i></span></td></tr>';
+            });
+
+            $('#tblShippingBillDtl>tbody').html(Html);
+            $('#tblShippingBillDtl').show();
+        }
+    }
+
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+    document.getElementById('Partybox').addEventListener('keyup', debounce(function () {
+        SearchPartyByPartyCode()
+    }, 800));
+    document.getElementById('Payerbox').addEventListener('keyup', debounce(function () {
+        SearchPayerByPayerCode()
+    }, 800));
+
+    //$('#BtnSaveDelvApp').on("click", function () {
+
+    //});
+
+    var Page = 0;
+    function LoadParty() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/Export/VIZ_CWCExport/LoadPartyCodeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            async: false,
+            success: function (data) {
+                if (data.Status == 1) {
+
+                    var html = '';
+                    var tabvalue = 201;
+                    $.each(data.Data.lstParty, function (item, elem) {
+
+                        html += '<tr tabindex=' + tabvalue + ' onclick="SelectParty(' + elem.PartyId + ',&quot;' + elem.PartyName.replace(/\r?\n|\r/g, "") + '&quot;)"><td colspan="8" width="60%" class="txt_wrp">' + elem.PartyName.replace(/\r?\n|\r/g, "") + '</td><td colspan="4" width="40%" class="txt_wrp">' + elem.PartyCode.replace(/\r?\n|\r/g, "") + '</td></tr>';
+
+                        tabvalue++;
+                    });
+                    $('#tbleParty tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadMoreParty() {
+        debugger;
+        $.ajax({
+            url: '/Export/VIZ_CWCExport/LoadPartyCodeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+
+                    var html = '';
+                    var tabvalue = 201;
+                    $.each(data.Data.lstParty, function (item, elem) {
+
+                        html += '<tr tabindex=' + tabvalue + ' onclick="SelectParty(' + elem.PartyId + ',&quot;' + elem.PartyName.replace(/\r?\n|\r/g, "") + '&quot;)"><td colspan="8" width="60%" class="txt_wrp">' + elem.PartyName.replace(/\r?\n|\r/g, "") + '</td><td colspan="4" width="40%" class="txt_wrp">' + elem.PartyCode.replace(/\r?\n|\r/g, "") + '</td></tr>';
+                        tabvalue++;
+                    });
+                    if (Page == -1)
+                        $('#tbleParty tbody').html(html);
+                    else
+                        $('#tbleParty tbody').append(html);
+                    Page++;
+
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SearchPartyByPartyCode() {
+
+        if ($('#Partybox').val() != '') {
+            $.ajax({
+                url: '/Export/VIZ_CWCExport/SearchPartyNameByPartyAlias',
+                type: 'GET',
+                data: { PartyCode: $('#Partybox').val() },
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        var html = '';
+                        var tabvalue = 201;
+                        $.each(data.Data.lstParty, function (item, elem) {
+                            html += '<tr tabindex=' + tabvalue + ' onclick="SelectParty(' + elem.PartyId + ',&quot;' + elem.PartyName.replace(/\r?\n|\r/g, "") + '&quot;)"><td colspan="8" width="60%" class="txt_wrp">' + elem.PartyName.replace(/\r?\n|\r/g, "") + '</td><td colspan="4" width="40%" class="txt_wrp">' + elem.PartyCode.replace(/\r?\n|\r/g, "") + '</td></tr>';
+                            tabvalue++;
+                        });
+                        $('#tbleParty tbody').html('');
+                        $('#tbleParty tbody').html(html);
+                        $('#btnLoadMore').prop('disabled', true);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleParty tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMore').prop('disabled', false);
+                    }
+                }
+            });
+        }
+        else
+            LoadParty();
+    }
+
+    function CloseParty() {
+        $('#Partybox').val('');
+        $("#PartyModal").modal("hide");
+        //LoadParty();
+    }
+
+    function LoadPayer() {
+        debugger;
+        Page1 = 0;
+        $.ajax({
+            url: '/Export/VIZ_CWCExport/LoadPayerListForPD',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page1 },
+            async: false,
+            success: function (data) {
+                if (data.Status == 1) {
+
+                    var html = '';
+                    tabvalue = 201;
+                    $.each(data.Data.lstPayer, function (item, elem) {
+
+                        html += '<tr tabindex=' + tabvalue + ' onclick="SelectPayer(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;)" onkeypress="SelectPayer(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;)"><td colspan="8" width="60%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="40%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+
+                        tabvalue++;
+                    });
+
+                    $('#tblePayer tbody').html(html);
+
+                    if (data.Data.StatePayer == true)
+                        $('#btnPayerLoadMore').prop('disabled', false);
+                    else $('#btnPayerLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadMorePayer() {
+        debugger;
+        $.ajax({
+            url: '/Export/VIZ_CWCExport/LoadPayerListForPD',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page1 + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+
+                    var html = '';
+                    tabvalue = 201;
+                    $.each(data.Data.lstPayer, function (item, elem) {
+
+                        html += '<tr tabindex=' + tabvalue + ' onclick="SelectPayer(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;)" onkeypress="SelectPayer(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;)"><td colspan="8" width="60%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="40%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+
+                        tabvalue++;
+                    });
+                    if (Page1 == -1)
+                        $('#tblePayer tbody').html(html);
+                    else
+                        $('#tblePayer tbody').append(html);
+                    Page1++;
+
+
+                    if (data.Data.StatePayer == true)
+                        $('#btnPayerLoadMore').prop('disabled', false);
+                    else $('#btnPayerLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SearchPayerByPayerCode() {
+
+        if ($('#Payerbox').val() != '') {
+            $.ajax({
+                url: '/Export/VIZ_CWCExport/SearchPayerNameByPayeeCodeForPD',
+                type: 'GET',
+                data: { PartyCode: $('#Payerbox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        tabvalue = 201;
+                        $.each(data.Data.lstPayer, function (item, elem) {
+
+                            html += '<tr tabindex=' + tabvalue + ' onclick="SelectPayer(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;)" onkeypress="SelectPayer(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;)"><td colspan="8" width="60%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="40%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+
+                            tabvalue++;
+                        });
+                        $('#tblePayer tbody').html('');
+                        $('#tblePayer tbody').html(html);
+                        $('#btnPayerLoadMore').prop('disabled', true);
+                        Page1 = -1;
+                    }
+                    else {
+                        $('#tblePayer tbody').html('');
+                        Page1 = -1;
+                        $('#btnPayerLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadPayer();
+    }
+
+    function ClosePayer() {
+        $('#Payerbox').val('');
+        $("#PayerModal").modal("hide");
+       // LoadPayer();
+    }
+    function PartySearch(i)
+    {
+        $('#Index').val(0);
+        $('#Index').val(i);
+        LoadParty();
+    }
+    function SelectParty(PartyId, PartyName) {
+        debugger;
+        var idd = 0;
+        idd = $('#Index').val();
+        $('#tdPartyId' + idd).val(PartyName);        
+        if (ArrayOfShippingBill.length != 0) {
+            ArrayOfShippingBill[idd].PartyId = PartyId;
+            ArrayOfShippingBill[idd].PartyName = PartyName;
+        }        
+        //LoadParty();
+        $("#PartyModal").modal("hide");
+        $('#Partybox').val('');       
+    }
+    function PayerSearch(i) {
+        $('#Index1').val(0);
+        $('#Index1').val(i);
+        LoadPayer();
+    }
+    function SelectPayer(PartyId, PartyName) {
+        debugger;
+        var idd = 0;
+        idd = $('#Index1').val();
+        $('#tdPayerId' + idd).val(PartyName);
+
+        if (ArrayOfShippingBill.length != 0) {
+            ArrayOfShippingBill[idd].PayerId = PartyId;
+            ArrayOfShippingBill[idd].PayerName = PartyName;
+        }
+        $("#PayerModal").modal("hide");
+        $('#Payerbox').val('');
+        //LoadPayer();
+    }
+
+  function PrintInvoice()
+    {
+        $.ajax({
+            url: '/Export/VIZ_CWCExport/GetStuffingInvoicePrint',
+            type: 'GET',
+            data: { StuffingId: $('#StuffingId').val() },
+            dataType: 'JSON',
+            async: false,
+            success: function (data) {
+                debugger;
+                var InvoiceNOJson = data.Data;
+
+                $.each(InvoiceNOJson, function (i, item) {
+
+                     var Token = $('input[name="__RequestVerificationToken"]').val();
+                    $.ajax({
+                        url: '@Url.Action("GetBulkInvoiceReport", "VIZ_ReportCWC", new { Area = "Report" }) ',
+                        headers: { "__RequestVerificationToken": Token },
+                        dataType: 'JSON',
+                        type: 'POST',
+                        data: {
+                            InvoiceNumber: item.InvoiceNo,
+                            InvoiceModule: 'EXPCSI',
+                            PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                            PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                            InvoiceModuleName: 'Container Stuffing Payment Sheet',
+                        },
+                        success: function (data) {
+                            if (data.Status == 1)
+                                window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                            else
+                                alert(data.Data);
+                        }
+                    });
+                });
+
+            }
+        });
+
+    }
+
+    function GenerateInvoice() {
+
+        //if ($('#StuffingReqNo').val() == '') {
+        //    $('#ErrStuffing').html('Fill Out This Field');
+        //    return false;
+        //}
+
+        //if ($('#InvoiceValue').val() <= 0) {
+        //    alert('Invoice Amount cannot be Zero or Negative');
+        //    return false;
+        //}
+        //else {
+
+        var conf = confirm("Are You Sure You Want To Save?");
+            if (conf) {
+                try {
+                    debugger;                    
+                    if (ArrayOfShippingBill.length != 0) {
+                        $('#ShippingBillDtlXml').val(JSON.stringify(ArrayOfShippingBill));
+                    }
+                    $('#btnGenerateInvoice').submit();
+
+                    if (ArrayOfShippingBill.length != 0) {
+                        $.each(ArrayOfShippingBill, function (i, item) {
+                            document.getElementById('PartySearchId' + i).style.display = 'none';
+                            document.getElementById('PayerSearchId' + i).style.display = 'none';
+                        })
+                    }
+                    
+                }
+                catch (e) {
+                    $('#btnGenerateInvoice').removeAttr('disabled');
+                }
+            }
+        //}
+    }
+
+    function StuffingOnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            $('#DivContainerStuffingMsg').html(data.Message);
+            $('#btnReset').removeAttr("disabled");
+            $('#btnGenerateInvoice').prop("disabled", true);
+            $('#BtnGenerateIRN').removeAttr('disabled');
+            $('#btnPrint').removeAttr('disabled');
+        }
+
+        else {
+            $('#DivContainerStuffingErrMsg').html(data.Message);
+            $('#btnReset').removeAttr("disabled");
+        }
+    }
+
+    function StuffingOnFailure() { }
+
+
+
+    function GenerateIRN() {
+        debugger;
+        $.ajax({
+            url: '/Export/VIZ_CWCExport/GetStuffingInvoicePrint',
+            type: 'GET',
+            data: { StuffingId: $('#StuffingId').val() },
+            dataType: 'JSON',
+            async: false,
+            success: function (data) {
+                debugger;
+                var InvoiceNOJson = data.Data;
+                $.each(InvoiceNOJson, function (i, item) {
+                     $.ajax({
+                        url: '/Import/VIZ_CWCImport/GetIRNForYardInvoice',
+                        type: 'POST',
+                        data: { InvoiceNo: item.InvoiceNo, SupplyType: item.SupplyType },                        
+                        dataType: 'JSON',
+                        success: function (data) {
+
+                            alert(data.Message);
+                        }
+                    });
+                });
+
+            }
+        });
+
+    }
+
+
+</script>

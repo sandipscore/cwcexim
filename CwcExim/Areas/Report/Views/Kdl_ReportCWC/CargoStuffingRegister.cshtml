@@ -1,0 +1,204 @@
+﻿
+@model CwcExim.Areas.Report.Models.CargoStuffingRegister
+
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "RptInvoiceReportDetails";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+
+}
+<script>
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+</script>
+@using (Ajax.BeginForm("GetCargoStuffingRegister", "Kdl_ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+        <div class="row">
+            <div class="col-md-12">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Cargo Stuffing Register</h4>
+                            </div>
+                        </div>
+                        <div class="content_wrp">
+                            <div class="row Form_Space_top">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Period From:</label>
+                                        <div class="position-relative Date_Img">
+                                            @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                            @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-md-offset-6">
+                                    <label>Period To:</label>
+                                    <div class="position-relative Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodTo, new { @class = "", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                                @*<div class="Form_Space_top" style="padding:5px;">
+                                    <div class="row">
+                                        <div class="form-group Form_Input">
+                                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                                <label>Period From:</label>
+                                            </div>
+                                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                                @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                                @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                            </div>
+                                            <div class="col-md-1-5 col_cus_2 col_cus_offset_3 col-md-offset-4 padding_rt">
+                                                <label>Period To:</label>
+                                            </div>
+                                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                                @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                                @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>*@
+
+                                <div class="row SignUp_space_top SignUp_space_bottom">
+                                    <div class="stoke"></div>
+                                </div>
+                            <div class="d-flex justify-content-left">
+                                <input type="submit" class="btn btn-primary mr-1 btn-100px" name="Command" value="Print" id="BtnPreview">
+                            </div>
+                                @*<div class="row SignUp_space_bottom">
+                                    <div class="col-md-offset-5 col-md-2">
+                                        <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                                    </div>
+                                </div>*@
+
+                                <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                            </div>
+                </div>
+            </div>
+        </div>
+
+
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $('#BtnPreview').on("click", function () {
+        //alert("in");
+        //ValidateExitDet();
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        return true;
+    });
+    function RptConsumerListDtlOnFailure() { }
+    function RptInvoiceReportDetails(data) {
+        $('#DivDwnldWavMsg').html('')
+        //alert(data);
+        debugger;
+        if (data.Status == 1) {
+
+            debugger;
+            SaveReportPdf(data);
+
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+
+
+    function ValidateExitDet() {
+        var Status = true;
+      
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="txtGrossWeight"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+        
+
+        return Status;
+    }
+    function SaveReportPdf(data)
+    {
+        var FormDate = $("#PeriodFrom").val();
+        var ToDate = $("#PeriodTo").val();
+        var PostData = new FormData();
+        var Html = '<div style="text-align: center;border: 1px solid #000;">Cargo Stuffing Register Report From ' + FormDate + ' To ' + ToDate + '</div>'
+        Html += "<table style='width:100%;margin-left:25%;font-size:9pt;font-family:Verdana,Arial,San-serif;border: 1px solid #000;border-collapse: collapse;margin-top:10px;'><thead><tr><th style='text-align: center;border: 1px solid #000;font-weight: 600;width:12%;'>Date</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Ship Bill No</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;width:25%'>S.Bill Date</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;width:25%'>S.Bill Seal</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;width:25%'>Party</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Container No</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Commodity</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>No of Packages</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;width:25%;'>Remarks</th></tr></thead><tbody>";
+        for (i = 0; i < data.Data.length; i++) {
+            Html += '<tr><td style="text-align: center;border: 1px solid #000;">' + data.Data[i].Date + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].ShippingBillNo + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].ShippingBillDate + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].ShippingBillSeal + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].Party + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].ContainerNO + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].Commodity + '</td><td style="text-align: right;border: 1px solid #000;">' + data.Data[i].NoOfPackage + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].Remarks + '</td></tr>'
+        }
+        Html += "</tbody></table>"
+        PostData.append("Page", Html);
+       // alert("PostData=" + PostData);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GenerateCargoStuffingRegisterPDF", "Kdl_ReportCWC", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+
+            }
+        });
+    }
+
+</script>
+
+
+

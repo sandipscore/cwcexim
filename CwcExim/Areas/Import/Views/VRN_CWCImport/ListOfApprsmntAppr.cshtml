@@ -1,0 +1,203 @@
+﻿
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-4">
+            <div>
+                <div class="row">
+                    <div class="col-md-3 col-md-offset-2">
+                        <div class="boolean-container">
+                            @Html.RadioButton("status", "N", new { @id = "rbNew", @onchange = "LoadData(false)", @checked = true })
+                            <label for="rbNew"><i class="circle"></i><span>New</span></label>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="boolean-container">
+                            @{  var canedit = 0;
+                                foreach (var item in ViewBag.MenuRights)
+                                {
+                                    canedit = item.CanEdit;
+                                }
+                                if (canedit == 1)
+                                {
+                                    @Html.RadioButton("status", "A", new { @id = "rbApp", @onchange = "LoadData(false)" })
+                                }
+                                else
+                                {
+                                    @Html.RadioButton("status", "A", new { @id = "rbApp", disabled = "disabled" })
+                                }
+                            }
+                            <label for="rbApp"><i class="circle"></i><span>Approved / Hold / Seize</span></label>
+
+                        </div>
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="col-md-12">
+                        <div class="panel table_bk">
+                            <table class="table1 table-condensed Table_Text_Align Import_custom" style="border:none;">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center">Sl No</th>
+                                        <th>Appraisement No</th>
+                                        @*<th>App No</th>
+                                            <th>BOE No</th>
+                                            <th>CHA</th>
+                                            <th>Importer</th>*@
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div class="Left_list">
+                                <div class="div-table-content Left_List_con">
+                                    <table id="tblCusApp" class="table table-condensed Table_Text_Align Table_Hover Import_custom" style="border:none;">
+                                        <tbody>
+                                            @{var Srl = 1;
+                                                if (ViewBag.ListOfApp != null)
+                                                {
+                                                    foreach (var item in ViewBag.ListOfApp)
+                                                    {
+                                                        <tr onclick="LoadApprovalPage(@item.CstmAppraiseAppId)">
+                                                            <td class="text-center">@Srl.ToString()</td>
+                                                            <td>
+                                                                <a href="#" data-tooltip data-tooltip-label="Details" data-tooltip-message="@string.Concat("App No: " + item.AppraisementNo, Environment.NewLine,"BOE No: " + item.BOENo,Environment.NewLine,"CHA: " + item.CHA,Environment.NewLine,"Importer: " + item.Importer)">@item.AppraisementNo</a>
+                                                                @*<a href="#" data-toggle="tooltip" data-placement="right" title="@item.AppraisementNo<br/>@item.BOENo">@item.CstmAppraiseWorkOrderNo</a>*@
+                                                            </td>
+                                                            @*<td>@item.AppraisementNo</td>
+                                                                <td>@item.BOENo</td>
+                                                                <td>@item.CHA</td>
+                                                                <td>@item.Importer</td>*@
+                                                        </tr>
+                                                        Srl++;
+                                                    }
+                                                }
+
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <table style="border:none;width:100%;">
+                                <tfoot>
+                                    <tr>
+                                        <td><button id="btnLoadMore" class="tfoot_load" style="padding:4px;" onclick="LoadMoreData()">Load More</button></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        <div class="col-sm-12 col-md-8">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Custom Appraisement Approval</h4>
+                            </div>
+                        </div>
+                        <div class="row" id="DivLoadApproval"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @*<div class="col-md-8" id="DivLoadApproval">
+            </div>*@
+    </div>
+</div>
+@*<td>' + item.AppraisementNo + '</td>
+    <td>' + item.BOENo + '</td>
+    <td>' + item.CHA + '</td>
+    <td>' + item.Importer + '</td>*@
+<script>
+$(document).ready(function(){
+    //$('[data-toggle="tooltip"]').tooltip();
+    LoadData();
+});
+
+    var Skip = 1;
+    var SubDomain = '@System.Configuration.ConfigurationManager.AppSettings["SubDomain"]';
+    function LoadData(clear) {
+
+        var Approval;
+        if ($('#rbNew').is(":checked"))
+            Approval = "N";
+        else
+            Approval = "A";
+        if (clear == true)
+            $('#DivLoadApproval').html('');
+        Skip = 0;
+        $.ajax({
+            url: '/Import/VRN_CWCImport/LoadMoredata',
+            type: 'GET',
+            data: { Skip: 0, status: Approval },
+            dataType: 'JSON',
+            success: function (data) {
+                var html = '';
+                if (data.Status == 1) {
+                    $.each(data.Data.lstApproval, function (i, item) {
+                        debugger;
+
+                        html += '<tr onclick="LoadApprovalPage(' + item.CstmAppraiseAppId + ')"><td>' + (i + 1) + '</td><td><a href="#" data-tooltip data-tooltip-label="Details" data-tooltip-message=" App No: ' + item.AppraisementNo + ' \r\n BOE No: ' + item.BOENo + ' \r\n CHA:' + item.CHA + ' \r\n Importer: ' + item.Importer + '">' + item.AppraisementNo + '</a></td></tr>'
+                    });
+                    if (data.Data.State == false)
+                        $('#btnLoadMore').css("display", "none");
+                    else
+                        $('#btnLoadMore').css("display", "block");
+                }
+                $('#tblCusApp tbody').html(html);
+            }
+        });
+    }
+    function LoadMoreData() {
+        debugger;
+
+        if ($.trim($('#tblCusApp>tbody').html()) == '') {
+            $('#btnLoadMore').css("display", "none");
+            return false;
+        }
+        var Approval;
+        if ($('#rbNew').is(":checked"))
+            Approval = "N";
+        else
+            Approval = "A";
+        //if (clear == true)
+        //    $('#DivLoadApproval').html('');
+
+        Skip = Skip + 1;
+        $.ajax({
+            url: '/Import/VRN_CWCImport/LoadMoredata',
+            type: 'GET',
+            data: { Skip: Skip, status: Approval },
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+               // var length = $('#tblCusApp tbody tr').length();
+                var html = '';
+
+                if (data.Status == 1) {
+                    var length = $('#tblCusApp tbody tr').length;
+                    $.each(data.Data.lstApproval, function (i, item) {
+                        length++;
+                        html += '<tr onclick="LoadApprovalPage(' + item.CstmAppraiseAppId + ')"><td>' + (i + 1) + '</td><td><a href="#" data-tooltip data-tooltip-label="Details" data-tooltip-message=" App No: ' + item.AppraisementNo + ' \r\n BOE No: ' + item.BOENo + ' \r\n CHA:' + item.CHA + ' \r\n Importer: ' + item.Importer + '">' + item.AppraisementNo + '</a></td></tr>'
+                    });
+
+                    if (data.Data.State == false)
+                        $('#btnLoadMore').css("display", "none");
+                    else
+                        $('#btnLoadMore').css("display", "block");
+                    $('#tblCusApp tbody').append(html);
+                }
+                //if (data.Data.State == false)
+                //    $('#btnLoadMore').css("display", "none");
+                //else
+                //    $('#btnLoadMore').css("display", "block");
+                //$('#tblCusApp tbody').append(html);
+            }
+        });
+    }
+    function LoadApprovalPage(CstmAppraiseApprId) {
+        $('#DivLoadApproval').load('/Import/VRN_CWCImport/LoadApprovalPage?CstmAppraiseAppId=' + CstmAppraiseApprId);
+    }
+</script>

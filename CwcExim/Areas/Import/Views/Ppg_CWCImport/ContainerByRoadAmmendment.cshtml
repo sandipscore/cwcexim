@@ -1,0 +1,589 @@
+﻿@model CwcExim.Areas.Import.Models.ppg_ContainerAmendment
+
+<script>
+
+</script>
+<style>
+    #DivFormOneDet {
+        height: 500px;
+        overflow-x: hidden;
+    }
+
+    #tbleSline.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .slim_tble {
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .txt_wrp {
+        overflow: hidden;
+        word-wrap: break-word;
+    }
+</style>
+
+
+
+
+@*if (ViewBag.ListOfTrainPick != null)
+    {
+        <input type="hidden" id="hdnTrainNo" value="@ViewBag.ListOfTrainPick" />
+    }
+    else
+    {
+        <input type="hidden" id="hdnTrainNo" value="" />
+    }
+
+    if (ViewBag.ListOfTrain != null)
+    {
+        <input type="hidden" id="hdnTrain" value="@ViewBag.ListOfTrain" />
+    }
+    else
+    {
+        <input type="hidden" id="hdnTrain" value="" />
+    }
+    if (ViewBag.ListOfShippingLine != null)
+    {
+        <input type="hidden" id="hdnShipping" value="@ViewBag.ListOfShippingLine" />
+    }
+    else
+    {
+        <input type="hidden" id="hdnShipping" value="" />
+    }*@
+
+
+<div id="ContainerSizeAppDiv">
+
+    <div class="row">
+
+        @using (Ajax.BeginForm("AddEditContainerByRoadAmmendment", "Ppg_CWCImport", new AjaxOptions { Confirm = "Are you sure you want to Save?", HttpMethod = "POST", OnSuccess = "impAmmendmentSuccess", OnFailure = "impAmmendmentFailure" }))
+
+        {
+
+            @Html.AntiForgeryToken()
+            <div class="col-md-12">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Container Size & Shipping Line Name Amendment</h4>
+                        </div>
+                    </div>
+
+                    <div class="content_wrp">
+                        <div class="row Form_Space_top">
+                            @Html.HiddenFor(m => m.FormOneDetailId)
+                            @Html.HiddenFor(m => m.FormOneId)
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Container No.:</label>
+                                    <div class="position-relative">
+                                        @Html.TextBoxFor(m => m.ContainerNo, new { @readonly = true })
+                                        <span class="input_icon" id="OBLNoSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#blNomodal"></i></span>
+                                        @Html.ValidationMessageFor(m => m.ContainerNo, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 col-md-offset-6">
+                                <div class="form-group">
+                                    <label>Amendment Date:</label>
+                                    <div class="position-relative Date_Img">
+                                        @Html.TextBoxFor(m => m.AmendDate, DateTime.Now.ToString("dd/mm/yyyy"), new { @readonly = true })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Old Container Size:</label>
+                                    @Html.TextBoxFor(m => m.OldContainerSize, new { @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.OldContainerSize, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 col-md-offset-6">
+                                <div class="form-group">
+                                    <label>New Container Size:</label>
+                                    @Html.DropDownListFor(m => m.newContainerSize, new List<SelectListItem>
+                               {
+                               new SelectListItem { Text="----Select----",Value="",Selected = true },
+                                new SelectListItem { Text="20",Value="20"},
+                                new SelectListItem { Text="40",Value="40"},
+                                }, new { })
+                                    @Html.ValidationMessageFor(m => m.newContainerSize, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                @Html.HiddenFor(m => m.OldShippingLineId)
+                                <div class="form-group">
+                                    <label>Old Shipping Line Name:</label>
+                                    @Html.TextBoxFor(m => m.OldShippingLineName, new { @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.OldShippingLineName, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 col-md-offset-6">
+                                <div class="form-group">
+                                    <label>New Shipping Line Name:</label>
+                                    <div class="position-relative">
+                                        @Html.HiddenFor(m => m.newShippingLineId)
+                                        @Html.TextBoxFor(m => m.NewShippingLineName, new { @readonly = true })
+                                        <span class="input_icon" id="NewImporterSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#blImporterNomodal"></i></span>
+                                        @Html.ValidationMessageFor(m => m.NewShippingLineName, "", new { @class = "Error_Msg" })                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-left">
+                            <input type="submit" id="BtnYardSubmit" class="btn btn-primary mr-1 btn-100px" value="Save">
+                            <input type="button" class="btn btn-primary-border btn-100px" value="Reset" onclick="ResetImpDetails()">
+                        </div>
+
+                        <div class="logSuccMsg" style="background-color:transparent" id="DivJobOrder"></div>
+                        <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivJobOrderErrMsg"></div>
+
+                        <div class="row mt10 mb10">
+                            <div class="col-md-12">
+                                <input type="button" id="BtnCommodityLoad" value="Show List" onclick="LoadAmemdentList()" class="btn btn-primary btn-100px" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div id="tblEntryDet"></div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 SignUp_space_bottom">
+                                <div id="DivYardList"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+
+    @Scripts.Render("~/bundles/jqueryval")
+    <div id="blNomodal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Container No.</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="OBLNobox" type="text" />
+                    <ul class="navList" id="lstOBLNo">
+                        @*@{
+                                if (ViewBag.ListOfTrain != null)
+                                {
+                                    foreach (var item in ViewBag.ListOfTrain)
+                                    {
+                                        <li id="@item.TrainSummaryID">@item.TrainNo</li>
+                                    }
+                                }
+                            }*@
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="blImporterNomodal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Shipping Line Name</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="Importerbox" type="text" />
+                    <ul class="navList" id="lstImporter">
+                        @*@{
+                                if (ViewBag.ListOfTrain != null)
+                                {
+                                    foreach (var item in ViewBag.ListOfTrain)
+                                    {
+                                        <li id="@item.TrainSummaryID">@item.TrainNo</li>
+                                    }
+                                }
+                            }*@
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+        //  GenerateEntryTable();
+    });
+
+
+
+    var dt;
+
+    function isDecimalNumber(event) {
+        let charCode = (event.which) ? event.which : event.keyCode;
+        if (charCode != 46 && charCode > 31
+            && (charCode < 48 || charCode > 57))
+            return false;
+        return true;
+    }
+
+
+    $('#OBLNobox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstOBLNo > li').show();
+        else {
+            $('#lstOBLNo > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+
+    $('#Importerbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstImporter > li').show();
+        else {
+            $('#lstImporter > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    var ListOfImporter = [];
+    $('#OBLNoSearch').on("click", function () {
+
+
+        debugger;
+        $.ajax({
+            url: "/Import/Ppg_CWCImport/GetAllContainerforContainerByRoadAmmendment",
+            type: "GET",
+            dataType: "JSON",
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    var Html = '';
+                    ListOfOBL = data.Data;
+                    $.each(data.Data, function (i, item) {
+                        debugger
+                        Html += '<li id=' + item.FormOneDetailId + ' onclick="SelectContainer(&quot;' + item.ContainerNo + '&quot;,' + item.FormOneDetailId + ')">' + item.ContainerNo + '</li>';
+                    });
+                    $('#lstOBLNo').html(Html);
+                }
+            }
+
+        });
+    });
+
+
+    $('#NewImporterSearch').on("click", function () {
+
+
+        debugger;
+        $.ajax({
+            url: "/Import/Ppg_CWCImport/GetShippingLineNameForContainerAmendment",
+            type: "GET",
+            dataType: "JSON",
+            success: function (data) {
+                debugger;
+
+                var Html = '';
+                ListOfImporter = data;
+                $.each(data, function (i, item) {
+                    debugger
+                    Html += '<li id=' + item.ShippingLineId + ' onclick="SelectShippingLine(' + item.ShippingLineId + ',&quot;' + item.ShippingLineName + '&quot;)">' + item.ShippingLineName + '</li>';
+                });
+                $('#lstImporter').html(Html);
+
+            }
+
+        });
+    });
+
+
+
+
+    $('#BtnYardSubmit').on("click", function () {
+
+        if ($('#ContainerNo').val() == '') {
+            alert("select Container No.");
+            return false;
+        }
+
+        else if ($('#newContainerSize').val() == '') {
+            alert("select New Container Size.");
+            return false;
+        }
+
+        else if ($('#NewShippingLineName').val() == '') {
+            alert("select New Shipping Line Name.");
+            return false;
+        }
+        else {
+            return true;
+        }
+
+    });
+    function SelectContainer(ContainerNo, FormOneDetailId) {
+        debugger;
+        //var ContainerNo=ContainerNo.id==''?ContainerNo:ContainerNo.id;
+        $('#ContainerNo').val(ContainerNo);
+        $('#FormOneDetailId').val(FormOneDetailId);
+        $("#blNomodal").modal("hide");
+        GetContainerDet(FormOneDetailId);
+    }
+
+
+    function SelectShippingLine(Id, Name) {
+        debugger;
+        //var ContainerNo=ContainerNo.id==''?ContainerNo:ContainerNo.id;
+        $('#newShippingLineId').val(Id);
+        $('#NewShippingLineName').val(Name);
+        $("#blImporterNomodal").modal("hide");
+
+    }
+
+    function GetContainerDet(FormOneDetailId) {
+
+        $.ajax({
+            url: '/Import/PpG_CWCImport/GetContainerDetailsForContainerAmmendment',
+            type: 'GET',
+            data: { FormOneDetailId: FormOneDetailId },
+            success: function (data) {
+                if (data.Status == 1) {
+                    $('#OldContainerSize').val(data.Data.OldContainerSize);
+                    $('#OldShippingLineId').val(data.Data.OldShippingLineId);
+                    $('#OldShippingLineName').val(data.Data.OldShippingLineName);
+
+                }
+
+
+            }
+        });
+
+    }
+
+
+
+
+
+    function SearchByPartyCode() {
+        if ($('#ShpngLinebox').val() != '') {
+            $.ajax({
+                url: '/Import/PpG_CWCImport/SearchByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#ShpngLinebox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstShippingLine, function (item, elem) {
+                            html += '<tr onclick="SelectSline(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleSline tbody').html('');
+                        $('#tbleSline tbody').html(html);
+                        $('#btnLoadMore').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleSline tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadEximTrader();
+    }
+
+    var Page = 0;
+    function LoadMoreEximTrader() {
+        debugger;
+        $.ajax({
+            url: '/Import/PpG_CWCImport/LoadEximtradeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectSline(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleSline tbody').html(html);
+                    else
+                        $('#tbleSline tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SelectSline(ShippingLineId, ShippingLineName) {
+        angular.element(document.querySelector('[ng-controller="JobOrderCtrl"]')).scope().
+        SelectShippingLine(ShippingLineId, ShippingLineName);
+
+    }
+    function LoadEximTrader() {
+        Page = 0;
+        $.ajax({
+            url: '/Import/PpG_CWCImport/LoadEximtradeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+                        debugger;
+                        html += '<tr  onclick="SelectSline(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+
+                    $('#tbleSline tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function CloseEximTrader() {
+        $('#ShpngLinebox').val('');
+        $("#slmodal").modal("hide");
+        LoadEximTrader();
+    }
+    //$('#lstsline > li').on("click", function () {
+    //    debugger;
+    //    $('#SLine').val($(this).text().split('(')[0]);
+    //    $('#ShippingLineName').val($(this).text().split('(')[0]);
+    //    $('#SlineId').val($(this).attr('id'));
+    //    $("#slmodal").modal("hide");
+    //    //  GetTrainDetails();
+    //});
+
+
+
+
+    function ResetJobOrder() {
+        $('#CNNo, #size, #CSNo, #SLNo,#SLine,#Remarks,#CargoDescription').val('');
+        $('#GWeg,#NPckg').val('0');
+        //  $('#IsReefer, #IsFlatReck').attr('checked', false)
+        $('#CrType, #CLType,#TransportForm').prop('selectedIndex', 0);
+        //   $('#btnAddFormOneDet').prop("disabled", false);
+    }
+
+    function ResetImpDetails() {
+        $('#ContainerNo, #OldContainerSize, #OldShippingLineName,#newContainerSize,#NewShippingLineName').val('');
+    }
+    function LoadAmemdentList() {
+        debugger;
+        $('#tblEntryDet').html('');
+        $('#DivYardList').load('/Import/PpG_CWCImport/ListofContainerByRoadAmmendmentData');
+    }
+
+    function impAmmendmentSuccess(data) {
+        if (data.Status == 1) {
+            $('#DivJobOrder').html(data.Message);
+            setTimeout(function () {
+                $('#DivBody').load('/Import/Ppg_CWCImport/ContainerByRoadAmmendment');
+            }, 3000)
+        }
+        else {
+            $('#DivJobOrderErrMsg').html(data.Message);
+        }
+        //if (data.Status == 1) {
+        //    $('#DivJobOrder').html(data.Message);
+        //    setTimeout(impJOOnSuccess, TimeInSeconds);
+        //  // ResetImpJODetails();
+        //  //    LoadJOList();
+        //  //  $('#DivBody').load('/Import/PpG_CWCImport/CreateJobOrder');
+        //}
+        //else {
+        //    $('#DivJobOrderErrMsg').html(data.Message);
+        //}
+        //  setTimeout(function () { $('#DivJobOrderErrMsg,#DivJobOrder').html(''); }, 5000);
+    }
+    function impAmmendmentFailure() { }
+
+    function SaveDetails() {
+        $('#StringifyXML').val(JSON.stringify(FormOneDetails));
+    }
+
+
+
+
+
+
+
+    function GenerateEntryTable() {
+        tablehtml = '';
+        var tablehtml = '<table id="tblEntryDet" class="table table-striped table-bordered dataTable" style="width:100%;"><thead><tr><th class="text-center">SL No</th><th>Job Order No</th><th>Job Order Date</th><th>Train No</th><th class="text-center">View</th><th class="text-center">Edit</th><th class="text-center">Delete</th><th class="text-center">Preview</th></tr></thead><tbody>';
+        tablehtml += '</tbody></table>';
+        $('#tblEntryDet').html(tablehtml);
+    }
+
+    $('#AmendDate').datepicker({
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        startDate: new Date(),
+        buttonImageOnly: true,
+        dateFormat: "dd/mm/yy",
+        altField: "#slider_example_4andHalf_alt",
+        altFieldTimeOnly: false,
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    }).datepicker("setDate", new Date());
+</script>
+
+

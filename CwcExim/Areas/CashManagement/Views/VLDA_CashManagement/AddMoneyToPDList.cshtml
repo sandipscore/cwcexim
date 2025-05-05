@@ -1,0 +1,72 @@
+﻿
+@model IEnumerable<CwcExim.Areas.CashManagement.Models.WFLD_CashReceiptModel>
+<table id="tblCashReceiptList" class="table table-bordered table-striped" style="width:100%">
+    <thead>
+        <tr>
+            <th class="text-center">SL. No.</th>
+            <th>Receipt No.</th>
+            <th>Receipt Date</th>
+            <th>Party Name</th>
+            <th>Amount</th>
+            <th>Print</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{ var Serial = 1;
+            if (Model != null)
+            {
+                foreach (var data in Model)
+                {
+                    <tr>
+                        <td class="text-center">@Serial.ToString()</td>
+                        <td>@data.ReceiptNo</td>
+                        <td>@data.ReceiptDate</td>
+                        <td>@data.PartyName</td>
+                        <td>@data.TotalValue</td>
+                        <td class="text-center"><a href="#" onclick="PreviewCRnote('@data.ReceiptNo')"><i class="fa fa-file-pdf-o Edit"></i></a></td>
+                    </tr>
+                    Serial++;
+                }
+            }
+        }
+    </tbody>
+</table>
+<script>
+    $(document).ready(function () {
+        var tblCashReceiptList = $('#tblCashReceiptList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                       { "sName": "SL. No." },
+                       { "sName": "Receipt No.", "bSortable": false },
+                       { "sName": "Receipt Date", "bSortable": false },
+                       { "sName": "Party Name", "bSortable": false, },
+                       { "sName": "Amount", "bSortable": false, },
+                       { "sName": "Print", "bSortable": false, "width": "10%" }
+
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(tblCashReceiptList);
+    });
+    function PreviewCRnote(ReceiptNumber) {
+        debugger;
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetBulkReceiptReport", "VLDA_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                ReceiptNumber:ReceiptNumber
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }
+</script>

@@ -1,0 +1,240 @@
+﻿
+@model CwcExim.Areas.Report.Models.SlineChaImpDailyActivity
+
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "RptInvoiceReportDetails";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+
+}
+<script>
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+</script>
+@using (Ajax.BeginForm("GetSlineChaImpDailyActivity", "DSR_ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Shipping Line/CHA/Importer Wise Daily Activity Report</h4>
+                            </div>
+                        </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                       <label>Date From:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-3 col_cus_4 padding_rt">
+                                        <label>Shipping Line / CHA / Importer:</label>
+                                    </div>
+                                    <div class="col-md-2-5 col_cus_3">
+                                        <div id="LoadedDiv">
+                                            @Html.HiddenFor(m => m.EximTraderId, new { @value = "" })
+                                            @Html.TextBoxFor(m => m.EximTraderName, new { @class = "form-control input-sm", @readonly = true })
+                                            <span class="search" id="ShippingLineCHAImporter"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#SlineCHAImpModal"></i></span>
+                                            @Html.ValidationMessageFor(m => m.EximTraderName)
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="SlineCHAImpModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">S/L Line/CHA/Importer</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="SlineCHAImpbox" type="text" />
+                    <ul class="navList" id="lstSlineCHAImp">
+                        @{
+                            if (@ViewBag.SlineImpCHAList != null)
+                            {
+                                foreach (var item in @ViewBag.SlineImpCHAList )
+                                {
+                                    <li id="@item.id">@item.Name</li>
+                                }
+                            }
+                        }
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+                            }
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $('#SlineCHAImpbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstSlineCHAImp > li').show();
+        else {
+            $('#lstSlineCHAImp > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    var ExitTrdrName = "";
+
+    $('#lstSlineCHAImp > li').on("click", function () {
+        $('#EximTraderName').val($(this).text());
+        $('#EximTraderId').val($(this).attr('id'));
+        $("#SlineCHAImpModal").modal("hide");
+    //    ExitTrdrName = $('#EximTraderId').val();
+         //alert(ExitTrdrName);
+
+    });
+
+
+    $('#BtnPreview').on("click", function () {
+        //alert("in");
+        //ValidateExitDet();
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+      //  var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+      //  var ST = To.split('/');
+     //   var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+    //    var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+    //    if (FromDate > ToDate) {
+    //        $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+     //       return false;
+      //  }
+       // return true;
+    });
+    function RptConsumerListDtlOnFailure() { }
+    function RptInvoiceReportDetails(data) {
+        $('#DivDwnldWavMsg').html('')
+        //alert(data);
+        debugger;
+        if (data.Status == 1) {
+
+            debugger;
+            SaveReportPdf(data);
+
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+
+
+    function ValidateExitDet() {
+        var Status = true;
+      
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="txtGrossWeight"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+        
+
+        return Status;
+    }
+    function SaveReportPdf(data)
+    {
+        var FormDate = $("#PeriodFrom").val();
+        var ToDate = $("#PeriodTo").val();
+        var PostData = new FormData();
+        var Html = '<div style="text-align: center;border: 1px solid #000;">S/Line/CHA/Importer wise daily activity report As On Date ' + FormDate +'</div>'
+        Html += "<table style='width:100%;font-size:7pt;font-family:Verdana,Arial,San-serif;border: 1px solid #000;border-collapse: collapse;margin-top:10px;'><thead><tr><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Container No</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Size</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Commodity</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Work Description</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Vessel No</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Voyage No</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Rotation No</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Line No</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Gate In No</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Gate In Date</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Gate Out No</th><th style='text-align: center;border: 1px solid #000;font-weight: 600;'>Gate Out Date</th></tr></thead><tbody>";
+        for (i = 0; i < data.Data.length; i++) {
+            Html += '<tr><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].ContainerNo + '</td><td style="text-align: center;border: 1px solid #000;">' + data.Data[i].Size + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].Commodity + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].CargoDescription + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].VesselNo + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].VoyageNo + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].RotationNo + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].LineNo + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].GateInNo + '</td><td style="text-align: center;border: 1px solid #000;">' + data.Data[i].GateInDate + '</td><td style="text-align: left;border: 1px solid #000;">' + data.Data[i].GateOutNo + '</td><td style="text-align: center;border: 1px solid #000;">' + data.Data[i].GateOutDate + '</td></tr>'
+        }
+        Html += "</tbody></table>"
+        PostData.append("Page", Html);
+       // alert("PostData=" + PostData);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GenerateSlineChaImpDailyActivityPDF", "DSR_ReportCWC", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+
+            }
+        });
+    }
+
+</script>
+
+
+

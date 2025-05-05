@@ -1,0 +1,31 @@
+﻿function IrrInvoiceModel() {
+    this.TrainNo = '';
+    this.PartyId = 0;
+    this.PartyName = '';
+    this.PayeeId = 0;
+    this.PayeeName = '';
+    this.GstNo = '';
+    this.Address = '';
+    this.StateCode ='';
+    this.StateName = '';
+    this.Amount = 0;
+    this.CGST = 0;
+    this.SGST = 0;
+    this.IGST = 0;
+    this.Total = 0;
+    this.RoundOff = 0;
+    this.InvoiceAmt = 0;
+    this.Remarks = '';
+    this.InvoiceDate = '';
+    this.InvoiceNo = '';
+    this.InvoiceId = 0;
+    this.CGSTPer = 0;
+    this.SGSTPer = 0;
+    this.IGSTPer = 0;
+    this.OperationId = 0;
+    this.OperationDesc = '';
+    this.OperationSdDesc = '';
+    this.InvoiceType = 'Tax';
+    this.CargoType = 0;
+    this.SupplyType = '';
+}

@@ -1,0 +1,154 @@
+﻿@model IEnumerable<CwcExim.Areas.Export.Models.Hdb_BTTCargoEntry>
+
+<script>
+    var Page = 0;
+    $(document).ready(function () {
+        var tblBTTCargo = $('#tblBTTCargo').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                       { "sName": "SL No", "width": "8%" },
+                       { "sName": "Carting No", "bSortable": false },
+                       { "sName": "Carting Date", "bSortable": false, "width": "12%" },
+                       { "sName": "CHA" },
+                        { "sName": "ShippingBillNo" },
+                         { "sName": "ShippingBillDate" },
+                       { "sName": "Edit", "bSortable": false, "width": "10%" },
+                       { "sName": "View", "bSortable": false, "width": "10%" },
+                       { "sName": "Delete", "bSortable": false, "width": "10%" },
+                       { "sName": "Print", "bSortable": false, "width": "10%" }
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(tblBTTCargo);
+    });
+
+    function EditBTTCargo(BTTCargoEntryId) {
+        debugger;
+        $('#divBTTCargoEntry').load( '/Export/Hdb_CWCExport/EditBTTCargo?BTTCargoEntryId=' + BTTCargoEntryId);
+    }
+    function ViewBTTCargo(BTTCargoEntryId) {
+        $('#divBTTCargoEntry').load('/Export/Hdb_CWCExport/ViewBTTCargo?BTTCargoEntryId=' + BTTCargoEntryId);
+    }
+    function DeleteBTTCargo(BTTCargoEntryId) {
+        debugger;
+        var Confirm = confirm("Are you sure you want to Delete?");
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        if (Confirm == true) {
+            $.ajax({
+                url: '@Url.Action("DeleteBTTCargo", "Hdb_CWCExport", new { areas= "Export" }) ',
+                type: 'POST',
+                dataType: 'JSON',
+                data: { BTTCargoEntryId: BTTCargoEntryId },
+                headers: { '__RequestVerificationToken': Token },
+                success: function (data) {
+                    alert(data.Message);
+                    if (data.Status == 1) {
+                        GetBTTCargoEntry();
+                        GetBTTCargoEntryList();
+                    }
+                    //else {
+                    //    alert(data.Message);
+                    //}
+                }
+            });
+        }
+    }
+
+    function PrintBTTCargo(BTTId)
+    {   debugger;
+        var Token=$('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/Report/Hdb_ReportCWC/BTTCargoPrint',
+            type:'POST',
+            data:{BTTId:BTTId},
+            headers:{"__RequestVerificationToken":Token},
+            dataType:'JSON',
+            success:function(data)
+            {
+                if(data.Status==1)
+                    window.open(data.Message+"?_t="+(new Date().getTime()),"_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+
+    }
+
+    function LoadMoreListData() {
+        debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Export/Hdb_CWCExport/LoadListMoreDataBTTCargo',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblBTTCargo').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.CartingNo],
+        [item.CartingDate],
+        [item.CHAName],
+         [item.ShippingBillNo],
+          [item.ShippingBillDate],
+        
+        ['<a href="#"  class="text-center" onclick=EditBTTCargo(' + [item.BTTId] + ')><i class="fa fa-pencil-square Edit" aria-hidden="true"></i></a>'],
+        ['<a href="#" class="text-center" onclick=ViewBTTCargo(' + [item.BTTId] + ')><i class="fa fa-search-plus Edit" aria-hidden="true"></i></a>'],
+          ['<a href="#" class="text-center" onclick=DeleteBTTCargo(' + [item.BTTId] + ')><i class="fa fa-window-close-o Delete" aria-hidden="true"></i></a>'],
+            ['<a href="#" class="text-center"  onclick=PrintBTTCargo(' + [item.BTTId] + ')><i class="fa fa-file-pdf-o Edit" aria-hidden="true"></i></a>'],
+
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+
+</script>
+<table id="tblBTTCargo" class="table table-bordered table-striped dataTable" style="width:100%;">
+    <thead>
+        <tr>
+            <th class="text-center">SL No</th>
+            <th>@Html.DisplayNameFor(m => m.CartingNo)</th>
+            <th>@Html.DisplayNameFor(m => m.CartingDate)</th>
+            <th>@Html.DisplayNameFor(m => m.CHAName)</th>
+            <th>@Html.DisplayNameFor(m => m.ShippingBillNo)</th>
+            <th>@Html.DisplayNameFor(m => m.ShippingBillDate)</th>
+            <th style="text-align:center;">@Html.DisplayName("Edit")</th>
+            <th style="text-align:center;">@Html.DisplayName("View")</th>
+            <th style="text-align:center;">@Html.DisplayName("Delete")</th>
+            <th style="text-align:center;">@Html.DisplayName("Print")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var Serial = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center">@Serial.ToString()</td>
+                    <td>@Html.DisplayFor(m => item.CartingNo)</td>
+                    <td>@Html.DisplayFor(m => item.CartingDate)</td>
+                    <td>@Html.DisplayFor(m => item.CHAName)</td>
+                    <td>@Html.DisplayFor(m => item.ShippingBillNo)</td>
+                    <td>@Html.DisplayFor(m => item.ShippingBillDate)</td>
+                    <td style="text-align:center;"><a href="#" onclick="EditBTTCargo(@item.BTTId)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                    <td style="text-align:center;"><a href="#" onclick="ViewBTTCargo(@item.BTTId)"><i class="fa fa-search-plus Edit"></i></a></td>
+                    <td style="text-align:center;"><a href="#" onclick="DeleteBTTCargo(@item.BTTId)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                    <td style="text-align:center;"><a href="#" onclick="PrintBTTCargo(@item.BTTId)"><i class="fa fa-file-pdf-o Edit"></i></a></td>
+                </tr>
+                Serial++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>

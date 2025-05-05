@@ -1,0 +1,301 @@
+﻿@model CwcExim.Areas.Report.Models.LNSM_InvoiceInformation
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "BulkInvoiceReportSuccess";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+
+}
+@Html.AntiForgeryToken()
+@Html.HiddenFor(m => m.InvoiceModuleName)
+@using (Ajax.BeginForm("GetBulkInvoiceReport", "LNSM_ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-11 col-md-offset-0-5">
+            <div class="container-fluid">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Bulk Invoice Report</h4>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 padding_rt">
+                                <label>Invoice Date:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-0-5">
+                                <label></label>
+                            </div>
+
+                            <div class="col-md-3 col_cus_4">
+                                @*<a href="#" id="LoadInvoice" class="btn log_Btn_sm">Load Invoice List</a>*@
+                                @*<button id="LoadInvoice" class="btn log_Btn_sm" >Load Invoice List</button>*@
+                                @*onclick="loadInvoiceLIst();"*@
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 padding_rt">
+                                <label>Invoice Type:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.DropDownListFor(m => m.InvoiceModule, new List<SelectListItem>
+                                {
+                                   new SelectListItem { Text="All",Value="All"},
+
+                                 new SelectListItem { Text="EMPTY",Value="EMPTY"},
+                                 new SelectListItem { Text="EXPORT",Value="EXPORT"},
+                                 new SelectListItem { Text="IMPORT",Value="IMPORT"},
+                                   new SelectListItem { Text="BOND",Value="BOND"},
+
+
+                                }, new { @class = "form-control input-sm dropdown" })
+                                @Html.ValidationMessageFor(m => m.InvoiceModule, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 padding_rt">
+                                <label>Invoice No.:</label>
+                            </div>
+                            <div class="col-md-2-5 col_cus_2_5">
+                                @Html.TextBoxFor(m => m.InvoiceNumber, new { @class = "form-control" })
+                                @Html.ValidationMessageFor(m => m.InvoiceNumber, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+              
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 padding_rt">
+                                <label>Party Name:</label>
+                            </div>
+                            <div class="col-md-10-5 col_cus_1_5">
+                                @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control", @readonly = true })
+                                <span class="search" id="PartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>
+                                @Html.HiddenFor(m => m.PartyId)
+                            </div>
+
+                        </div>
+                    </div>
+
+
+                 
+
+
+                    <div class="row SignUp_space_top SignUp_space_bottom">
+                        <div class="stoke"></div>
+                    </div>
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-offset-3-5 col-md-2">
+                            <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" value="Reset" name="Command" class="btn log_Btn_sm" id="BtnReset" onclick="InformationReset()" />
+                        </div>
+                    </div>
+                    <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                </div>
+
+                <div class="row SignUp_space_top SignUp_space_bottom"></div>
+
+                <div class="Form_Space_top">
+                    <div id="ListOfInvovice"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+
+<div id="PartyModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Party</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Partybox" type="text" />
+                <ul class="navList" id="lstParty"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+}
+
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+
+    });
+
+</script>
+<script>
+    $(document).ready(function () {
+        $('#PeriodFrom').datepicker('setDate', new Date());
+        $('#PeriodTo').datepicker('setDate', new Date());
+    });
+
+    $('#PartySearch').on("click", function () {
+        InvPartyBinding('');
+    });
+    function InvPartyBinding(SearchValue) {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/Report/LNSM_ReportCWC/GetInvPaymentParty',
+            type: 'GET',
+            data: { Page: Page, SearchValue: SearchValue },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data, function (i, elem) {
+                        html += '<li id="' + elem.PartyId + '" onclick="selectInvParty(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;);">' + elem.PartyName + '</li>';
+                    });
+                    $('#lstParty').html('');
+                    $('#lstParty').html(html);
+                }
+            }
+        });
+    }
+
+    function selectInvParty(PartyId, PartyName) {
+        $('#PartyId').val(PartyId);
+        $('#PartyName').val(PartyName);
+        $("#PartyModal").modal("hide");
+    }
+
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+    document.getElementById('Partybox').addEventListener('keyup', debounce(function () {
+        var Partyboxtxt = document.getElementById('Partybox').value;
+        InvPartyBinding(Partyboxtxt);
+    }, 800));
+
+    function ShowListData() {
+        debugger;
+        var IsValid = 0;
+        $('#DivDwnldWavMsg').html('');
+        var PeriodFrom = $("#PeriodFrom").val();
+        var PeriodTo = $("#PeriodTo").val();
+        var invNo = $("#InvoiceNumber").val().trim();
+        var PartyGSTNo = $("#PartyGSTNo").val().trim();
+        var RefInvoiceNo = $("#RefInvoiceNo").val().trim();
+        var PartyName = $("#PartyName").val().trim();
+        if (PartyName != "")
+        {
+            PartyName = PartyName.replace(/\s/g, "");
+        }
+
+        var From = PeriodFrom;
+        var To = PeriodTo;
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+
+        //CONDITION FOR ALL CONDITION IN MODULE SELECTION
+        if (FromDate > ToDate) {
+            IsValid = 1;
+        }
+
+        if (IsValid == 0) {
+            $('#ListOfInvovice').load('/Report/LNSM_ReportCWC/GetAllInvoiceInformation?Page=' + 0 + '&PeriodFrom=' + PeriodFrom + '&PeriodTo=' + PeriodTo + '&invNo=' + invNo + '&PartyGSTNo=' + PartyGSTNo + '&PartyName=' + PartyName + '&RefInvoiceNo=' + RefInvoiceNo);
+        }
+        else {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+        }
+
+    }
+
+    function InformationReset()
+    {
+        $('#PeriodFrom').datepicker('setDate', new Date());
+        $('#PeriodTo').datepicker('setDate', new Date());
+        $("#InvoiceNumber").val('');
+        $("#PartyGSTNo").val('');
+        $("#PartyName").val('');
+    }
+    function RptConsumerListDtlOnFailure() { }
+    function BulkInvoiceReportSuccess(data) {
+        $('#DivDwnldWavMsg').html('')
+      
+        if (data.Status == 1) {
+          
+                window.open(data.Data + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+             
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+</script>
+
+
+

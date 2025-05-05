@@ -1,0 +1,230 @@
+﻿@model CwcExim.Models.Operation
+
+<script>
+    var TimeInSeconds;
+    $(document).ready(function () {
+        TimeInSeconds = 5000;
+        GetOperationList();
+    });
+    function GetOperationList() {
+        $('#DivOperationList').load('/Operation/GetOperationList');
+    }
+    function ResetOperation() {
+        $('#DivOperation').find('input:text').val('');
+        $('[data-valmsg-for]').html('<span></span>');
+        $('select').val('');
+        $('textarea').val('');
+        $('#DivOperationMsg').html('');
+        $('#DivOperationErrMsg').html('');
+    }
+    function OperationOnSuccess(data) {
+        if (data.Status == 1) {
+            $('#DivOperationMsg').html(data.Message);
+            GetOperationList();
+            ResetOperation();
+        }
+        else {
+            $('#DivOperationErrMsg').html(data.Message);
+        }
+        setTimeout(function () {
+            $('#DivOperationMsg').html('');
+            $('#DivOperationErrMsg').html('');
+        }, 5000);
+    }
+    function OperationOnFailure() { }
+
+    $('#box').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('.navList > li').show();
+        } else {
+            $('.navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+    $('.navList li').on("click", function () {
+        var SACCode = $(this).text();
+        var SACId = $(this).attr('id');
+        $('#SacCode').val(SACCode);
+        $('#SacId').val(SACId);
+        $("#myModal").modal("hide");
+    });
+</script>
+
+@{ 
+    AjaxOptions options = new AjaxOptions();
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "OperationOnSuccess";
+    options.OnFailure = "OperationOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+  <div id="DivOperation">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="Head_h4">
+                <div class="row SignUp_space_bottom">
+                    <div class="col-md-12">
+                        <h4>Operation Master</h4>
+                    </div>
+                </div>
+                <div class="content_wrp">
+                    @using (Ajax.BeginForm("AddOperation", "Operation", options))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <span class="ReQSimbol">*</span>
+                                    @Html.LabelFor(m => m.Type, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                    @if (Session["BranchId"].ToString() == "1")
+                                    {
+                                        <span>
+                                            @Html.DropDownListFor(m => m.Type, new List<SelectListItem> {
+                               new SelectListItem { Value="1",Text="Import"},
+                               new SelectListItem {Value="4",Text="Import (RMS)" },
+                               new SelectListItem { Value="5",Text="Import (Non RMS [100%])"},
+                               new SelectListItem { Value = "6", Text = "Import (Non RMS [25%])" },
+                               new SelectListItem { Value = "7", Text = "Heavy Scrap" },
+                               new SelectListItem { Value="2",Text="Export"},
+                               new SelectListItem { Value="3",Text="General"}}, "----Select----", new { @class = "dropdown" })
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span>
+                                            @Html.DropDownListFor(m => m.Type, new List<SelectListItem> {
+                               new SelectListItem { Value="1",Text="Import"},
+                               new SelectListItem {Value="4",Text="Import (RMS)" },
+                               new SelectListItem { Value="2",Text="Export"},
+                               new SelectListItem { Value="3",Text="General"}}, "----Select----", new { @class = "dropdown" })
+                                        </span>
+                                    }
+                                    @Html.ValidationMessageFor(m => m.Type, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Code, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                    @Html.TextBoxFor(m => m.Code, new { @placeholder = "Enter Clause" })
+                                    @Html.ValidationMessageFor(m => m.Code, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <span class="ReQSimbol">*</span>
+                                @Html.LabelFor(m => m.SacCode, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                <div class="position-relative">
+                                    @Html.TextBoxFor(m => m.SacCode, new { @class = "", @readonly = "readonly" })
+                                    @Html.HiddenFor(m => m.SacId)
+                                    @Html.ValidationMessageFor(m => m.SacCode, "", new { @class = "Error_Msg" })
+                                    <span class="input_icon"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#myModal"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                       
+                        <div class="row Form_Space_top">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Short Description:</label>
+                                   @Html.TextBoxFor(m => m.ShortDescription, new { @placeholder = "Enter Short Description" })
+                                   @Html.ValidationMessageFor(m => m.ShortDescription, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Description:</label>
+                                    @Html.TextAreaFor(m => m.Description, new { @placeholder = "Enter Description", @style = "width:100%;height:75px;" })
+                                    @Html.ValidationMessageFor(m => m.Description, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>                        
+                 
+                        <div class="row">
+                            <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                        </div>
+
+                        <div class="d-flex justify-content-left">
+                            <input type="submit" class="btn btn-primary mr-1 btn-100px" value="Save">
+                            <input type="button" class="btn btn-primary-border btn-100px" value="Reset" onclick="ResetOperation()">
+                        </div>
+
+                        <div class="logSuccMsg Form_Space_top SignUp_space_bottom2" style="background-color:transparent">
+                            <div id="DivOperationMsg"></div>
+                        </div>
+                        <div class="logErrMsg" style="background-color:transparent" id="DivOperationErrMsg"></div>
+                    }
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div id="DivOperationList"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+
+
+
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of SAC Code</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="box" type="text" />
+                <ul class="navList" id="PartyList">
+                    @{
+                        foreach (var item in Model.LstSac)
+                        {
+                            <li id="@item.SACId">@item.SACCode</li>
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@*<div class="modal fade"id="myModal"role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dissmiss="modal">&times;</button>
+                <h4 class="modal-title">List Of SAC Code</h4>
+            </div>
+            <div class="modal-body">
+                <input placeholder="Search Me" id="box" type="text" />
+                <ul class="navList" id="SacList">
+                    @{
+                        foreach (var item in Model.LstSac)
+                        {
+                            <li id="@item.SACId">@item.SACCode</li>
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dissmiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>*@

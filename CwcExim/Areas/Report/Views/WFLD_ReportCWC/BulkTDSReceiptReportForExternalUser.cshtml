@@ -1,0 +1,257 @@
+﻿@model CwcExim.Areas.Report.Models.BulkReceiptReport
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "BulkInvoiceReportSuccess";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<script>
+    $(function () {
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+</script>
+@using (Ajax.BeginForm("GetBulkTDSReceiptReportForExternalUser", "WFLD_ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+    <input type="hidden" id="JsonInvoiceLilst" name="JsonInvoiceLilst" />
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Bulk Receipt Report</h4>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>Period From:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5">
+                                    <label>Period To:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-3 col_cus_4">
+                                    <a href="#" id="LoadReceipt" class="btn log_Btn_sm">Load Receipt List</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>Receipt No.:</label>
+                                </div>
+                                <div class="col-md-2-5 col_cus_2_5">
+                                    <span class="search" id="ShippingLineSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ReceiptModal"></i></span>
+                                    @Html.TextBoxFor(m => m.ReceiptNumber, new { @class = "form-control" })
+                                    @Html.ValidationMessageFor(m => m.ReceiptNumber, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="ReceiptModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">Receipt List</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="ReceiptBox" type="text" />
+                    <ul class="navList" id="lstReceipt"></ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $('#BtnPreview').on("click", function () {
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        return true;
+    });
+    function RptConsumerListDtlOnFailure() {
+        alert("No Data");
+    }
+    function BulkInvoiceReportSuccess(data) {
+        $('#DivDwnldWavMsg').html('');
+        if (data.Status == 1) {
+            window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes');
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+    function ValidateExitDet() {
+        var Status = true;
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="txtGrossWeight"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+        return Status;
+    }
+    $("#LoadReceipt").click(function () {
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        if (From == '')
+        {
+            $('[data-valmsg-for="PeriodFrom"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        else if (To == '')
+        {
+            $('[data-valmsg-for="PeriodTo"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        loadInvoiceLIst();
+        $("#ReceiptNumber").val('');
+    });
+    function loadInvoiceLIst() {
+
+
+        var fromDt = $("#PeriodFrom").val();
+        var toDt = $("#PeriodTo").val();
+
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/Report/WFLD_ReportCWC/ListOfTDSReceiptDateWiseForExternalUser',
+            type: 'GET',
+            headers: { '__RequestVerificationToken': Token },
+            dataType: 'JSON',
+            data: { FromDate: fromDt, ToDate: toDt },
+            async: false,
+            success: function (data) {
+                // alert(data);
+
+                if (data.Data != null && data.Data != "" && data.Data != undefined) {
+                    //$("#ReceiptNumber").val();
+                    $("#JsonInvoiceLilst").val('');
+                    $("#JsonInvoiceLilst").val(data.Data);
+                    populateList();
+
+                }
+                else {
+
+                    //$("#ReceiptNumber").val();
+                    alert("No Details Found");
+
+                    $("#JsonInvoiceLilst").val('');
+
+                }
+            }
+        });
+    }
+    function populateList() {
+
+        var jsonval = JSON.parse($('#JsonInvoiceLilst').val());
+        var html = '';
+        $.each(jsonval, function (i, item) {
+            html += '<li id="' + item.ReceiptNumber + '" onclick="GetInv(&quot;' + item.ReceiptNumber + '&quot;)">' + item.ReceiptNumber + '</li>';
+        });
+
+        $('#lstReceipt').html(html);
+    }
+
+    function GetInv(elem) {
+
+        $('#ReceiptNumber').val(elem);
+        //$('#ReferenceNoId').val($(elem).attr('id'));
+        var selectedReference = $('#ReceiptNumber').val();
+        // alert(selectedReference);
+        $("#ReceiptModal").modal("hide");
+
+
+    }
+
+    $('#ReceiptBox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstReceipt > li').show();
+        else {
+            $('#lstReceipt > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+</script>

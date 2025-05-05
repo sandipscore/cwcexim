@@ -1,0 +1,2138 @@
+﻿@model CwcExim.Areas.Export.Models.Chn_ContainerStuffing
+<style>
+    .table-striped > tbody > tr > td > input[type=text], .table-striped > tbody > tr > td > select, .table-striped > tfoot > tr > td > input[type=text], .table-striped > tfoot > tr > td > select {
+        width: auto !important;
+    }
+
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+</style>
+<script>
+    var ArrayOfContainerStuff = [];
+    var TimeInSeconds;
+    var ArrayOfContainer = [];
+    var ArrayOfSCMTR=[];
+    $(function () {
+        debugger
+        ArrayOfContainerStuff=@Html.Raw(Json.Encode(Model.LstStuffingDtl));
+        @*ArrayOfSCMTR=@Html.Raw(Json.Encode(Model.LstSCMTRDtl));*@
+        TimeInSeconds = 5000;
+
+        GenerateContainerStuffTable();
+        $('#BtnPrint').prop("disabled", true);
+
+        var radioValue = $("#TransportMode").val();
+        if (radioValue == 2) {
+
+            document.getElementById("Road").checked = true;
+        }
+        //else {
+
+        //    document.getElementById("Train").checked = true;
+        //}
+    });
+    $('#StuffingCargoType').change(function () {
+        if ($('#StuffingCargoType').val() == 'General')
+        {
+            var html = '';
+            html += '<option value="Manual - Carton Box">Manual - Carton Box</option>';
+            html += '<option value="Manual - Bagged Cargo">Manual - Bagged Cargo</option>';
+            html += '<option value="Mechanical - Fully">Mechanical - Fully</option>';
+            html += '<option value="Mechanical - Partly">Mechanical - Partly</option>';
+            $('#StuffingMethod').html(html);
+        }
+        else {
+            var html = '';
+            html += '<option value="FULL">FULL</option>';
+            html += '<option value="Part">Part</option>';
+         
+            $('#StuffingMethod').html(html);
+        }
+     
+
+    });
+    $('#StuffingDate').datetimepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='StuffingDate']").html('');
+        }
+    });
+    $('#ShippingDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='StuffingDate']").html('');
+        }
+    });
+
+
+    function checkdate(id) {
+
+        debugger;
+        if ($('#EventDate' + id).val() != '') {
+            var result = moment($('#EventDate' + id).val(), "DD/MM/YYYY", true).isValid();
+            if (!result) {
+                alert('Incorrect Date');
+                $('#EventDate' + id).val('');
+            }
+            else {
+                return true;
+            }
+        }
+        else {
+            // $('#ErrddlValidType_' + id).html('');
+        }
+    }
+    function checkmasking(Id) {
+        //alert('ii');
+        $('#EventDate' + Id).mask('99/99/9999');
+    }
+    function ResetAllFields() {
+        ArrayOfContainerStuff = [];
+        ArrayOfContainer=[];
+        $('#DivEditContainerStuffing').find('input:text,textarea').val('');
+        $('#DivEditContainerStuffing #DivContainerStuffingMsg').html('');
+        $('#DivEditContainerStuffing #DivContainerStuffingErrMsg').html('');
+        $('[data-valmsg-for]').html('<span><span>');
+        $('#DivEditContainerStuffing #TblContainerStuffing >tbody').html('');
+        $('#TblContainerStuffing').hide();
+        $('#DivContainerStuffingMsg').html('');
+        $('#DivContainerStuffingErrMsg').html('');
+    }
+
+    //function ContainerStuffingOnSuccess(data) {
+    //    debugger;
+    //    if (data.Status == 1) {
+    //        $('#DivContainerStuffingMsg').html(data.Message);
+    //        //$('#CartingNoList #' + $('#CartingAppId').val()).remove();
+    //        setTimeout(ResetAllFields, TimeInSeconds);
+    //        GetContainerStuffList();
+    //    }
+    //    else {
+    //        $('#DivContainerStuffingErrMsg').html(data.Message);
+    //    }
+    //}
+
+
+    //$('#SearchReqNo').keyup(function () {
+    //    debugger;
+    //    var valThis = $(this).val().toLowerCase();
+    //    if (valThis == "") {
+    //        $('#DivModalStuffingReqNo .navList > li').show();
+    //    }
+    //    else {
+    //        $('#DivModalStuffingReqNo .navList > li').each(function () {
+    //            debugger;
+    //            var Text = $(this).text().toLowerCase();
+    //            (Text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+    //        });
+    //    };
+    //});
+    //$('#LstRequestNo li').on("click", function () {
+    //    debugger;
+    //    var StuffingReqNo = $(this).text();
+    //    var StuffingReqId = $(this).attr('id');
+    //    $('#StuffingReqNo').val(StuffingReqNo);
+    //    $('#StuffingReqId').val(StuffingReqId);
+    //    $('#DivModalStuffingReqNo').modal("hide");
+    //    GetContainerNoList(StuffingReqId);
+    //   // GetCartingDetails(CartingAppId);
+    //});
+
+    $('#ShippingLineBox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#ShippingLineModal .navList > li').show();
+        } else {
+            $('#ShippingLineModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('#ShippingLineList li').on("click", function () {
+        $('#ShippingLine').val($(this).text());
+        $('#ShippingLineId').val($(this).attr('id'));
+        $("#ShippingLineModal").modal("hide");
+    });
+
+    $('#LstExporter li').on("click", function () {
+        debugger;
+        $('#Exporter').val($(this).text());
+        $('#ExporterId').val($(this).attr('id'));
+        $("#ExporterModal").modal("hide");
+    });
+    $('#SearchExporter').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#ExporterModal .navList > li').show();
+        } else {
+            $('#ExporterModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+    $('#ListOfCHAHdr li').on("click", function () {
+        debugger;
+        $('#CHA').val($(this).text());
+        $('#CHAId').val($(this).attr('id'));
+        $("#CHAHdrModal").modal("hide");
+    });
+    $('#SearchCHAHdr').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#CHAHdrModal .navList > li').show();
+        } else {
+            $('#CHAHdrModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    function AllowOnlyInteger(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+    function AllowOnlyDecimal(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || (CharCode == 46) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+    //$('#ContainerBox').keyup(function () {
+    //    var valThis = $(this).val().toLowerCase();
+    //    if (valThis == "") {
+    //        $('.navList > li').show();
+    //    } else {
+    //        $('.navList > li').each(function () {
+    //            var text = $(this).text().toLowerCase();
+    //            (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+    //        });
+    //    };
+    //});
+    // $('#ContainerList  li').on("click", function () {
+    //function FillContainerTxtBox(ContainerNo) {
+    //    debugger;
+    //    $('#BtnAddContainerStuff').prop("disabled", false);
+    //    $('#ContainerNo').val(ContainerNo);
+    //    $("#ContainerModal").modal("hide");
+    //    GetContainerDet(ContainerNo);
+    //}
+
+    //   });
+
+    //function GetContainerNoList(StuffingReqId) {
+    //    debugger;
+    //    $.ajax({
+    //        url: '/Export/CWCExport/GetContainerNoOfStuffingReq',
+    //        type: 'GET',
+    //        dataType: 'JSON',
+    //        data: { StuffingReqId: StuffingReqId},
+    //        success: function (data)
+    //        {
+    //            debugger;
+    //            if (data.Status == 1) {
+    //                debugger;
+    //                var Html = '';
+    //                $.each(data.Data, function (i, item) {
+    //                    debugger;
+    //                    Html += '<li onclick="FillContainerTxtBox(' + item.ContainerNo + ')">' + item.ContainerNo + '</li>'
+    //                });
+    //                $('#ContainerList').html(Html);
+    //            }
+    //        }
+    //    });
+    //}
+
+    //function GetContainerDet(ContainerNo) {
+    //    debugger;
+    //    var StuffingReqId = $('#StuffingReqId').val();
+    //    $.ajax({
+    //        url: '/Export/CWCExport/GetContainerDetOfStuffingReq',
+    //        type: 'GET',
+    //        dataType: 'JSON',
+    //        data: { ContainerNo: ContainerNo, StuffingReqId: StuffingReqId },
+    //        success: function (data) {
+    //            debugger;
+    //            if (data.Status == 1)
+    //            {
+    //                $('#StuffingReqDtlId').val(data.Data.StuffingReqDtlId),
+    //                $('#ContainerNo').val(data.Data.ContainerNo),
+    //                $('#CFSCode').val(data.Data.CFSCode),
+    //                $('#Size').val(data.Data.Size),
+    //                $('#ShippingLineId').val(data.Data.ShippingLineId),
+    //                $('#ShippingLine').val(data.Data.ShippingLine),
+    //                $('#ShippingSeal').val(data.Data.ShippingSeal),
+    //                $('#CustomSeal').val(data.Data.CustomSeal),
+    //                $('#'+data.Data.StuffingType+'').prop("checked",true);
+    //               // $('#'+Data.StuffingType+').val(data.Data.StuffingType),
+    //                $('#ShippingBillNo').val(data.Data.ShippingBillNo),
+    //                $('#ShippingDate').val(data.Data.ShippingDate),
+    //                $('#CHAId').val(data.Data.CHAId),
+    //                $('#ExporterId').val(data.Data.ExporterId),
+    //                $('#CHA').val(data.Data.CHA),
+    //                $('#Exporter').val(data.Data.Exporter),
+    //                $('#CargoDescription').val(data.Data.CargoDescription),
+    //                //$('#Consignee').val(data.Data.Consignee),
+    //                //$('#MarksNo').val() == "" ? 0 : $('#MarksNo').val(data.Data.MarksNo),
+    //                 $('#Fob').val(data.Data.Fob),
+    //                 $('#StuffQuantity').val(data.Data.StuffQuantity),
+    //                 $('#StuffWeight').val(data.Data.StuffWeight),
+    //                $('#StuffingReqDtlId').val(data.Data.StuffingReqDtlId),
+    //                $('#RequestDate').val(data.Data.RequestDate)
+    //                }
+    //        }
+    //    });
+    //}
+
+    function SaveContainerStuffingDtl() {
+        debugger;
+        $('#DivContainerStuffingTblErrMsg').html('');
+        if ($('#ContainerNo').val() != "") {
+            if ($('#CustomSeal').val()) {
+                var StuffingType=$('#FCL').prop("checked")==true? "FCL" :"LCL"
+                var ContainerStuffingDtl = {
+                    "ContainerNo" : $('#ContainerNo').val(),
+                    "CFSCode" :$('#CFSCode').val(),
+                    "Size":$('#Size').val(),
+                    "ShippingLineId":$('#ShippingLineId').val(),
+                    "ShippingLine":$('#ShippingLine').val(),
+                    "ShippingSeal":$('#ShippingSeal').val(),
+                    "CustomSeal": $('#CustomSeal').val(),
+                    "StuffingType": StuffingType,
+                    "ShippingBillNo": $('#ShippingBillNo').val(),
+                    "ShippingDate": $('#ShippingDate').val(),
+                    "CHAId":$('#CHAId').val(),
+                    "SQM": $('#SQM').val(),
+                    "ExporterId":$('#ExporterId').val(),
+                    "CHA": $('#CHA').val(),
+                    "Exporter": $('#Exporter').val(),
+                    "CargoDescription": $('#CargoDescription').val(),
+                    "Consignee": $('#Consignee').val(),
+                    "MarksNo": $('#MarksNo').val() == "" ? 0 : $('#MarksNo').val(),
+                    "Fob": $('#Fob').val() == "" ? 0 : $('#Fob').val(),
+                    "StuffQuantity": $('#StuffQuantity').val() == "" ? 0 : $('#StuffQuantity').val(),
+                    "StuffWeight": $('#StuffWeight').val() == "" ? 0 : $('#StuffWeight').val(),
+                    "StuffingReqDtlId": $('#StuffingReqDtlId').val(),
+                    "Refer": $('#Refer').is(':checked') == true ? 1 : 0,
+                    "Insured": $('#Insured').is(':checked') == true ? 1 : 0,
+                    "ContainerStuffingDtlId": $('#ContainerStuffingDtlId').val(),
+                    "EquipmentSealType": $('#EquipmentSealType').val(),
+                    "EquipmentStatus": $('#EquipmentStatus').val(),
+                    "EquipmentQUC": $('#EquipmentQUC').val(),
+                    "StuffingCargoType": $('#StuffingCargoType').val(),
+                    "StuffingMethod": $('#StuffingMethod').val(),
+                    "MCINPCIN": $('#MCINPCIN').val(),
+                }
+                ArrayOfContainerStuff.push(ContainerStuffingDtl);
+                $.each(ArrayOfContainerStuff, function (i, item) {
+                    //debugger;
+                    if (item.ContainerNo == $('#ContainerNo').val()) {
+                        item.ShippingSeal = $('#ShippingSeal').val();
+                        item.CustomSeal = $('#CustomSeal').val();
+                    }
+                });
+                //$('#ContainerList #' + $('#ContainerNo').val()).remove();
+                ResetConatinerStuffDet();
+                GenerateContainerStuffTable();
+                $('#BtnAddContainerStuff').prop("disabled", true);
+            }
+            else{
+                $('#DivContainerStuffingTblErrMsg').html('Please fill Custom Seal ');
+            }
+        }
+        else {
+            $('#DivContainerStuffingTblErrMsg').html('Please Select A Container No In Order To Add Details');
+            // $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+        }
+    }
+
+    function ResetConatinerStuffDet() {
+        debugger;
+        var POD = $('#POD').val();
+        $('#DivContainerStuffingDetails').find('input:text,textarea').val('');
+        $('#DivEditContainerStuffing #Size').val('');
+        $('#FCL').prop("checked", false);
+        $('#LCL').prop("checked", false);
+        $('#DivContainerStuffingDetails #Insured').prop("checked", false);
+        $('#DivContainerStuffingDetails #Refer').prop("checked", false);
+        $('#DivContainerNo').find('input:text').val('');
+        $('#DivContainerSize').find('input:text').val('');
+        $('#DivShippingLine').find('input:text').val('');
+        $('#DivShippingSeal').find('input:text').val('');
+        $('#SearchContainerNo').css("display", "none");
+        $('#POD').val(POD);
+        $('#EquipmentSealType').val('BTSL');
+        $('#EquipmentStatus').val('94');
+        $('#EquipmentQUC').val('PKG');
+        $('#StuffingCargoType').val('General');
+
+        var html = '';
+        html += '<option value="Manual - Carton Box">Manual - Carton Box</option>';
+        html += '<option value="Manual - Bagged Cargo">Manual - Bagged Cargo</option>';
+        html += '<option value="Mechanical - Fully">Mechanical - Fully</option>';
+        html += '<option value="Mechanical - Partly">Mechanical - Partly</option>';
+        $('#StuffingMethod').html(html);
+    }
+
+
+    function GenerateContainerStuffTable() {
+        debugger;
+        $('#TblContainerStuffing').hide();
+        var Html = '';
+        var HtmlScmtr='';
+        ArrayOfContainer=[];
+        if (ArrayOfContainerStuff.length != 0) {
+            $.each(ArrayOfContainerStuff, function (i, item) {
+                debugger;
+                Html += '<tr><td class="text-center">' + (i + 1) + '</td><td>' + item.ContainerNo + '</td><td>' + item.ShippingBillNo + '</td><td>' + item.ShippingDate + '</td><td>' + item.Exporter + '</td><td>' + item.StuffQuantity + '</td><td>' + item.StuffWeight+ '</td><td>' + item.MCINPCIN + '</td><td class="text-center"><a href="#" onclick="EditContainerStuff(' + i + ')"><i class="fa fa fa-pencil-square Edit" aria-hidden="true"></i></a></td><td class="text-center"><a href="#" onclick="ViewContainerStuff(' + i + ')"><i class="fa fa-search-plus Edit" aria-hidden="true"></i></a></td></tr>';
+                //if(ArrayOfContainer.length !=0){
+                var ContainerDtl = {
+                    "ContainerNo": item.ContainerNo,
+                    "CFSCode": item.CFSCode,
+                    "Size": item.Size,
+                    "Fob": item.Fob,
+                    "StuffingReqId": $('#StuffingReqId').val(),
+                    "StuffWeight": item.StuffWeight,
+                    "Refer": item.Refer,
+                    "Insured": item.Insured
+                };
+                ArrayOfContainer.push(ContainerDtl);
+                //}
+            });
+            $('#TblContainerStuffing>tbody').html(Html);
+            $('#TblContainerStuffing').show();
+            //--------------------------ICES --------------------------------
+
+        }
+    }
+
+    function EditContainerStuff(Index) {
+        debugger;
+        if ($('#BtnAddContainerStuff').prop("disabled") == true) {
+            $('#DivContainerStuffingTblErrMsg').html('');
+            $('#SearchContainerNo').css("display", "block");
+            $('#BtnAddContainerStuff').prop("disabled", false);
+            $('#ContainerNo').val(ArrayOfContainerStuff[Index].ContainerNo);
+            $('#CFSCode').val(ArrayOfContainerStuff[Index].CFSCode);
+            $('#Size').val(ArrayOfContainerStuff[Index].Size);
+            $('#ShippingLineId').val(ArrayOfContainerStuff[Index].ShippingLineId);
+            $('#ShippingLine').val(ArrayOfContainerStuff[Index].ShippingLine);
+            $('#ShippingSeal').val(ArrayOfContainerStuff[Index].ShippingSeal);
+            $('#CustomSeal').val(ArrayOfContainerStuff[Index].CustomSeal);
+            $('#' + ArrayOfContainerStuff[Index].StuffingType + '').prop("checked", true);
+            $('#ShippingBillNo').val(ArrayOfContainerStuff[Index].ShippingBillNo);
+            $('#ShippingDate').val(ArrayOfContainerStuff[Index].ShippingDate);
+            $('#CHAId').val(ArrayOfContainerStuff[Index].CHAId);
+            $('#ExporterId').val(ArrayOfContainerStuff[Index].ExporterId);
+            $('#CHA').val(ArrayOfContainerStuff[Index].CHA);
+            $('#Exporter').val(ArrayOfContainerStuff[Index].Exporter);
+            $('#CargoDescription').val(ArrayOfContainerStuff[Index].CargoDescription);
+            $('#Consignee').val(ArrayOfContainerStuff[Index].Consignee);
+            $('#MarksNo').val(ArrayOfContainerStuff[Index].MarksNo);
+            $('#Fob').val(ArrayOfContainerStuff[Index].Fob);
+            $('#StuffQuantity').val(ArrayOfContainerStuff[Index].StuffQuantity);
+            $('#StuffWeight').val(ArrayOfContainerStuff[Index].StuffWeight);
+            $('#StuffingReqDtlId').val(ArrayOfContainerStuff[Index].StuffingReqDtlId);
+            $('#MCINPCIN').val(ArrayOfContainerStuff[Index].MCINPCIN);
+            $('#MCINPCINText').val(ArrayOfContainerStuff[Index].MCINPCIN);
+            if (ArrayOfContainerStuff[Index].EquipmentSealType != null) {
+                $('#EquipmentSealType').val(ArrayOfContainerStuff[Index].EquipmentSealType);
+            }
+            if (ArrayOfContainerStuff[Index].EquipmentStatus != null) {
+                $('#EquipmentStatus').val(ArrayOfContainerStuff[Index].EquipmentStatus);
+            }
+            if (ArrayOfContainerStuff[Index].EquipmentQUC != null) {
+                $('#EquipmentQUC').val(ArrayOfContainerStuff[Index].EquipmentQUC);
+            }
+            if (ArrayOfContainerStuff[Index].StuffingCargoType != null) {
+                $('#StuffingCargoType').val(ArrayOfContainerStuff[Index].StuffingCargoType);
+            }
+            if (ArrayOfContainerStuff[Index].StuffingMethod != null) {
+                $('#StuffingMethod').val(ArrayOfContainerStuff[Index].StuffingMethod);
+            }
+
+            ArrayOfContainer.splice(Index, 1);
+            ArrayOfContainerStuff[Index].Refer == 1 ? $('#Refer').prop("checked", true) : $('#Refer').prop("checked", false);
+            ArrayOfContainerStuff[Index].Insured == 1 ? $('#Insured').prop("checked", true) : $('#Insured').prop("checked", false);
+            $('#ContainerStuffingDtlId').val(ArrayOfContainerStuff[Index].ContainerStuffingDtlId);
+            ArrayOfContainerStuff.splice(Index, 1);
+
+            GenerateContainerStuffTable();
+            //InvoiceNoGRE=data.Data.invoicenoGRE;
+            //InvoiceNoINS=data.Data.invoicenoINS;
+            //InvoiceNoSTO=data.Data.invoicenoSTO;
+            //InvoiceNoHND=data.Data.invoicenoHND;
+        }
+        else {
+            $('#DivContainerStuffingTblErrMsg').html('Please Add The Above Records');
+        }
+
+    }
+
+    //function DeleteContainerStuff(Index) {
+    //    debugger;
+    //    ArrayOfContainerStuff.splice(Index, 1);
+    //    GenerateContainerStuffTable();
+    //}
+
+    function ViewContainerStuff(Index) {
+        debugger;
+        if ($('#BtnAddContainerStuff').prop("disabled") == true)
+        {
+            $('#DivContainerStuffingTblErrMsg').html('');
+            $('#BtnAddContainerStuff').prop("disabled", true);
+            // if ($('#DivShippingDetails #Exporter').val() == '' || $('#DivShippingDetails #Exporter').prop("disabled") == true) {
+            //$('#DivShippingDetails').find('input').prop("disabled", true);
+            $('#SearchContainerNo').css("display", "none");
+            $('#ContainerNo').val(ArrayOfContainerStuff[Index].ContainerNo);
+            $('#CFSCode').val(ArrayOfContainerStuff[Index].CFSCode);
+            $('#Size').val(ArrayOfContainerStuff[Index].Size);
+            $('#ShippingLineId').val(ArrayOfContainerStuff[Index].ShippingLineId);
+            $('#ShippingLine').val(ArrayOfContainerStuff[Index].ShippingLine);
+            $('#ShippingSeal').val(ArrayOfContainerStuff[Index].ShippingSeal);
+            $('#CustomSeal').val(ArrayOfContainerStuff[Index].CustomSeal);
+            $('#' + ArrayOfContainerStuff[Index].StuffingType + '').prop("checked", true);
+            // $('#StuffingType').val(ArrayOfCartingRegDtl[Index].StuffingType);
+            $('#ShippingBillNo').val(ArrayOfContainerStuff[Index].ShippingBillNo);
+            $('#ShippingDate').val(ArrayOfContainerStuff[Index].ShippingDate);
+            $('#CHAId').val(ArrayOfContainerStuff[Index].CHAId);
+            $('#ExporterId').val(ArrayOfContainerStuff[Index].ExporterId);
+            $('#CHA').val(ArrayOfContainerStuff[Index].CHA);
+            $('#Exporter').val(ArrayOfContainerStuff[Index].Exporter);
+            $('#CargoDescription').val(ArrayOfContainerStuff[Index].CargoDescription);
+            $('#Consignee').val(ArrayOfContainerStuff[Index].Consignee);
+            $('#MarksNo').val(ArrayOfContainerStuff[Index].MarksNo);
+            $('#Fob').val(ArrayOfContainerStuff[Index].Fob);
+            $('#StuffQuantity').val(ArrayOfContainerStuff[Index].StuffQuantity);
+            $('#StuffWeight').val(ArrayOfContainerStuff[Index].StuffWeight);
+            $('#StuffingReqDtlId').val(ArrayOfContainerStuff[Index].StuffingReqDtlId);
+            $('#ContainerStuffingDtlId').val(ArrayOfContainerStuff[Index].ContainerStuffingDtlId);
+            $('#MCINPCIN').val(ArrayOfContainerStuff[Index].MCINPCIN);
+            $('#MCINPCINText').val(ArrayOfContainerStuff[Index].MCINPCIN);
+            if (ArrayOfContainerStuff[Index].EquipmentSealType != null) {
+                $('#EquipmentSealType').val(ArrayOfContainerStuff[Index].EquipmentSealType);
+            }
+            if (ArrayOfContainerStuff[Index].EquipmentStatus != null) {
+                $('#EquipmentStatus').val(ArrayOfContainerStuff[Index].EquipmentStatus);
+            }
+            if (ArrayOfContainerStuff[Index].EquipmentQUC != null) {
+                $('#EquipmentQUC').val(ArrayOfContainerStuff[Index].EquipmentQUC);
+            }
+            if (ArrayOfContainerStuff[Index].StuffingCargoType != null) {
+                $('#StuffingCargoType').val(ArrayOfContainerStuff[Index].StuffingCargoType);
+            }
+            if (ArrayOfContainerStuff[Index].StuffingMethod != null) {
+                $('#StuffingMethod').val(ArrayOfContainerStuff[Index].StuffingMethod);
+            }
+
+            // $('#Insured').val(ArrayOfContainerStuff[Index].Insured);
+            ArrayOfContainerStuff[Index].Refer == 1 ? $('#Refer').prop("checked", true) : $('#Refer').prop("checked", false);
+            ArrayOfContainerStuff[Index].Insured == 1 ? $('#Insured').prop("checked", true) : $('#Insured').prop("checked", false);
+        }
+        else{
+            $('#DivContainerStuffingTblErrMsg').html('Please Add The Above Records');
+        }
+
+    }
+
+    $('#BtnSaveContainerStuff').on("click", function () {
+        debugger;
+        $("#GENSPPartyCode").removeAttr('required');
+        var Radio = $('input[name=Mode]:checked').val();
+        if (Radio == "By Road") {
+            $('#TransportMode').val(2);
+            //document.getElementById("Road").checked = true;
+        }
+
+        //ArryResList = [];
+        //if (ArrayOfContainerStuff.length > 0) {
+        //    //debugger;
+        //    ArryResList = ArrayOfContainerStuff;
+        //    for (var j = 0; j < ArrayOfContainerStuff.length; j++) {
+        //        if (ArryResList[j].MCINPCIN == null || ArryResList[j].MCINPCIN == "") {
+        //            // $("#ShippingSeal").rules("add", "required");
+        //            alert("MCIN / PCIN Is Required For Every ShipBill.");
+        //            return false;
+        //        }
+        //    }
+        //}
+
+        $('#DivContainerStuffingTblErrMsg').html('');
+        if ($('#ContainerNo').val() == "" && $('#TblContainerStuffing >tbody').html()!="") {
+            if (ArrayOfContainerStuff.length != 0) {
+                $('#StuffingXML').val(JSON.stringify(ArrayOfContainerStuff));
+            }
+        }
+        else if($('#ContainerNo').val() != "" && $('#BtnAddContainerStuff').prop("disabled")==true){
+            if (ArrayOfContainerStuff.length != 0) {
+                $('#StuffingXML').val(JSON.stringify(ArrayOfContainerStuff));
+            }
+        }
+        else {
+            $('#DivContainerStuffingTblErrMsg').html('Please Add The Above Records');
+            return false;
+        }
+        if ($('#FinalDestinationLocation').val() == "" || $('#FinalDestinationLocation').val() == null) {
+            alert('Please Fill Up Final Destination location');
+            return false;
+        }
+
+
+
+
+        if (confirm("Are You Sure You Want To Save?")) {
+
+            debugger;
+            $('#BtnSaveContainerStuff').attr('disabled', true);
+            $('#BtnSaveContainerStuff').submit();
+        }
+
+    });
+
+    function LoadContainerStuffing() {
+        $('#DivBody').load('/Export/Chn_CWCExport/CreateContainerStuffing');
+    }
+
+    function ContainerStuffingOnSuccess(data) {
+        if (data.Status == 1) {
+            $('#DivContainerStuffingMsg').html(data.Message);
+            $('#BtnCIMSF').prop('disabled', false);
+            //setTimeout(LoadContainerStuffing, TimeInSeconds);
+            // $('#BtnPrint').prop("disabled",false);
+            $('#BtnSaveContainerStuff').prop("disabled", true);
+        }
+        else {
+            $('#DivContainerStuffingErrMsg').html(data.Message);
+        }
+    }
+
+    function ContainerStuffingOnFailure() { }
+
+    function TransPortModeFunc()
+    {
+        debugger;
+        var Radio = $('input[name=Mode]:checked').val();
+        if (Radio == "By Road")
+        {
+            $('#TransportMode').val(2);
+            document.getElementById("Road").checked = true;
+        }
+        //else
+        //{
+        //    $('#TransportMode').val(1);
+        //    document.getElementById("Train").checked = true;
+        //}
+    }
+
+    function GetFinalDestination() {
+        $.ajax({
+            url: '/Export/Hdb_CWCExport/GetFinalDestination',
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                    $('#FinalDestinationList').html('');
+                    var html = '';
+                    var tab = 401;
+                    var jsondata = JSON.parse(JSON.stringify(data));
+                    $.each(jsondata, function (i, item) {
+                        html += '<li tabindex=' + tab + '_' + i + ' onkeypress="SelectFinalDestination(' + item.CustodianId + ',&quot;' + item.CustodianCode + '&quot;)" onclick="SelectFinalDestination(' + item.CustodianId + ',&quot;' + item.CustodianCode + '&quot;)">' + item.CustodianCode + '</li>';
+                    });
+
+                    $('#FinalDestinationList').html(html);
+
+                }
+            }
+        });
+    }
+
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+
+    document.getElementById('DestinationBox').addEventListener('keyup', debounce(function () {
+        debugger;
+        SearchFinalDestination();
+    }, 1200));
+
+
+
+
+    function SearchFinalDestination() {
+        var CustodianName = $('#DestinationBox').val();
+        $.ajax({
+            url: '/Export/Hdb_CWCExport/GetFinalDestination',
+            type: 'GET',
+            data: { CustodianCode: CustodianName },
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                    $('#FinalDestinationList').html('');
+                    var html = '';
+                    var tab = 401;
+                    var jsondata = JSON.parse(JSON.stringify(data));
+                    $.each(jsondata, function (i, item) {
+                        html += '<li tabindex=' + tab + '_' + i + ' onkeypress="SelectFinalDestination(' + item.CustodianId + ',&quot;' + item.CustodianCode + '&quot;)" onclick="SelectFinalDestination(' + item.CustodianId + ',&quot;' + item.CustodianCode + '&quot;)">' + item.CustodianCode + '</li>';
+                    });
+                    $('#FinalDestinationList').html(html);
+                }
+            }
+        });
+    }
+
+
+    function SelectFinalDestination(CustodianId, CustodianCode) {
+        $('#FinalDestinationLocationId').val(CustodianId);
+        $('#FinalDestinationLocation').val(CustodianCode);
+        $('#modelFinalDestinationlocation').modal("hide");
+    }
+    function DestinationModalClose() {
+        $('#modelFinalDestinationlocation').modal("hide");
+        $('#DestinationModal .navList > li').show();
+        $('#DestinationBox').val('');
+    }
+
+    function SendSF() {
+
+        var ContainerStuffingId = $('#ContainerStuffingId').val();
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: "/Export/Chn_CWCExport/SendSF",
+            type: "POST",
+            dataType: "JSON",
+            data: { ContainerStuffingId: ContainerStuffingId },
+            headers: { "__RequestVerificationToken": Token },
+            async: false,
+            success: function (data) {
+                if (data.Status == 1) {
+                    $('#BtnCIMSF').prop('disabled', true);
+                    alert(data.Message);
+                }
+                else {
+                    alert(data.Message);
+                }
+            }
+        });
+    }
+
+</script>
+
+@{
+    AjaxOptions options = new AjaxOptions();
+    //options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "ContainerStuffingOnSuccess";
+    options.OnFailure = "ContainerStuffingOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<div class="container-fluid">
+    <div style="width:90%;margin-left:auto;margin-right:auto;">
+        <div class="row clearfix">
+            @using (Ajax.BeginForm("AddEditContainerStuffingDet", "Chn_CWCExport", options))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.StuffingReqId)
+                @Html.HiddenFor(m => m.StuffingXML)
+                @Html.Hidden("StuffingReqDtlId")
+                @Html.Hidden("ContainerStuffingDtlId")
+                @Html.HiddenFor(m => m.ContainerStuffingId)
+                @Html.HiddenFor(m => m.SCMTRXML)
+
+                <div class="panel with-nav-tabs panel-primary cwc_panel">
+                    <div class="panel-heading cwc_panel_heading">
+                        <ul class="nav nav-tabs" id="DivTabs">
+                            <li class="active"><a href="#DivContainerStuffing" data-toggle="tab">Container Stuffing</a></li>
+
+                        </ul>
+                    </div>
+
+                    <div class="panel-body">
+                        <div class="tab-content">
+                            <div class="tab-pane fade in active" id="DivContainerStuffing">
+                                <div class="Head_h4">
+                                    <div id="DivEditContainerStuffing">
+                                        @Html.HiddenFor(m => m.StuffingReqId)
+                                        @Html.HiddenFor(m => m.StuffingXML)
+                                        @Html.HiddenFor(m => m.SCMTRXML)
+                                        @Html.Hidden("StuffingReqDtlId")
+                                        @Html.Hidden("ContainerStuffingDtlId")
+                                        @Html.HiddenFor(m => m.ContainerStuffingId)
+                                        @Html.HiddenFor(m => m.TransportMode)
+                                        @Html.Hidden("MCINPCIN")
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>Transport Mode:</label>
+                                                </div>
+                                                <div class="col-md-1-5">
+                                                    <div class="boolean-container">
+                                                        @Html.RadioButton("Mode", "By Road", new { @id = "Road", @onclick = "TransPortModeFunc();" })
+                                                        <label for="Road"><i class="circle"></i><span>By Road</span></label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-1-5">
+                                                    <div class="boolean-container">
+                                                        @*@Html.RadioButton("Mode", "By Road", new { @id = "Road", @onclick = "TransPortModeFunc();" })
+                                                            <label for="Road"><i class="circle"></i><span>By Road</span></label>*@
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>Request No:</label>
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    <span class="ReQSimbol">*</span>
+                                                    @Html.TextBoxFor(m => m.StuffingReqNo, new { @class = "form-control input-sm", @readonly = true })
+                                                </div>
+                                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                                    <label>Request Date:</label>
+                                                </div>
+                                                <div class="col-md-2 col_cus_2_5">
+                                                    @Html.TextBoxFor(m => m.RequestDate, new { @class = "form-control input-sm", @readonly = true })
+                                                    @Html.ValidationMessageFor(m => m.RequestDate, "", new { @class = "Error_Msg" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>Stuffing No:</label>
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    @Html.TextBoxFor(m => m.StuffingNo, new { @class = "form-control input-sm", @readonly = true })
+                                                    @Html.ValidationMessageFor(m => m.StuffingNo, "", new { @class = "Error_Msg" })
+                                                </div>
+                                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                                    <label>Stuffing Date:</label>
+                                                </div>
+                                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                                    @Html.TextBoxFor(m => m.StuffingDate, new { @class = "form-control input-sm", @readonly = true })
+                                                    @Html.ValidationMessageFor(m => m.StuffingDate, "", new { @class = "Error_Msg" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="DivContainerNo" class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>Container No:</label>
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    @Html.TextBox("ContainerNo", "", new { @class = "form-control input-sm", @readonly = true })
+                                                </div>
+                                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                                    <label>ICD Code:</label>
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    @Html.TextBox("CFSCode", "", new
+                                               {
+                                                   @class = "form-control input-sm",
+                                                   @readonly = true@*, maxlength = "11", @onkeypress = "return AllowOnlyDecimal()"*@})
+                                                    @Html.ValidationMessage("CFSCode", new { @class = "Error_Msg" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="DivContainerSize" class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>Container Size:</label>
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    @Html.DropDownList("Size", new List<SelectListItem>
+                                        {
+                                            new SelectListItem { Text="20",Value="20"},
+                                            new SelectListItem { Text="40",Value="40"},
+
+                                        }, "----Select----", new { @class = "form-control input-sm dropdown" })
+                                                    @Html.ValidationMessage("Size", new { @class = "Error_Msg" })
+                                                </div>
+                                                <div class="col-md-1">
+                                                    <div class="boolean-container">
+                                                        @Html.RadioButton("StuffingType", "FCL", new { @class = "", @id = "FCL", @disabled = true })
+                                                        <label for="FCL"><i class="circle"></i><span>FCL</span></label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-1">
+                                                    <div class="boolean-container">
+                                                        @Html.RadioButton("StuffingType", "LCL", new { @class = "", @id = "LCL", @disabled = true })
+                                                        <label for="LCL"><i class="circle"></i><span>LCL</span></label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-offset-0-5 col-md-3" style="display:none">
+                                                    <div class="boolean-container">
+                                                        @Html.CheckBoxFor(m => m.DirectStuffing, new { @id = "chkDS" })
+                                                        <label for="chkDS"><i class="square"></i><span>Direct Stuffing</span></label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-offset-2 col-md-1-5 col_cus_5">
+                                                    <label>POD:</label>
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    @Html.TextBoxFor(m => m.POD, new { @class = "form-control input_sm" })
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="DivContainerSize" class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>Origin:</label>
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    @Html.DropDownListFor(m => m.ContOrigin, new List<SelectListItem>
+                                        {
+                                            new SelectListItem { Text="FAC",Value="FAC"},
+                                            new SelectListItem { Text="NON FAC",Value="NON FAC"},
+
+                                        }, "----Select----", new { @class = "form-control input-sm dropdown" })
+
+                                                </div>
+                                                <div class="col-md-1-5 col-md-offset-4 col_cus_2">
+                                                    <label>POL:</label>
+                                                </div>
+                                                <div class="col-md-2-5">
+                                                    @Html.DropDownListFor(m => m.ContPOL, new SelectList(ViewBag.ListOfPOD, "Value", "Text"), "----Select----")
+                                                    @*@Html.DropDownListFor(m => m.ContPOL, new List<SelectListItem>
+                                                        {
+                                                            new SelectListItem { Text="LONI",Value="LONI"},
+                                                            new SelectListItem { Text="PIPAVA",Value="PIPAVA"},
+                                                            new SelectListItem { Text="MUNDRA",Value="MUNDRA"},
+                                                            new SelectListItem { Text="JNPT",Value="JNPT"},
+
+                                                        }, "----Select----", new { @class = "form-control input-sm dropdown" })*@
+                                                    @*@Html.ValidationMessage("POL", new { @class = "Error_Msg" })*@
+                                                </div>
+                                                <div class="col-md-offset-1 col-md-1 col_cus_2" style="display:none">
+                                                    <label>Via:</label>
+                                                </div>
+                                                <div class="col-md-2-5" style="display:none">
+                                                    @Html.DropDownListFor(m => m.ContVia, new List<SelectListItem>
+                                        {
+                                            new SelectListItem { Text="LONI",Value="LONI"},
+                                            new SelectListItem { Text="TKD",Value="TKD"},
+
+                                        }, "----Select----", new { @class = "form-control input-sm dropdown" })
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="DivShippingLine" class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>Shipping Line:</label>
+                                                </div>
+                                                <div class="col-md-10-5 col_cus_10">
+                                                    @Html.TextBox("ShippingLine", "", new { @class = "form-control input-sm", @readonly = true })
+                                                    <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ShippingLineModal"></i></span>
+                                                    @Html.Hidden("ShippingLineId")
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="DivShippingSeal" class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>Shipping Seal:</label>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    @Html.TextBox("ShippingSeal", "", new
+                                               {
+                                                   @class = "form-control input-sm"
+                                               })
+                                                </div>
+                                                <div class="col-md-1-5 col_cus_offset_0_5 col-md-offset-1 padding_rt">
+                                                    <label>Custom Seal:</label>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    @Html.TextBox("CustomSeal", "", new
+                                               {
+                                                   @class = "form-control input-sm",
+                                                   @maxlength = "30"@*, maxlength = "11", @onkeypress = "return AllowOnlyDecimal()"*@})
+                                                    @Html.ValidationMessage("CustomSeal", new { @class = "Error_Msg" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>Remarks:</label>
+                                                </div>
+                                                <div class="col-md-10-5 col_cus_10">
+                                                    @Html.TextAreaFor(m => m.Remarks, new { @style = "width:100%;height:100px" })
+                                                    @Html.ValidationMessageFor(m => m.Remarks, "", new { @class = "Error_Msg" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="DivShippingSeal" class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>Final Destination location:</label>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    @Html.TextBoxFor(x => x.FinalDestinationLocation, "", new { @class = "form-control input-sm", @readonly = true })
+                                                    <span class="search"><i class="fa fa-search" aria-hidden="true" onclick="GetFinalDestination()" data-toggle="modal" data-target="#modelFinalDestinationlocation"></i></span>
+                                                    @Html.HiddenFor(x => x.FinalDestinationLocationId)
+                                                </div>
+                                                <div class="col-md-1-5 col_cus_offset_0_5 col-md-offset-1 padding_rt">
+                                                    <label>Equipment Seal Type:</label>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    @Html.DropDownList("EquipmentSealType", new List<SelectListItem>
+                                                   {
+                                                   new SelectListItem { Text="Bottle-Seal",Value="BTSL"},
+                                                   new SelectListItem { Text="E-Seal",Value="ESEAL"},
+                                                   new SelectListItem { Text="Others",Value="OTH"},
+                                                   }, new { @class = "form-control input-sm dropdown" })
+                                                    @Html.ValidationMessage("EquipmentSealType", new { @class = "Error_Msg" })
+                                                </div>
+                                            </div>
+                                        </div>
+
+
+                                        <div id="DivShippingSeal" class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>Equipment Status:</label>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    @Html.DropDownList("EquipmentStatus", new List<SelectListItem>
+                                                  {
+                                                  new SelectListItem { Text="Intact",Value="94"},
+                                                  new SelectListItem { Text="Damaged",Value="218"}
+                                                  }, new { @class = "form-control input-sm dropdown" })
+                                                    @Html.ValidationMessage("EquipmentStatus", new { @class = "Error_Msg" })
+                                                </div>
+                                                <div class="col-md-1-5 col_cus_offset_0_5 col-md-offset-1 padding_rt">
+                                                    <label>Equipment QUC:</label>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    @Html.DropDownList("EquipmentQUC", new List<SelectListItem>
+                                                    {
+                                                    new SelectListItem { Text="Package",Value="PKG"},
+                                                    new SelectListItem { Text="Kilogram",Value="KGS"},
+                                                    }, new { @class = "form-control input-sm dropdown" })
+                                                    @Html.ValidationMessage("EquipmentQUC", new { @class = "Error_Msg" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="DivShippingSeal" class="row Form_Space_top">
+                                            <div class="form-group Form_Input">
+                                                <div class="col-md-1-5 col_cus_2">
+                                                    <label>Cargo Type:</label>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    @Html.DropDownList("StuffingCargoType", new List<SelectListItem>
+                                              {
+                                              new SelectListItem { Text="General",Value="General"},
+                                              new SelectListItem { Text="GOH",Value="GOH"}
+                                              }, new { @class = "form-control input-sm dropdown" })
+                                                    @Html.ValidationMessage("StuffingCargoType", new { @class = "Error_Msg" })
+                                                </div>
+                                                <div class="col-md-1-5 col_cus_offset_0_5 col-md-offset-1 padding_rt">
+                                                    <label>Stuffing Method:</label>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    @Html.DropDownList("StuffingMethod", new List<SelectListItem>
+                                                {
+                                                new SelectListItem { Text="Manual - Carton Box",Value="Manual - Carton Box"},
+                                                new SelectListItem { Text="Manual - Bagged Cargo",Value="Manual - Bagged Cargo"},
+                                                new SelectListItem { Text="Mechanical - Fully",Value="Mechanical - Fully"},
+                                                new SelectListItem { Text="Mechanical - Partly",Value="Mechanical - Partly"},
+                                                }, new { @class = "form-control input-sm dropdown" })
+                                                    @Html.ValidationMessage("StuffingMethod", new { @class = "Error_Msg" })
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="DivContainerStuffingDetails" class="Head_h5">
+                                            @*@Html.Hidden("CartingAppDtlId")
+                                                @Html.Hidden("LocationDetails")*@
+                                            <div class="row Form_Space_top">
+                                                <div class="form-group Form_Input">
+                                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                                        <label>Shipping Bill No:</label>
+                                                    </div>
+                                                    <div class="col-md-2-5">
+                                                        <span class="ReQSimbol">*</span>
+                                                        @Html.TextBox("ShippingBillNo", "", new
+                                                   {
+                                                       @class = "form-control input-sm",
+                                                       @maxlength = "30"
+                                                   })
+                                                    </div>
+                                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                                        <label>Shipping Bill Date:</label>
+                                                    </div>
+                                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                                        @Html.TextBox("ShippingDate", "", new { @class = "form-control input-sm", @readonly = true })
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row Form_Space_top">
+                                                <div class="form-group Form_Input">
+                                                    <div class="col-md-1-5 col_cus_2">
+                                                        <label>CHA:</label>
+                                                    </div>
+                                                    <div class="col-md-10-5 col_cus_10">
+                                                        @Html.Hidden("CHAId")
+                                                        <span class="ReQSimbol">*</span>
+                                                        @Html.TextBox("CHA", "", new
+                                                   {
+                                                       @class = "form-control input-sm",
+                                                       @readonly = true
+                                                   })
+                                                        <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CHAHdrModal"></i></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row Form_Space_top">
+                                                <div class="form-group Form_Input">
+                                                    <div class="col-md-1-5 col_cus_2">
+                                                        <label>Exporter:</label>
+                                                    </div>
+                                                    <div class="col-md-10-5 col_cus_10">
+                                                        @Html.Hidden("ExporterId")
+                                                        <span class="ReQSimbol">*</span>
+                                                        @Html.TextBox("Exporter", "", new
+                                                   {
+                                                       @class = "form-control input-sm",
+                                                       @readonly = true
+                                                   })
+                                                        <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ExporterModal"></i></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row Form_Space_top">
+                                                <div class="form-group Form_Input">
+                                                    <div class="col-md-1-5 col_cus_2">
+                                                        <label>Consignee:</label>
+                                                    </div>
+
+                                                    <div class="col-md-10-5 col_cus_10">
+                                                        <span class="ReQSimbol">*</span>
+                                                        @Html.TextBox("Consignee", "", new
+                                                   {
+                                                       @class = "form-control input-sm",
+                                                       @maxlength = "50"
+                                                   })
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row Form_Space_top">
+                                                <div class="form-group Form_Input">
+                                                    <div class="col-md-1-5 col_cus_2">
+                                                        <label>Cargo Description:</label>
+                                                    </div>
+                                                    <div class="col-md-10-5 col_cus_10">
+                                                        <span class="ReQSimbol">*</span>
+                                                        @Html.TextArea("CargoDescription", "", new
+                                                   {
+                                                       @style = "width:100%;height:75px"
+                                                   })
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row Form_Space_top">
+                                                <div class="form-group Form_Input">
+                                                    <div class="col-md-1-5 col_cus_2">
+                                                        <label>Marks & No:</label>
+                                                    </div>
+                                                    <div class="col-md-2-5">
+                                                        <span class="ReQSimbol">*</span>
+                                                        @Html.TextBox("MarksNo", "", new
+                                                   {
+                                                       @class = "form-control input-sm"
+                                                   })
+                                                    </div>
+                                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                                        <label>FOB Value:</label>
+                                                    </div>
+                                                    <div class="col-md-2-5">
+                                                        <span class="ReQSimbol">*</span>
+                                                        @Html.TextBox("Fob", "", new
+                                                   {
+                                                       @class = "form-control input-sm",
+                                                       @onkeypress = "return AllowOnlyDecimal(event)"
+                                                   })
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row Form_Space_top">
+                                                <div class="form-group Form_Input">
+                                                    <div class="col-md-1-5 col_cus_2">
+                                                        <label>Stuffed Qty:</label>
+                                                    </div>
+                                                    <div class="col-md-2-5">
+                                                        <span class="ReQSimbol">*</span>
+                                                        @Html.TextBox("StuffQuantity", "", new
+                                                   {
+                                                       @class = "form-control input-sm",
+                                                       @onkeypress = "return AllowOnlyInteger(event)"
+                                                   })
+                                                    </div>
+                                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                                        <label>Stuffed Wt (Kg):</label>
+                                                    </div>
+                                                    <div class="col-md-2-5">
+                                                        <span class="ReQSimbol">*</span>
+                                                        @Html.TextBox("StuffWeight", "", new
+                                                   {
+                                                       @class = "form-control input-sm",
+                                                       @onkeypress = "return AllowOnlyDecimal(event)"
+                                                    @*, maxlength = "11", @onkeypress = "return AllowOnlyDecimal(event)"*@})
+                                                        @*@Html.ValidationMessage("CUM", new { @class = "Error_Msg" })*@
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row Form_Space_top">
+                                                <div class="form-group Form_Input">
+                                                    <div class="col-md-1-5 col_cus_2">
+                                                        <label>Insured:</label>
+                                                    </div>
+                                                    <div class="col-md-1">
+                                                        <div class="boolean-container">
+                                                            <input type="checkbox" id="Insured" />
+                                                            <label for="Insured"><i class="square"></i></label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-1-5 col_cus_2">
+                                                        <label>Refer:</label>
+                                                    </div>
+                                                    <div class="col-md-1">
+                                                        <div class="boolean-container">
+                                                            <input type="checkbox" id="Refer" />
+                                                            <label for="Refer"><i class="square"></i></label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row Form_Space_top">
+                                                <div class="form-group Form_Input">
+                                                    <div class="col-md-1-5 col_cus_2">
+                                                        <label>MCIN/PCIN:</label>
+
+                                                    </div>
+                                                    <div class="col-md-2-5">
+                                                        <div class="boolean-container">
+                                                            @Html.TextBox("MCINPCINText", "", new
+                                                       {
+                                                           @class = "form-control input-sm",
+                                                           @readonly = true
+                                                       })
+                                                            @*@Html.ValidationMessage("CUM", new { @class = "Error_Msg" })*@
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+
+                                                    </div>
+                                                    <div class="col-md-2-5">
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="stoke SignUp_space_top SignUp_space_bottom"></div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-offset-4 col-md-2">
+                                                    <input type="button" id="BtnAddContainerStuff" class="btn log_Btn_sm" value="Add" onclick="SaveContainerStuffingDtl()" disabled />
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <input type="button" class="btn log_Btn_sm" value="Reset" />
+                                                </div>
+                                            </div>
+                                            <div id="DivContainerStuffingTblErrMsg" class="logErrMsg Form_Space_bottom Form_Space_top" style="background-color:transparent"></div>
+                                            <table class="table table-striped table-bordered dataTable" id="TblContainerStuffing" style="width:100%;">
+                                                <thead>
+                                                    <tr>
+                                                        <th class="text-center">@Html.DisplayName("SL No")</th>
+                                                        <th>@Html.DisplayName("Container No")</th>
+                                                        <th>@Html.DisplayName("Shipping Bill No")</th>
+                                                        <th>@Html.DisplayName("Shipping Bill Date")</th>
+                                                        <th>@Html.DisplayName("Exporter")</th>
+                                                        <th>@Html.DisplayName("Stuffed Qty")</th>
+                                                        <th>@Html.DisplayName("Stuffed Wt")</th>
+                                                        <th>@Html.DisplayName("MCIN/PCIN")</th>
+                                                        <th class="text-center">@Html.DisplayName("Edit")</th>
+                                                        <th class="text-center">@Html.DisplayName("View")</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    @*<div class="row">
+                                            <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                                        </div>
+                                        <div class="logSuccMsg" style="background-color:transparent" id="DivContainerStuffingMsg"></div>
+                                        <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivContainerStuffingErrMsg"></div>*@
+
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+
+
+                    <div class="row">
+                        <div class="col-md-offset-4 col-md-2 SignUp_space_bottom">
+                            <input type="button" class="btn log_Btn_sm" value="Save" id="BtnSaveContainerStuff" />
+                        </div>
+                        <div class="col-md-2 SignUp_space_bottom">
+                            <input type="button" class="btn log_Btn_sm" value="Back" onclick="LoadContainerStuffing()" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" id="BtnCIMSF" class="btn log_Btn_sm" disabled value="CIM SF" onclick="SendSF()" />
+                        </div>
+                        @*<div class="col-md-2">
+                                <input type="button" class="btn log_Btn_sm" value="Cancel" onclick="LoadContainerStuffing()" />
+                            </div>*@
+                        @*<div class="col-md-2">
+                                <input type="button" id="BtnPrint" class="btn log_Btn_sm" value="Print" onclick="PrintInvoiceByNo()" />
+                            </div>*@
+                    </div>
+                    <div class="logSuccMsg" style="background-color:transparent" id="DivContainerStuffingMsg"></div>
+                    <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivContainerStuffingErrMsg"></div>
+
+                </div>
+            }
+            @Scripts.Render("~/bundles/jqueryval")
+            @*<div class="row">
+                    <div class="col-md-12">
+                        <div id="DivContainerStuffingList"></div>
+                    </div>
+                </div>*@
+        </div>
+    </div>
+
+</div>
+
+
+<div class="modal fade" id="DivModalStuffingReqNo" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List Of Request No.</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="SearchReqNo" type="text" />
+                <ul class="navList" id="LstRequestNo">
+                    @{
+                        if (ViewBag.LstRequestNo != null)
+                        {
+                            foreach (var data in ViewBag.LstRequestNo)
+                            {
+                                <li id="@data.Value">@data.Text</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="CHAHdrModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List Of CHA</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="SearchCHAHdr" type="text" />
+                <ul class="navList" id="ListOfCHAHdr">
+                    @{
+                        if (ViewBag.CHAList != null)
+                        {
+                            foreach (var data in ViewBag.CHAList)
+                            {
+                                <li id="@data.Value">@data.Text</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ExporterModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List Of Exporter</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="SearchExporter" type="text" />
+                <ul class="navList" id="LstExporter">
+                    @{
+                        if (ViewBag.ListOfExporter != null)
+                        {
+                            foreach (var data in ViewBag.ListOfExporter)
+                            {
+                                <li id="@data.Value">@data.Text</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ShippingLineModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Shipping Line</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="ShippingLineBox" type="text" />
+                <ul class="navList" id="ShippingLineList">
+                    @{
+                        if (ViewBag.ShippingLineList != null)
+                        {
+                            foreach (var item in ViewBag.ShippingLineList)
+                            {
+                                <li id="@item.Value">@item.Text</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ContainerModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Container No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="ContainerBox" type="text" />
+                <ul class="navList" id="ContainerList">
+                    @*<li></li>*@
+                    @*@{
+                            if (ViewBag.ContainerList != null)
+                            {
+                                foreach (var item in ViewBag.ContainerList)
+                                {
+                                    <li id="@item.Value">@item.Text</li>
+                                }
+                            }
+                        }*@
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade mTabindex" id="modelFinalDestinationlocation" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="DestinationModalClose()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Final Destination</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="DestinationBox" type="text" tabindex="401" />
+                <ul class="navList" id="FinalDestinationList"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="DestinationModalClose()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@*<div class="modal fade" id="GREPartyModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Party</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="GREPartybox" type="text" />
+                    <ul class="navList" id="lstGREParty"></ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="INSPartyModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Party</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="INSPartybox" type="text" />
+                    <ul class="navList" id="lstINSParty"></ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="STOPartyModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Party</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="STOPartybox" type="text" />
+                    <ul class="navList" id="lstSTOParty"></ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="HandalingPartyModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Party</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="HandalingPartybox" type="text" />
+                    <ul class="navList" id="lstHandalingParty"></ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="GENSPPartyModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Party</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="GENSPPartybox" type="text" />
+                    <ul class="navList" id="lstGENSPParty"></ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>*@
+<script>
+    var ViewCHAShippingLine = [];
+
+    @*function PrintInvoiceByNo() {
+        debugger;
+        InvoiceNoGRE=$('#InvoiceNoGRE').val();
+        InvoiceNoINS=$('#InvoiceNoINS').val();
+        InvoiceNoSTO=$('#InvoiceNoSTO').val();
+        InvoiceNoHND=$('#InvoiceNoHND').val();
+        InvoiceNoGENSP=$('#InvoiceNoGENSP').val();
+        debugger;
+            if (InvoiceNoGRE != '') {
+                var Token = $('input[name="__RequestVerificationToken"]').val();
+                $.ajax({
+                    url: '@Url.Action("GetBulkInvoiceReport", "Ppg_ReportCWC", new { Area = "Report" }) ',
+                    headers: { "__RequestVerificationToken": Token },
+                    dataType: 'JSON',
+                    type: 'POST',
+                    data: {
+                        InvoiceNumber: InvoiceNoGRE,
+                        InvoiceModule: 'EXPCSGRE',
+                        PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                        PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                        InvoiceModuleName: 'Container Stuffing',
+                    },
+                    success: function (data) {
+                        if (data.Status == 1) {
+                            window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                        }
+                        else
+                            alert(data.Data);
+                    }
+                });
+            }*@
+    @*if(InvoiceNoINS != ''){
+                $.ajax({
+                    url: '@Url.Action("GetBulkInvoiceReport", "Ppg_ReportCWC", new { Area = "Report" }) ',
+                    headers: { "__RequestVerificationToken": Token },
+                    dataType: 'JSON',
+                    type: 'POST',
+                    data: {
+                        InvoiceNumber: InvoiceNoINS,
+                        InvoiceModule: 'EXPCSINS',
+                        PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                        PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                        InvoiceModuleName: 'Container Stuffing',
+                    },
+                    success: function (data) {
+                        if (data.Status == 1) {
+                            window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                        }
+                        else
+                            alert(data.Data);
+                    }
+                });
+            }*@
+    @*if(InvoiceNoSTO != ''){
+                $.ajax({
+                    url: '@Url.Action("GetBulkInvoiceReport", "Ppg_ReportCWC", new { Area = "Report" }) ',
+                    headers: { "__RequestVerificationToken": Token },
+                    dataType: 'JSON',
+                    type: 'POST',
+                    data: {
+                        InvoiceNumber: InvoiceNoSTO,
+                        InvoiceModule: 'EXPCSSTO',
+                        PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                        PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                        InvoiceModuleName: 'Container Stuffing',
+                    },
+                    success: function (data) {
+                        if (data.Status == 1) {
+                            window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+
+                        }
+                        else
+                            alert(data.Data);
+                    }
+                });
+            }*@
+    @*if (InvoiceNoHND != '') {
+                $.ajax({
+                    url: '@Url.Action("GetBulkInvoiceReport", "Ppg_ReportCWC", new { Area = "Report" }) ',
+                    headers: { "__RequestVerificationToken": Token },
+                    dataType: 'JSON',
+                    type: 'POST',
+                    data: {
+                        InvoiceNumber: InvoiceNoHND,
+                        InvoiceModule: 'EXPCSHND',
+                        PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                        PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                        InvoiceModuleName: 'Container Stuffing',
+                    },
+                    success: function (data) {
+                        if (data.Status == 1)
+                            window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                        else
+                            alert(data.Data);
+                    }
+                });
+            }*@
+
+    @*if (InvoiceNoGENSP != '') {
+            $.ajax({
+                url: '@Url.Action("GetBulkInvoiceReport", "Ppg_ReportCWC", new { Area = "Report" }) ',
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                type: 'POST',
+                data: {
+                    InvoiceNumber: InvoiceNoGENSP,
+                    InvoiceModule: 'EXPCSGEN',
+                    PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                    PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                    InvoiceModuleName: 'Container Stuffing',
+                },
+                success: function (data) {
+                    if (data.Status == 1)
+                        window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                    else
+                        alert(data.Data);
+                }
+            });
+        }
+            //ResetAllFields();
+            //ResetAllInvoiceFields();
+            setTimeout(LoadContainerStuffing, TimeInSeconds);
+
+            //else {
+            //alert("Invoice No not generated");
+            //}
+
+    }*@
+
+    @*$('#GREPartySearch').on("click", function () {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("ListOfGREParty", "Chn_CWCExport", new { Area = "Export" })',
+            dataType: 'JSON',
+            type: 'GET',
+            success: function (data) {
+                debugger;
+                ViewCHAShippingLine = data;
+                var html = '';
+                $.each(data, function (i, item) {
+                    html += '<li id="' + item.GREPartyId + '" " onclick="GetGREParty(this)">' + item.GREPartyCode + '</li>';
+                });
+                $('#lstGREParty').html(html);
+            }
+        });
+
+    });*@
+    @*function GetGREParty(elem) {
+
+        $('#GREPartyCode').val($(elem).text());
+        $('#GREPartyId').val($(elem).attr('id'))
+        CalculateGroundRentEmpty();
+        $("#GREPartyModal").modal("hide");
+    }
+
+    function CalculateGroundRentEmpty() {
+        debugger;
+
+        var StuffingDate = $('#StuffingDate').val();
+
+        var GREPartyId = $('#GREPartyId').val();
+
+            $.ajax({
+                url: '/Export/Chn_CWCExport/CalculateGroundRentEmpty',
+                type: 'POST',
+                data: {
+                    "StuffingDate": StuffingDate, "ArrayOfContainer":JSON.stringify(ArrayOfContainer), "GREPartyId": GREPartyId
+                },
+                success: function (data) {
+                    debugger;
+                    if (data != null || data != undefined) {
+                        //GREContainerWiseAmtLst=data.GREContainerWiseAmtLst;
+                        //GREOperationCFSCodeWiseAmtLst = data.GREOperationCFSCodeWiseAmtLst;
+                        $('#GREContainerWiseAmt').val(JSON.stringify(data.GREContainerWiseAmtLst));
+                        $('#GREOperationCFSCodeWiseAmt').val(JSON.stringify(data.GREOperationCFSCodeWiseAmtLst));
+
+                        debugger;
+                        $('#GREOperationId').val(data.GREOperationId);
+                        $('#GREChargeType').val(data.GREChargeType);
+                        $('#GREChargeName').val(data.GREChargeName);
+                        $('#GRETaxable').val(data.GRETaxable);
+                        $('#GRECharge').val(data.GRECharge);
+                        $('#GRECGSTCharge').val(data.GRECGSTCharge);
+                        $('#GRESGSTCharge').val(data.GRESGSTCharge);
+                        $('#GREIGSTCharge').val(data.GREIGSTCharge);
+                        $('#GRECGSTPer').val(data.GRECGSTPer);
+                        $('#GRESGSTPer').val(data.GRESGSTPer);
+                        $('#GREIGSTPer').val(data.GREIGSTPer);
+                        $('#GRETotalAmount').val(data.GRETotalAmount);
+                        $('#GRESACCode').val(data.GRESACCode);
+                    }
+                }
+            });
+
+    }
+    $('#INSPartySearch').on("click", function () {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("ListOfINSParty", "Chn_CWCExport", new { Area = "Export" })',
+            dataType: 'JSON',
+            type: 'GET',
+            success: function (data) {
+                debugger;
+                ViewCHAShippingLine = data;
+                var html = '';
+                $.each(data, function (i, item) {
+                    html += '<li id="' + item.INSPartyId + '" " onclick="GetINSParty(this)">' + item.INSPartyCode + '</li>';
+                });
+                $('#lstINSParty').html(html);
+            }
+        });
+
+    });*@
+    //function GetINSParty(elem) {
+
+    //    $('#INSPartyCode').val($(elem).text());
+    //    $('#INSPartyId').val($(elem).attr('id'))
+    //    CalculateINS();
+    //    $("#INSPartyModal").modal("hide");
+    //}
+
+    //function CalculateINS() {
+    //    debugger;
+    //    var StuffingDate = $('#StuffingDate').val();
+    //    var ContainerNo = $('#ContainerNo').val();
+    //    var CFSCode = $('#CFSCode').val();
+    //    var Size = $('#Size').val();
+    //    var INSPartyId = $('#INSPartyId').val();
+
+    //    $.ajax({
+    //            url: '/Export/Chn_CWCExport/CalculateINS',
+    //            type: 'POST',
+    //            data: {
+    //                "StuffingDate":StuffingDate,"ArrayOfContainer":JSON.stringify(ArrayOfContainer),"INSPartyId": INSPartyId
+    //            },
+    //            success: function (data) {
+    //                debugger;
+    //                if (data != null || data != undefined) {
+    //                    debugger;
+    //                    //INSContainerWiseAmtLst = data.INSContainerWiseAmtLst;
+    //                    //INSOperationCFSCodeWiseAmtLst = data.INSOperationCFSCodeWiseAmtLst;
+
+    //                    $('#INSContainerWiseAmt').val(JSON.stringify(data.INSContainerWiseAmtLst));
+    //                    $('#INSOperationCFSCodeWiseAmt').val(JSON.stringify(data.INSOperationCFSCodeWiseAmtLst));
+
+
+    //                    $('#INSOperationId').val(data.INSOperationId);
+    //                    $('#INSChargeType').val(data.INSChargeType);
+    //                    $('#INSChargeName').val(data.INSChargeName);
+    //                    $('#INSTaxable').val(data.INSTaxable);
+    //                    $('#INSCharge').val(data.INSCharge);
+    //                    $('#INSCGSTCharge').val(data.INSCGSTCharge);
+    //                    $('#INSSGSTCharge').val(data.INSSGSTCharge);
+    //                    $('#INSIGSTCharge').val(data.INSIGSTCharge);
+    //                    $('#INSCGSTPer').val(data.INSCGSTPer);
+    //                    $('#INSSGSTPer').val(data.INSSGSTPer);
+    //                    $('#INSIGSTPer').val(data.INSIGSTPer);
+    //                    $('#INSTotalAmount').val(data.INSTotalAmount);
+    //                    $('#INSSACCode').val(data.INSSACCode);
+    //                }
+    //            }
+    //        });
+    //}
+
+    @*$('#STOPartySearch').on("click", function () {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("ListOfSTOParty", "Chn_CWCExport", new { Area = "Export" })',
+            dataType: 'JSON',
+            type: 'GET',
+            success: function (data) {
+                debugger;
+                ViewCHAShippingLine = data;
+                var html = '';
+                $.each(data, function (i, item) {
+                    html += '<li id="' + item.STOPartyId + '" " onclick="GetSTOParty(this)">' + item.STOPartyCode + '</li>';
+                });
+                $('#lstSTOParty').html(html);
+            }
+        });
+
+    });*@
+    //function GetSTOParty(elem) {
+    //    $('#STOPartyCode').val($(elem).text());
+    //    $('#STOPartyId').val($(elem).attr('id'))
+    //    CalculateSTO();
+    //    $("#STOPartyModal").modal("hide");
+    //}
+    //function CalculateSTO() {
+    //    debugger;
+    //    var StuffingDate = $('#StuffingDate').val();
+    //    var ContainerNo = $('#ContainerNo').val();
+    //    var CFSCode = $('#CFSCode').val();
+    //    var Size = $('#Size').val();
+    //    var STOPartyId = $('#STOPartyId').val();
+
+    //    $.ajax({
+    //        url: '/Export/Chn_CWCExport/CalculateSTO',
+    //        type: 'POST',
+    //        data: {
+    //            "StuffingDate": StuffingDate, "ArrayOfContainer": JSON.stringify(ArrayOfContainer), "STOPartyId": STOPartyId
+    //        },
+    //        success: function (data) {
+    //            debugger;
+    //            if (data != null || data != undefined) {
+    //                debugger;
+
+    //                $('#STOinvoicecargodtl').val(JSON.stringify(data.STOinvoicecargodtlLst));
+    //                $('#STOOperationCFSCodeWiseAmt').val(JSON.stringify(data.STOOperationCFSCodeWiseAmtLst));
+
+    //                $('#STOOperationId').val(data.STOOperationId);
+    //                $('#STOChargeType').val(data.STOChargeType);
+    //                $('#STOChargeName').val(data.STOChargeName);
+    //                $('#STOTaxable').val(data.STOTaxable);
+    //                $('#STOCharge').val(data.STOCharge);
+    //                $('#STOCGSTCharge').val(data.STOCGSTCharge);
+    //                $('#STOSGSTCharge').val(data.STOSGSTCharge);
+    //                $('#STOIGSTCharge').val(data.STOIGSTCharge);
+    //                $('#STOCGSTPer').val(data.STOCGSTPer);
+    //                $('#STOSGSTPer').val(data.STOSGSTPer);
+    //                $('#STOIGSTPer').val(data.STOIGSTPer);
+    //                $('#STOTotalAmount').val(data.STOTotalAmount);
+    //                $('#STOSACCode').val(data.STOSACCode);
+    //            }
+    //        }
+    //    });
+    //}
+
+
+    @*$('#HandalingPartySearch').on("click", function () {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("ListOfHandalingParty", "Chn_CWCExport", new { Area = "Export" })',
+            dataType: 'JSON',
+            type: 'GET',
+            success: function (data) {
+                debugger;
+
+                var html = '';
+                $.each(data, function (i, item) {
+                    html += '<li id="' + item.HandalingPartyId + '" " onclick="GetHandalingParty(this)">' + item.HandalingPartyCode + '</li>';
+                });
+                $('#lstHandalingParty').html(html);
+            }
+        });
+
+    });*@
+    //function GetHandalingParty(elem) {
+    //    $('#HandalingPartyCode').val($(elem).text());
+    //    $('#HandalingPartyId').val($(elem).attr('id'))
+    //    CalculateHandaling();
+    //    $("#HandalingPartyModal").modal("hide");
+    //}
+    //function CalculateHandaling() {
+    //    debugger;
+    //    var StuffingDate = $('#StuffingDate').val();
+    //    var HandalingPartyId = $('#HandalingPartyId').val();
+    //    var TMode = "";
+    //    if ($('#TransportMode') == "1") {
+
+    //        TMode = "Train";
+    //        //document.getElementById("Road").checked = true;
+    //    }
+    //    else {
+    //        TMode = "Road";
+    //        //document.getElementById("Train").checked = true;
+    //    }
+
+
+    //    if(document.getElementById("Road").checked)
+    //    {
+    //        TMode = "Road";
+    //    }
+    //    else
+    //    {
+    //        TMode = "Train";
+    //    }
+
+    //    var Orig = $('#ContOrigin').val();
+    //    var Via = $('#ContVia').val();
+    //    $.ajax({
+    //        url: '/Export/Chn_CWCExport/CalculateHandaling',
+    //        type: 'POST',
+    //        data: {
+    //            "StuffingDate": StuffingDate,"TMode":TMode,"Origin":Orig,"Via":Via, "ArrayOfContainer": JSON.stringify(ArrayOfContainer), "HandalingPartyId": HandalingPartyId
+    //        },
+    //        success: function (data) {
+    //            debugger;
+    //            if (data != null || data != undefined) {
+    //                debugger;
+    //                //HNDOperationCFSCodeWiseAmtLst = data.HNDOperationCFSCodeWiseAmtLst;
+    //                $('#HNDOperationCFSCodeWiseAmt').val(JSON.stringify(data.HNDOperationCFSCodeWiseAmtLst));
+
+    //                $('#HandalingOperationId').val(data.HandalingOperationId);
+    //                $('#HandalingChargeType').val(data.HandalingChargeType);
+    //                $('#HandalingChargeName').val(data.HandalingChargeName);
+    //                $('#HandalingTaxable').val(data.HandalingTaxable);
+    //                $('#HandalingCharge').val(data.HandalingCharge);
+    //                $('#HandalingCGSTCharge').val(data.HandalingCGSTCharge);
+    //                $('#HandalingSGSTCharge').val(data.HandalingSGSTCharge);
+    //                $('#HandalingIGSTCharge').val(data.HandalingIGSTCharge);
+    //                $('#HandalingCGSTPer').val(data.HandalingCGSTPer);
+    //                $('#HandalingSGSTPer').val(data.HandalingSGSTPer);
+    //                $('#HandalingIGSTPer').val(data.HandalingIGSTPer);
+    //                $('#HandalingTotalAmount').val(data.HandalingTotalAmount);
+    //                $('#HandalingSACCode').val(data.HandalingSACCode);
+    //            }
+    //        }
+    //    });
+    //}
+
+    @*$('#GENSPPartySearch').on("click", function () {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("ListOfGENSPParty", "Chn_CWCExport", new { Area = "Export" })',
+            dataType: 'JSON',
+            type: 'GET',
+            success: function (data) {
+                debugger;
+
+                var html = '';
+                $.each(data, function (i, item) {
+                    html += '<li id="' + item.GENSPPartyId + '" " onclick="GetGENSPParty(this)">' + item.GENSPPartyCode + '</li>';
+                });
+                $('#lstGENSPParty').html(html);
+            }
+        });
+
+    });*@
+    //function GetGENSPParty(elem) {
+    //    $('#GENSPPartyCode').val($(elem).text());
+    //    $('#GENSPPartyId').val($(elem).attr('id'))
+    //    CalculateGENSP();
+    //    $("#GENSPPartyModal").modal("hide");
+    //}
+    //function CalculateGENSP() {
+    //    debugger;
+    //    var StuffingDate = $('#StuffingDate').val();
+    //    var GENSPPartyId = $('#GENSPPartyId').val();
+
+    //    $.ajax({
+    //        url: '/Export/Chn_CWCExport/CalculateGENSP',
+    //        type: 'POST',
+    //        data: {
+    //            "StuffingDate": StuffingDate, "ArrayOfContainer": JSON.stringify(ArrayOfContainer), "GENSPPartyId": GENSPPartyId
+    //        },
+    //        success: function (data) {
+    //            debugger;
+    //            if (data != null || data != undefined) {
+    //                debugger;
+    //                //HNDOperationCFSCodeWiseAmtLst = data.HNDOperationCFSCodeWiseAmtLst;
+    //                $('#GENSPOperationCFSCodeWiseAmt').val(JSON.stringify(data.GENSPOperationCFSCodeWiseAmtLst));
+
+    //                $('#GENSPOperationId').val(data.GENSPOperationId);
+    //                $('#GENSPChargeType').val(data.GENSPChargeType);
+    //                $('#GENSPChargeName').val(data.GENSPChargeName);
+    //                $('#GENSPTaxable').val(data.GENSPTaxable);
+    //                $('#GENSPCharge').val(data.GENSPCharge);
+    //                $('#GENSPCGSTCharge').val(data.GENSPCGSTCharge);
+    //                $('#GENSPSGSTCharge').val(data.GENSPSGSTCharge);
+    //                $('#GENSPIGSTCharge').val(data.GENSPIGSTCharge);
+    //                $('#GENSPCGSTPer').val(data.GENSPCGSTPer);
+    //                $('#GENSPSGSTPer').val(data.GENSPSGSTPer);
+    //                $('#GENSPIGSTPer').val(data.GENSPIGSTPer);
+    //                $('#GENSPTotalAmount').val(data.GENSPTotalAmount);
+    //                $('#GENSPSACCode').val(data.GENSPSACCode);
+    //                $("#GENSPPartyModal").modal("hide");
+    //            }
+    //        }
+    //    });
+    //}
+
+</script>
+

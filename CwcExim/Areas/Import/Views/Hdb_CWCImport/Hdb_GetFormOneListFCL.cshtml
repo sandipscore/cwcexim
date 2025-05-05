@@ -1,0 +1,177 @@
+﻿@model IEnumerable<CwcExim.Areas.Import.Models.Hdb_FormOneModel>
+
+<script>
+    var Page = 0;
+    var r2 = JSON.parse($("#hdnRights").val());
+    if (r2.lstMenu[0].CanEdit == 1) {
+        //$('.edit').css('display', 'block');
+        //$('.edit').disabled=false;
+    } else {
+        //$('.edit').css('display', 'none');
+        $('.edit').css('pointer-events', 'none');
+        // $('.edit').attr('onclick', 'return false');
+    }
+
+    if (r2.lstMenu[0].CanDelete == 1) {
+        //$('.delete').css('display', 'block');
+
+    } else {
+        //$('.delete').css('display', 'none');
+
+        //   $('.delete').removeAttr('onclick');
+        //  $('.delete').attr('onclick', 'return false');
+        $('.delete').css('pointer-events', 'none');
+    }
+
+    if (r2.lstMenu[0].CanView == 1) {
+        //$('.view').css('display', 'block');
+
+    } else {
+        //$('.view').css('display', 'none');
+        //   $('.view').removeAttr('onclick');
+        // $('.view').attr('onclick', 'return false');
+        $('.view').css('pointer-events', 'none');
+    }
+    $(document).ready(function () {
+        var tblFormOne = $('#tblFormOne').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                    { "sName": "SL No", "width": "10%" },
+                    { "sName": "Form 1 No", "bSortable": false },
+                    { "sName": "Form 1 Date", "bSortable": false },
+                    { "sName": "Shipping Line Name" },
+                     { "sName": "ContainerNo" },
+                      { "sName": "ContainerSize" },
+                    { "sName": "View", "bSortable": false, "width": "10%" },
+                    { "sName": "Edit", "bSortable": false, "width": "10%" },
+                    { "sName": "Delete", "bSortable": false, "width": "10%" },
+                    { "sName": "Print", "bSortable": false, "width": "10%" }
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(tblFormOne);
+    });
+    function ViewFormOne(FormOneId) {
+        $('#divFormOne').load( '/Import/Hdb_CWCImport/ViewFormOneFCL?FormOneId=' + FormOneId);
+    }
+    function EditFormOne(FormOneId) {
+        $('#divFormOne').load( '/Import/Hdb_CWCImport/EditFormOneFCL?FormOneId=' + FormOneId);
+    }
+    function DeleteFormOne(FormOneId) {
+        var Confirm = confirm("Are you sure you want to Delete?");
+        if (Confirm == true) {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("DeleteFormOneFCL", "Hdb_CWCImport", new { areas= "Import" }) ',
+                type: 'POST',
+                data: { FormOneId: FormOneId },
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                success: function (data) {
+                    alert(data.Message);
+                    if (data.Status == 1) {
+                        GetFormOne();
+                        GetFormOneList();
+                    }
+                }
+            });
+        }
+    }
+    function PrintFormOne(FormOneId) {
+        debugger;
+        $.ajax({
+            url:  '/Import/Hdb_CWCImport/PrintFormOneFCL?FormOneId=' + FormOneId,
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data) {
+                if (data.Status == 1) {
+                    window.open(data.FileUrl + '?t=' + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes');
+                    //GeneratePDF(data.Data);
+                }
+                else {
+                    alert("Error");
+                }
+            }
+        });
+    }
+
+
+
+
+    function LoadMoreListData() {
+        debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Import/Hdb_CWCImport/LoadListMoreData',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblFormOne').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.FormOneNo],
+        [item.FormOneDate],
+        [item.ShippingLineName],
+        [item.ContainerNo],
+        [item.ContainerSize],
+        ['<a href="#" class="view" onclick=ViewFormOne(' + [item.FormOneId] + ')><i class="fa fa-search-plus Edit"></i></a>'],
+        ['<a href="#" class="edit" onclick=EditFormOne(' + [item.FormOneId] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+          ['<a href="#" class="delete" onclick=DeleteFormOne(' + [item.FormOneId] + ')><i class="fa fa-window-close-o Delete"></i></a>'],
+            ['<a href="#"  onclick=PrintFormOne(' + [item.FormOneId] + ')><i class="fa fa-print Edit"></i></a>'],
+
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+</script>
+<table id="tblFormOne" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+    <thead>
+        <tr>
+            <th style="text-align:center">@Html.DisplayName("SL No")</th>
+            <th>@Html.DisplayNameFor(m => m.FormOneNo)</th>
+            <th>@Html.DisplayNameFor(m => m.FormOneDate)</th>
+            <th>@Html.DisplayNameFor(m => m.ShippingLineName)</th>
+            <th>@Html.DisplayNameFor(m => m.ContainerNo)</th>
+            <th>@Html.DisplayNameFor(m => m.ContainerSize)</th>
+            <th style="text-align:center;">@Html.DisplayName("View")</th>
+            <th style="text-align:center;">@Html.DisplayName("Edit")</th>
+            <th style="text-align:center;">@Html.DisplayName("Delete")</th>
+            <th style="text-align:center;">@Html.DisplayName("Print")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td style="text-align:center">@SerialNo</td>
+                    <td>@Html.DisplayFor(m => item.FormOneNo)</td>
+                    <td>@Html.DisplayFor(m => item.FormOneDate)</td>
+                    <td>@Html.DisplayFor(m => item.ShippingLineName)</td>
+                    <td>@Html.DisplayFor(m => item.ContainerNo)</td>
+                    <td>@Html.DisplayFor(m => item.ContainerSize)</td>
+                    <td style="text-align:center"><a href="#" class="view" onclick="ViewFormOne(@item.FormOneId)"><i class="fa fa-search-plus Edit" aria-hidden="true"></i></a></td>
+                    <td style="text-align:center"><a href="#" class="edit" onclick="EditFormOne(@item.FormOneId)"><i class="fa fa-pencil-square Edit" aria-hidden="true"></i></a></td>
+                    <td style="text-align:center"><a href="#" class="delete" onclick="DeleteFormOne(@item.FormOneId)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                    <td style="text-align:center"><a href="#" onclick="PrintFormOne(@item.FormOneId)"><i class="fa fa-print Edit" aria-hidden="true"></i></a></td>
+                </tr>
+                SerialNo += 1;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+

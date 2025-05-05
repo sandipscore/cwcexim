@@ -1,0 +1,347 @@
+﻿@{
+    if (ViewBag.ShippingLine != null)
+    {
+        <input type="hidden" value="@ViewBag.ShippingLine" id="hdnShipping" />
+    }
+    else
+    {
+        <input type="hidden" value="" id="hdnShipping" />
+    }
+    if (ViewBag.State != null)
+    {
+        <input type="hidden" value="@ViewBag.State" id="hdnState" />
+    }
+    else
+    {
+        <input type="hidden" value="false" id="hdnState" />
+    }
+}
+<script type="text/javascript" src="~/Areas/Import/Scripts/App/Controllers/Ppg_TrnSumryLONICtrlV2.js"></script>
+<script type="text/javascript" src="~/Areas/Import/Scripts/App/Services/Ppg_TrnSumryLONISrvcV2.js"></script>
+<script type="text/javascript" src="~/Scripts/ng-file-upload12.2.3.min.js"></script>
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script>
+    angular.bootstrap(document.getElementById('DivTrnSumryTKD'), ['CWCApp']);
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+</script>
+<style>
+    .ang_srch {
+        top: 3%;
+        right: 7px;
+        height: 19px;
+        padding: 0 4px;
+        display: block;
+        background: #ebebe4;
+        position: absolute;
+        cursor: pointer;
+    }
+
+    .table.dataTable {
+        text-align: center;
+    }
+
+        .table.dataTable thead tr th {
+            text-align: center;
+        }
+
+    #tbleParty.dataTable tbody > tr > td {
+        cursor: pointer;
+        text-align: left;
+    }
+
+    .slimScrollDiv {
+        height: 300px;
+    }
+
+    .table.tblhd {
+        border-bottom: 0;
+    }
+</style>
+
+<div id="DivTrnSumryTKD" ng-controller="TrainSummaryLONICtrl">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="Head_h4">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>Train Summary Upload(ACTL)</h4>
+                    </div>
+                </div>
+
+                <div class="content_wrp">
+                    <div class="row Form_Space_top">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Train No:</label>
+                                <input type="text" ng-model="TrainNo" id="TrainNo" ng-readonly="IsUploaded ==1" />
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Train Date:</label>
+                                <div class="position-relative Date_Img">
+                                    <input type="text" class="" value="@DateTime.Now.ToString("dd/MM/yyyy HH:mm")" readonly id="txtDate" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Port:</label>
+                                <div class="position-relative">
+                                    <input type="text" class="" ng-model="PortName" id="PortName" disabled="disabled" />
+                                    <span class="input_icon" ng-hide="IsUploaded ==1" ng-click="PopulatePortList()"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PortModal"></i></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>SEZ:</label>
+                                @Html.DropDownList("SEZ", new List<SelectListItem>
+                                        {
+                                        new SelectListItem { Text="SEZWP",Value="SEZWP"},
+                                        new SelectListItem {Text="SEZWOP",Value="SEZWOP" }
+
+                                        }, "---Select---", new { @class = "  dropdown" })
+                                @Html.ValidationMessage("SEZ", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="col-md-10">
+                            <div class="form-group">
+                                <label>Select File:</label>
+                                <input type="file" ng-model="file" ng-disabled="IsUploaded ==1" ngf-select="UploadFiles($files)" class="" />
+                            </div>
+                        </div>
+                        <input type="button" value="Upload" ng-disabled="IsUploaded ==1" ng-click="UploadFinal()" class="btn btn-primary UploadFileBtn btn-100px" />
+                    </div>
+
+                    <div class="logSuccMsg Form_Space_bottom" ng-model="Message" style="background-color:transparent;"></div>
+
+                    <div id="divTrainSummaryUpload" class="row Form_Space_top Form_Space_bottom mt10">
+                        <div class="col-md-12">
+                            <table id="tblTrainSummaryUpload" ng-hide="TrainSummaryList.length==0" class="table table-bordered table-striped dataTable">
+                                <thead>
+                                    <tr>
+                                        <th rowspan='2' style="width:3%;" class="text-center">Sl No</th>
+                                        <th colspan='4' style="width:10%; text-align:center; border-bottom-width: 1px;">Container</th>
+                                        <th rowspan='2' style="width:10%; text-align:left;">S Line</th>
+                                        <th rowspan='2' style="width:5%">Status</th>
+                                        <th rowspan='2' style="width:15%">Payee</th>
+                                        <th rowspan='2' style="width:7%">Invoice No</th>
+                                        <th rowspan='2' style="width:5%">Total Invoice Amount</th>
+                                        <th rowspan='2' style="width:5%">Cargo Type</th>
+                                        <th rowspan='2' style="width:7%">Save</th>
+                                    </tr>
+                                    <tr>
+                                        <th style="width:10%">No</th>
+                                        <th style="width:3%">Size</th>
+                                        <th style="width:10%">Line Seal No</th>
+                                        <th style="width:10%; border-right-width: 1px;">Commodity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="data in TrainSummaryList">
+                                        <td>{{$index+1}}</td>
+                                        <td>{{data.Container_No}}</td>
+                                        <td>{{data.CT_Size}}</td>
+                                        <td>{{data.Line_Seal_No}}</td>
+                                        <td>{{data.Cont_Commodity}}</td>
+                                        <td style="text-align:left;">{{data.S_Line}}</td>
+                                        <td>{{data.Ct_Status}}</td>
+                                        <td>
+                                            <div style="position:relative;">
+                                                <input type="text" id="PayeeName_{{$index}}" readonly="readonly" ng-model="data.PayeeName" />
+                                                <span class="ang_srch" ng-hide="data.InvoiceNo!=''" ng-click="SelectIndex($index)">
+                                                    <i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PayeeModal"></i>
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td>{{data.InvoiceNo}}</td>
+                                        <td>{{data.InvoiceAmt}}</td>
+                                        <td>{{data.Genhaz}}</td>
+                                        <td><input style="width:90%; margin-left:0;" type="button" value="Save" class="btn btn-primary-border" ng-click="SaveInvoice($index)" ng-hide="data.InvoiceNo!=''" /></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="row SignUp_space_top SignUp_space_bottom">
+                        <div class="stoke"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-left">
+                        <input type="button" class="btn btn-primary-border mr-1 btn-100px" value="Reset" onclick="$('#DivBody').load('/Import/Ppg_CWCImportV2/TrainSummaryUploadLONI')">
+                        <input type="button" id="BtnGenerateIRN" class="btn btn-primary btn-100px" value="Generate IRN" ng-click="GenerateIRN()" disabled="disabled">
+                    </div>
+
+                    <div class="row mt10 mb10">
+                        <div class="col-md-12">
+                            <input type="button" value="Show List" onclick="$('#divTrainSummaryUploadList').load('/Import/Ppg_CWCImportV2/ListOfTrainSummaryLONI')" class="btn btn-primary btn-100px" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div id="divTrainSummaryUploadList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="PortModal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title"> Choose Port Name</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" ng-model="Portbox" id="Portbox" type="text" />
+                    <ul class="navList" id="lstPort">
+                        <li ng-repeat="data in PortList|filter:{PortName:Portbox}" ng-click="SelectPort(data)">{{data.PortName}}</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @*<div class="modal fade" id="PayeeModal" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content popup_modal">
+                    <div class="modal-header popup_header">
+                        <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                        <h4 class="modal-title"> Choose Payee Name</h4>
+                    </div>
+                    <div class="modal-body popup_body">
+                        <input placeholder="Search Me" ng-model="EximTraderNamebox" id="EximTraderNamebox" type="text" />
+                        <ul class="navList" id="lstPort">
+                            <li ng-repeat="data in lstShipping|filter:{EximTraderName:EximTraderNamebox}" ng-click="SelectShippingLine(data)">{{data.EximTraderName}}</li>
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="row">
+                            <div class="col-md-offset-6 col-md-6">
+                                <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>*@
+    <div id="PayeeModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal" ng-click="LoadShippingList()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">Choose Payee Name</h4>
+                </div>
+                <div class="modal-body popup_body" style="position:relative;">
+                    <input placeholder="Search By Party Name Or Party Code" type="text" ng-model="PartyCode" id="PartyCode" />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" ng-click="SearchPartyList()"></i></span>
+                    <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;text-align:left;">
+                        <thead>
+                            <tr>
+                                <th colspan="8" style="text-align:left;" width="80%">Party Name</th>
+                                <th colspan="4" width="20%">Party Code</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div id="slim_scroll">
+                        <table class="table dataTable table-bordered table-striped slim_tble" id="tbleParty">
+                            <tbody>
+                                <tr ng-repeat="item in lstShipping" ng-click="SelectShippingLine(item)">
+                                    <td colspan="8" width="80%" class="txt_wrp">{{item.EximTraderName}}</td>
+                                    <td colspan="4" width="20%" class="txt_wrp">{{item.EximTraderAlias}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <button type="button" style="width:100%; margin-left:0;" ng-click="LoadMoreShippingList()" class="btn log_Btn_sm" ng-disabled="!State">Load More Data</button>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal" ng-click="LoadShippingList()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        $("#TrainNo").keydown(function (e) {
+            // Allow: backspace, delete, tab, escape, enter and .
+            if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 110, 190]) !== -1 ||
+                // Allow: Ctrl+A, Command+A
+                (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+                // Allow: home, end, left, right, down, up
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                // let it happen, don't do anything
+                return;
+            }
+            // Ensure that it is a number or character
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105) && (e.keyCode < 65 || e.keyCode > 90)) {
+                e.preventDefault();
+            }
+        });
+
+        $('#txtDate').datetimepicker({
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            dateFormat: "dd/mm/yy",
+            timeFormat: 'HH:mm',
+            altField: "#slider_example_4andHalf_alt",
+            altFieldTimeOnly: false,
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+                $('[data-valmsg-for="Data"]').html('<span></span>');
+            }
+        });
+        //GetPortList();
+        //ListOfTrainSummary();
+    });
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+    document.getElementById('PartyCode').addEventListener('keyup', debounce(function () {
+        if (document.getElementById('PartyCode').value != "")
+            angular.element('#DivTrnSumryTKD').scope().SearchPartyList();
+        else
+            angular.element('#DivTrnSumryTKD').scope().LoadShippingList();
+    }, 800));
+</script>

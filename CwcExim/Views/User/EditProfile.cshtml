@@ -1,0 +1,466 @@
+﻿@model CwcExim.Models.EditProfile
+
+<style>
+    .OtpMsg {
+        margin: 10px 0 0;
+        font-size: 13px;
+        width: 100%;
+        color: #379010;
+        text-align: center;
+        padding: 5px;
+    }
+</style>
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.Confirm = "Are you sure you want to Update?";
+    options.OnBegin = "OnBegin";
+    options.OnComplete = "OnComplete";
+    options.OnFailure = "OnFailure";
+    options.OnSuccess = "OnSuccess";
+    options.LoadingElementDuration = 1000;
+    options.LoadingElementId = "divProgress";
+    options.UpdateTargetId = "divResponse";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+@using (Ajax.BeginForm("EditProfile", "User", options))
+{
+    @Html.AntiForgeryToken()
+
+    <div class="container-fluid form-horizontal">
+
+        <div class="row">
+            <div class="col-md-12 SignUp_head">
+                <h4>Update Profile</h4>
+            </div>
+        </div>
+        <div class="row">
+            <div class="singup_body" style="padding:0px 15px;">
+                <div class="clearfix"></div>
+                <div class="row SignUp_space_top SignUp">
+                    <div class="col-md-2 ">
+                        @Html.LabelFor(model => model.LoginId, new { @class = "control-label" })
+                    </div>
+                    <div class="col-md-4">
+                        @Html.TextBoxFor(model => model.LoginId, new { @class = "form-control", @readonly = "readonly" })
+                        @Html.ValidationMessageFor(model => model.LoginId, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-sm-2 col-md-2 col-lg-2">
+                        @Html.LabelFor(model => model.MobileNo, new { @class = "control-label" })<span class="LabelColon">:</span>
+                    </div>
+                    <div class="col-sm-4 col-md-4 col-lg-4">
+                        @Html.TextBoxFor(model => model.MobileNo, new { @class = "form-control", @id = "TxtMobileNo", @readonly = "readonly" })<a class="UpdateProfileIcon" href="#" onclick="ChangeMobile()" data-toggle="tooltip" data-placement="bottom" title="Change Mobile No"><i style="font-size:20px;" class="fa fa-pencil-square Edit" aria-hidden="true"></i></a>
+                        @Html.ValidationMessageFor(model => model.MobileNo, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="row Form_Space_top SignUp">
+                    <div class="col-md-2">
+                        @Html.LabelFor(model => model.Name, new { @class = "control-label" })<span class="LabelColon">:</span>
+                    </div>
+                    <div class="col-md-4">
+                        @Html.HiddenFor(m => m.Uid)
+                        @Html.TextBoxFor(model => model.Name, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-sm-2 col-md-2">
+                        @Html.LabelFor(model => model.Email, new { @class = "control-label" })<span class="LabelColon">:</span>
+                    </div>
+                    <div class="col-sm-4 col-md-4">
+                        @{ Html.EnableClientValidation(false); }
+                        @Html.TextBoxFor(model => model.Email, new { @class = "form-control", @readonly = "readonly", @id = "TxtEmail" })<a class="UpdateProfileIcon" href="#" onclick="ChangeEmail()" data-toggle="tooltip" data-placement="bottom" title="Change E-mail id" style="display:none;"><i style="font-size:20px;" class="fa fa-pencil-square Edit" aria-hidden="true"></i></a>
+                        @{ Html.EnableClientValidation(true); }
+                        @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="row Form_Space_top ClearFix SignUp">
+                    <div class="col-sm-2 col-md-2 col-lg-2">
+                        @Html.LabelFor(model => model.Address, new { @class = "control-label" })<span class="LabelColon">:</span>
+                    </div>
+                    <div class="col-sm-4 col-md-4 col-lg-4">
+                        @Html.TextAreaFor(model => model.Address, new { @class = "form-control", id = "txtAddress" })
+                        @Html.ValidationMessageFor(model => model.Address, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="row SignUp_space_top" style="padding-bottom: 10px;">
+                    <div class="col-md-offset-4 col-md-4">
+                        <input type="submit" value="Update" class="btn Log_Btn log" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    //:::::::::: Mobile Body:::::::::://
+
+    <div id="DivMobileModal" class="modal">
+        <div class="modal-content log_modal">
+            <div class="modal-body" style="padding:0px;">
+                <button type="button" class="close" style="margin:5px 15px;" data-dismiss="modal"><i class="fa fa-times" style="color:#000;" aria-hidden="true"></i></button>
+                <div id="DivMobile" style="padding-bottom: 10px;">
+                    <div class="row">
+                        <div class="col-md-12 SignUp_head">
+                            <h4>Change Mobile No.</h4>
+                        </div>
+                    </div>
+                    <div class="singup_body" style="padding:0px 15px; position:relative;">
+                        <div class="clearfix"></div>
+                        <div class="row SignUp_space_top SignUp ClearFix">
+                            <div class="col-sm-5 col-md-5">
+                                <label class="control-label">Enter New Mobile No:</label>
+                            </div>
+                            <div class="col-sm-5 col-md-5">
+                                <input type="text" id="TxtNewMobileNo" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top SignUp ClearFix" style="text-align:center; margin: 13px 0 8px;"><a href="javascript:GenerateMobileCode();" style="text-decoration: underline;">Generate Code</a></div>
+                        <div class="row Form_Space_top SignUp ClearFix">
+                            <div class="col-sm-5 col-md-5">
+                                <label class="control-label">Enter Verification Code:</label>
+                            </div>
+                            <div class="col-sm-5 col-md-5">
+                                <input type="text" id="TxtMobileGenerateCode" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="OtpMsg hidden" id="LblMobile"></div>
+                        <div class="logSuccMsg hidden" id="DivErrMsg" style="margin: 10px 0 0;"></div>
+
+                        <div class="row SignUp_space_top" style="padding-bottom: 10px;">
+                            <div class="col-md-offset-2 col-md-3">
+                                <input type="button" value="Verify" class="btn Log_Btn" onclick="GetUpdatedMobileNo()" />
+                            </div>
+                            <div class="col-md-6">
+                                <input style="padding:3px 8px;width:100%;" id="BtnGenerateCode" type="button" onclick="GenerateMobileCode()" value="Re-Generate code" class="btn Log_Btn" />
+                            </div>
+                        </div>
+                    </div>
+                    @*<div id="DivConfirmMsg"></div>*@
+                </div>
+            </div>
+        </div>
+    </div>
+
+    //:::::::::::::::: Email Body:::::::::::::::::://
+    <div id="DivEmailModal" class="modal">
+        <div class="modal-content log_modal" style="width:40% !important;">
+            <div class="modal-body" style="padding:0px;">
+                <button type="button" class="close" style="margin:5px 15px;" data-dismiss="modal"><i class="fa fa-times" style="color:#000;" aria-hidden="true"></i></button>
+                <div id="DivEmail">
+                    <div class="row">
+                        <div class="col-md-12 SignUp_head">
+                            <h4>Change Email</h4>
+                        </div>
+                    </div>
+                    <div class="singup_body">
+                        <div class="row SignUp_space_top ClearFix SignUp">
+                            <div class="col-sm-4 col-md-4">
+                                <label>Enter New Email Id:</label>
+                            </div>
+                            <div class="col-sm-5 col-md-5">
+                                <input type="text" id="TxtNewEmail" class="form-control" />
+                            </div>
+                            <div class="col-md-3">
+                                <input style="padding:4px 2px;width:100%;font-size:11px;" id="BtnGenerateCodeforEmail" type="button" onmouseup="GenerateEmailCode()" value="Generate code" class="btn Log_Btn" />
+                            </div>
+                        </div>
+                        <div class="row SignUp">
+                            <div class="col-md-12 logSuccMsg">
+                                <label id="LblEmail"></label>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top SignUp ClearFix">
+                            <div class="col-sm-4 col-md-4" style="padding-right:0px;">
+                                <label class="control-label">Enter Verification Code:</label>
+                            </div>
+                            <div class="col-md-5">
+                                <input type="text" id="TxtEmailGenerateCode" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top ClearFix">
+                            <div class="col-md-offset-4 col-md-4">
+                                <input type="button" value="Save" class="btn Log_Btn log" onclick="GetUpdatedEmail()" />
+                            </div>
+                        </div>
+                    </div>
+                    @*<div id="DivConfirmMsg"></div>*@
+                    <div class="logErrMsg" id="DivEmailErrMsg"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@Scripts.Render("~/bundles/jqueryval")
+<div class="logSuccMsg" id="DivConfirmMsg"></div>
+<script type="text/javascript">
+
+    function OnBegin() {
+
+    }
+    function OnComplete() {
+
+    }
+    function OnSuccess(data) {
+
+        if (data.Status == 1) {
+            $('#DivConfirmMsg').html("User Profile Updated Successfully.").removeClass('logErrMsg').addClass('logSuccMsg');
+        }
+        else if (data.Status == -1) {
+            $('#DivConfirmMsg').html("Please fill all the required fields").removeClass('logSuccMsg').addClass('logErrMsg');
+
+        }
+        else {
+            $('#DivConfirmMsg').html(data.Message).removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+    function OnFailure() {
+
+    }
+
+    // Code for mobile
+    function GenerateMobileCode() {
+        var ObjData = new Object();
+        ObjData.Mobile = $('#TxtNewMobileNo').val();
+        $('#DivErrMsg').html('');
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GenerateCodeForMobile", "User",null)',
+            contentType: 'application/json',
+            dataType: "Json",
+            data: JSON.stringify(ObjData),
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    $("#BtnGenerateCode").prop("disabled", false);
+                    $('#DivErrMsg').removeClass('hidden');
+                    $('#DivErrMsg').html("Verification Code has been sent to your Mobile sucessfully");
+                    $('#BtnGenerateCode').val('Regenerate code');
+                    $('#TxtMobileGenerateCode').removeAttr("disabled");
+                }
+
+            }
+        });
+
+    }
+
+    // Code for Email
+    function GenerateEmailCode() {
+
+        var ObjData = new Object();
+        ObjData.EmailId = $('#TxtNewEmail').val();
+        if ($('#TxtNewEmail').val() == '') {
+            $('#TxtNewEmail').focus();
+            $('#DivEmailErrMsg').html("Please Enter Email ID");
+        }
+        else {
+            $('#DivEmailErrMsg').html('');
+            $.ajax({
+                type: 'POST',
+                url: '@Url.Action("GenerateCodeForEmail", "User",null)',
+                contentType: 'application/json',
+                dataType: "Json",
+                data: JSON.stringify(ObjData),
+                success: function (data) {
+                    if (data.Status == 1) {
+                        //$('#DivConfirmMsg').html("Verification Code has been sent to your email sucessfully");
+                        $('#BtnGenerateCodeforEmail').val('Regenerate code');
+                    }
+                }
+            });
+        }
+    }
+
+    // Get New Mobile Number
+    function GetUpdatedMobileNo() {
+        if (CheckMobile() == true) {
+            $.ajax({
+                url: '@Url.Action("GetMobileVerificationCode","User")',
+                data: {},
+                type: 'GET',
+                success: function (data) {
+                    var MobileVerificationCode = data;
+
+                    if ($('#TxtNewMobileNo').val() != '' && $('#TxtMobileGenerateCode').val() != '') {
+
+                        if ($('#TxtMobileGenerateCode').val() == MobileVerificationCode) {
+                            $('#TxtMobileNo').val($('#TxtNewMobileNo').val());
+                            $('#DivMobileModal').hide();
+                            $('#TxtMobileGenerateCode').val('');
+                            $('#DivErrMsg').html("");
+                            return true;
+                        }
+                        else {
+                            $('#DivErrMsg').html("Invalid Code.");
+                            return false;
+                        }
+                    }
+                    else {
+                        $('#DivErrMsg').html("Please fill required fields.");
+                        return false;
+                    }
+
+                }
+            });
+        }
+        return (false);
+    }
+
+    //Mobile check
+    function CheckMobile() {
+        var MobileLength = $('#TxtNewMobileNo').val()
+
+        if (MobileLength.length > 10 || MobileLength.length < 10) {
+            $('#DivErrMsg').html("Mobile No Should Contain 10 digits.");
+            return false;
+        }
+        else if (!MobileLength.match(/^([0-9])/)) {
+            $('#DivErrMsg').html("Mobile No Contain Number Only.");
+            return false;
+        }
+        else {
+            return true;
+        }
+
+    }
+
+    // Get Email Verification Code
+
+    function GetUpdatedEmail() {
+        if (CheckEmail() == true) {
+            $.ajax({
+                url: '@Url.Action("GetEmailVerificationCode","User")',
+                data: {},
+                type: 'GET',
+                success: function (data) {
+                    var EmailVerificationCode = data;
+                    if ($('#TxtNewEmail').val() != '' && $('#TxtEmailGenerateCode').val() != '') {
+                        if ($('#TxtEmailGenerateCode').val() == EmailVerificationCode) {
+                            $('#TxtEmail').val($('#TxtNewEmail').val());
+                            $('#BtnGenerateCodeforEmail').val('Generate code');
+                            $('#DivEmailModal').hide();
+                            $('#TxtEmailGenerateCode').val('');
+                            $('#DivEmailErrMsg').html("");
+
+                            return true;
+                        }
+                        else {
+                            $('#DivEmailErrMsg').html("Invalid Code.");
+                            return false;
+                        }
+                    }
+                    else {
+                        $('#DivEmailErrMsg').html("Please fill required fields.");
+                        return false;
+                    }
+
+                }
+            });
+        }
+        return (false);
+    }
+
+    //Check Email
+    function CheckEmail() {
+        var CheckEmail = $('#TxtNewEmail').val();
+        if (!CheckEmail.match(/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/)) {
+            $('#DivEmailErrMsg').html("Invalid Email Format.");
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
+
+    //Show Mobile and Email View in modal
+    function ChangeMobile() {
+        $('#DivMobile').show();
+        $('#TxtNewMobileNo').val($('#TxtMobileNo').val());
+        $("#BtnGenerateCode").prop("disabled", true);
+        $("#BtnOk").prop("disabled", false);
+        $('#TxtNewMobileNo').removeAttr("disabled");
+        $('#DivErrMsg').html("");
+        $('#TxtMobileGenerateCode').val('');
+        $('#TxtMobileGenerateCode').attr("disabled", "disabled");
+        $('#LblMobile').text("");
+        $('#DivMobileModal').show();
+
+    }
+
+
+    function ChangeEmail() {
+        $('#DivEmail').show();
+        $('#TxtNewEmail').val($('#TxtEmail').val());
+        $('#TxtNewEmail').removeAttr("disabled");
+        $('#DivEmailErrMsg').html("");
+        $('#TxtEmailGenerateCode').val('');
+        $('#TxtEmailGenerateCode').attr("disabled", "disabled");
+        $('#LblEmail').text("");
+        $('#DivEmailModal').show();
+    }
+
+    // Mobile & Email Code Generate button disabled enable
+
+    $('#BtnOk').click(function () {
+        if ($('#TxtNewMobileNo').val() == '') {
+            $('#TxtNewMobileNo').removeAttr("disabled");
+            $('#TxtNewMobileNo').focus();
+            $('#DivErrMsg').html("Please Enter Mobile No.");
+            return false;
+        }
+        else {
+            $(this).attr("disabled", true);
+            $("#BtnGenerateCode").prop("disabled", false);
+            $('#TxtNewMobileNo').attr("disabled", "disabled");
+            $('#TxtMobileGenerateCode').removeAttr("disabled");
+            if ($('#TxtNewMobileNo').val() != '') {
+                $('#LblMobile').text("Verification Code has been sent to your Mobile No.");
+            }
+            $('#TxtMobileGenerateCode').focus();
+        }
+    });
+
+
+    $(function () {
+        $('#BtnGenerateCodeforEmail').click(function () {
+            if ($('#TxtNewEmail').val() != '') {
+                $('#TxtNewEmail').attr("disabled", "disabled");
+                $('#LblEmail').text("Verification Code has been sent to your Email Id");
+                $('#TxtEmailGenerateCode').removeAttr("disabled");
+                $('#TxtEmailGenerateCode').focus();
+            }
+            // $('#TxtEmailGenerateCode').focus();
+        })
+    });
+
+    // Get the modal
+
+    $('.close').on("click", function () {
+        $('#DivMobileModal').hide();
+        $('#DivEmailModal').hide();
+        $('#BtnGenerateCodeforEmail').val('Generate code');
+    });
+
+    window.onclick = function (event) {
+        if (event.target == $('#DivMobileModal')) {
+            backdrop: 'static'
+        }
+        if (event.target == $('#DivEmailModal')) {
+            backdrop: 'static'
+        }
+    }
+    //$(function () {
+    //    $('#my_tooltip').tooltip().on("mouseenter", function () {
+    //        var $this = $(this),
+    //        tooltip = $this.next(".tooltip");
+    //        tooltip.find(".tooltip-inner").css({
+    //            width: "350px",
+    //        });
+    //    });
+    //});
+    $(document).ready(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
+

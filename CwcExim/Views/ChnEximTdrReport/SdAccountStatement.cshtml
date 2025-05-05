@@ -1,0 +1,160 @@
+﻿
+@model CwcExim.Areas.Report.Models.ChnSDStatement
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "PDAOnFailure";
+    options.OnSuccess = "PDAOnSuccess";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+@using (Ajax.BeginForm("GetSDStatement", "ChnEximTdrReport", options))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>SD A/c Statement</h4>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 padding_rt">
+                                    <label>Month:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.DropDownList("PDAMonth", new SelectList(ViewBag.Months, "Value", "Text"), "Select", new { @onchange = "GetPDAMonth()" })
+                                    @Html.HiddenFor(m => m.Month)
+                                    @Html.ValidationMessageFor(m => m.Month, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4">
+                                    <label>Year:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    <select id="DDLPDAYear">
+                                        <option value="">---Select---</option>
+                                    </select>
+                                    @Html.HiddenFor(m => m.Year)
+                                    @Html.ValidationMessageFor(m => m.Year, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPDAPreview" />
+                            </div>
+                        </div>
+                        <div class="logErrMsg Form_Space_bottom" id="DivPDAErrMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+
+    $(function () {
+        debugger;
+        var Year = $('#Year').val(new Date().getFullYear());
+        $('#DDLPDAYear').dynamicYear({ onChangeCallback: GetPDAYear });
+
+    });
+
+    function GetPDAYear(element) {
+        debugger;
+        $('#Year').val($(element).val());
+    }
+
+    function GetPDAMonth() {
+        debugger;
+        var Month = $('#PDAMonth').val();
+        if (Month != "") {
+            $('#Month').val(Month);
+            $("[data-valmsg-for='Month']").html('');
+        }
+        else {
+            $('#Month').val(0);
+            $("[data-valmsg-for='Month']").html("<span>Fill Out This Field</span>");
+        }
+    }
+
+    function PDAOnFailure() { }
+
+    function PDAOnSuccess(data) {
+        $('#DivPDAErrMsg').html('')
+        debugger;
+        if (data.Status == 1) {
+
+            SaveReportPdf(data);
+        }
+        else {
+            $('#DivPDAErrMsg').html(data.Message);
+        }
+    }
+
+    $('#BtnPDAPreview').on("click", function () {
+        $('#DivPDAErrMsg').html("");
+        var Month = $('#Month').val();
+        if (Month == 0) {
+            $("[data-valmsg-for='Month']").html("<span>Fill Out This Field</span>");
+            return false;
+        }
+        return true;
+    });
+
+    function SaveReportPdf(data)
+    {
+        debugger;
+        var PDAMonth = $("#PDAMonth option:selected").text();
+        var PDAYear = $("#DDLPDAYear option:selected").text();
+        var PostData = new FormData();
+        var Html = "<table style='width:100%;font-size:7pt;font-family:Verdana,Arial,San-serif;border-collapse:collapse;'><thead><tr><th colspan='5' style='text-align:center;'>  (A GOVT. OF INDIA UNDERTAKING)<br/> SD A/C STATEMENT FOR THE MONTH OF <span>" + PDAMonth + "</span>, <span>" + PDAYear + "</span></th></tr> <tr><th style='font-weight:600;text-align:center;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:5%; '>SL No.</th><th style='font-weight:600;text-align:left;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px; width:15%;'>Name of Payee</th><th style='font-weight:600;text-align:right;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:15%;'>SD Opening Balance (Rs)</th><th style='font-weight:600;text-align:right;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:15%;'>Unpaid Amount (Rs)</th><th style='font-weight:600;text-align:right;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:15%;'>Adjusted Amount (Rs)</th><th style='font-weight:600;text-align:right;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:15%;'>Refund Amount (Rs)</th><th style='font-weight:600;text-align:right;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:15%;'>Closing Balance (Rs)</th><th style='font-weight:600;text-align:right;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:15%;'>Invoice to Utilize(Rs)</th></tr></thead><tbody>";
+       // var Html = "<table repeat-header: yes;  style='width:100%;font-size:7pt;font-family:Verdana,Arial,San-serif;border-collapse:collapse;'><thead><tr><th colspan='3' style='text-align:center;'><span style='font-size:12pt'>SD A/C STATEMENT FOR THE MONTH OF <span>" + PDAMonth + "</span>, <span>" + PDAYear + "</span>			</th></tr><tr><th style='font-weight:600;text-align:center;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:5%;'>SL No.</th><th style='font-weight:600;text-align:left;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;'>Name of Party</th><th style='font-weight:600;text-align:right;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:15%;'>SD Amount (Rs)</th><th style='font-weight:600;text-align:right;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:15%;'>Unpaid Amount (Rs)</th><th style='font-weight:600;text-align:right;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:15%;'>Balance Amount (Rs)</th></tr></thead><tbody>";
+        $.each(data.Data.LstSD, function (i, item) {
+            debugger;
+            Html += "<tr><td style='text-align:center;padding:4px;'>" + ++i + "</td><td style='text-align:center;padding:4px;'>" + item.PartyName + "</td><td style='text-align:right;padding:4px;'>" + item.SDAmount + "</td><td style='text-align:right;padding:4px;'>" + item.UnpaidAmount + "</td><td style='text-align:right;padding:4px;'>" + item.AdjustAmount + "</td><td style='text-align:right;padding:4px;'>" + item.RefundAmount + "</td><td style='text-align:right;padding:4px;'>" + item.BalanceAmount + "</td><td style='text-align:right;padding:4px;'>" + item.UtilizationAmount + "</td></tr>";
+        });
+        Html += "</tbody></table>";
+       // Html += "</tbody>	<tfoot>		<tr>			<td colspan='2' style='text-align:left;padding:4px;'>Total:</td><td style='text-align:right;padding:4px;'>" + data.Data.TotalAmount + "</td>		</tr>		<tr>			<td colspan='2' style='text-align:left;padding:4px;'>O/B</td>";
+       // Html += "<td style='text-align:right;padding:4px;'>" + eval(data.Data.OpeningAmount) + "</td>	</tr><tr><td colspan='2' style='text-align:left;padding:4px;'>Collection</td>			<td style='text-align:right;padding:4px;'>" + data.Data.Collections + "</td>		</tr>		<tr>			<td colspan='2' style='text-align:left;padding:4px;'>Adjustment(-)</td>			<td style='text-align:right;padding:4px;'>" + data.Data.Adjustment + "</td>		</tr>		<tr>			<td colspan='2' style='text-align:left;padding:4px;'>Closing BAL</td>			<td style='text-align:right;padding:4px;'>" + data.Data.closingAmount + "</td>		</tr>	</tfoot></table>";
+        PostData.append("Page", Html);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GeneratePDFForPDAStatement", "ChnEximTdrReport")',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            async:false,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+            }
+        });
+    }
+
+</script>
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,2089 @@
+﻿
+@model CwcExim.Areas.Import.Models.OBLEntryV2
+<script src="~/Areas/Import/Scripts/App/Services/Loni_OBLEntryServiceV2.js"></script>
+<script src="~/Areas/Import/Scripts/App/Controllers/Loni_OBLEntryCtrlV2.js"></script>
+<script>
+    angular.bootstrap(document.getElementById('OBLEntryAppDiv'), ['CWCApp']);
+</script>
+<style>
+    .ang_srch {
+        top: 25%;
+        right: 6px;
+        height: 21px;
+        padding: 0 4px;
+        display: block;
+        background: #ebebe4;
+        position: absolute;
+        cursor: pointer;
+    }
+
+    /*#DivFormOneDet {
+        height: 584px;
+        overflow-x: hidden;
+    }*/
+
+    .slimScrollDiv {
+        height: 300px;
+    }
+
+    #tbleCommodity.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    #tbleImp.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .table.tblhd {
+        border-bottom: 0;
+    }
+</style>
+<style>
+    #tbleSline.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+</style>
+<div class="container-fluid" id="OBLEntryAppDiv" ng-controller="OBLEntryCtrl">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>OBL Entry</h4>
+                    </div>
+                </div>
+                @*@using (Ajax.BeginForm("AddEditOBLEntry", "Ppg_OblEntry", new AjaxOptions
+                    {
+                        Confirm = "Are you sure you want to save?",
+                        HttpMethod = "POST",
+                        OnSuccess = "JobOrderOnSuccess",
+                        OnFailure = "JobOrderOnFailure"
+                    }))*@
+                @{
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.StringifiedText)
+                    @Html.HiddenFor(m => m.Id)
+                    @Html.HiddenFor(m => m.IsAlreadyUsed)
+                    if (ViewBag.ListOfContainerNo != null)
+                    {
+                        <input type="hidden" id="hdnListOfContainerNo" value="@ViewBag.ListOfContainerNo" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="hdnListOfContainerNo" value="" />
+                    }
+                    <div id="DivJOHdr" class="Form_Space_bottom">
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Container / CBT:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.DropDownListFor(m => m.CONTCBT, new List<SelectListItem>
+                                      {
+                                      new SelectListItem { Text="Container",Value="CONT"},
+                                      new SelectListItem { Text="CBT",Value="CBT"},
+                                      }, "----Select----", new { @class = "form-control input-sm", @onchange = "OnTypeChange()" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Container / CBT No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.HiddenFor(m => m.CFSCode)
+                                    @Html.TextBoxFor(m => m.ContainerNo, new { @class = "form-control input_sm" })
+                                    <span class="search" id="ContainerNoSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerNoModal"></i></span>
+                                </div>
+                                <div class="col-md-offset-0-5 col-md-2-5">
+                                    <input type="button" id="btnShowDetails" class="btn log_Btn_sm" value="Show Details" onclick="ShowDetails()" />
+                                </div>
+                                <div class="col-md-offset-1 col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Container / CBT Size:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.DropDownListFor(m => m.ContainerSize, new List<SelectListItem>
+                                    {
+                                        new SelectListItem { Text="20",Value="20"},
+                                        new SelectListItem { Text="40",Value="40"},
+                                    }, "----Select----")
+                                    @Html.ValidationMessageFor(m => m.ContainerSize, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>IGM No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.IGM_No, new { @class = "form-control input_sm" })
+                                    @Html.ValidationMessageFor(m => m.IGM_No, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                    <label>IGM Date:</label>
+                                </div>
+                                <div class="col-md-2-5 Date_Img">
+                                    @Html.TextBoxFor(m => m.IGM_Date, new { @size = 10, @maxlength = 10, @onkeyup = "checks()", @onblur = "checkdates()" })
+                                    <div class="field-validation-error" id="DivMsges" style="background-color:transparent"></div>
+                                    @Html.ValidationMessageFor(m => m.IGM_Date, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>TP No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.TPNo, new { @class = "form-control input_sm" })
+                                    @Html.ValidationMessageFor(m => m.TPNo, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                    <label>TP Date:</label>
+                                </div>
+                                <div class="col-md-2-5 Date_Img">
+                                    @Html.TextBoxFor(m => m.TPDate, new { @size = 10, @maxlength = 10, @onkeyup = "chec()", @onblur = "checkdat()" })
+                                    <div class="field-validation-error" id="DivMs" style="background-color:transparent"></div>
+                                    @Html.ValidationMessageFor(m => m.TPDate, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Movement Type:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.DropDownListFor(m => m.MovementType, new List<SelectListItem>
+                               {
+                                   new SelectListItem {Text="FCL",Value="FCL" },
+                                   new SelectListItem {Text="LCL",Value="LCL" }
+                               }, "----Select----", new { @class = "form-control input_sm dropdown" })
+                                    @Html.ValidationMessageFor(m => m.MovementType, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt col-md-1-5">
+                                    <label>Port:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.HiddenFor(m => m.PortId)
+                                    @Html.TextBoxFor(m => m.PortName, new { @class = "form-control input_sm", @disabled = true })
+                                    <span class="search" id="PortSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PortModal"></i></span>
+                                    @Html.ValidationMessageFor(m => m.PortId, "", new { @class = "Error_Msg" })
+                                    @Html.HiddenFor(m => m.SelectPortId)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+
+                                    <label>Country:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.HiddenFor(m => m.CountryId)
+                                    @Html.TextBoxFor(m => m.CountryName, new { @class = "form-control input_sm", @disabled = true })
+                                    <span class="search" id="CountrySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CountryModal"></i></span>
+                                    @Html.ValidationMessageFor(m => m.CountryId, "", new { @class = "Error_Msg" })
+                                    @Html.HiddenFor(m => m.SelectCountryId)
+                                </div>
+                                <div class="col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt col-md-1-5">
+                                    <label>Shipping Line:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.HiddenFor(m => m.ShippingLineId)
+                                    @Html.TextBoxFor(m => m.ShippingLineName, new { @class = "form-control input_sm", @readonly = true })
+                                    <span class="search" id="ShippingLineSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ShippingLineModal"></i></span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div id="DivJobOrderDtl" class="Head_h5 Form_Space_top" ng-hide="true">
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>OBL / HBL No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("OBL_No", "", new { @class = "form-control input_sm", @maxlength = 30 })
+                                    @Html.ValidationMessage("OBL_No", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt col-md-1-5">
+                                    <label>OBL / HBL Date:</label>
+                                </div>
+                                <div class="col-md-2-5 Date_Img">
+                                    @Html.TextBox("OBL_Date", new { @size = 10, @maxlength = 10, @onkeyup = "check()", @onblur = "checkdate()" })
+                                    <div class="field-validation-error" id="DivMsgs" style="background-color:transparent"></div>
+                                    @Html.ValidationMessage("OBL_Date", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Line:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("LineNo", "", new { @class = "form-control input_sm", @maxlength = 30 })
+                                </div>
+                                <div class="col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt col-md-1-5">
+                                    <label>SMTP No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("SMTPNo", "", new { @class = "form-control input_sm", @maxlength = 30 })
+                                </div>
+                                <div class="col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt col-md-1-5">
+                                    <label>OBL / HBL Date:</label>
+                                </div>
+
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>No Of Package:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("NoOfPkg", "", new { @class = "form-control input_sm", @maxlength = 30 })
+                                </div>
+                                <div class="col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt col-md-1-5">
+                                    <label>Cargo Type:</label>
+                                </div>
+                                <div class="col-md-2-5 Date_Img">
+                                    @Html.DropDownList("CargoType", new List<SelectListItem>
+                                    {
+                                        new SelectListItem {Text="HAZ",Value="1" },
+                                        new SelectListItem {Text="NON-HAZ",Value="2" }
+                                    }, "----Select----", new { @class = "form-control input_sm dropdown" })
+                                    @Html.ValidationMessage("CargoType", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Cargo Description:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextArea("CargoDescription", "", new { @class = "form-control input_sm", @style = "width:100%;height:50px;" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Package type:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("PkgType", "", new { @class = "form-control input_sm", @maxlength = 30 })
+                                    @Html.ValidationMessage("PkgType", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt col-md-1-5">
+                                    <label>GR WT(Kg):</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBox("GR_WT", "", new { @class = "form-control input_sm", @maxlength = 30 })
+                                    @Html.ValidationMessage("GR_WT", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Importer Name:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    <input type="hidden" id="ImporterId" value="0" />
+                                    @Html.TextBox("ImporterName", "", new { @class = "form-control input_sm", @readonly = true })
+                                    <span class="search" id="ImporterSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ImporterModal"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div id="DivFormOneDet" ng-hide="OblEntryDetails.length==0">
+                                <table class="table table-striped table-bordered dataTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Sl No</th>
+                                            <th width="20%">OBL / HBL No</th>
+                                            <th width="8%">OBL / HBL Date</th>
+                                            <th width="4%" ng-show="false">Line No.</th>
+                                            <th width="8%">SMTP No.</th>
+                                            <th width="8%">SMTP Date</th>
+                                            <th width="15%">Cargo Desc</th>
+                                            <th width="10%">Commodity</th>
+                                            <th width="10%"style="display:none;">Cargo Type</th>
+                                            <th width="5%">No. of PKG</th>
+                                            <th width="5%">PKG Type</th>
+                                            <th width="5%">GR WT(Kg)</th>
+                                            <th>Importer Name</th>
+                                            <th>IGM Importer Name</th>
+                                            <th width="3%" class="text-center" ng-hide="Action">Action</th>
+                                            @*<th class="text-center" style="width:10%;">View</th>*@
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="j in OblEntryDetails">
+                                            <td>
+                                                {{$index+1}}
+                                                <input type="hidden" ng-model="j.icesContId" />
+                                                <input type="hidden" ng-model="j.ID" />
+                                                <input type="hidden" ng-model="j.AddID" />
+                                            </td>
+                                            <td width="10%"><input type="text" ng-model="j.OBL_No" ng-blur="onchangetext(j);" /> </td>
+                                            @*<td width="8%">
+                                                    <input type="text" ng-model="j.OBL_Date"
+                                                           name="date"
+                                                           placeholder="dd/mm/yyyy"
+                                                           onkeyup="var v = this.value;
+                                                    if (v.match(/^\d{2}$/) !== null) {
+                                                    this.value = v + '/';
+                                                    } else if (v.match(/^\d{2}\/\d{2}$/) !== null) {
+                                                    this.value = v + '/';
+                                                    }"
+                                                           maxlength="10" />
+                                                </td>*@
+                                            <td>
+                                                <input type="text" id="date{{$index}}" ng-model="j.OBL_Date" name="date" placeholder="dd/mm/yyyy"
+                                                       onkeyup="check(this.id)" onblur="checkdate(this.id)" />
+                                                <span class="field-validation-error" id="ErrddlValidType_date{{$index}}"></span>
+
+
+                                            </td>
+
+                                            <td width="4%" ng-show="false"><input type="text" ng-model="j.LineNo" /></td>
+                                            <td width="8%"><input type="text" ng-model="j.SMTPNo" /></td>
+                                            <td>
+                                                <input type="text" id="SMTP_Date{{$index}}" ng-model="j.SMTP_Date" name="date" placeholder="dd/mm/yyyy"
+                                                       onkeyup="check(this.id)" onblur="checkdate(this.id)" />
+                                                <span class="field-validation-error" id="ErrddlValidType_SMTP_Date{{$index}}"></span>
+
+
+                                            </td>
+                                            <td width="15%">
+                                                <textarea class="col-xs-12" style="padding:3px; resize:none;" ng-model="j.CargoDescription" cols="2"></textarea>
+                                            </td>
+                                            <td style="position:relative;">
+                                                <input type="text" ng-model="j.Commodity" id="Commodity_{{$index}}" ng-disabled="true" required />
+                                                <input type="text" ng-hide="true" ng-model="j.CommodityId" />
+                                                <span class="ang_srch" id="CommoditySerach"><i class="fa fa-search" aria-hidden="true" ng-model="j.Commoditymodal" ng-click="onCommodityChange($index)" data-toggle="modal" data-target="#CommodityModal"></i></span>
+                                            </td>
+                                            <td width="10%" style="display:none;">
+                                                <select ng-model="j.CargoType" required>
+                                                    <option value="0">--Select--</option>
+                                                    <option value="{{s.id}}" ng-repeat="s in CargoTypeList">{{s.CargoType}}</option>
+                                                </select>
+                                            </td>
+                                            <td width="5%">
+                                                <input type="text" ng-model="j.NoOfPkg" onkeypress="return isNumber(event)" />
+                                            </td>
+                                            <td>
+                                                <input type="text" ng-model="j.PkgType" />
+                                            </td>
+                                            <td width="5%"><input type="text" ng-model="j.GR_WT" onkeypress="return isDecimalNumber(event)" /></td>
+                                            <td style="position:relative;">
+                                                <input type="text" ng-model="j.ImporterName" id="ImporterName_{{$index}}" ng-disabled="true" required />
+                                                <input type="text" ng-hide="true" ng-model="j.ImporterId" />
+                                                <span class="ang_srch" id="ImporterSerach"><i class="fa fa-search" aria-hidden="true" ng-model="j.Slmodal" ng-click="onImporterChange($index)" data-toggle="modal" data-target="#ImporterModal"></i></span>
+                                            </td>
+                                            <td>
+                                                <input type="text" ng-model="j.IGM_IMPORTER" ng-disabled="true" />
+                                            </td>
+                                            <td width="3%" style="text-align:center;" ng-hide="Action">
+                                                <input type="hidden" ng-model="j.IsProcessed" />
+                                                <a href="#" ng-click="Delete($index,j)"><i class="fa fa-window-close-o Delete" aria-hidden="true"></i></a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                        <div class="logErrMsg" id="DivTblContrErrMsg" style="background-color:transparent"></div>
+                    </div>
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-2 col-md-offset-5">
+                            <input type="button"  class="btn log_Btn_sm" value="Back" onclick="ResetAllField()" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                    </div>
+                    <div class="row SignUp_space_top2">
+                        <div class="col-md-2">
+                          
+                        </div>
+                    </div>
+                    <div class="logSuccMsg Form_Space_top" id="DivSucMsg" style="background-color:transparent"></div>
+                    <div class="logErrMsg Form_Space_bottom" id="DivErrMsg" style="background-color:transparent"></div>
+                }
+                <div class="row">
+                    <div class="col-md-2 SignUp_space_bottom">
+                        <input type="button" id="BtnCommodityLoad" value="Show List" class="btn log_Btn_sm" onclick="LoadOblEntryList()" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="tblEntryDet"></div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="OblEntryList"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal fade" id="ContainerNoModal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Container / CBT No</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="ContainerNobox" type="text" />
+                    <ul class="navList" id="lstContainerNo"></ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="PortModal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Port</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="PortBox" type="text" />
+                    <ul class="navList" id="lstPort"></ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="CountryModal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Country</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="CountryBox" type="text" />
+                    <ul class="navList" id="lstCountry"></ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ShippingLineModal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" onclick="CloseEximTrader()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Shipping Line Names</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search By Shipping Line Name Or Party Code" id="ShpngLinebox" type="text" />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByPartyCode()"></i></span>
+
+                    <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="8" width="80%">Shipping Line Name</th>
+                                <th colspan="4" width="20%">Party Code</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div id="slim_scroll">
+                        <table class="table dataTable table-bordered table-striped slim_tble" id="tbleSline">
+                            @{
+                                if (ViewBag.lstShippingLine != null)
+                                {
+                                    foreach (var item in ViewBag.lstShippingLine)
+                                    {
+                                        <tr onclick="SelectShippingLine(@item.ShippingLineId,'@item.ShippingLineName')">
+                                            <td colspan="8" width="80%" class="txt_wrp">@item.ShippingLineName</td>
+                                            <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+                            }
+                            else
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" onclick="CloseEximTrader()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="ImporterModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" onclick="CloseImporter()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Importer Name</h4>
+                </div>
+                <div class="modal-body popup_body" style="position:relative;">
+                    <input placeholder="Search By Importer Name Or Party Code" id="Impbox" type="text" />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchImporterByPartyCode()"></i></span>
+                    <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="8" width="80%">Importer Name</th>
+                                <th colspan="4" width="20%">Party Code</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div id="slim_scroll_1">
+                        <table class="table dataTable table-bordered table-striped slim_tble" id="tbleImp">
+                            @{
+                                if (ViewBag.lstImporter != null)
+                                {
+                                    foreach (var item in ViewBag.lstImporter)
+                                    {
+                                        <tr ng-click="SelectImporter(@item.ImporterId,'@item.ImporterName')">
+                                            <td colspan="8" width="80%" class="txt_wrp">@item.ImporterName</td>
+                                            <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            @if (ViewBag.ImpState != null && Convert.ToBoolean(ViewBag.ImpState) == true)
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreImporter()" class="btn log_Btn_sm" id="btnLoadImp">Load More Data</button>
+                            }
+                            else
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreImporter()" class="btn log_Btn_sm" id="btnLoadImp" disabled>Load More Data</button>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" onclick="CloseImporter()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="modal fade" id="CommodityModal" role="dialog">
+        <div class="modal-dialog">
+
+            <!-- Modal content-->
+            <div class="modal-content popup_modal" style="width:80%;">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" onclick="CloseCommodity()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Commodity</h4>
+                </div>
+                <div class="modal-body popup_body" style="position:relative;">
+                    <input placeholder="Search By Commodity Name" id="CommodityBox" type="text" />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchCommodityByPartyCode()"></i></span>
+                    <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th>Commodity Name</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div id="slim_scroll_2">
+                        <table class="table dataTable table-bordered table-striped" id="tbleCommodity">
+                            @{
+                                if (ViewBag.LstCommodity != null)
+                                {
+                                    foreach (var item in ViewBag.LstCommodity)
+                                    {
+                                        <tr ng-click="SelectCommodity(@item.CommodityId,'@item.CommodityName','@item.CommodityType')">
+                                            <td>@item.CommodityName</td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-5">
+                            @if (ViewBag.CommodityState != null && Convert.ToBoolean(ViewBag.CommodityState) == true)
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreCommodity()" class="btn log_Btn_sm" id="btnLoadMoreCommodity">Load More Data</button>
+                            }
+                            else
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreCommodity()" class="btn log_Btn_sm" id="btnLoadMoreCommodity" disabled>Load More Data</button>
+                            }
+                        </div>
+                        <div class="col-md-offset-3 col-md-4">
+                            <button type="button" class="btn log_Btn_sm" onclick="CloseCommodity()">Close</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+    $(function () {
+        $('#slim_scroll_2').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+
+    $(function () {
+        $('#slim_scroll_1').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+    function OnTypeChange () {
+        if($("#CONTCBT").val()=='CBT'){
+            $("#ContainerSize").prop('disabled',true);
+        }
+        else{
+            $("#ContainerSize").prop('disabled',false);
+        }
+    }
+</script>
+
+
+<script>
+    var ArrayJODetails = [];
+    $(function () {
+        GenerateBlankTable();
+
+        $("#CargoType").change(function (e) {
+            if ($("#CargoType").val()!=null || $("#CargoType").val()!=''|| $("#CargoType").val()!='----Select----') {
+                $('[data-valmsg-for="CargoType"]').html('');
+            }
+            else {
+                $('[data-valmsg-for="CargoType"]').html('Fill Out This Field');
+            }
+
+        });
+
+        // Decimal Number
+        $("#GR_WT").keydown(function (e) {
+            if(e.keyCode==190 || e.keyCode==110){
+                if($(this).val().indexOf('.')>=0){
+                    e.preventDefault();
+                }
+            }
+            // Allow: backspace, delete, tab, escape, enter and .
+            if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 110, 190]) !== -1 ||
+                // Allow: Ctrl+A, Command+A
+                (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+                // Allow: home, end, left, right, down, up
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                // let it happen, don't do anything
+                return;
+            }
+            // Ensure that it is a number or character
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                e.preventDefault();
+            }
+        });
+
+        // Integer Number
+        $("#NoOfPkg").keydown(function (e) {
+            // Allow: backspace, delete, tab, escape, enter and .
+            if ($.inArray(e.keyCode, [46, 8, 9, 27, 13]) !== -1 ||
+                // Allow: Ctrl+A, Command+A
+                (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+                // Allow: home, end, left, right, down, up
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                // let it happen, don't do anything
+                return;
+            }
+            // Ensure that it is a number or character
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                e.preventDefault();
+            }
+        });
+
+        // Text Box
+        $("#ContainerNo,#IGM_No,#TPNo,#OBL_No,#LineNo,#SMTPNo").keydown(function (e) {
+            // Allow: backspace, delete, tab, escape, enter and .
+            if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 110, 190]) !== -1 ||
+                // Allow: Ctrl+A, Command+A
+                (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+                // Allow: home, end, left, right, down, up
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                // let it happen, don't do anything
+                return;
+            }
+            // Ensure that it is a number or character
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105) && (e.keyCode < 65 || e.keyCode > 90)) {
+                e.preventDefault();
+            }
+        });
+
+        // Text Box with space
+        $("#CargoDescription,#PkgType").keydown(function (e) {
+            // Allow: backspace, delete, tab, escape, enter and .
+            if (e.keyCode == 32) {
+                return true;
+            }
+            else if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 110, 190]) !== -1 ||
+                // Allow: Ctrl+A, Command+A
+                (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+                // Allow: home, end, left, right, down, up
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                // let it happen, don't do anything
+                return;
+            }
+            // Ensure that it is a number or character
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105) && (e.keyCode < 65 || e.keyCode > 90)) {
+                e.preventDefault();
+            }
+        });
+
+        var SerializedData = @Html.Raw(Json.Encode(Model.StringifiedText));
+        if(SerializedData!=null)
+        {
+            ArrayJODetails=$.parseJSON(SerializedData);
+            //GenerateTable();
+            //$('#tblJODet').show();
+        }
+        else {
+            $('#tblJODet').hide();
+        }
+
+        // GetPortList();
+        //  GetAllCountry();
+        // LoadOblEntryList();
+
+        if ($('#Id').val()>0) {
+            $('#btnReset').attr('disabled', true);
+            $('#btnResetJO').attr('disabled', true);
+            $('#btnShowDetails').attr('disabled', true);
+            $('#ContainerNo').attr('readonly', true);
+            $('#ContainerSize').attr('readonly', true);
+            $('#IGM_No').attr('readonly', true);
+            $('#ContainerNoSerach').css('display', 'none');
+        }
+        else {
+            $('#IGM_Date').datepicker({
+                dateFormat: "dd/mm/yy",
+                showOn: "button",
+                buttonImage: "/Content/images/calendar.png",
+                buttonImageOnly: true,
+                buttonText: "Select date",
+                changeMonth: true,
+                changeYear: true,
+                showAnima: "fadein",
+                onClose: function () {
+                    $('[data-valmsg-for="IGM_Date"]').html('');
+                }
+            });
+        }
+
+    });
+
+
+    function SelectCommodity(CommodityId, Commodity,CommodityType) {
+        angular.element(document.querySelector('[ng-controller="OBLEntryCtrl"]')).scope().
+         SelectCommodity(CommodityId, Commodity,CommodityType);
+    }
+
+    function LoadMoreCommodity() {
+        debugger;
+        $.ajax({
+            url: '/Import/Ppg_OblEntryV2/LoadCommodityList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.LstCommodity, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectCommodity(' + elem.CommodityId + ',&quot;' + elem.CommodityName + '&quot;,&quot;' + elem.CommodityType + '&quot;)"><td>' + elem.CommodityName + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleCommodity tbody').html(html);
+                    else
+                        $('#tbleCommodity tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMoreCommodity').prop('disabled', false);
+                    else $('#btnLoadMoreCommodity').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    var Page=0;
+    function LoadCommodity() {
+        Page = 0;
+        $.ajax({
+            url: '/Import/Ppg_OblEntryV2/LoadCommodityList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.LstCommodity, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectCommodity(' + elem.CommodityId + ',&quot;' + elem.CommodityName + '&quot;,&quot;' + elem.CommodityType + '&quot;)"><td>' + elem.CommodityName + '</td></tr>';
+                    });
+                    $('#tbleCommodity tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMoreCommodity').prop('disabled', false);
+                    else $('#btnLoadMoreCommodity').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SearchCommodityByPartyCode() {
+        if ($('#CommodityBox').val() != '') {
+            $.ajax({
+                url: '/Import/Ppg_OblEntryV2/SearchCommodityByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#CommodityBox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.LstCommodity, function (item, elem) {
+                            html += '<tr onclick="SelectCommodity(' + elem.CommodityId + ',&quot;' + elem.CommodityName + '&quot;,&quot;' + elem.CommodityType + '&quot;)"><td>' + elem.CommodityName + '</td></tr>';
+                        });
+                        $('#tbleCommodity tbody').html('');
+                        $('#tbleCommodity tbody').html(html);
+                        $('#btnLoadMoreCommodity').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleCommodity tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMoreCommodity').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadCommodity();
+    }
+
+    function CloseCommodity() {
+        $('#CommodityBox').val('');
+        $("#CommodityModal").modal("hide");
+        LoadCommodity();
+    }
+
+    //$('#Commoditybox').keyup(function () {
+    //    var valThis = $(this).val().toLowerCase();
+    //    if (valThis == "") {
+    //        $('#CommodityModal .navList > li').show();
+    //    } else {
+    //        $('#CommodityModal .navList > li').each(function () {
+    //            var text = $(this).text().toLowerCase();
+    //            (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+    //        });
+    //    };
+    //});
+
+    function SelectImporter(ImporterId, ImporterName) {
+        debugger;
+        angular.element(document.querySelector('[ng-controller="OBLEntryCtrl"]')).scope().
+         SelectImporter(ImporterId, ImporterName);
+    }
+
+    function LoadMoreImporter() {
+        debugger;
+        $.ajax({
+            url: '/Import/Ppg_OblEntryV2/LoadImporterList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstImporter, function (item, elem) {
+                        debugger;
+                        //html += '<tr onclick="SelectImporter(' + elem.ImporterId + ',&quot;' + elem.ImporterName + '&quot;)"><td>' + elem.ImporterName + '</td></tr>';
+                        html += '<tr onclick="SelectImporter(' + elem.ImporterId + ',&quot;' + elem.ImporterName.replace(/\r?\n|\r/g,"") + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ImporterName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+
+                    });
+                    if (Page == -1)
+                        $('#tbleImp tbody').html(html);
+                    else
+                        $('#tbleImp tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#LoadMoreImporter').prop('disabled', false);
+                    else $('#LoadMoreImporter').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    var Page=0;
+    function LoadImporter() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/Import/Ppg_OblEntryV2/LoadImporterList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstImporter, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectImporter(' + elem.ImporterId + ',&quot;' + elem.ImporterName.replace(/\r?\n|\r/g,"") + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ImporterName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    $('#tbleImp tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#LoadMoreImporter').prop('disabled', false);
+                    else $('#LoadMoreImporter').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SearchImporterByPartyCode() {
+        if ($('#Impbox').val() != '') {
+            $.ajax({
+                url: '/Import/Ppg_OblEntryV2/SearchImporterByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#Impbox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstImporter, function (item, elem) {
+                            html += '<tr onclick="SelectImporter(' + elem.ImporterId + ',&quot;' + elem.ImporterName.replace(/\r?\n|\r/g,"") + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ImporterName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleImp tbody').html('');
+                        $('#tbleImp tbody').html(html);
+                        $('#LoadMoreImporter').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleImp tbody').html('');
+                        Page = -1;
+                        $('#LoadMoreImporter').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadImporter();
+    }
+
+    function CloseImporter() {
+        $('#Impbox').val('');
+        $("#ImporterModal").modal("hide");
+        LoadImporter();
+    }
+
+
+    $('#TPDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $('[data-valmsg-for="TPDate"]').html('');
+        }
+    });
+
+    //$('#OBL_Date').datepicker({
+    //    dateFormat: "dd/mm/yy",
+    //    showOn: "button",
+    //    buttonImage: "/Content/images/calendar.png",
+    //    buttonImageOnly: true,
+    //    buttonText: "Select date",
+    //    changeMonth: true,
+    //    changeYear: true,
+    //    showAnima: "fadein",
+    //    onClose: function () {
+    //        $('[data-valmsg-for="OBL_Date"]').html('');
+    //    }
+    //});
+
+    function ShowDetails(){
+
+        if ($('#Id').val() > 0) {
+            return false;
+        }
+        else if ($('#ContainerNo').val() == '' || $('#ContainerNo').val() == null) {
+            alert("Please enter Container / CBT No.");
+            return false;
+        }
+            //else if ($('#ContainerSize').val() == '' || $('#ContainerSize').val() == '----Select----' && $('#ContainerSize').val() == null) {
+            //    alert("Please select Container Size.");
+            //    return false;
+            //}
+            //else if ($('#IGM_No').val() == '' || $('#IGM_No').val() == null) {
+            //    alert("Please enter IGM No.");
+            //    return false;
+            //}
+            //else if ($('#IGM_Date').val() == '' || $('#IGM_Date').val() == null) {
+            //    alert("Please select IGM Date.");
+            //    return false;
+            //}
+        else {
+
+            $.ajax({
+                type: 'GET',
+                url: '/Import/Ppg_OblEntryV2/GetCFSCodeFromContainer',
+                data: { ContainerNo: $('#ContainerNo').val(), ContainerSize: $('#ContainerSize').val(),CFSCode:$('#CFSCode').val() },
+                dataType: 'JSON',
+                success: function (data) {
+                    if (data.Status == 0) {
+                        $('#CFSCode').val('');
+                        angular.element('#OBLEntryAppDiv').scope().GetOBLDetails();
+                        angular.element('#OBLEntryAppDiv').scope().$apply();
+                        //GetOBLDetails();
+                    }
+                    else if (data.Status == 1) {
+                        $('#CFSCode').val(data.Data);
+                        angular.element('#OBLEntryAppDiv').scope().GetOBLDetails();
+                        angular.element('#OBLEntryAppDiv').scope().$apply();
+                        //GetOBLDetails();
+                    }
+                    else if (data.Status == 2) {
+                        $('#CFSCode').val('');
+                        alert("This Container / CBT is alredy exists in OBL Entry.");
+                        angular.element('#OBLEntryAppDiv').scope().OblEntryDetails.length=0;
+                        //ArrayJODetails=[];
+                        $('#tblJODet tbody').html('');
+                        $('#tblJODet').hide();
+                        return false;
+                    }
+                },
+            });
+
+        }
+
+
+    }
+
+    function isDecimalNumber(event) {
+        let charCode = (event.which) ? event.which : event.keyCode;
+        if (charCode != 46 && charCode > 31
+            && (charCode < 48 || charCode > 57))
+            return false;
+        return true;
+    }
+
+    function isNumber(evt) {
+        evt = (evt) ? evt : window.event;
+        var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+            return false;
+        }
+        return true;
+    }
+
+    //function GetOBLDetails() {
+    //    if ($('#Id').val() == 0 && $('#ContainerNo').val() != '' && $('#ContainerNo').val() != null && $('#IGM_No').val() != '' && $('#IGM_No').val() != null && $('#IGM_Date').val() != '' && $('#IGM_Date').val() != null) {
+    //        $.ajax({
+    //            type: 'GET',
+    //            url: '/Import/Ppg_OblEntry/GetOBLDetails',
+    //            data: { CFSCode : $('#CFSCode').val(), ContainerNo: $('#ContainerNo').val(), ContainerSize: $('#ContainerSize').val(), IGM_No: $('#IGM_No').val(), IGM_Date: $('#IGM_Date').val(),OBLEntryId:$('#Id').val() },
+    //            dataType: 'JSON',
+    //            success: function (data) {
+    //                if (data.Status == 1) {
+    //                    if (data.Data.StringifiedText != null && data.Data.StringifiedText != '') {
+    //                        ArrayJODetails = $.parseJSON(data.Data.StringifiedText);
+    //                        GenerateTable();
+    //                        $('#tblJODet').show();
+    //                    }
+    //                    else {
+    //                        alert("No OBL is available.");
+    //                        ArrayJODetails = [];
+    //                        $('#tblJODet').hide();
+    //                    }
+
+    //                }
+    //                else {
+    //                    alert("No OBL is available.");
+    //                    ArrayJODetails = [];
+    //                    $('#tblJODet').hide();
+    //                    $('#MovementType').val('');
+    //                    $('#PortId').val(0);
+    //                    $('#ShippingLineId').val(0);
+    //                    $('#ShippingLineName').val('');
+
+    //                }
+    //            },
+    //        });
+    //    }
+
+    //}
+
+    //function GetPortList() {
+
+    //    $.ajax({
+    //        type: 'GET',
+    //        url: '/Import/Ppg_OblEntry/GetPortList',
+    //        dataType: 'JSON',
+    //        success: function (data) {
+    //            if (data != null) {
+    //                for (var i = 0; i < data.length; i++) {
+    //                    $('#PortId').append($("<option></option>").attr("value", data[i].PortId).text(data[i].PortName));
+    //                }
+    //            }
+    //            else {
+    //                $('#PortId').html('');
+    //            }
+
+    //            if ($('#SelectPortId').val() > 0) {
+    //                $('#PortId').val($('#SelectPortId').val());
+    //            }
+
+    //        }
+    //    });
+    //}
+
+    //function GetAllCountry() {
+
+    //    $.ajax({
+    //        type: 'GET',
+    //        url: '/Import/Ppg_OblEntry/GetAllCountry',
+    //        dataType: 'JSON',
+    //        success: function (data) {
+    //            if (data != null) {
+    //                for (var i = 0; i < data.length; i++) {
+    //                    $('#CountryId').append($("<option></option>").attr("value", data[i].CountryId).text(data[i].CountryName));
+    //                }
+    //            }
+    //            else {
+    //                $('#PortId').html('');
+    //            }
+
+    //            if ($('#SelectCountryId').val() > 0) {
+    //                $('#CountryId').val($('#SelectCountryId').val());
+    //            }
+
+    //        }
+    //    });
+    //}
+
+    function LoadOblEntryList() {
+        $('#tblEntryDet').html('');
+        $('#OblEntryList').load('/Import/Ppg_OblEntryV2/ListOfOBLEntry');
+    }
+    //function LoadOblEntryList() {
+    //    $('#OblEntryList').load('/Import/Ppg_OblEntry/ListOfOBLEntry');
+    //}
+    $('#ContainerNobox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstContainerNo > li').show();
+        else {
+            $('#lstContainerNo > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    var ListOfContainerNo=[];
+    $('#ContainerNoSerach').on("click", function () {
+        debugger;
+        $.ajax({
+            url: "/Import/Ppg_OblEntryV2/GetTContainerNoForOBLEntry",
+            type: "GET",
+            dataType: "JSON",
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    var Html = '';
+                    ListOfContainerNo=data.Data;
+                    $.each(data.Data, function (i, item) {
+                        debugger
+                        Html += '<li id=' + item.ContainerNo + ' onclick="FillContainerBox(&quot;' + item.ContainerNo + '&quot;,&quot;' + item.Size + '&quot;,&quot;' + item.CFSCode + '&quot;)">' + item.ContainerNo + '</li>';
+                    });
+                    $('#lstContainerNo').html(Html);
+                }
+            }
+
+        });
+    });
+
+    function FillContainerBox(ContainerNo,Size,CFSCode) {
+        debugger;
+        //var ContainerNo=ContainerNo.id==''?ContainerNo:ContainerNo.id;
+        $('#ContainerNo').val(ContainerNo);
+        $('#ContainerSize').val(Size);
+        $('#CFSCode').val(CFSCode);
+        $("#ContainerNoModal").modal("hide");
+        GetContainerDet(ContainerNo);
+    }
+
+    function GetContainerDet(ContainerNo) {
+        debugger;
+        //$('#ContainerNo').val($(this).text());
+        //$('#CFSCode').val($(this).attr('id'));
+        //$('#ContainerSize').val($(this).attr('id'));
+
+        @*//ListOfContainerNo= @Html.Raw(Json.Encode(ViewBag.ListOfContainerNo));*@
+        //var ListContainerNo=JSON.parse(hdnListOfContainerNo);
+
+        var resultAarray = $.grep(ListOfContainerNo, function (item) {
+            return item.ContainerNo==$('#ContainerNo').val();
+        });
+        $('#MovementType').val(resultAarray[0].MovementType);
+        //$.ajax({
+        //    type: 'GET',
+        //    url: '/Import/Ppg_OblEntry/GetContainerSize',
+        //    dataType: 'JSON',
+        //    data : {CFSCode : $('#CFSCode').val()},
+        //    success: function (data) {
+        //        if (data != null) {
+        //            $('#ContainerSize').val(data);
+        //            //GetOBLDetails();
+        //        }
+        //    }
+        //});
+
+        $("#ContainerNoModal").modal("hide");
+    }
+
+    @*var ListOfContainerNo=[];
+    $('#lstContainerNo > li').on("click", function () {
+        debugger;
+        $('#ContainerNo').val($(this).text());
+        //$('#CFSCode').val($(this).attr('id'));
+        $('#ContainerSize').val($(this).attr('id'));
+
+        ListOfContainerNo= @Html.Raw(Json.Encode(ViewBag.ListOfContainerNo));
+        //var ListContainerNo=JSON.parse(ListOfContainerNo);
+
+        var resultAarray = $.grep(ListOfContainerNo, function (item) {
+            return item.ContainerNo==$('#ContainerNo').val();
+        });
+        $('#MovementType').val(resultAarray[0].MovementType);
+        //$.ajax({
+        //    type: 'GET',
+        //    url: '/Import/Ppg_OblEntry/GetContainerSize',
+        //    dataType: 'JSON',
+        //    data : {CFSCode : $('#CFSCode').val()},
+        //    success: function (data) {
+        //        if (data != null) {
+        //            $('#ContainerSize').val(data);
+        //            //GetOBLDetails();
+        //        }
+        //    }
+        //});
+
+        $("#ContainerNoModal").modal("hide");
+    });*@
+
+    $('#PortBox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstPort > li').show();
+        else {
+            $('#lstPort > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    $('#PortSearch').on("click", function () {
+        debugger;
+        $.ajax({
+            url: "/Import/Ppg_OblEntryV2/GetPortList",
+            type: "GET",
+            dataType: "JSON",
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    var Html = '';
+                    $.each(data.Data, function (i, item) {
+                        debugger
+                        Html += '<li id=' + item.PortName + ' onclick="FillPortBox(&quot;' + item.PortName + '&quot;,' + item.PortId + ')">' + item.PortName + '</li>';
+                    });
+                    $('#lstPort').html(Html);
+                    //}
+                }
+            }
+
+        });
+    });
+
+    function FillPortBox(PortName,PortId) {
+        debugger;
+        //var PortName=PortName.id==''?PortName:PortName.id;
+        $('#PortName').val(PortName);
+        $('#PortId').val(PortId);
+        $("#PortModal").modal("hide");
+    }
+
+    $('#CountryBox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstCountry > li').show();
+        else {
+            $('#lstCountry > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    $('#CountrySearch').on("click", function () {
+        debugger;
+        $.ajax({
+            url: "/Import/Ppg_OblEntryV2/GetAllCountry",
+            type: "GET",
+            dataType: "JSON",
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    var Html = '';
+                    $.each(data.Data, function (i, item) {
+                        debugger
+                        Html += '<li id="' + item.CountryId + '" onclick="FillCountryBox(&quot;' + item.CountryName + '&quot;,' + item.CountryId + ')">' + item.CountryName + '</li>';
+                    });
+                    $('#lstCountry').html(Html);
+                    //}
+                }
+            }
+
+        });
+    });
+
+    function FillCountryBox(CountryName,CountryId) {
+        debugger;
+        //var CountryName=CountryName.id==''?CountryName:CountryName.id;
+        $('#CountryName').val(CountryName);
+        $('#CountryId').val(CountryId);
+        $("#CountryModal").modal("hide");
+    }
+
+    var Page = 0;
+    function LoadMoreEximTrader() {
+        debugger;
+        $.ajax({
+            url: '/Import/Ppg_OblEntryV2/LoadEximtradeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + ',&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleSline tbody').html(html);
+                    else
+                        $('#tbleSline tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadEximTrader() {
+        Page=0;
+        $.ajax({
+            url: '/Import/Ppg_OblEntryV2/LoadEximtradeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    $('#tbleSline tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SearchByPartyCode() {
+        if ($('#ShpngLinebox').val() != '') {
+            $.ajax({
+                url: '/Import/Ppg_OblEntryV2/SearchByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#ShpngLinebox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstShippingLine, function (item, elem) {
+                            html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleSline tbody').html('');
+                        $('#tbleSline tbody').html(html);
+                        $('#btnLoadMore').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleSline tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadEximTrader();
+    }
+
+    function SelectShippingLine(ShippingLineId, ShippingLineName) {
+        $('#ShippingLineName').val(ShippingLineName);
+        $('#ShippingLineId').val(ShippingLineId);
+        $("#ShippingLineModal").modal("hide");
+        $('#ShpngLinebox').val('');
+        LoadEximTrader();
+    }
+
+    function CloseEximTrader()
+    {
+        debugger;
+        $('#ShpngLinebox').val('');
+        $("#ShippingLineModal").modal("hide");
+        LoadEximTrader();
+    }
+    //$('#ShippingLinebox').keyup(function () {
+    //    var val = $(this).val().toLowerCase();
+    //    if (val == "")
+    //        $('#lstShippingLine > li').show();
+    //    else {
+    //        $('#lstShippingLine > li').each(function () {
+    //            var text = $(this).text().toLowerCase();
+    //            (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+    //        });
+    //    }
+    //});
+    //$('#lstShippingLine > li').on("click", function () {
+    //    $('#ShippingLineName').val($(this).text());
+    //    $('#ShippingLineId').val($(this).attr('id'));
+    //    $("#ShippingLineModal").modal("hide");
+    //});
+    $('#Importerbox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#lstImporter > li').show();
+        } else {
+            $('#lstImporter > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    //$('#lstImporter li').on("click", function () {
+    //    $('#ImporterName').val($(this).text());
+    //    $('#ImporterId').val($(this).attr('id'));
+    //    $("#ImporterModal").modal("hide");
+    //});
+
+    function JobOrderOnSuccess(data) {
+        if (data.Status == 1 || data.Status == 2) {
+            $('#DivSucMsg').html(data.Message);
+            // LoadOblEntryList();
+            ResetAllField();
+        }
+        else {
+            $('#DivErrMsg').html(data.Message);
+        }
+        setTimeout(function () { $('#DivErrMsg,#DivSucMsg').html(''); }, 5000);
+    }
+    function JobOrderOnFailure() { }
+
+    var isEditOpened=false;
+    function LoadOblEntry() {
+        $('#DivBody').load('/Import/Ppg_OblEntryV2/OBLEntry');
+    }
+    function ResetAllField() {
+        ArrayJODetails = [];
+        LoadOblEntry();
+        $('#Id').val(0);
+        $('#tblJODet').hide();
+        $('#DivJOHdr input[type="text"]').val('');
+        $('textarea').val('');
+        $('#StringifiedText').val('');
+        $('#MovementType').val('');
+        $('#PortId').val('');
+        $('#CountryId').val('');
+        $('#btnReset').attr('disabled', false);
+        $('#IGM_No').attr('readonly', false);
+        $('#ContainerNoSerach').css('display', 'block');
+
+        $('#IGM_Date').datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $('[data-valmsg-for="IGM_Date"]').html('');
+            }
+        });
+
+    }
+    function GenerateBlankTable() {
+        tablehtml = '';
+        var tablehtml = '<table id="tblEntryDet" class="table table-striped table-bordered dataTable" style="width:100%;"><thead><tr><th class="text-center">SL No</th><th>Container / CBT No</th><th>Container / CBT Size</th><th>IGM No</th><th>IGM Date</th><th>OBL/HBL Date</th><th class="text-center">View</th><th class="text-center">Edit</th><th class="text-center">Delete</th></tr></thead><tbody>';
+        tablehtml += '</tbody></table>';
+        $('#tblEntryDet').html(tablehtml);
+    }
+    //function ResetJODet() {
+    //    $('#OBL_No,#OBL_Date,#LineNo,#SMTPNo,#NoOfPkg,#CargoDescription,#PkgType,#GR_WT,#ImporterName').val('');
+    //    $('#CargoType').val(0);
+    //    $('#btnAddJO').attr('disabled', false);
+    //    $('#btnResetJO').attr('disabled', false);
+    //}
+
+    function AddJODet() {
+        if (ValidateJODet()) {
+            var JODetails = {
+                OBLEntryId: 0,
+                OBL_No: $('#OBL_No').val(),
+                OBL_Date: $('#OBL_Date').val(),
+                LineNo: $('#LineNo').val(),
+                SMTPNo: $('#SMTPNo').val(),
+                SMTP_Date: $('#SMTP_Date').val(),
+                NoOfPkg: $('#NoOfPkg').val(),
+                CargoType: $('#CargoType').val(),
+                CargoDescription: $('#CargoDescription').val(),
+                PkgType: $('#PkgType').val(),
+                GR_WT: $('#GR_WT').val(),
+                ImporterId: $('#ImporterId').val(),
+                IGM_IMPORTER:$('#IGM_IMPORTER').val(),
+            };
+            ArrayJODetails.push(JODetails);
+            GenerateTable();
+            ResetJODet();
+            isEditOpened=false;
+            $('#btnResetJO').attr('disabled', false);
+            $('#DivTblContrErrMsg').html('');
+        }
+    }
+    function ValidateJODet() {
+        var Result = true;
+        if ($('#OBL_No').val() == null || $('#OBL_No').val() == '') {
+            $('[data-valmsg-for="OBL_No"]').html('<span>Fill Out This Field</span>');
+            Result = false;
+        }
+        if ($('#OBL_Date').val() == null || $('#OBL_Date').val() == '') {
+            $('[data-valmsg-for="OBL_Date"]').html('<span>Fill Out This Field</span>');
+            Result = false;
+        }
+        if ($('#CargoType').val() == null  || $('#CargoType').val() == '' || $('#CargoType').val() == '----Select----') {
+            $('[data-valmsg-for="CargoType"]').html('<span>Fill Out This Field</span>');
+            Result = false;
+        }
+        if ($('#PkgType').val() == null || $('#PkgType').val() == '') {
+            $('[data-valmsg-for="PkgType"]').html('<span>Fill Out This Field</span>');
+            Result = false;
+        }
+        if ($('#GR_WT').val() == null || $('#GR_WT').val() == '') {
+            $('[data-valmsg-for="GR_WT"]').html('<span>Fill Out This Field</span>');
+            Result = false;
+        }
+
+        return Result;
+    }
+    //function GenerateTable() {
+    //    var html = '';
+    //    $.each(ArrayJODetails, function (i, item) {
+    //        var cargoType = '';
+    //        if (item.CargoType == 1) {
+    //            cargoType = 'HAZ';
+    //        }
+    //        else if (item.CargoType == 2) {
+    //            cargoType = 'NON-HAZ';
+    //        }
+    //        html += '<tr><td class="text-center">' + (i + 1) + '</td><td>' + item.OBL_No + '</td><td>' + item.OBL_Date + '</td><td>' + cargoType + '</td><td>' + item.NoOfPkg + '</td><td>' + item.GR_WT + '</td>'
+    //          + '<td class="text-center"><a href="#" onclick="EditJODet(' + i + ')"><i class="fa fa-pencil-square Edit"></i></a></td><td class="text-center"><a href="#" onclick="ViewJODet(' + i + ')"><i class="fa fa-search-plus Edit"></i></a></td></tr>';
+    //    });
+    //    $('#tblJODet tbody').html(html);
+    //    $('#tblJODet').show();
+    //}
+    function EditJODet(i) {
+        debugger;
+        if (!isEditOpened)
+        {
+            debugger;
+            $('#tblEntryDet').html('');
+            $('#BtnCommodityLoad').hide();
+            $('#BtnAddContainer').prop("disabled", false);
+            $('#OBL_No').val(ArrayJODetails[i].OBL_No);
+            $('#OBL_Date').val(ArrayJODetails[i].OBL_Date);
+            $('#LineNo').val(ArrayJODetails[i].LineNo);
+            $('#SMTPNo').val(ArrayJODetails[i].SMTPNo);
+            $('#SMTP_Date').val(ArrayJODetails[i].SMTP_Date);
+            $('#NoOfPkg').val(ArrayJODetails[i].NoOfPkg);
+            $('#CargoType').val(ArrayJODetails[i].CargoType);
+            $('#CargoDescription').val(ArrayJODetails[i].CargoDescription);
+            $('#PkgType').val(ArrayJODetails[i].PkgType);
+            $('#GR_WT').val(ArrayJODetails[i].GR_WT);
+            $('#ImporterName').val(ArrayJODetails[i].ImporterName);
+            $('#btnAddJO').attr('disabled', false);
+            ArrayJODetails.splice(i, 1);
+            GenerateTable();
+            isEditOpened=true;
+            $('#btnResetJO').attr('disabled', true);
+
+
+        }
+        else {
+            $('#DivTblContrErrMsg').html('Please Add The Above Records');
+        }
+    }
+    function ViewJODet(i) {
+        if (!isEditOpened)
+        {
+            debugger;
+            $('#OBL_No').val(ArrayJODetails[i].OBL_No);
+            $('#OBL_Date').val(ArrayJODetails[i].OBL_Date);
+            $('#LineNo').val(ArrayJODetails[i].LineNo);
+            $('#SMTPNo').val(ArrayJODetails[i].SMTPNo);
+            $('#SMTP_Date').val(ArrayJODetails[i].SMTP_Date);
+            $('#NoOfPkg').val(ArrayJODetails[i].NoOfPkg);
+            $('#CargoType').val(ArrayJODetails[i].CargoType);
+            $('#CargoDescription').val(ArrayJODetails[i].CargoDescription);
+            $('#PkgType').val(ArrayJODetails[i].PkgType);
+            $('#GR_WT').val(ArrayJODetails[i].GR_WT);
+            $('#ImporterName').val(ArrayJODetails[i].ImporterName);
+            $('#btnAddJO').attr('disabled', true);
+            $('#btnResetJO').attr('disabled', false);
+        }
+        else {
+            $('#DivTblContrErrMsg').html('Please Add The Above Records');
+        }
+    }
+
+    function DecimalValidationGW(elem) {
+        var State = true;
+        var Value = $('#' + elem).val();
+        if (!Value.match(/^[\d]{1,8}\.\d{0,2}$/) && !Value.match(/^[\d]{1,8}$/))
+            State = false;
+        return State;
+    }
+
+    function checkdate(id) {
+        debugger;
+            var result = moment($('#'+id).val(), "DD/MM/YYYY", true).isValid();
+            if (!result) {
+                $('#ErrddlValidType_'+id).html('Incorrect Date');
+                //setTimeout(function () { $('#ErrddlValidType').html(''); }, 5000);
+                $('#'+id).val('').focus();
+            }
+            else{
+                $('#ErrddlValidType_'+id).html('');
+                return true;
+            }
+    }
+    function check(id) {
+        debugger;
+        //alert(elm);
+        $('#'+id).val($('#'+id).val().replace(/^(\d\d)(\d)$/g, '$1/$2').replace(/^(\d\d\/\d\d)(\d+)$/g, '$1/$2').replace(/[^\d\/]/g, ''));
+        $('#ErrddlValidType').html('');
+        //  elm = elm.replace(/^(\d\d)(\d)$/g, '$1/$2').replace(/^(\d\d\/\d\d)(\d+)$/g, '$1/$2').replace(/[^\d\/]/g, '');
+    }
+    function checks() {
+        debugger;
+        //alert(elm);
+        $('#IGM_Date').val($('#IGM_Date').val().replace(/^(\d\d)(\d)$/g, '$1/$2').replace(/^(\d\d\/\d\d)(\d+)$/g, '$1/$2').replace(/[^\d\/]/g, ''));
+        $('#DivMsges').html('');
+        //  elm = elm.replace(/^(\d\d)(\d)$/g, '$1/$2').replace(/^(\d\d\/\d\d)(\d+)$/g, '$1/$2').replace(/[^\d\/]/g, '');
+    }
+    function checkdates() {
+        debugger;
+        if(  $('#IGM_Date').val()!='')
+        {
+            var result = moment($('#IGM_Date').val(), "DD/MM/YYYY", true).isValid();
+            if (!result) {
+                $('#DivMsges').html('Incorrect Date');
+                setTimeout(function () { $('#DivMsges').html(''); }, 5000);
+                //  $('#IGM_Date').val('');
+                $('#IGM_Date').val('').focus();
+            }
+        }
+    }
+    function checkdat() {
+        debugger;
+        if(  $('#TPDate').val()!='')
+            {
+            var result = moment($('#TPDate').val(), "DD/MM/YYYY", true).isValid();
+        if (!result) {
+            $('#DivMs').html('Incorrect Date');
+            setTimeout(function () { $('#DivMs').html(''); }, 5000);
+            $('#TPDate').val('').focus();
+        }
+    }
+  }
+    function chec() {
+        debugger;
+        //alert(elm);
+        $('#TPDate').val($('#TPDate').val().replace(/^(\d\d)(\d)$/g, '$1/$2').replace(/^(\d\d\/\d\d)(\d+)$/g, '$1/$2').replace(/[^\d\/]/g, ''));
+        $('#DivMs').html('');
+        //  elm = elm.replace(/^(\d\d)(\d)$/g, '$1/$2').replace(/^(\d\d\/\d\d)(\d+)$/g, '$1/$2').replace(/[^\d\/]/g, '');
+    }
+    //$('#btnSave').on("click", function () {
+
+    //    if($('#IsAlreadyUsed').val() == 1){
+    //        $('#DivErrMsg').html("Cannot Update OBL Entry As It Already Exists In Another Page.");
+    //        return false;
+    //    }
+
+    //    var length = ArrayJODetails.length;
+    //    if (length != null && length > 0){
+    //        $('#StringifiedText').val(JSON.stringify(ArrayJODetails));
+    //    }
+    //    else {
+    //        var isModelValid =true;
+
+    //        if($('#ContainerNo').val() == null || $('#ContainerNo').val() == ''){
+    //            isModelValid =false;
+    //        }
+    //        if($('#ContainerSize').val() == null || $('#ContainerSize').val() == ''){
+    //            isModelValid =false;
+    //        }
+    //        if($('#IGM_No').val() == null || $('#IGM_No').val() == ''){
+    //            isModelValid =false;
+    //        }
+    //        if($('#IGM_Date').val() == null || $('#IGM_Date').val() == ''){
+    //            isModelValid =false;
+    //        }
+    //        if($('#MovementType').val() == null || $('#MovementType').val() == '' || $('#MovementType').val() == '----Select----'){
+    //            isModelValid =false;
+    //        }
+    //        if($('#PortId').val() == 0){
+    //            isModelValid =false;
+    //        }
+    //        if($('#CountryId').val() == 0){
+    //            isModelValid =false;
+    //        }
+
+    //        //if (isModelValid) {
+    //        //    alert("Please enter atleast one OBL Entry.");
+    //        //    return false;
+    //        //}
+
+    //    }
+
+    //    if (isEditOpened) {
+    //        $('#DivTblContrErrMsg').html('Please Add The Above Records');
+    //        return false;
+    //    }
+    //    else {
+    //        $('#DivTblContrErrMsg').html('');
+    //    }
+    //});
+</script>
+
+
+@*<script>
+
+        /*
+        jQuery Masked Input Plugin
+        Copyright (c) 2007 - 2015 Josh Bush (digitalbush.com)
+        Licensed under the MIT license (http://digitalbush.com/projects/masked-input-plugin/#license)
+        Version: 1.4.1
+    */
+        ! function(a) {
+            "function" == typeof define && define.amd ? define(["jquery"], a) : a("object" == typeof exports ? require("jquery") : jQuery)
+        }(function(a) {
+            var b, c = navigator.userAgent,
+              d = /iphone/i.test(c),
+              e = /chrome/i.test(c),
+              f = /android/i.test(c);
+            a.mask = {
+                definitions: {
+                    9: "[0-9]",
+                    a: "[A-Za-z]",
+                    "*": "[A-Za-z0-9]"
+                },
+                autoclear: !0,
+                dataName: "rawMaskFn",
+                placeholder: "_"
+            }, a.fn.extend({
+                caret: function(a, b) {
+                    var c;
+                    if (0 !== this.length && !this.is(":hidden")) return "number" == typeof a ? (b = "number" == typeof b ? b : a, this.each(function() {
+                        this.setSelectionRange ? this.setSelectionRange(a, b) : this.createTextRange && (c = this.createTextRange(), c.collapse(!0), c.moveEnd("character", b), c.moveStart("character", a), c.select())
+                    })) : (this[0].setSelectionRange ? (a = this[0].selectionStart, b = this[0].selectionEnd) : document.selection && document.selection.createRange && (c = document.selection.createRange(), a = 0 - c.duplicate().moveStart("character", -1e5), b = a + c.text.length), {
+                        begin: a,
+                        end: b
+                    })
+                },
+                unmask: function() {
+                    return this.trigger("unmask")
+                },
+                mask: function(c, g) {
+                    var h, i, j, k, l, m, n, o;
+                    if (!c && this.length > 0) {
+                        h = a(this[0]);
+                        var p = h.data(a.mask.dataName);
+                        return p ? p() : void 0
+                    }
+                    return g = a.extend({
+                        autoclear: a.mask.autoclear,
+                        placeholder: a.mask.placeholder,
+                        completed: null
+                    }, g), i = a.mask.definitions, j = [], k = n = c.length, l = null, a.each(c.split(""), function(a, b) {
+                        "?" == b ? (n--, k = a) : i[b] ? (j.push(new RegExp(i[b])), null === l && (l = j.length - 1), k > a && (m = j.length - 1)) : j.push(null)
+                    }), this.trigger("unmask").each(function() {
+                        function h() {
+                            if (g.completed) {
+                                for (var a = l; m >= a; a++)
+                                    if (j[a] && C[a] === p(a)) return;
+                                g.completed.call(B)
+                            }
+                        }
+
+                        function p(a) {
+                            return g.placeholder.charAt(a < g.placeholder.length ? a : 0)
+                        }
+
+                        function q(a) {
+                            for (; ++a < n && !j[a];);
+                            return a
+                        }
+
+                        function r(a) {
+                            for (; --a >= 0 && !j[a];);
+                            return a
+                        }
+
+                        function s(a, b) {
+                            var c, d;
+                            if (!(0 > a)) {
+                                for (c = a, d = q(b); n > c; c++)
+                                    if (j[c]) {
+                                        if (!(n > d && j[c].test(C[d]))) break;
+                                        C[c] = C[d], C[d] = p(d), d = q(d)
+                                    }
+                                z(), B.caret(Math.max(l, a))
+                            }
+                        }
+
+                        function t(a) {
+                            var b, c, d, e;
+                            for (b = a, c = p(a); n > b; b++)
+                                if (j[b]) {
+                                    if (d = q(b), e = C[b], C[b] = c, !(n > d && j[d].test(e))) break;
+                                    c = e
+                                }
+                        }
+
+                        function u() {
+                            var a = B.val(),
+                              b = B.caret();
+                            if (o && o.length && o.length > a.length) {
+                                for (A(!0); b.begin > 0 && !j[b.begin - 1];) b.begin--;
+                                if (0 === b.begin)
+                                    for (; b.begin < l && !j[b.begin];) b.begin++;
+                                B.caret(b.begin, b.begin)
+                            } else {
+                                for (A(!0); b.begin < n && !j[b.begin];) b.begin++;
+                                B.caret(b.begin, b.begin)
+                            }
+                            h()
+                        }
+
+                        function v() {
+                            A(), B.val() != E && B.change()
+                        }
+
+                        function w(a) {
+                            if (!B.prop("readonly")) {
+                                var b, c, e, f = a.which || a.keyCode;
+                                o = B.val(), 8 === f || 46 === f || d && 127 === f ? (b = B.caret(), c = b.begin, e = b.end, e - c === 0 && (c = 46 !== f ? r(c) : e = q(c - 1), e = 46 === f ? q(e) : e), y(c, e), s(c, e - 1), a.preventDefault()) : 13 === f ? v.call(this, a) : 27 === f && (B.val(E), B.caret(0, A()), a.preventDefault())
+                            }
+                        }
+
+                        function x(b) {
+                            if (!B.prop("readonly")) {
+                                var c, d, e, g = b.which || b.keyCode,
+                                  i = B.caret();
+                                if (!(b.ctrlKey || b.altKey || b.metaKey || 32 > g) && g && 13 !== g) {
+                                    if (i.end - i.begin !== 0 && (y(i.begin, i.end), s(i.begin, i.end - 1)), c = q(i.begin - 1), n > c && (d = String.fromCharCode(g), j[c].test(d))) {
+                                        if (t(c), C[c] = d, z(), e = q(c), f) {
+                                            var k = function() {
+                                                a.proxy(a.fn.caret, B, e)()
+                                            };
+                                            setTimeout(k, 0)
+                                        } else B.caret(e);
+                                        i.begin <= m && h()
+                                    }
+                                    b.preventDefault()
+                                }
+                            }
+                        }
+
+                        function y(a, b) {
+                            var c;
+                            for (c = a; b > c && n > c; c++) j[c] && (C[c] = p(c))
+                        }
+
+                        function z() {
+                            B.val(C.join(""))
+                        }
+
+                        function A(a) {
+                            var b, c, d, e = B.val(),
+                              f = -1;
+                            for (b = 0, d = 0; n > b; b++)
+                                if (j[b]) {
+                                    for (C[b] = p(b); d++ < e.length;)
+                                        if (c = e.charAt(d - 1), j[b].test(c)) {
+                                            C[b] = c, f = b;
+                                            break
+                                        }
+                                    if (d > e.length) {
+                                        y(b + 1, n);
+                                        break
+                                    }
+                                } else C[b] === e.charAt(d) && d++, k > b && (f = b);
+                            return a ? z() : k > f + 1 ? g.autoclear || C.join("") === D ? (B.val() && B.val(""), y(0, n)) : z() : (z(), B.val(B.val().substring(0, f + 1))), k ? b : l
+                        }
+                        var B = a(this),
+                          C = a.map(c.split(""), function(a, b) {
+                              return "?" != a ? i[a] ? p(b) : a : void 0
+                          }),
+                          D = C.join(""),
+                          E = B.val();
+                        B.data(a.mask.dataName, function() {
+                            return a.map(C, function(a, b) {
+                                return j[b] && a != p(b) ? a : null
+                            }).join("")
+                        }), B.one("unmask", function() {
+                            B.off(".mask").removeData(a.mask.dataName)
+                        }).on("focus.mask", function() {
+                            if (!B.prop("readonly")) {
+                                clearTimeout(b);
+                                var a;
+                                E = B.val(), a = A(), b = setTimeout(function() {
+                                    B.get(0) === document.activeElement && (z(), a == c.replace("?", "").length ? B.caret(0, a) : B.caret(a))
+                                }, 10)
+                            }
+                        }).on("blur.mask", v).on("keydown.mask", w).on("keypress.mask", x).on("input.mask paste.mask", function() {
+                            B.prop("readonly") || setTimeout(function() {
+                                var a = A(!0);
+                                B.caret(a), h()
+                            }, 0)
+                        }), e && f && B.off("input.mask").on("input.mask", u), A()
+                    })
+                }
+            })
+        });
+
+        $("#datepicker-input").mask("99/99/9999");
+
+        $("#datepicker-input").datepicker({
+            showOn: "button",
+            buttonImageOnly: true,
+            changeMonth: true,
+            changeYear: true,
+            beforeShow: function(input, inst) {
+                console.log("input: " + input + ", inst: " + inst);
+                //inst.dpDiv.css({marginTop: '-1px', marginLeft: input.offsetWidth + 'px'});
+                $(".datepicker-wrap").append(inst.dpDiv);
+            }
+        });
+
+        $("#datepicker-btn").click(function() {
+            $("#datepicker-input").datepicker("show");
+        });
+
+    </script>*@

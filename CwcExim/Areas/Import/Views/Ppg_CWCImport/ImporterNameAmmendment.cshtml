@@ -1,0 +1,604 @@
+﻿@model CwcExim.Areas.Import.Models.Ppg_ImporterAmmendment
+
+<script>
+
+</script>
+<style>
+    #DivFormOneDet {
+        height: 500px;
+        overflow-x: hidden;
+    }
+
+    #tbleSline.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .slim_tble {
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .txt_wrp {
+        overflow: hidden;
+        word-wrap: break-word;
+    }
+</style>
+
+<div id="ImporterAmmendmentAppDiv">
+
+    <div class="row">
+
+        @using (Ajax.BeginForm("AddEditImporterAmmendment", "Ppg_CWCImport", new AjaxOptions { Confirm = "Are you sure you want to Save?", HttpMethod = "POST", OnSuccess = "impAmmendmentSuccess", OnFailure = "impAmmendmentFailure" }))
+
+        {
+            @Html.AntiForgeryToken()
+            <div class="col-md-12">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Importer Name Amendment</h4>
+                        </div>
+                    </div>
+
+                    <div class="content_wrp">
+                        <div class="row Form_Space_top">
+                            @Html.HiddenFor(m => m.OBLDTLId)
+                            @Html.HiddenFor(m => m.OBLHDRId)
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>OBL No.:</label>
+                                    <div class="position-relative">
+                                        @Html.TextBoxFor(m => m.OBLNo, new { @readonly = true })
+                                        <span class="input_icon" id="OBLNoSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#blNomodal"></i></span>
+                                        @Html.ValidationMessageFor(m => m.OBLNo, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 col-md-offset-6">
+                                <div class="form-group">
+                                    <label>OBL Date:</label>
+                                    <div class="position-relative Date_Img">
+                                        @Html.TextBoxFor(m => m.OBLDate, DateTime.Now.ToString("dd/MMM/yyyy"), new { @readonly = true })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            @Html.HiddenFor(m => m.OldImporterId)
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Old Importer Name:</label>
+                                    @Html.TextBoxFor(m => m.OldImporterName, new { @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.OldImporterName, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 col-md-offset-6">
+                                <div class="form-group">
+                                    <label>New Importer Name:</label>
+                                    <div class="position-relative">
+                                        @Html.TextBoxFor(m => m.NewImporterName, "", new {@readonly = true })
+                                        <span class="input_icon"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ImporterModal"></i></span>
+                                        @Html.HiddenFor(m => m.NewImporterName)
+                                        @Html.ValidationMessageFor(m => m.NewImporterName, "", new { @class = "Error_Msg" })
+                                        @Html.HiddenFor(m => m.NewImporterId)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-left">
+                            <input type="submit" id="BtnYardSubmit" class="btn btn-primary mr-1 btn-100px" value="Save">
+                            <input type="button" class="btn btn-primary-border btn-100px" value="Reset" onclick="ResetImpDetails()">
+                        </div>
+
+                        <div class="logSuccMsg" style="background-color:transparent" id="DivJobOrder"></div>
+                        <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivJobOrderErrMsg"></div>
+
+                        <div class="row mt10 mb10">
+                            <div class="col-md-12">
+                                <input type="button" id="BtnCommodityLoad" value="Show List" onclick="LoadAmemdentList()" class="btn btn-primary btn-100px" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div id="tblEntryDet"></div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 SignUp_space_bottom">
+                                <div id="DivYardList"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+
+    @Scripts.Render("~/bundles/jqueryval")
+    <div class="modal fade" id="ImporterModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" onclick="CloseEximTrade()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">New Importer Name</h4>
+                </div>
+                <div class="modal-body popup_body" style="position:relative;">
+                    <input placeholder="Search By Importer Name Or Party Code" id="ShpngLinebox" type="text" />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByPartyCode()"></i></span>
+                    <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="8" width="80%">Importer Name</th>
+                                <th colspan="4" width="20%">Party Code</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div id="slim_scroll">
+                        <table class="table dataTable table-bordered table-striped slim_tble" id="tbleSline">
+                            <tbody>
+                                @{
+                                    if (ViewBag.lstImporter != null)
+                                    {
+                                        foreach (var item in ViewBag.lstImporter)
+                                        {
+                                            <tr onclick="SelectImporter(@item.ImporterId,'@item.ImporterName')">
+                                                <td colspan="8" width="80%" class="txt_wrp">@item.ImporterName</td>
+                                                <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                            </tr>
+                                        }
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+
+                            @* else
+                                {
+                                    <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                                }*@
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" onclick="CloseEximTrade()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="blNomodal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of OBL No.</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="OBLNobox" type="text" />
+                    <ul class="navList" id="lstOBLNo">
+                        @*@{
+                                if (ViewBag.ListOfTrain != null)
+                                {
+                                    foreach (var item in ViewBag.ListOfTrain)
+                                    {
+                                        <li id="@item.TrainSummaryID">@item.TrainNo</li>
+                                    }
+                                }
+                            }*@
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="blImporterNomodal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Importer Name</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="Importerbox" type="text" />
+                    <ul class="navList" id="lstImporter">
+                        @*@{
+                                if (ViewBag.ListOfTrain != null)
+                                {
+                                    foreach (var item in ViewBag.ListOfTrain)
+                                    {
+                                        <li id="@item.TrainSummaryID">@item.TrainNo</li>
+                                    }
+                                }
+                            }*@
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+        //  GenerateEntryTable();
+    });
+
+
+
+    var dt;
+
+    function isDecimalNumber(event) {
+        let charCode = (event.which) ? event.which : event.keyCode;
+        if (charCode != 46 && charCode > 31
+            && (charCode < 48 || charCode > 57))
+            return false;
+        return true;
+    }
+
+
+    $('#OBLNobox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstOBLNo > li').show();
+        else {
+            $('#lstOBLNo > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+
+    $('#Importerbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstImporter > li').show();
+        else {
+            $('#lstImporter > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    var ListOfImporter = [];
+    $('#OBLNoSearch').on("click", function () {
+
+
+        debugger;
+        $.ajax({
+            url: "/Import/Ppg_CWCImport/GetAllOBLNoforImporterAmendment",
+            type: "GET",
+            dataType: "JSON",
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    var Html = '';
+                    ListOfOBL = data.Data;
+                    $.each(data.Data, function (i, item) {
+                        debugger
+                        Html += '<li id=' + item.OBLDTLId + ' onclick="SelectOBL(&quot;' + item.OBLNo + '&quot;,' + item.OBLDTLId + ')">' + item.OBLNo + '</li>';
+                    });
+                    $('#lstOBLNo').html(Html);
+                }
+            }
+
+        });
+    });
+
+
+    //$('#NewImporterSearch').on("click", function () {
+
+
+    //    debugger;
+    //    $.ajax({
+    //        url: "/Import/Ppg_CWCImport/GetImporterName",
+    //        type: "GET",
+    //        dataType: "JSON",
+    //        success: function (data) {
+    //            debugger;
+
+    //                var Html = '';
+    //                ListOfImporter = data;
+    //                $.each(data, function (i, item) {
+    //                    debugger
+    //                    Html += '<li id=' + item.ImporterId + ' onclick="SelectImporter(' + item.ImporterId + ',&quot;' + item.ImporterName + '&quot;)">' + item.ImporterName + '</li>';
+    //                });
+    //                $('#lstImporter').html(Html);
+
+    //        }
+
+    //    });
+    //});
+
+
+
+
+    $('#BtnYardSubmit').on("click", function () {
+
+        if ($('#OBLNo').val() == '') {
+            alert("select Obl No.");
+            return false;
+        }
+
+        else if ($('#NewImporterName').val() == '') {
+            alert("select New Importer Name.");
+            return false;
+        }
+        else {
+            return true;
+        }
+
+    });
+    function SelectOBL(OblNo, OBLDTLId) {
+        debugger;
+        //var ContainerNo=ContainerNo.id==''?ContainerNo:ContainerNo.id;
+        $('#OBLNo').val(OblNo);
+        $('#OBLDTLId').val(OBLDTLId);
+        $("#blNomodal").modal("hide");
+        GetOBLDet(OBLDTLId);
+    }
+
+
+    //  function SelectImporter(Id, Name) {
+    debugger;
+    //var ContainerNo=ContainerNo.id==''?ContainerNo:ContainerNo.id;
+    //  $('#NewImporterId').val(Id);
+    //  $('#NewImporterName').val(Name);
+    //  $("#blImporterNomodal").modal("hide");
+
+    // }
+
+    function GetOBLDet(OBLDTLId) {
+
+        $.ajax({
+            url: '/Import/PpG_CWCImport/GetOBLDetailsForImporterAmmendment',
+            type: 'GET',
+            data: { OBLDtlId: OBLDTLId },
+            success: function (data) {
+                if (data.Status == 1) {
+                    $('#OBLDate').val(data.Data.OBLDate);
+                    $('#OldImporterId').val(data.Data.OldImporterId);
+                    $('#OldImporterName').val(data.Data.OldImporterName);
+
+                }
+
+
+            }
+        });
+
+    }
+
+
+
+
+
+
+    //$('#lstsline > li').on("click", function () {
+    //    debugger;
+    //    $('#SLine').val($(this).text().split('(')[0]);
+    //    $('#ShippingLineName').val($(this).text().split('(')[0]);
+    //    $('#SlineId').val($(this).attr('id'));
+    //    $("#slmodal").modal("hide");
+    //    //  GetTrainDetails();
+    //});
+
+
+
+
+    function ResetJobOrder() {
+        $('#CNNo, #size, #CSNo, #SLNo,#SLine,#Remarks,#CargoDescription').val('');
+        $('#GWeg,#NPckg').val('0');
+        //  $('#IsReefer, #IsFlatReck').attr('checked', false)
+        $('#CrType, #CLType,#TransportForm').prop('selectedIndex', 0);
+        //   $('#btnAddFormOneDet').prop("disabled", false);
+    }
+
+    function ResetImpDetails() {
+        $('#OBLNo, #OBLDate, #OldImporterName, #NewImporterName').val('');
+    }
+    function LoadAmemdentList() {
+        debugger;
+        $('#tblEntryDet').html('');
+        $('#DivYardList').load('/Import/PpG_CWCImport/ListofImporterAmendData');
+    }
+
+    function impAmmendmentSuccess(data) {
+        if (data.Status == 1) {
+            $('#DivJobOrder').html(data.Message);
+            setTimeout(function () {
+                $('#DivBody').load('/Import/Ppg_CWCImport/ImporterNameAmmendment');
+            }, 3000)
+        }
+        else {
+            $('#DivJobOrderErrMsg').html(data.Message);
+        }
+        //if (data.Status == 1) {
+        //    $('#DivJobOrder').html(data.Message);
+        //    setTimeout(impJOOnSuccess, TimeInSeconds);
+        //  // ResetImpJODetails();
+        //  //    LoadJOList();
+        //  //  $('#DivBody').load('/Import/PpG_CWCImport/CreateJobOrder');
+        //}
+        //else {
+        //    $('#DivJobOrderErrMsg').html(data.Message);
+        //}
+        //  setTimeout(function () { $('#DivJobOrderErrMsg,#DivJobOrder').html(''); }, 5000);
+    }
+    function impAmmendmentFailure() { }
+
+    function SaveDetails() {
+        $('#StringifyXML').val(JSON.stringify(FormOneDetails));
+    }
+
+
+
+
+
+
+
+    function GenerateEntryTable() {
+        tablehtml = '';
+        var tablehtml = '<table id="tblEntryDet" class="table table-striped table-bordered dataTable" style="width:100%;"><thead><tr><th class="text-center">SL No</th><th>Job Order No</th><th>Job Order Date</th><th>Train No</th><th class="text-center">View</th><th class="text-center">Edit</th><th class="text-center">Delete</th><th class="text-center">Preview</th></tr></thead><tbody>';
+        tablehtml += '</tbody></table>';
+        $('#tblEntryDet').html(tablehtml);
+    }
+
+
+    function SelectImporter(ImporterId, ImporterName) {
+        debugger;
+        $('#NewImporterName').val(ImporterName);
+        $('#NewImporterId').val(ImporterId);
+        $("#ImporterModal").modal("hide");
+        $('#ShpngLinebox').val('');
+
+        // LoadEximTrader();
+    }
+
+
+    function LoadEximTrader() {
+        Page = 0;
+        $.ajax({
+            url: '/Import/PpG_CWCImport/LoadImporterList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstimporter, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectImporter(' + elem.ImporterId + ',&quot;' + elem.ImporterName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ImporterName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    $('#tbleSline tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SearchByPartyCode() {
+        if ($('#ShpngLinebox').val() != '') {
+            $.ajax({
+                url: '/Import/PpG_CWCImport/SearchImporterByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#ShpngLinebox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstimporter, function (item, elem) {
+                            html += '<tr onclick="SelectImporter(' + elem.ImporterId + ',&quot;' + elem.ImporterName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ImporterName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleSline tbody').html('');
+                        $('#tbleSline tbody').html(html);
+                        $('#btnLoadMore').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleSline tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadEximTrader();
+    }
+    function CloseEximTrade() {
+        $('#ShpngLinebox').val('');
+        $("#ImporterModal").modal("hide");
+        LoadEximTrader();
+    }
+    function LoadMoreEximTrader() {
+        debugger;
+        $.ajax({
+            url: '/Import/PpG_CWCImport/LoadImporterList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstimporter, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectImporter(' + elem.ImporterId + ',&quot;' + elem.ImporterName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ImporterName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleSline tbody').html(html);
+                    else
+                        $('#tbleSline tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+    document.getElementById('ShpngLinebox').addEventListener('keyup', debounce(function () {
+        SearchByPartyCode();
+    }, 800));
+
+    function SearchByImporter() {
+        debugger;
+        // $('#tblEntryDet').hide();
+        $('#DivYardList').load('/Import/PpG_CWCImport/ListofImporterAmendDataSearch?ImporterName=' + $('#ImporterSearch').val().trimLeft());
+
+    }
+
+</script>
+

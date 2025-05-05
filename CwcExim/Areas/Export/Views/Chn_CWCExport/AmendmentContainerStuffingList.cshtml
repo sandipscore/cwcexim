@@ -1,0 +1,125 @@
+﻿@model IEnumerable<CwcExim.Areas.Export.Models.Chn_ContainerStuffing>
+
+<script type="text/javascript">
+    $(function(){
+        var TblContainerStuffList = $('#TblContainerStuffList').DataTable({
+            "bFilter":false,
+            "bInfo":false,
+            "aoColumns":[
+                       {"sName":"SL No","width":"8%"},
+                       {"sName":"Amendment Date"},
+                       {"sName":"Stuffing No"},
+                       {"sName":"Stuffing Date"},
+                       {"sName":"Container/CBT No"},
+                       {"sName":"Shipbill No"}
+                       //{"sName":"Print","bSortable":false,"width":"10%"}
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0)', nRow).addClass("text-center");
+                $('td:eq(3),td:eq(4),td:eq(5)', nRow).addClass("text-center");
+                $('td:eq(0)', nRow).css("width", "10px");
+                $('td:eq(1)', nRow).css("width", "50px");
+                $('td:eq(2)', nRow).css("width", "50px");
+                $('td:eq(3)', nRow).css("width", "50px");
+                $('td:eq(4)', nRow).css("width", "150px");
+                $('td:eq(5)', nRow).css("width", "150px");
+
+            }
+        });
+        new $.fn.dataTable.FixedHeader(TblContainerStuffList);
+    });
+
+    function PrintContainerStuffing(ContainerStuffingId){
+        var Token=$('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url:"/Export/Chn_CWCExport/PrintContainerStuffing",
+            type:"POST",
+            dataType:"JSON",
+            data:{ContainerStuffingId:ContainerStuffingId},
+            headers:{"__RequestVerificationToken":Token},
+            async:false,
+            success:function(data){
+                if(data.Status==1){
+                    window.open(data.Message+"?_t="+(new Date().getTime()),"_blank");
+                }
+                else
+                {
+                    alert(data.Message);
+                }
+            }
+        });
+    }
+    var Page = 0;
+    function LoadMoreListData() {
+        debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Export/Chn_CWCExport/LoadAmendmentContainerStuffingList',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#TblContainerStuffList').dataTable();
+                    var len = dt.fnGetData().length;
+
+                    $.each(data, function (i, item) {
+                        debugger;
+
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.AmendmentDate],
+        [item.StuffingNo],
+        [item.StuffingDate],
+        [item.ContainerNo],
+        [item.ShipBillNo],
+        //['<a href="#" onclick=PrintContainerStuffing(' + [item.ContainerStuffingId] + ')><i class="fa fa-file-pdf-o Edit"></i></a>'],
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+
+        });
+    }
+</script>
+
+<table id="TblContainerStuffList" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("SL No")</th>
+            <th>Amendment Date</th>
+            <th>Stuffing No</th>
+            <th>Stuffing Date</th>
+            <th>Container/CBT No</th>
+            <th>ShipBill No</th>
+            @*<th class="text-center">@Html.DisplayName("Print")</th>*@
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-center">@SerialNo</td>
+                    <td>@Html.DisplayFor(m => item.AmendmentDate)</td>
+                    <td>@Html.DisplayFor(m => item.StuffingNo)</td>
+                    <td>@Html.DisplayFor(m => item.StuffingDate)</td>
+                    <td>@Html.DisplayFor(m => item.ContainerNo)</td>
+                    <td>@Html.DisplayFor(m => item.ShipBillNo)</td>
+
+                    @*<td class="text-center"><a href="#" onclick="PrintContainerStuffing(@item.ContainerStuffingId)"><i class="fa fa-file-pdf-o Edit" aria-hidden="true"></i></a></td>*@
+                </tr>
+                SerialNo++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+
+

@@ -1,0 +1,217 @@
+﻿
+@model CwcExim.Areas.Export.Models.WFLD_BulkSF
+
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "RptInvoiceReportDetails";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+
+}
+<script>
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+
+        $("#PeriodFrom").datepicker({ "setDate": new Date() });
+        $("#PeriodTo").datepicker({ "setDate": new Date() });
+    });
+
+</script>
+@using (Ajax.BeginForm("BulkSF", "WFLD_CWCExport", options))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Bulk SF</h4>
+                            </div>
+                        </div>
+                        <div class="Form_Space_top" style="padding:5px;">
+                            <div class="row">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Period From:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col_cus_2 col_cus_offset_3 col-md-offset-4">
+                                        <label>Period To:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                     
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Search" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                       
+                        <div class="row Form_Space_top">
+                            <div class="col-md-12">
+                                <table id="CWCCCIN" class="table table-striped table-bordered dataTable Table_center">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:12%;">Sr No.</th>
+                                            <th>Container No</th>
+                                            <th>CFSCode</th>
+                                            <th>Status</th>
+                                            <th class="text-center">
+                                                <div class="boolean-container">
+                                                    <input type="checkbox" id="AllChkbox" />
+                                                    <label style="text-align:center;" for="AllChkbox"><i class="square"></i></label>
+                                                </div>
+                                            </th>
+                                            <th style="display:none"></th>
+
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent; color:red"></div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg1" style="background-color:transparent;"></div>
+                        <div class="row Form_Space_top">
+                            <div class="row SignUp_space_bottom">
+                                <div class="col-md-offset-5 col-md-2">
+                                    <input type="button" value="CIM SF" name="Command" class="btn log_Btn_sm" onclick="GeneratedCIMSF()" id="btnCIMSF" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $('#BtnPreview').on("click", function () {
+        //alert("in");
+        //ValidateExitDet();
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        return true;
+    });
+    function RptConsumerListDtlOnFailure() { }
+    function RptInvoiceReportDetails(data) {
+        debugger;
+        var html = '';
+        $('#CWCCCIN tbody').html('');
+        var j = 1;
+        if (data != '')
+        {
+            $.each(data, function (i, item) {
+
+                debugger;
+                html += '<tr><td  class="text-center">' + j + '</td><td  class="text-center">' + item.ContainerNo + '</td><td  class="text-center">' + item.Status + '</td><td  class="text-center">' + item.CFSCode + '</td><td><input type="checkbox"  id="chk_' + item.ContainerStuffingDtlId + '"  /><label for="chk_' + item.ContainerStuffingDtlId + '" style="text-align:center;"><i class="square"></i></label></td><td style="display:none">' + item.ContainerStuffingDtlId + '</td></tr>';
+                j++;
+            });
+            $('#CWCCCIN tbody').html(html);
+        }
+      
+        
+    }
+    $("#AllChkbox").click(function () {
+        $('input:checkbox').not(this).prop('checked', this.checked);
+    });
+
+    function GeneratedCIMSF()
+    {
+        debugger;
+        $('#DivDwnldWavMsg').text('');
+        var alljson = [];
+        var table = $("#CWCCCIN tbody");
+
+        table.find('tr').each(function (i) {
+            var $tds = $(this).find('td');
+            if($tds.eq(4).find("input[type=checkbox]").is(':checked')==true)
+            {
+                alljson.push({ 'ContainerStuffingDtlId': $tds.eq(5).text(), 'ContainerNo': $tds.eq(1).text(), 'CFSCode': $tds.eq(3).text() });
+            }
+
+        });
+
+        debugger;
+        if (alljson.length > 0)
+        {
+
+            $.ajax({
+                url: '/Export/WFLD_CWCExport/SendBulkSF',
+                type: 'POST',
+                dataType: 'JSON',
+                data: JSON.stringify(alljson),
+                contentType: 'application/json; charset=utf-8',
+                success: function (data) {
+                    $('#DivDwnldWavMsg1').text(data);
+                    setTimeout(Reset, 3000);
+                }
+            });
+        }
+        else
+        {
+            $('#DivDwnldWavMsg').text('Please Select Container No.')
+        }
+      
+    }
+
+    function Reset()
+    {
+        $('#DivBody').load('/Export/WFLD_CWCExport/BulkSF');
+    }
+
+</script>
+
+
+

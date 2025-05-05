@@ -1,0 +1,167 @@
+﻿@model CwcExim.Models.AccessRightsVM
+<script src="~/Scripts/LeftList.js"></script>
+
+@{
+    Layout = null;
+}
+
+<div>
+
+    <script type="text/javascript">
+        var ActionCheck = false;
+        function CanAddCheckbox(obj) {
+            ActionCheck = true;
+            if (obj.checked == true) {
+                var thisrow = this;
+                var row = obj.parentNode.parentNode;
+                if (row.children[1].children[0].checked == false) {
+                    obj.checked = false;
+                    alert("View Rights must be given before giving Add/Edit Rights.");
+                    return false;
+                }
+            }
+        }
+
+        //function CanViewCheckbox()
+        //{
+        //    ActionCheck = true;
+        //}
+
+        function ActionChecked() {
+            ActionCheck = true;
+        }
+
+        function SaveAccessRights() {
+            debugger;
+            $('#SpnResult').html('');
+            if (ActionCheck == false) {
+                alert("You have not checked or unchecked anything!");
+                return false;
+            }
+        }
+
+    </script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#divProgress").css("display", "none");
+        });
+
+        function OnBegin() {
+        }
+        function OnComplete() {
+        }
+
+        function OnSuccess(data) {
+            if (data.Status == 1) {
+                alert("Rights assigned successfully.");
+                LoadAccessRight();
+            }
+            else {
+                $('#SpnResult').html(data.Message);
+            }
+        }
+
+        function OnFailure() {
+        }
+
+        function LoadAccessRight() {
+            $('#DivBody').load('/AccessRights/Load');
+        }
+
+        function Clear() {
+            $('select').each(function () {
+                $(this).find('option[value=""]').attr('selected', true);
+            });
+
+        }
+    </script>
+
+    @{
+
+        AjaxOptions options = new AjaxOptions();
+        options.HttpMethod = "POST";
+        options.Confirm = "Are you sure you want to save?";
+        options.OnBegin = "OnBegin";
+        options.OnComplete = "OnComplete";
+        options.OnFailure = "OnFailure";
+        options.OnSuccess = "OnSuccess";
+        options.LoadingElementDuration = 1000;
+        options.LoadingElementId = "divProgress";
+        options.UpdateTargetId = "divResponse";
+        options.InsertionMode = InsertionMode.InsertAfter;
+
+
+    }
+
+    @using (Ajax.BeginForm("AccessRightsList", "AccessRights", options))
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="table-responsive" style="height: 50vh;">
+            <table class="table table-bordered dataTable nowrap sticky_table" cellspacing="0" width="100%">
+                <thead>
+                    <tr>
+                        <th>@Html.DisplayName("Menu")</th>
+                        <th>@Html.DisplayName("View Rights")</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.lstAccessRights.Count(); i++)
+                {
+                    var vrid = "lstAccessRights_" + i.ToString() + "__CanView";
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(m => m.lstAccessRights[i].MenuName)
+                                @Html.HiddenFor(m => m.lstAccessRights[i].MenuId)
+                                @Html.HiddenFor(m => m.lstAccessRights[i].SrlNo)
+                                @Html.HiddenFor(m => Model.ModuleId)
+                                @Html.HiddenFor(m => Model.RoleId)
+                                @Html.HiddenFor(m => Model.Ptype)
+                            </td>
+
+                            <td>
+                                <div class="boolean-container">
+                                    @Html.CheckBoxFor(m => m.lstAccessRights[i].CanView, new { @onclick = "ActionChecked()" })
+                                    <label for="@vrid" style="margin-bottom:0;"><i class="square"></i></label>
+                                </div>
+                            </td>
+                            @*<td>
+                                <div class="boolean-container">
+
+                                    @if (Model.lstAccessRights[i].CanAdd.ToString() != "true" || Model.lstAccessRights[i].CanView.ToString() == "true")
+                                    {
+                                        @Html.HiddenFor(m => m.lstAccessRights[i].CanAdd, new { @Value = "true" })
+                                    }
+                                    else
+                                    {
+                                        @Html.HiddenFor(m => m.lstAccessRights[i].CanAdd)
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <div class="boolean-container">
+                                    @if (Model.lstAccessRights[i].CanEdit.ToString() != "true" || Model.lstAccessRights[i].CanView.ToString() == "true")
+                                    {
+                                        @Html.HiddenFor(m => m.lstAccessRights[i].CanEdit, new { @Value = "true" })
+                                    }
+                                    else
+                                    {
+                                        @Html.HiddenFor(m => m.lstAccessRights[i].CanEdit)
+                                    }
+                                </div>
+                            </td>*@
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+
+        <div class="SignUp_space_bottom">
+            <div class="d-flex justify-content-left" style="text-align:center">
+                <input id="btnSave" type="submit" value="Save" class="btn btn-primary mr-1 btn-100px" onclick="return SaveAccessRights();" />
+            </div>
+        </div>
+    }
+</div>

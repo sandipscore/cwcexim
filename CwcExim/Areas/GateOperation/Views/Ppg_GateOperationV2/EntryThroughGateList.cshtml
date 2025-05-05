@@ -1,0 +1,381 @@
+﻿@model IEnumerable<CwcExim.Areas.GateOperation.Models.PpgEntryThroughGateV2>
+@Html.DropDownList("searchType",new List<SelectListItem> {
+    new SelectListItem
+    {
+        Text="All",
+        Value="All"
+    },
+    new SelectListItem
+    {
+        Text="Container",
+        Value="Container"
+    },
+    new SelectListItem
+    {
+        Text="Vehicle",
+        Value="Vehicle"
+    },
+},new { @onchange="typechange()",@style= "position: absolute; right: 20px; top: 6px;" })
+
+
+<input type="hidden" id="hdnlstFlag" value="@TempData["lstFlag"].ToString()" />
+
+
+
+<table id="tblGateEntryList" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+    <thead>
+        <tr>
+            <th style="text-align:center;width:5%;">@Html.DisplayName("Edit")</th>
+            <th style="text-align:center;width:5%;">@Html.DisplayName("View")</th>
+            <th style="text-align:center;width:5%;">@Html.DisplayName("Delete")</th>
+            <th style="text-align:center; width:5%;">@Html.DisplayName("SL No")</th>
+            <th style="width:10%;">@Html.DisplayName("ICD Code")</th>
+            <th style="width:10%;">@Html.DisplayNameFor(m => m.GateInNo)</th>
+            <th style="width:10%;">@Html.DisplayName("Gate In Date & Time")</th>
+            <th style="width:10%;">@Html.DisplayNameFor(m => m.ReferenceNo)</th>
+            <th style="width:10%;">@Html.DisplayNameFor(m => m.VehicleNo)</th>
+            <th style="width:10%;">@Html.DisplayNameFor(m => m.ContainerNo)</th>
+           
+        </tr>
+    </thead>
+    <tbody>
+       @{
+           var SerialNo = 1;
+           foreach (var elem in Model)
+           {
+            <tr>
+                <td style="width:5%;" class="text-center"><div class="table_icon">
+    <a href="#" class="edit" onclick="EditGateEntry(@elem.EntryId,&quot;@elem.OperationType&quot;,&quot;@elem.ContainerType&quot;)">
+        <i class="fa fa-pencil"></i>
+    </a>
+</div>
+</td>
+                <td style="width:5%;" class="text-center"><div class="table_icon"><a href="#" class="view" onclick="ViewGateEntryDet(@elem.EntryId,&quot;@elem.OperationType&quot;,&quot;@elem.ContainerType&quot;)"><i class="fa fa-eye"></i></a></div></td>
+                <td style="width:5%;" class="text-center"><div class="table_icon"><a href="#" class="delete" onclick="DeleteGateEntryDet(@elem.EntryId)"><i class="fa fa-trash-o"></i></a></div></td>
+
+                <td style="width:5%;" class="text-center">@SerialNo.ToString()</td>
+                <td style="width:10%;">@elem.DisPlayCfs</td>
+                <td style="width:10%;">@elem.GateInNo</td>
+                <td style="width:10%;">@elem.EntryDateTime</td>
+                <td style="width:10%;">@elem.ReferenceNo</td>
+                <td style="width:10%;">@elem.VehicleNo</td>
+                <td style="width:10%;">@elem.ContainerNo</td>                
+            </tr>
+               SerialNo = SerialNo + 1;
+           }
+    }
+    </tbody>
+</table>
+
+<div class="col-md-3"><input class="btn btn-primary mr-1 btn-100px" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+
+
+<script>
+   // debugger;
+    var r2 = JSON.parse($("#hdnRights").val());
+    if (r2.CanEdit == 1) {
+        //$('.edit').css('display', 'block');
+        //$('.edit').disabled=false;
+    } else {
+        //$('.edit').css('display', 'none');
+        $('.edit').removeAttr('onclick');
+        $('.edit').attr('onclick', 'return false');
+    }
+
+    if (r2.CanDelete == 1) {
+        //$('.delete').css('display', 'block');
+
+    } else {
+        //$('.delete').css('display', 'none');
+
+        $('.delete').removeAttr('onclick');
+        $('.delete').attr('onclick', 'return false');
+    }
+
+    if (r2.CanView == 1) {
+        //$('.view').css('display', 'block');
+
+    } else {
+        //$('.view').css('display', 'none');
+        $('.view').removeAttr('onclick');
+        $('.view').attr('onclick', 'return false');
+    }
+    var Page = 0;
+    var lstFlag="";
+    $(document).ready(function(){
+        var TblGateEntry= $('#tblGateEntryList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns": [
+                { "sName": "SL No", "width": "5%" },
+                { "sName": "ICD", "bSortable": false, "width": "10%" },
+                { "sName": "Gate In No.", "bSortable": false, "width": "10%" },
+                { "sName": "Gate In Date&Time.", "bSortable": false, "width": "10%" },
+                { "sName": "Reference No.", "bSortable": false, "width": "10%" },
+                { "sName": "Vehicle No", "width": "10%" },
+                { "sName": "Container No", "width": "10%" },
+                { "sName": "View", "bSortable": false, "width": "5%" },
+                { "sName": "Edit", "bSortable": false, "width": "5%" },
+                { "sName": "Delete", "bSortable": false, "width": "5%" },
+              
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0)', nRow).addClass("text-center");
+                //$('td:eq(6),td:eq(7)', nRow).addClass("text-center");
+                $('td:eq(0)', nRow).css("width", "5%");
+                $('td:eq(1)', nRow).css("width", "10%");
+                $('td:eq(2)', nRow).css("width", "10%");
+                $('td:eq(3)', nRow).css("width", "10%");
+                $('td:eq(4)', nRow).css("width", "10%");
+                $('td:eq(5)', nRow).css("width", "10%");
+                $('td:eq(6)', nRow).css("width", "10%");
+                $('td:eq(7)', nRow).css("width", "5%");
+                $('td:eq(8)', nRow).css("width", "5%");
+                $('td:eq(9)', nRow).css("width", "5%");
+                
+            }
+        });
+        new $.fn.dataTable.FixedHeader(TblGateEntry);
+
+        $('#searchType').val($('#hdnlstFlag').val());
+    });
+
+    function typechange() {
+        debugger;
+       var t=$('#searchType').val();
+       $('#DivGateEntryList').load('/GateOperation/Ppg_GateOperationV2/EntryThroughGateList/?lstFlag=' + t);
+    }
+
+    function LoadEntryThroughGateList() {
+        debugger;
+        $('#DivGateEntryList').load( '/GateOperation/Ppg_GateOperationV2/CreateEntryThroughGate');
+    }
+    function EditGateEntry(EntryId, OperationType, ContainerType) {
+       
+        debugger;
+        if (OperationType == "Import")
+        {
+        $('#DivBody').load( '/GateOperation/Ppg_GateOperationV2/EditEntryThroughGate?EntryId=' + EntryId);
+        }
+        else if (OperationType == "Export" && (ContainerType == "Empty" || ContainerType == "EmptyVehicle"))
+        {
+            $('#DivBody').load('/GateOperation/Ppg_GateOperationV2/EditEntryThroughGateExport?EntryId=' + EntryId);
+        }
+        else if (OperationType == "Bond")
+        {
+            $('#DivBody').load('/GateOperation/Ppg_GateOperationV2/EditEntryThroughGateBond?EntryId=' + EntryId);
+
+        }
+        else if (OperationType == "Export" && ContainerType=="Loaded") {
+            $('#DivBody').load('/GateOperation/Ppg_GateOperationV2/EditEntryThroughGateLoadContainer?EntryId=' + EntryId);
+
+        }
+    }
+    function ViewGateEntryDet(EntryId, OperationType, ContainerType) {
+        debugger;
+        if (OperationType == "Export" && (ContainerType == "Empty" || ContainerType == "EmptyVehicle")) {
+            $('#DivBody').load('/GateOperation/Ppg_GateOperationV2/ViewEntryThroughGateExport?EntryId=' + EntryId);
+        }
+
+        else if (OperationType == "Export" && ContainerType == "Loaded") {
+            $('#DivBody').load('/GateOperation/Ppg_GateOperationV2/ViewEntryThroughGateLoadedContainer?EntryId=' + EntryId);
+
+        }
+        else if (OperationType == "Import" && ContainerType == "Loaded") {
+            $('#DivBody').load('/GateOperation/Ppg_GateOperationV2/ViewEntryThroughGate?EntryId=' + EntryId);
+
+        }
+       // $('#DivBody').load('/GateOperation/Ppg_GateOperationV2/ViewEntryThroughGate?EntryId=' + EntryId);
+    }
+    function DeleteGateEntryDet(EntryId) {
+
+        var Confirm = confirm("Are you sure you want to delete?")
+        debugger;
+        if (Confirm == true) {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("DeleteEntryThroughGate", "Ppg_GateOperationV2", new { Area = "GateOperation" }) ',
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                type: 'POST',
+                data: { EntryId: EntryId },
+                success: function (data) {
+                    //if (data.Status == 1) {
+
+                        debugger;
+                        //if(data.Status==1)
+                        //{
+                            //LoadEntryThroughGateList();
+                            GateEntryDeleteSuccess(data);
+
+                        //}
+                        //else {
+                        //    alert(data.Message);
+                        //}
+
+                   // }
+                }
+            });
+        }
+    }
+    var TimeInSeconds = 4000;
+    function GateEntryDeleteSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            // ResetGateEntry();
+            if ($('#DivEntryThroughGateMsg').hasClass('logErrMsg'))
+                $('#DivEntryThroughGateMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivEntryThroughGateMsg').html(data.Message);
+            //setTimeout(CountryReset, TimeInSeconds);
+            debugger;
+            LoadEntryThroughGateList();
+        }
+        else if (data.Status == 3) {
+            if ($('#DivEntryThroughGateMsg').hasClass('logErrMsg'))
+                $('#DivEntryThroughGateMsg').removeClass('logErrMsg').addClass('logErrMsg');
+            $('#DivEntryThroughGateMsg').html(data.Message);
+        }
+        else {
+            if ($('#DivEntryThroughGateMsg').hasClass('logSuccMsg'))
+                $('#DivEntryThroughGateMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivEntryThroughGateMsg').html(data.Message);
+            setTimeout(clearData, TimeInSeconds);
+        }
+    }
+    function clearData()
+    {
+        $('#DivEntryThroughGateMsg').html('');
+    }
+
+    //function typechange() {
+    //    debugger;
+    //    //Page = Page + 1;
+    //    $.ajax({
+    //        url: '/GateOperation/Ppg_GateOperation/EntryThroughGateList',
+    //        type: 'GET',
+    //        dataType: 'JSON',
+    //        data:
+    //            {                    
+    //                lstFlag: $('#searchType').val()
+    //            },
+    //        success: function (data) {
+    //            alert(data);
+    //            debugger;
+    //            if (data != null && data != '' && data != undefined && data.length > 0) {
+    //                Page++;
+    //                var html = '';
+    //                var dt = $('#tblGateEntryList').dataTable();
+    //                var len = dt.fnGetData().length;
+    //                $.each(data, function (i, item) {
+    //                    debugger;
+    //                    len++;
+    //                    dt.fnAddData([
+    //    len,
+    //    [item.DisPlayCfs],
+    //    [item.GateInNo],
+    //    [item.EntryDateTime],
+    //    [item.ReferenceNo],
+    //    [item.VehicleNo],
+    //    [item.ContainerNo],
+    //    ['<a href="#" onclick=EditGateEntry(' + [item.EntryId] + ',' + [item.OperationType] + ',' + [item.ContainerType] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+    //    ['<a href="#" onclick=ViewGateEntryDet(' + [item.EntryId] + ')><i class="fa fa-search-plus Edit"></i></a>'],
+    //    ['<a href="#" onclick=DeleteGateEntryDet(' + [item.EntryId] + ')><i class="fa fa-window-close-o Delete"></i></a>'],
+    //    ['<a href="#" onclick=PrintInvoiceByNo(' + [item.InvoiceNo] + ')><i class="fa fa-print Print"></i></a>'],
+    //                    ]);
+    //                });
+    //            }
+    //            else alert('No more data available');
+    //        }
+    //    });
+    //}
+
+    function LoadMoreListData() {       
+        debugger;
+        //Page = Page + 1;
+        if ($('#hdnOprationType').length) {
+            oprationType = $('#hdnOprationType').val();
+        }
+        ContainerType = $('#hdnContainerType').val();
+        OperationType = $('#hdnOperationType').val();
+        $.ajax({
+            url: '/GateOperation/Ppg_GateOperationV2/LoadMoreEntryThroughGateList?OperationType=' + OperationType + '&ContainerType=' + ContainerType,
+            type: 'GET',
+            dataType: 'JSON',
+            data:
+                {
+                    Page: Page + 1                    
+                },         
+            success: function (data) {              
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblGateEntryList').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.DisPlayCfs],
+        [item.GateInNo],
+        [item.EntryDateTime],
+        [item.ReferenceNo],
+        [item.VehicleNo],
+        [item.ContainerNo],       
+        ['<a href="#" onclick=EditGateEntry(' + [item.EntryId] + ',' + [item.OperationType] + ',' + [item.ContainerType] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#" onclick=ViewGateEntryDet(' + [item.EntryId] + ')><i class="fa fa-search-plus Edit"></i></a>'],
+        ['<a href="#" onclick=DeleteGateEntryDet(' + [item.EntryId] + ')><i class="fa fa-window-close-o Delete"></i></a>'],
+        ['<a href="#" onclick=PrintInvoiceByNo(' + [item.InvoiceNo] + ')><i class="fa fa-print Print"></i></a>'],     
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+
+    function PrintInvoice(invoiceid) {
+        //debugger;
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GateEntryInvoicePrint", "Ppg_GateOperationV2", new { Area = "GateOperation" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: { InvoiceID: invoiceid },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+    }
+
+    function PrintInvoiceByNo(invoiceno) {
+        debugger;
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetBulkInvoiceReport", "Ppg_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                InvoiceNumber: invoiceno,
+                InvoiceModule:'GE',
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                InvoiceModuleName: 'GATE ENTRY',
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }
+
+</script>

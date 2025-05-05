@@ -1,0 +1,248 @@
+﻿@model CwcExim.Areas.Master.Models.PpgFumigationCharge
+@{
+    AjaxOptions options = new AjaxOptions();
+    //options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "ChargesEntryOnSuccess";
+    options.OnFailure = "ChargesEntryOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<script>
+    $('#EffectiveDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select Date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $('[data-valmsg-for="EffectiveDate"]').html('<span></span>');
+        }
+    });
+</script>
+
+<div id="DivAddFumigationCharge" class="container-fluid">
+    <div class="row">
+        @using (Ajax.BeginForm("AddEditFumigationChargeForContainer", "LoniCWCCharges", options))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.StringifyData)
+
+            <div class="col-md-12">
+                <div class="row SignUp_space_bottom">
+                    <div class="col-md-12 cwc_body">
+                        <h5>Fumigation Charges <span class="triangle"></span></h5>
+                    </div>
+                </div>
+            </div>
+            <div class="row Form_Space_top">
+                <div class="form-group Form_Input">
+                    <div class="col-md-1-5" id="DivRbtnCargo">
+                        <div class="boolean-cargo">
+                            @Html.RadioButton("Type", "Cargo", new { @class = "", @id = "Cargo", @onclick = "GoToCargo();" })
+                            <label for="Cargo"><i class="circle"></i><span>Cargo</span></label>
+                        </div>
+                    </div>
+                    <div class="col-md-1-5" id="DivRbtnContainer">
+                        <div class="boolean-container">
+                            @Html.RadioButton("Type", "Container", new { @class = "", @id = "Container", @checked = true, @onclick = "GoToContainer();" })
+                            <label for="Container"><i class="circle"></i><span>Container</span></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group Form_Input">
+                    <div class="col-md-1-5 padding_rt">
+                        <label>Effective Date:</label>
+                    </div>
+                    <div class="col-md-2 Date_Img">
+                        <span class="ReQSimbol">*</span>
+                        @Html.TextBoxFor(m => m.EffectiveDate, new { @class = "form-control input-sm", @readonly = "readonly" })
+                        @Html.ValidationMessageFor(m => m.EffectiveDate, "", new { @class = "Error_Msg" })
+                    </div>
+                </div>
+            </div>
+            <div class="row Form_Space_top">
+                <div class="form-group Form_Input">
+                    <div class="col-md-1-5 col_cus_2">
+                        <label>Container Size:</label>
+                    </div>
+                    <div class="col-md-2-5">
+                        <span class="ReQSimbol">*</span>
+                        @Html.DropDownListFor(m => m.ContainerSize, new List<SelectListItem>
+                               {
+                                new SelectListItem { Text="20",Value="20"},
+                                new SelectListItem { Text="40",Value="40"}
+                                //new SelectListItem { Text="ODC",Value="ODC"},
+                                }, "----Select----", new { @class = "form-control input-sm" })
+                       
+
+                    </div>
+                    <div class="col-md-1-5 col_cus_2 col-md-offset-4 col_cus_offset_3 padding_rt">
+                        <label>Rate:</label>
+                    </div>
+                    <div class="col-md-2-5">
+                        <span class="ReQSimbol">*</span>
+                        @Html.TextBoxFor(m => m.SizeRate, new { @class = "form-cotrol input-sm" })
+
+                    </div>
+                </div>
+            </div>
+            <div class="row SignUp_space_bottom">
+                <div class="col-md-offset-4 col-md-2">
+                    <input type="button" id="btnAddDet" class="btn log_Btn_sm" value="Add" onclick="AddEntryDet()" />
+                </div>
+                <div class="col-md-2">
+                    <input type="button" id="btnResetDet" class="btn log_Btn_sm" value="Reset" onclick="ResetEntryDet()" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="tblEntryDet"></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="stoke SignUp_space_top SignUp_space_bottom"></div>
+            </div>
+            <div class="row Form_Space_top">
+                <div class="col-md-12 SignUp_space_bottom">
+                    <div class="col-md-offset-4 col-md-2">
+                        <input type="submit" value="Save" class="btn log_Btn_sm" id="BtnSave" />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="button" value="Reset" id="btnReset" class="btn log_Btn_sm" onclick="ResetAllFields()" />
+                    </div>
+                </div>
+                <div class="logSuccMsg SignUp_space_bottom2" style="background-color:transparent">
+                    <div id="DivEntryChargesMsg"></div>
+                </div>
+            </div>
+
+        }
+        <div class="row">
+            <div class="col-md-12">
+                <div id="DivChargeEntryList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $(document).ready(function () {
+        ArrayEntryDet = [];
+        LoadChargeList();
+
+    });
+    function GoToCargo() {
+        debugger;
+        $("#DivRbtnContainer").hide();
+        $('#DivAddFumigationCharge').load('/Master/LoniCWCCharges/CreateFumigationCharge');
+    }
+    function GoToContainer() {
+        debugger;
+        //$("#DivRbtnCargo").hide();
+        $('#DivAddFumigationCharge').load('/Master/LoniCWCCharges/CreateFumigationChargeContainer');
+    }
+    function AddEntryDet() {
+        //if (ValidateEntryData()) {
+        debugger;
+
+        if ($('#ContainerSize').val() == '') {
+            alert("Fill Out Size Field");
+            return false;
+
+        }
+
+   
+        if ($('#SizeRate').val() == '') {
+            alert("Fill Out Rate Field");
+            return false;
+
+        }
+        if ($('#SizeRate').val() != "") {
+            if (!DecimalValidationGW("SizeRate")) {
+                alert("Rate must be a decimal up to 2 places and less then 99999999.99");
+                return false;
+            }
+        }
+      
+            var ChargeEntryDet = {
+                "ContainerSize": $('#ContainerSize').val(),
+                "SizeRate": $('#SizeRate').val()
+            };
+            ArrayEntryDet.push(ChargeEntryDet);
+            $('#tblEntryDet').html('');
+            GenerateTable();
+            ResetEntryDet();
+            $('[data-valmsg-for]').html('');
+        }
+    
+    function GenerateTable() {
+        tablehtml = '';
+        var tablehtml = '<table id="tblEntryDet" class="table table-striped table-bordered dataTable" style="width:100%;"><thead><tr><th class="text-center">SL No</th><th>Container Size</th><th>Rate</th><th class="text-center">Remove</th></tr></thead><tbody>';
+        $.each(ArrayEntryDet, function (i, data) {
+            tablehtml += '<tr><td class="text-center">' + (i + 1) + '</td><td>' + data.ContainerSize + '</td><td>' + data.SizeRate + '</td><td class="text-center"><a href="#" onclick="DeleteEntryDet(' + i + ')"><i class="fa fa-window-close Delete"></i></a></td></tr>';
+        });
+        tablehtml += '</tbody></table>';
+        $('#tblEntryDet').html(tablehtml);
+    }
+    function ResetEntryDet() {
+        $('[data-valmsg-for]').html('');
+        $('input[type="text"],Select,textarea').val('');
+    }
+
+    $('#BtnSave').on("click", function () {
+        debugger;
+        if ($('#tblEntryDet>tbody').html() == '' || $('#tblEntryDet>tbody').html() == undefined) {
+            $('#DivEntryChargesMsg').html('Add The Record To Save');
+
+        }
+
+        else {
+            $('#StringifyData').val(JSON.stringify(ArrayEntryDet));
+            setTimeout(function () { $('#DivEntryChargesMsg').html(''); }, 5000);
+            ArrayEntryDet = [];
+        }
+
+    });
+    function ChargesEntryOnSuccess(data) {
+        if (data.Status == 1) {
+            if ($('#DivEntryChargesMsg').hasClass('logErrMsg'))
+                $('#DivEntryChargesMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivEntryChargesMsg').html(data.Message);
+            $('#tblEntryDet').html('');
+            ArrayEntryDet = [];
+            LoadChargeList();
+            ResetAllFields();
+        }
+    }
+    function DecimalValidationGW(elem) {
+        var State = true;
+        var Value = $('#' + elem).val();
+        if (!Value.match(/^[\d]{1,8}\.\d{0,2}$/) && !Value.match(/^[\d]{1,8}$/))
+            State = false;
+        return State;
+    }
+    function ResetAllFields() {
+        $('[data-valmsg-for]').html('');
+        $('input[type="text"],Select,textarea').val('');
+        $('#tblEntryDet>tbody').html('');
+        $('#tblEntryDet').html('');
+        $('#StringifyData').val('');
+        ArrayEntryDet = [];
+    }
+    function LoadChargeList() {
+        debugger;
+        $('#DivChargeEntryList').load('/Master/LoniCWCCharges/ListOfFumigationChargeDetails');
+    }
+
+    function DeleteEntryDet(i) {
+        debugger;
+        ArrayEntryDet.splice(i, 1);
+        GenerateTable();
+    }
+   function ChargesEntryOnFailure(){}
+</script>

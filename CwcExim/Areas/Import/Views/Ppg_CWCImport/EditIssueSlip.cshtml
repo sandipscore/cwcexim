@@ -1,0 +1,254 @@
+﻿@model CwcExim.Areas.Import.Models.PPG_Issueslip
+
+<script>
+    var ArrayOfContainer = [];
+    var ArrayOfCargo = [];
+    var TimeInSeconds;
+    $(function () {
+        debugger;
+        TimeInSeconds = 5000;
+        ArrayOfContainer=@Html.Raw(Json.Encode(Model.LstContainer));
+        ArrayOfCargo=@Html.Raw(Json.Encode(Model.LstCargo));
+        GenerateConatinerTable();
+        GenerateCargoTable();
+    });
+
+
+    $('#IssueSlipDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage:"/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='IssueSlipDate']").html('');
+        }
+    });
+
+
+
+    function ReloadIssueSlipPage() {
+        $('#DivBody').load('/Import/Ppg_CWCImport/CreateIssueSlip');
+    }
+
+    //function ResetAllFields() {
+    //    $('#DivAddIssueSlip').find('input:hidden').val('');
+    //    $('#DivAddIssueSlip').find('input:text,textarea').val('');
+    //    $('#DivAddIssueSlip #DivIssueSlipMsg').html('');
+    //    $('#DivAddIssueSlip #DivIssueSlipErrMsg').html('');
+    //    $('[data-valmsg-for]').html('<span><span>');
+    //    $('#DivAddIssueSlip #TblContainer >tbody').html('');
+    //    $('#DivAddIssueSlip #TblContainer').hide();
+    //    $('#DivAddIssueSlip #TblCargo >tbody').html('');
+    //    $('#DivAddIssueSlip #TblCargo').hide();
+    //}
+
+    function IssueSlipOnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            $('#DivIssueSlipMsg').html(data.Message);
+            setTimeout(ReloadIssueSlipPage, TimeInSeconds);
+            // $('#InvoiceList #' + $('#InvoiceNo').val()).remove();
+            // GetIssueSlipList();
+        }
+        else {
+            $('#DivIssueSlipErrMsg').html(data.Message);
+        }
+    }
+
+    function IssueSlipOnFailure() { }
+
+    function GenerateConatinerTable() {
+        debugger;
+        $('#TblContainer').hide();
+        var Html = '';
+        if (ArrayOfContainer.length != 0) {
+            $.each(ArrayOfContainer, function (i, item) {
+                debugger;
+                Html += '<tr><td>' + item.CFSCode + '</td><td>' + item.ContainerNo + '</td><td>' + item.Size + '</td><td>' + item.GrossWeight + '</td><td>' + item.CIFValue + '</td><td>' + item.Duty + '</td><td>' + item.Total + '</td></tr>';
+            });
+            $('#TblContainer>tbody').html(Html);
+            $('#TblContainer').show();
+        }
+    }
+
+    function GenerateCargoTable() {
+        debugger;
+        $('#TblCargo').hide();
+        var Html = '';
+        if (ArrayOfCargo.length != 0) {
+            $.each(ArrayOfCargo, function (i, item) {
+                debugger;
+                Html += '<tr><td>' + item.OBLNo + '</td><td>' + item.CargoDescription + '</td><td>' + item.GodownNo + '</td><td>' + item.Location + '</td><td>' + item.StackNo + '</td><td>' + item.Area + '</td><td>' + item.NetWeight + '</td></tr>';
+            });
+            $('#TblCargo>tbody').html(Html);
+            $('#TblCargo').show();
+        }
+    }
+
+</script>
+
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "IssueSlipOnSuccess";
+    options.OnFailure = "IssueSlipOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="Head_h4">
+            <div class="row">
+                <div class="col-md-12">
+                    <h4>Invoice Checking</h4>
+                </div>
+            </div>
+            @using (Ajax.BeginForm("AddEditIssueSlip", "Ppg_CWCImport", options))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.IssueSlipId)
+
+
+                <div class="content_wrp">
+                    <div class="row Form_Space_top">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Issue Slip No:</label>
+                                @Html.TextBoxFor(m => m.IssueSlipNo, "", new { @readonly = true })
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 col-md-offset-6">
+                            <div class="form-group">
+                                <label>Issue Slip Date:</label>
+                                <div class="position-relative Date_Img">
+                                    @Html.TextBoxFor(m => m.IssueSlipDate, new { @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.IssueSlipDate, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Invoice No:</label>
+                                <div class="position-relative">
+                                    @Html.HiddenFor(m => m.InvoiceId)
+                                    @Html.TextBoxFor(m => m.InvoiceNo, new { @readonly = true })
+                                    <span class="input_icon"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#InvoiceModal"></i></span>
+                                    @Html.ValidationMessageFor(m => m.InvoiceNo, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 col-md-offset-6">
+                            <div class="form-group">
+                                <label>Invoice Date:</label>
+                                <div class="position-relative Date_Img">
+                                    @Html.TextBoxFor(m => m.InvoiceDate, new { @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label>Cargo Description:</label>
+                                @Html.TextAreaFor(m => m.CargoDescription, new { @style = "width:100%;height:100px" })
+                                @Html.ValidationMessageFor(m => m.CargoDescription, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div id="DivTblContainer" class="col-md-12">
+                            <table class="table table-striped table-bordered dataTable" id="TblContainer" style="width:100%;">
+                                <thead>
+                                    <tr>
+                                        <th colspan="7">Container / CBT Details</th>
+                                    </tr>
+                                    <tr>
+                                        <th>@Html.DisplayName("ICD No")</th>
+                                        <th>@Html.DisplayName("Container / CBT No")</th>
+                                        <th style="width:10%;">@Html.DisplayName("Size")</th>
+                                        <th style="width:15%;">@Html.DisplayName("Gross Wt(Kg)")</th>
+                                        <th style="width:15%;">@Html.DisplayName("CIF Value")</th>
+                                        <th style="width:15%;">@Html.DisplayName("Duty")</th>
+                                        <th style="width:15%;">@Html.DisplayName("Total")</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div id="DivTblCargo" class="col-md-12">
+                            <table class="table table-striped table-bordered dataTable" id="TblCargo" style="width:100%;">
+                                <thead>
+                                    <tr>
+                                        <th colspan="7">Cargo Details</th>
+                                    </tr>
+                                    <tr>
+                                        <th style="width:15%;">@Html.DisplayName("OBL / HBL No")</th>
+                                        <th>@Html.DisplayName("Cargo Description")</th>
+                                        <th style="width:15%;">@Html.DisplayName("Godown No")</th>
+                                        <th>@Html.DisplayName("Location")</th>
+                                        <th>@Html.DisplayName("Stack No")</th>
+                                        <th>@Html.DisplayName("Area")</th>
+                                        <th style="width:10%;">@Html.DisplayName("Net Wt")</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-left">
+                        <input type="submit" id="BtnSaveIssueSlip" class="btn btn-primary mr-1 btn-100px" value="Save">
+                        <input type="button" class="btn btn-primary-border btn-100px" value="Cancel" onclick="ReloadIssueSlipPage()">
+                    </div>
+
+                    <div class="logSuccMsg" style="background-color:transparent" id="DivIssueSlipMsg"></div>
+                    <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivIssueSlipErrMsg"></div>
+                </div>
+            }
+            @Scripts.Render("~/bundles/jqueryval")
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,940 @@
+﻿@model CwcExim.Areas.Import.Models.OBLEntryGateEntryV2
+<script src="~/Areas/Import/Scripts/App/Services/OBLEntryServiceV2.js"></script>
+<script src="~/Areas/Import/Scripts/App/Controllers/OBLEntryCtrlV2.js"></script>
+<script>
+    angular.bootstrap(document.getElementById('OBLEntryAppDiv'), ['CWCApp']);
+</script>
+<style>
+    .ang_srch {
+        top: 25%;
+        right: 6px;
+        height: 21px;
+        padding: 0 4px;
+        display: block;
+        background: #ebebe4;
+        position: absolute;
+        cursor: pointer;
+    }
+
+    #DivFormOneDet {
+        height: 584px;
+        overflow-x: hidden;
+    }
+
+    .slimScrollDiv {
+        height: 300px;
+    }
+
+    #tbleCommodity.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    #tbleImp.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .table.tblhd {
+        border-bottom: 0;
+    }
+</style>
+<style>
+    #tbleSline.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+</style>
+<div class="container-fluid" id="OBLEntryAppDiv" ng-controller="OBLEntryCtrl">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>Container Updation</h4>
+                    </div>
+                </div>
+                @using (Ajax.BeginForm("UpdateOBLEntryANdGateEntry", "Ppg_OblEntryV2", new AjaxOptions { Confirm = "Are you sure you want to save?", HttpMethod = "POST", OnSuccess = "UpdateShippOnSuccess", OnFailure = "JobOrderOnFailure" }))
+                {
+
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.StringifiedText)
+                    @Html.HiddenFor(m => m.Id)
+                    @Html.HiddenFor(m => m.IsAlreadyUsed)
+                    @Html.HiddenFor(m => m.ContIcesData)
+                    if (ViewBag.ListOfContainerNo != null)
+                    {
+                        <input type="hidden" id="hdnListOfContainerNo" value="@ViewBag.ListOfContainerNo" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="hdnListOfContainerNo" value="" />
+                    }
+                    <div id="DivJOHdr" class="Form_Space_bottom">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <div class="boolean-container">
+                                    <input type="hidden" id="OblEntrys1" name="ROblEntry" value="OblEntrys" />
+                                    <input type="hidden" id="ROblEntry" name="ROblEntry" value="0" />
+                                    <input checked="True" id="OblEntrys" name="Entry"onclick="ShowOblDiv()"   type="radio" value="OblEntrys">
+                                    <label for="OblEntrys"><i class="circle"></i><span>Obl Entry</span></label>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col_cus_3">
+                                <div class="boolean-container">
+                                    <input type="hidden" id="RGateEntry" name="RGateEntry" value="0" />
+                                    <input id="GateEntrys" name="Entry" type="radio" onclick="ShowGateDiv()" value="GateEntrys">
+                                    <label for="GateEntrys"><i class="circle"></i><span>Gate Entry</span></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12 ">
+                            <div class="obl_entry_sec" id="DivOblEntry">
+                                <h4>OBL Entry</h4>
+                                <div class="row Form_Space_top">
+                                    <div class="col-md-4 col_cus_2">
+                                        <label>Container / CBT No:</label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        @Html.HiddenFor(m => m.CFSCode)
+                                        @Html.TextBoxFor(m => m.ContainerNo, new { @class = "form-control input_sm" })
+                                        <span class="search" id="ContainerNoSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerNoModal"></i></span>
+                                    </div>
+                                </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="col-md-4 col_cus_2 padding_rt">
+                                        <label>Container / CBT Size:</label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        @Html.HiddenFor(m => m.ContainerSize)
+                                        @Html.DropDownList("ddlContainerSize", new List<SelectListItem>
+                                        {
+                                            new SelectListItem { Text="20",Value="20"},
+                                            new SelectListItem { Text="40",Value="40"},
+                                        }, "----Select----", new { @onchange = "$('#ContainerSize').val($('#ddlContainerSize').val())", @class = "form-control" })
+                                        @Html.ValidationMessageFor(m => m.ContainerSize, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="col_cus_2 padding_rt col-md-4">
+                                        <label>Shipping Line:</label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        @Html.HiddenFor(m => m.ShippingLineId)
+                                        @Html.TextBoxFor(m => m.ShippingLineName, new { @class = "form-control input_sm", @readonly = true })
+                                        <span class="search" id="ShippingLineSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ShippingLineModal"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="DivGateEntry">
+                                <h4>Gate Entry</h4>
+                                <div class="row Form_Space_top">
+                                    <div class="col-md-4 col_cus_2">
+                                        <label>Container / CBT No:</label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        @Html.HiddenFor(m => m.CFSCodeGate)
+                                        @Html.TextBoxFor(m => m.ContainerNoGate, new { @class = "form-control input_sm" })
+                                        <span class="search" id="ContainerNoSerachGate"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerNoModalGate"></i></span>
+                                    </div>
+                                </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="col-md-4 col_cus_2 padding_rt">
+                                        <label>Container / CBT Size:</label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        @Html.HiddenFor(m => m.ContainerSizeGate)
+                                        @Html.DropDownList("ddlContainerSizeGate", new List<SelectListItem>
+                                        {
+                                            new SelectListItem { Text="20",Value="20"},
+                                            new SelectListItem { Text="40",Value="40"},
+                                        }, "----Select----", new { @onchange = "$('#ContainerSizeGate').val($('#ddlContainerSizeGate').val())", @class = "form-control" })
+                                        @Html.ValidationMessageFor(m => m.ContainerSize, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="col_cus_2 padding_rt col-md-4">
+                                        <label>Shipping Line:</label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        @Html.HiddenFor(m => m.ShippingLineIdGate)
+                                        @Html.TextBoxFor(m => m.ShippingLineNameGate, new { @class = "form-control input_sm", @readonly = true })
+                                        <span class="search" id="ShippingLineSerachGate"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ShippingLineModalGate"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row SignUp_space_top2 mt-5">
+                        <div class="col-md-offset-4 col-md-2">
+                            <input type="submit" id="btnSave" class="btn log_Btn_sm" value="Save" ng-click="OnOBLEntrySave()" />
+                        </div>
+                        <div class="col-md-2">
+                            @*<input type="button" id="btnReset" class="btn log_Btn_sm" value="Reset" onclick="ResetAllField()" />*@
+                        </div>
+                    </div>
+                    <div class="logSuccMsg" id="DivMsg" style="background-color:transparent"></div>
+                    <div class="logErrMsg Form_Space_bottom" id="DivErrMsg" style="background-color:transparent"></div>
+                }
+
+                @*<div class="row">
+                    <div class="col-md-2 SignUp_space_bottom">
+                        <input type="button" id="BtnCommodityLoad" value="Show List" class="btn log_Btn_sm" onclick="LoadOblEntryList()" />
+                    </div>
+                </div>*@
+                <!--<div class="row Form_Space_top Form_Space_bottom">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-offset-5 col-md-4" style="text-align:right;">
+                            <label>ContainerNo/IGMNO:</label>
+                        </div>
+                        <div class="col-md-3">
+                            @Html.TextBox("ContainerNoIGMNO")-->
+                            @*<input id="PartyCode" name="PartyCode" type="text" value="gfh gf">*@
+                            <!--<span class="search"><i class="fa fa-search" aria-hidden="true" onclick="GetListOfOBLEntryContainerNo()"></i></span>
+                        </div>
+                    </div>
+                </div>-->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="tblEntryDet"></div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="OblEntryList"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal fade" id="ContainerNoModal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Container / CBT No</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="ContainerNobox" type="text" />
+                    <ul class="navList" id="lstContainerNo"></ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ContainerNoModalGate" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Container / CBT No</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="ContainerNoboxGate" type="text" />
+                    <ul class="navList" id="lstContainerNoGate"></ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="ShippingLineModal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" onclick="CloseEximTrader()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Shipping Line Names</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search By Shipping Line Name Or Party Code" id="ShpngLinebox" type="text" />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByPartyCode()"></i></span>
+
+                    <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="8" width="80%">Shipping Line Name</th>
+                                <th colspan="4" width="20%">Party Code</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div id="slim_scroll">
+                        <table class="table dataTable table-bordered table-striped slim_tble" id="tbleSline">
+                            @{
+                                if (ViewBag.lstShippingLine != null)
+                                {
+                                    foreach (var item in ViewBag.lstShippingLine)
+                                    {
+                                        <tr onclick="SelectShippingLine(@item.ShippingLineId,'@item.ShippingLineName')">
+                                            <td colspan="8" width="80%" class="txt_wrp">@item.ShippingLineName</td>
+                                            <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+                            }
+                            else
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" onclick="CloseEximTrader()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ShippingLineModalGate" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" onclick="CloseEximTraderGate()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Shipping Line Names</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search By Shipping Line Name Or Party Code" id="ShpngLinebox" type="text" />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByPartyCodeGate()"></i></span>
+
+                    <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="8" width="80%">Shipping Line Name</th>
+                                <th colspan="4" width="20%">Party Code</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div id="slim_scroll">
+                        <table class="table dataTable table-bordered table-striped slim_tble" id="tbleSlineGate">
+                            @{
+                                if (ViewBag.lstShippingLineGate != null)
+                                {
+                                    foreach (var item in ViewBag.lstShippingLineGate)
+                                    {
+                                        <tr onclick="SelectShippingLineGate(@item.ShippingLineId,'@item.ShippingLineName')">
+                                            <td colspan="8" width="80%" class="txt_wrp">@item.ShippingLineName</td>
+                                            <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTraderGate()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+                            }
+                            else
+                            {
+                                <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTraderGate()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" onclick="CloseEximTraderGate()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#DivOblEntry").show();
+        $("#DivGateEntry").hide();
+   
+        var obl = $("#OblEntrys1").val(val);
+        $("#ROblEntry").val(obl);
+    });
+    function ShowOblDiv() {
+        debugger;
+        $("#DivOblEntry").show();
+        $("#DivGateEntry").hide();
+        var obl = $("#OblEntrys").val();
+        $("#ROblEntry").val(obl);
+
+  
+    }
+
+    function ShowGateDiv() {
+        debugger;
+        $("#DivOblEntry").hide();
+        $("#DivGateEntry").show();
+        var gate = $("#GateEntrys").val();
+        $("#RGateEntry").val(gate);
+    }
+
+
+
+    function UpdateShippOnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            if ($('#DivMsg').hasClass('logErrMsg'))
+                $('#DivMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivMsg').html(data.Message);
+            // ResetAllFields();
+            //LoadActualArrivalList();
+            // setTimeout(function () { $('#DivMsg').html(''); }, 5000);
+
+        }
+        else {
+            if ($('#DivMsg').hasClass('logSuccMsg'))
+                $('#DivMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivMsg').html(data.Message);
+        }
+
+    }
+
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+    $(function () {
+        $('#slim_scroll_2').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+
+    $(function () {
+        $('#slim_scroll_1').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+    function OnTypeChange () {
+        if($("#CONTCBT").val()=='CBT'){
+            $("#ContainerSize").prop('disabled',true);
+        }
+        else{
+            $("#ContainerSize").prop('disabled',false);
+        }
+    }
+</script>
+
+
+<script>
+   
+    function GetListOfOBLEntryContainerNo() {
+        Page=0;
+        debugger;
+        $('#tblEntryDet').hide();
+
+        if ($('#ContainerNoIGMNO').val().trim() == '') {
+            alert('Enter ContainerNo or IGM  Number for searching');
+            return;
+        }
+        var ContainerNo =encodeURI($('#ContainerNoIGMNO').val().trim());
+        //alert(party);
+        //$('#OblEntryList').load('/Import/Ppg_OblEntry/ListOfOBLEntry');
+        $('#OblEntryList').load('/Import/Ppg_OblEntryV2/GetListOfOBLEntryGateContainerNoFor?ContainerNo=' + ContainerNo);//$('#PartyCode').val().replace(' ', '+')
+    }
+
+
+
+    function ShowDetails(){
+
+        if ($('#Id').val() > 0) {
+            return false;
+        }
+        else if ($('#ContainerNo').val() == '' || $('#ContainerNo').val() == null) {
+            alert("Please enter Container / CBT No.");
+            return false;
+        }
+            //else if ($('#ContainerSize').val() == '' || $('#ContainerSize').val() == '----Select----' && $('#ContainerSize').val() == null) {
+            //    alert("Please select Container Size.");
+            //    return false;
+            //}
+            //else if ($('#IGM_No').val() == '' || $('#IGM_No').val() == null) {
+            //    alert("Please enter IGM No.");
+            //    return false;
+            //}
+            //else if ($('#IGM_Date').val() == '' || $('#IGM_Date').val() == null) {
+            //    alert("Please select IGM Date.");
+            //    return false;
+            //}
+        else {
+
+            $.ajax({
+                type: 'GET',
+                url: '/Import/Ppg_OblEntryV2/GetCFSCodeFromContainer',
+                data: { ContainerNo: $('#ContainerNo').val(), ContainerSize: $('#ContainerSize').val(),CFSCode:$('#CFSCode').val() },
+                dataType: 'JSON',
+                success: function (data) {
+                    if (data.Status == 0) {
+                        $('#CFSCode').val('');
+                        angular.element('#OBLEntryAppDiv').scope().GetOBLDetails();
+                        angular.element('#OBLEntryAppDiv').scope().$apply();
+                        //GetOBLDetails();
+                    }
+                    else if (data.Status == 1) {
+                        $('#CFSCode').val(data.Data);
+                        angular.element('#OBLEntryAppDiv').scope().GetOBLDetails();
+                        angular.element('#OBLEntryAppDiv').scope().$apply();
+                        //GetOBLDetails();
+                    }
+                    else if (data.Status == 2) {
+                        $('#CFSCode').val('');
+                        alert("This Container / CBT is alredy exists in OBL Entry.");
+                        angular.element('#OBLEntryAppDiv').scope().OblEntryDetails.length=0;
+                        //ArrayJODetails=[];
+                        $('#tblJODet tbody').html('');
+                        $('#tblJODet').hide();
+                        return false;
+                    }
+                },
+            });
+
+        }
+
+
+    }
+
+    function isDecimalNumber(event) {
+        let charCode = (event.which) ? event.which : event.keyCode;
+        if (charCode != 46 && charCode > 31
+            && (charCode < 48 || charCode > 57))
+            return false;
+        return true;
+    }
+
+    function isNumber(evt) {
+        evt = (evt) ? evt : window.event;
+        var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+            return false;
+        }
+        return true;
+    }
+
+
+
+    function LoadOblEntryList() {
+        $('#tblEntryDet').html('');
+        $('#OblEntryList').load('/Import/Ppg_OblEntryV2/ListOfOBLEntryGateEntry?Page=0');
+    }
+    //function LoadOblEntryList() {
+    //    $('#OblEntryList').load('/Import/Ppg_OblEntry/ListOfOBLEntry');
+    //}
+    $('#ContainerNobox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstContainerNo > li').show();
+        else {
+            $('#lstContainerNo > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    var ListOfContainerNo=[];
+    $('#ContainerNoSerach').on("click", function () {
+        debugger;
+        $.ajax({
+            url: "/Import/Ppg_OblEntryV2/GetTContainerNoForOBLEntryObjl",
+            type: "GET",
+            dataType: "JSON",
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    var Html = '';
+                    ListOfContainerNo=data.Data;
+                    $.each(data.Data, function (i, item) {
+                        
+                        Html += '<li id=' + item.ContainerNo + ' onclick="FillContainerBox(&quot;' + item.ContainerNo + '&quot;,&quot;' + item.Size + '&quot;,&quot;' + item.CFSCode + '&quot;)">' + item.ContainerNo + '</li>';
+                    });
+                    $('#lstContainerNo').html(Html);
+                }
+            }
+
+        });
+    });
+
+    function FillContainerBox(ContainerNo,Size,CFSCode) {
+        debugger;
+        //var ContainerNo=ContainerNo.id==''?ContainerNo:ContainerNo.id;
+        $('#ContainerNo').val(ContainerNo);
+        $('#ContainerSize,#ddlContainerSize').val(Size);
+        $('#CFSCode').val(CFSCode);      
+        $("#ContainerNoModal").modal("hide");
+        GetContainerDet(ContainerNo);
+    }
+
+    function GetContainerDet(ContainerNo) {
+        debugger;
+        //$('#ContainerNo').val($(this).text());
+        //$('#CFSCode').val($(this).attr('id'));
+        //$('#ContainerSize').val($(this).attr('id'));
+
+        @*//ListOfContainerNo= @Html.Raw(Json.Encode(ViewBag.ListOfContainerNo));*@
+        //var ListContainerNo=JSON.parse(hdnListOfContainerNo);
+
+        var resultAarray = $.grep(ListOfContainerNo, function (item) {
+            return item.ContainerNo==$('#ContainerNo').val();
+        });
+        $('#MovementType,#ddlMovementType').val(resultAarray[0].MovementType);
+        //$.ajax({
+        //    type: 'GET',
+        //    url: '/Import/Ppg_OblEntry/GetContainerSize',
+        //    dataType: 'JSON',
+        //    data : {CFSCode : $('#CFSCode').val()},
+        //    success: function (data) {
+        //        if (data != null) {
+        //            $('#ContainerSize').val(data);
+        //            //GetOBLDetails();
+        //        }
+        //    }
+        //});
+
+        $("#ContainerNoModal").modal("hide");
+    }
+
+
+// for Gate Entry 
+    $('#ContainerNoboxGate').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstContainerNoGate > li').show();
+        else {
+            $('#lstContainerNoGate > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    var ListOfContainerNo = [];
+    $('#ContainerNoSerachGate').on("click", function () {
+        debugger;
+        $.ajax({
+            url: "/Import/Ppg_OblEntryV2/GetTContainerNoForOBLEntryGate",
+            type: "GET",
+            dataType: "JSON",
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    var Html = '';
+                    ListOfContainerNo = data.Data.LstContainerInfo;
+                    $.each(data.Data.LstContainerInfo, function (i, item) {
+                     
+                        Html += '<li id=' + item.ContainerNo + ' onclick="FillContainerBoxGate(&quot;' + item.ContainerNo + '&quot;,&quot;' + item.CFSCode + '&quot;,&quot;' + item.Size + '&quot;)">' + item.ContainerNo + '</li>';
+                    });
+                    $('#lstContainerNoGate').html(Html);
+                }
+            }
+
+        });
+    });
+
+    function FillContainerBoxGate(ContainerNo, CFSCode, Size) {
+        debugger;
+        //var ContainerNo=ContainerNo.id==''?ContainerNo:ContainerNo.id;
+        $('#ContainerNoGate').val(ContainerNo);
+        $('#ContainerSizeGate,#ddlContainerSizeGate').val(Size);
+        $('#CFSCodeGate').val(CFSCode);
+        $("#ContainerNoModalGate").modal("hide");
+        GetContainerDetGate(ContainerNo);
+    }
+
+    function GetContainerDetGate(ContainerNo) {
+        debugger;
+        //$('#ContainerNo').val($(this).text());
+        //$('#CFSCode').val($(this).attr('id'));
+        //$('#ContainerSize').val($(this).attr('id'));
+
+        @*//ListOfContainerNo= @Html.Raw(Json.Encode(ViewBag.ListOfContainerNo));*@
+        //var ListContainerNo=JSON.parse(hdnListOfContainerNo);
+
+        var resultAarray = $.grep(ListOfContainerNo, function (item) {
+            return item.ContainerNo == $('#ContainerNoGate').val();
+        });
+        //$('#MovementType,#ddlMovementType').val(resultAarray[0].MovementType);
+        //$.ajax({
+        //    type: 'GET',
+        //    url: '/Import/Ppg_OblEntry/GetContainerSize',
+        //    dataType: 'JSON',
+        //    data : {CFSCode : $('#CFSCode').val()},
+        //    success: function (data) {
+        //        if (data != null) {
+        //            $('#ContainerSize').val(data);
+        //            //GetOBLDetails();
+        //        }
+        //    }
+        //});
+
+        $("#ContainerNoModalGate").modal("hide");
+    }
+
+
+// End Gate Entry 
+
+
+
+
+    var Page = 0;
+    function LoadMoreEximTrader() {
+        debugger;
+        $.ajax({
+            url: '/Import/Ppg_OblEntryV2/LoadEximtradeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (datas) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + ',&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleSline tbody').html(html);
+                    else
+                        $('#tbleSline tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadEximTrader() {
+        debugger;
+        Page=0;
+        $.ajax({
+            url: '/Import/Ppg_OblEntryV2/LoadEximtradeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+              
+                        html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    $('#tbleSline tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+    // Gate Entry 
+    function LoadEximTraderGate() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/Import/Ppg_OblEntryV2/LoadEximtradeGateList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+               
+                        html += '<tr onclick="SelectShippingLineGate(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    $('#tbleSlineGate tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+    var Page = 0;
+    function LoadMoreEximTraderGate() {
+        debugger;
+        $.ajax({
+            url: '/Import/Ppg_OblEntryV2/LoadEximtradeGateList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectShippingLineGate(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + ',&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleSlineGate tbody').html(html);
+                    else
+                        $('#tbleSlineGate tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+// End
+
+    function SearchByPartyCode() {
+        if ($('#ShpngLinebox').val() != '') {
+            $.ajax({
+                url: '/Import/Ppg_OblEntryV2/SearchByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#ShpngLinebox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstShippingLine, function (item, elem) {
+                            html += '<tr onclick="SelectShippingLineGate(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleSline tbody').html('');
+                        $('#tbleSline tbody').html(html);
+                        $('#btnLoadMore').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleSline tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadEximTrader();
+    }
+    function SearchByPartyCodeGate() {
+        debugger;
+        if ($('#ShpngLinebox').val() != '') {
+            $.ajax({
+                url: '/Import/Ppg_OblEntryV2/SearchByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#ShpngLinebox').val() },
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstShippingLine, function (item, elem) {
+                            html += '<tr onclick="SelectShippingLineGate(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleSlineGate tbody').html('');
+                        $('#tbleSlineGate tbody').html(html);
+                        $('#btnLoadMore').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleSlineGate tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadEximTrader();
+    }
+
+
+    function SelectShippingLine(ShippingLineId, ShippingLineName) {
+        debugger;
+        $('#ShippingLineName').val(ShippingLineName);
+        $('#ShippingLineId').val(ShippingLineId);
+        $("#ShippingLineModal").modal("hide");
+        $("#ShippingLineModalGate").modal("hide");
+        $('#ShpngLinebox').val('');
+        LoadEximTrader();
+    }
+
+
+    //Get Gate Entry
+    function SelectShippingLineGate(ShippingLineId, ShippingLineName) {
+        debugger;
+        $('#ShippingLineNameGate').val(ShippingLineName);
+        $('#ShippingLineIdGate').val(ShippingLineId);
+        $("#ShippingLineModalGate").modal("hide");
+        $("#ShippingLineModal").modal("hide");
+        $('#ShpngLinebox').val('');
+        LoadEximTraderGate();
+    }
+    //
+    function CloseEximTrader()
+    {
+        debugger;
+        $('#ShpngLinebox').val('');
+        $("#ShippingLineModal").modal("hide");
+
+        LoadEximTrader();
+    }
+    function CloseEximTraderGate()
+    {
+        debugger;
+        $('#ShpngLinebox').val('');
+
+        $("#ShippingLineModalGate").modal("hide");
+        LoadEximTrader();
+    }
+    //$('#ShippingLinebox').keyup(function () {
+    //    var val = $(this).val().toLowerCase();
+    //    if (val == "")
+    //        $('#lstShippingLine > li').show();
+    //    else {
+    //        $('#lstShippingLine > li').each(function () {
+    //            var text = $(this).text().toLowerCase();
+    //            (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+    //        });
+    //    }
+    //});
+    //$('#lstShippingLine > li').on("click", function () {
+    //    $('#ShippingLineName').val($(this).text());
+    //    $('#ShippingLineId').val($(this).attr('id'));
+    //    $("#ShippingLineModal").modal("hide");
+    //});
+
+
+   
+</script>
+

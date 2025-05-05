@@ -1,0 +1,363 @@
+﻿@model CwcExim.Areas.Export.Models.Dnd_VesselInf
+<script>
+    var TimeInSeconds;
+    $(document).ready(function () {
+
+        TimeInSeconds = 5000;
+    });
+    function LoadVesselPage() {
+
+        $('#DivVesselList').load('/Export/Dnd_CWCExport/GetVesselList');
+    }
+    function LoadLoadedContainerRequestSearch() {
+
+        debugger;
+        if ($('#containersearchtxt').val().trim() == '') {
+            alert('Enter Vassel/Via. for searching');
+            return;
+        }
+        $('#tblArrayContDet').html('');
+        var containersearch = encodeURI($('#containersearchtxt').val().trim());
+        // $('#CCINEntryList').empty();
+        $('#DivVesselList').load('/Export/Dnd_CWCExport/GetVesselListSearch?Search=' + containersearch);
+
+    }
+    $('#ETA').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='ETA']").html('');
+        }
+    });
+    $('#ETD').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='ETD']").html('');
+        }
+    });
+
+    //$('#CutOfTime').datepicker({
+    //    dateFormat: "dd/mm/yy",
+    //    showOn: "button",
+    //    buttonImage: "/Content/images/calendar.png",
+    //    buttonImageOnly: true,
+    //    buttonText: "Select date",
+    //    changeMonth: true,
+    //    changeYear: true,
+    //    showAnima: "fadein",
+    //    onClose: function () {
+    //        $("[data-valmsg-for='ETD']").html('');
+    //    }
+    //});
+    $('.clockpicker').clockpicker({
+        donetext: 'Done',
+        twelvehour: true
+        //duration : true
+    });
+    $(document).ready(function () {
+
+        var editTime = $("#EditTime").val();
+        //alert(editTime);
+        if (editTime != null && editTime != "") {
+            $("#time").val(editTime);
+        }
+    });
+    function VesselOnSuccess(data) {
+
+        if (data.Status == 1) {
+            if ($('#DivMsg').hasClass('logErrMsg'))
+                $('#DivMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivMsg').html(data.Message);
+            setTimeout(VesselReset, TimeInSeconds);
+            LoadVesselPage();
+
+        }
+        else {
+            if ($('#DivMsg').hasClass('logSuccMsg'))
+                $('#DivMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivMsg').html(data.Message);
+        }
+        setTimeout(function () { $('#DivMsg').html(''); }, 5000);
+
+
+    }
+
+    function VesselOnFailure() {
+        $('#DivBody').load('/Export/Dnd_CWCExport/CreateVesselInformation');
+    }
+    function ResetValidation() {
+        $('.field-validation-error').each(function () {
+            $(this).html("");
+        })
+    }
+    function VesselReset() {
+
+        ResetValidation();
+        $('[data-valmsg-for="VesselId"]').html('<span></span>');
+        $('[data-valmsg-for="VIA"]').html('<span></span>');
+        $('[data-valmsg-for="Vessel"]').html('<span></span>');
+        $('[data-valmsg-for="PortOfLoadingName"]').html('<span></span>');
+        $('[data-valmsg-for="ETA"]').html('<span></span>');
+        $('[data-valmsg-for="ETD"]').html('<span></span>');
+        //$('[data-valmsg-for="CutOfTime"]').html('<span></span>');
+        $('[data-valmsg-for="PortOfLoadingId"]').html('<span></span>');
+        $('#VesselId').val('');
+        $('#VIA').val('');
+        $('#Vessel').val('');
+        $('#PortOfLoadingName').val('');
+        $('#ETA').val('');
+        $('#ETD').val('');
+        //$('#CutOfTime').val('');
+        //$('#CutOfTime').val('');
+        $('#DivMsg').html("");
+    }
+
+
+    //$('#PortModal').keyup(function () {
+    //    var valThis = $(this).val().toLowerCase();
+    //    if (valThis == "")
+    //        $('#lstPort > li').show();
+    //    else {
+    //        $('#lstPort > li').each(function () {
+    //            var text = $(this).text().toLowerCase();
+    //            (text.indexOf(valThis) >= 0 ? $(this).show() : $(this).hide());
+    //        });
+    //    }
+    //});
+
+
+    $('#lstPort li').on("click", function () {
+        $('#PortOfLoadingName').val($(this).text());
+        $('#PortOfLoadingId').val($(this).attr('id'));
+        $("#PortModal").modal("hide");
+    });
+
+
+    $('#Portbox').keyup(function () {
+        debugger
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstPort > li').show();
+        else {
+            $('#lstPort > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+
+</script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.Confirm = "Are You Sure  To Save?";
+    options.OnSuccess = "VesselOnSuccess";
+    options.OnFailure = "VesselOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("AddEditVesselInformation", "Dnd_CWCExport", options))
+                {
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Vessel Information</h4>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>VIA:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.VIA, new { @class = "form-control input_sm" })
+                                @Html.ValidationMessageFor(m => m.VIA, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4-5 col_cus_offset_3 col_cus_2 padding_rt">
+                                <label>Vessel</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.Vessel, new { @class = "form-control input_sm" })
+                                @Html.ValidationMessageFor(m => m.Vessel, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Port of Loading:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                <span class="ReQSimbol">*</span>
+                                @Html.HiddenFor(m => m.PortOfLoadingId)
+                                @Html.TextBoxFor(m => m.PortOfLoadingName, new { @class = "form-control input_sm", @readonly = true })
+                                <span class="search" id="ShippingLineSerach"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PortModal"></i></span>
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4-5 col_cus_offset_3 col_cus_2 padding_rt">
+                                <label>Cut Off Time</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                <div class="input-group clockpicker" data-placement="left" data-align="top">
+                                    @Html.TextBoxFor(m => m.CutOfTime, new { @class = "form-control", Value = DateTime.Now.ToString("HH:mm:ss"), @readonly = true })
+                                    <span class="input-group-addon" style="padding:2px 10px;">
+                                        <span class="glyphicon glyphicon-time"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Expected Date Of Arrival :</label>
+                            </div>
+                            <div class="col-md-2-5 col_cus_2_5 Date_Img">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.ETA, new { @size = 10, @maxlength = 10, @readonly = true })
+                                @Html.ValidationMessageFor(m => m.ETA, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4-5 col_cus_offset_3 col_cus_2 padding_rt">
+                                <label>Expected Date Of Departure:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.ETD, new { @size = 10, @maxlength = 10, @readonly = true })
+                                @Html.ValidationMessageFor(m => m.ETA, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="stoke SignUp_space_top2 SignUp_space_bottom2"></div>
+                    </div>
+
+                    <div class="row SignUp_space_top2">
+                        <div class="col-md-offset-4-5 col-md-1-5">
+                            <input style="width:100% !important; margin-left:0;" type="submit" id="btnSave" class="btn log_Btn_sm" value="Save" />
+                        </div>
+                        <div class="col-md-2 col-md-1-5">
+                            <input style="width:100% !important; margin-left:0;" type="reset" id="btnReset" class="btn log_Btn_sm" value="Reset" />
+                        </div>
+                        @*<div class="col-md-2">
+                                <input style="width:100% !important; margin-left:0;" type="button" id="vlst" class="btn log_Btn_sm" value="Get Vessel List" onclick="LoadVesselPage()" />
+                            </div>*@
+                    </div>
+
+                    <div class="logSuccMsg" id="DivMsg" style="background-color:transparent">
+                        <div id="DivMsg"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-1-5 SignUp_space_bottom">
+                            <input style="width:100% !important; margin-left:0;" type="button" id="vlst" class="btn log_Btn_sm" value="Show List" onclick="LoadVesselPage()" />
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top Form_Space_bottom">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-offset-5 col-md-4" style="text-align:right;">
+                                <label>Vessel /Via  :</label>
+                            </div>
+                            <div class="col-md-3">
+                                @Html.TextBox("containersearchtxt")
+                                @*<input id="PartyCode" name="PartyCode" type="text" value="gfh gf">*@
+                                <span class="search"><i class="fa fa-search" aria-hidden="true" onclick="LoadLoadedContainerRequestSearch()"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 SignUp_space_bottom">
+                            <div id="DivVesselList">
+                            </div>
+                        </div>
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="CHAModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+
+    </div>
+</div>
+
+<div id="PortModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title"> List of Port</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Portbox" type="text" />
+                <ul class="navList" id="lstPort">
+                    @{
+                        if (@ViewBag.ListOfPort != null)
+                        {
+                            foreach (var item in @ViewBag.ListOfPort)
+                            {
+                                <li id="@item.PortId">@item.PortName</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+<div class="modal fade" id="CommodityModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+
+

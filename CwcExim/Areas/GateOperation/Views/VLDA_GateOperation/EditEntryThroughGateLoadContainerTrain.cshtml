@@ -1,0 +1,1269 @@
+﻿
+@model CwcExim.Areas.GateOperation.Models.WfldEntryThroughGate
+
+@{
+    AjaxOptions options = new AjaxOptions();
+    //options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "GateEntryOnSuccess";
+    options.OnFailure = "GateEntryOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<style>
+    #tbleSline.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    #tbleCha.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .slimScrollDiv {
+        height: 300px;
+    }
+
+    .table.tblhd {
+        border-bottom: 0;
+    }
+</style>
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+    $(function () {
+        $('#slim_scroll_1').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+    var TimeInSeconds;
+    $(document).ready(function () {
+       // GetEntryThroughGateList();
+        TimeInSeconds = 3000;
+
+        var SystemDateTime = $('#SystemDateTime').val();
+        var SplitSysDateTime = SystemDateTime.split(' ', 3);
+        $('#SystemDateTime').val(SplitSysDateTime[0]);
+        $('#SysEditTime').val(SplitSysDateTime[1] + " " + SplitSysDateTime[2]);
+        //$("#Size").rules("remove", "required");
+        ////$("#ContainerLoadType").rules("remove", "required");
+        ////$("#TransportFrom").rules("remove", "required");
+        //$("#CargoType").rules("remove", "required");
+        var radioValue = $("#TransportMode").val();
+      
+            document.getElementById("Train").checked = true;
+        
+
+    });
+
+    function GetEntryThroughGateList() {
+        debugger;
+
+        $('#DivGateEntryList').load( '/GateOperation/VLDA_GateOperation/EntryThroughTrainGateList');
+    }
+    $('#btnSave').on('click', function () {
+        if ($('#IsCBT').is(':checked') && $('#TPNo').val() == '') {
+            $('#errTP').html('<span>Enter TP No.</span>');
+            return false;
+        }
+        else {
+            $('#errTP').html('<span></span>');
+            return true;
+        }
+    });
+
+
+</script>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4 postn_rel">
+                @*@using (Ajax.BeginForm("", "", new AjaxOptions
+                    {
+                        Confirm = "Are you sure you want to Save?",
+                        HttpMethod = "POST",
+                        OnSuccess = "GateEntryOnSuccess",
+                        OnFailure = "GateEntryOnFailure"
+                    }))
+                    {*@
+
+                @using (Ajax.BeginForm("AddEditEntryThroughGate", "VLDA_GateOperation", options))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.OperationType)
+                    @*@Html.HiddenFor(m=>m.JsonContainer)*@
+                    @*<input type="hidden" id="JsonContainer" value="@ViewBag.JSONResult" name="JsonContainer" />*@
+                    // <input type="hidden" id="lstGateEntryExport" name="lstGateEntryExport" value="@ViewBag.lstGateEntryExport" />
+
+                    if (@ViewBag.lstReferenceNumberList != null && @ViewBag.lstReferenceNumberList != "")
+                    {
+                        <input type="hidden" id="lstReferenceNumberList" name="lstReferenceNumberList" value="@ViewBag.lstReferenceNumberList" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="lstReferenceNumberList" name="lstReferenceNumberList" value="" />
+                    }
+
+                    if (ViewBag.RightsList != null)
+                    {
+                        <input type="hidden" id="hdnRights" value="@ViewBag.RightsList" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="hdnRights" value="" />
+                    }
+
+                    if (@ViewBag.lstCHA != null)
+                    {
+                        <input type="hidden" id="CHAList" name="CHAList" value="@ViewBag.lstCHA" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="CHAList" name="CHAList" value="" />
+                    }
+                    if (@ViewBag.lstShippingLine != null)
+                    {
+                    <input type="hidden" id="lstShippingLine" name="lstShippingLine" value="@ViewBag.lstShippingLine" />
+                    }
+                    else
+                    {
+                        <input type="hidden" id="lstShippingLine" name="lstShippingLine" value="" />
+                    }
+
+                    @Html.HiddenFor(m => m.EntryId)
+
+                    <div class="time_sec" onload="startTime()"><span id="Time"></span></div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Entry Through Gate Export Loaded</h4>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Transport Mode:</label>
+                            </div>
+                            @Html.HiddenFor(m => m.TransportMode)
+
+                            @{
+                                if (Model.TransportMode == 1)
+                                {
+
+                                    <div class="col-md-1-5">
+                                        <div class="boolean-container">
+                                            @Html.RadioButton("Mode", "By Train", new { @id = "Train", @checked = true, @onclick = "GetRadioTransportModeVal();" })
+                                            <label for="Train"><i class="circle"></i><span>By Train</span></label>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+
+                                    <div class="col-md-1-5">
+                                        <div class="boolean-container">
+                                            @Html.RadioButton("Mode", "By Train", new { @id = "Train", @checked = true, @onclick = "GetRadioTransportModeVal();" })
+                                            <label for="Train"><i class="circle"></i><span>By Train</span></label>
+                                        </div>
+                                    </div>
+                                }
+
+                            }
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Container Type :</label>
+                            </div>
+                            <div class="col-md-1-5">
+                                @*<div class="boolean-container">
+                                        @Html.RadioButton("ContainerType", "Empty", new { @class = "", @id = "Empty", @onclick = "GetRadioVal();" })
+                                        <label for="Empty"><i class="circle"></i><span>Empty</span></label>
+                                    </div>*@
+                            </div>
+                            <div class="col-md-1-5">
+                                <div class="boolean-container">
+                                    @Html.RadioButton("ContainerType", "Loaded", new { @class = "", @id = "Loaded", @onclick = "GetRadioVal();", @checked = true })
+                                    <label for="Loaded"><i class="circle"></i><span>Loaded</span></label>
+                                </div>
+                            </div>
+                            @*<div class="col-md-1-5 col-md-offset-4">
+                                    @Html.LabelFor(m => m.ContainerNo, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-2-5" >
+                                    <div id="LoadedDiv">
+                                        @Html.HiddenFor(m => m.ContainerId, new { @value = "0" })
+                                        @Html.TextBoxFor(m => m.ContainerNo, new { @class = "form-control input-sm", @readonly = true })
+                                        <span class="search" id="ShippingLineSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerModal"></i></span>
+                                        @Html.ValidationMessageFor(m => m.ContainerNo)
+                                    </div>
+                                </div>*@
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Operation Type :</label>
+                            </div>
+
+
+
+                            <div class="col-md-4">
+                                <div class="boolean-container">
+                                    @Html.RadioButton("OperationType", "LoadedContainer", new { @class = "", @id = "LoadedContainer", @checked = true })
+                                    @*, @checked = true, @onclick = "GoToLoaadedContainer();"*@
+                                    <label for="LoadedContainer"><i class="circle"></i><span>Export Loaded Container</span></label>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.Label("CFS Code", new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.CFSCode, new { @class = "form-control input-sm", @readonly = "true" })
+                                @Html.ValidationMessageFor(m => m.CFSCode, "", new { @class = "Error_Msg" })
+                            </div>
+
+                            <div class="col-md-1-5 col_cus_2 col-md-offset-2 col_cus_offset_0_5 padding_rt">
+                                <label>System Date & Time:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                @Html.TextBoxFor(m => m.SystemDateTime, new { @class = "form-control", placeholder = "dd/mm/yyyy", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.SystemDateTime, "", new { @class = "Error_Msg", Value = DateTime.Today.ToString("dd/MM/yyyy") })
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                <div>
+                                    <input type="text" id="SysEditTime" name="SysEditTime" class="form-control" readonly="readonly" style="background-color:#fff;z-index:0;" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.GateInNo, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.GateInNo, new { @class = "form-control input-sm", @readonly = "true" })
+                                @Html.ValidationMessageFor(m => m.GateInNo, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-2 col_cus_offset_0_5 col_cus_2">
+                                <label>Entry Date & Time:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBoxFor(m => m.EntryDateTime, new { @class = "form-control", placeholder = "dd/mm/yyyy", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.EntryDateTime, "", new { @class = "Error_Msg", Value = DateTime.Today.ToString("dd/MM/yyyy") })
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                <div class="input-group clockpicker" data-placement="left" data-align="top">
+                                    <input type="text" id="time" name="time" class="form-control" value="00:00" readonly="readonly" style="background-color:#fff;z-index:0;" />
+                                    <input type="hidden" id="EditTime" name="EditTime" value="@ViewBag.strTime" />
+                                    <span class="input-group-addon" style="padding:2px 10px;">
+                                        <span class="glyphicon glyphicon-time"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.ReferenceNo, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.HiddenFor(m => m.ReferenceNoId, new { @value = "0" })
+                                @Html.TextBoxFor(m => m.ReferenceNo, new { @class = "form-control input-sm", @readonly = true })
+                                <span class="search" id="ShippingLineSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ReferenceModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.ReferenceNo)
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                @Html.LabelFor(m => m.ReferenceDate, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBoxFor(m => m.ReferenceDate, new { @class = "form-control", placeholder = "dd/mm/yyyy", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.ReferenceDate, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.ShippingLine, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                @*@Html.TextBoxFor(m => m.ShippingLine, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(m => m.ShippingLine, "", new { @class = "Error_Msg" })*@
+
+                                @Html.HiddenFor(m => m.ShippingLineId)
+                                @Html.TextBoxFor(m => m.ShippingLine, new { @class = "form-control input-sm", @readonly = true })
+                                @*, @readonly = true*@
+                                <span class="search" id="ShippingLineSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ShippingLineModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.ShippingLine)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5" style="padding-right:0px;">
+                                @Html.LabelFor(m => m.CHAName, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-10-5">
+                                @Html.TextBoxFor(m => m.CHAName, new { @class = "form-control input-sm", @readonly = true })
+                                @Html.HiddenFor(m => m.CHAId, new { @value = "0" })
+                                <span class="search" id="CHASearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CHAModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.CHAName, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Container No:</label>
+                            </div>
+                            <div class="col-md-2-5" id="ContainerNo1Div">
+                                @Html.TextBoxFor(m => m.ContainerNo1, new { @class = "form-control input-sm" })
+                                @Html.ValidationMessageFor(m => m.ContainerNo1, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1 padding_rt">
+                                @Html.LabelFor(m => m.Size, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                @Html.DropDownListFor(m => m.Size, new List<SelectListItem>
+                               {
+                                new SelectListItem { Text="20",Value="20"},
+                                new SelectListItem { Text="40",Value="40"},
+                                }, "----Select----", new { @class = "form-control input-sm" })
+                                @Html.ValidationMessageFor(m => m.Size, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1 padding_rt">
+                                <label style="display:none">Reefer:</label>
+                            </div>
+                            <div class="col-md-1">
+                                <div class="boolean-container" style="display:none">
+                                    @Html.CheckBoxFor(m => m.Reefer)
+                                    <label for="Reefer"><i class="square"></i></label>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Custom Seal No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.CustomSealNo, new { @class = "form-cotrol input-sm" })
+                                @Html.ValidationMessageFor(m => m.CustomSealNo, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                <label>Shipping Line No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.ShippingLineSealNo, new { @class = "form-cotrol input-sm" })
+                                @Html.ValidationMessageFor(m => m.ShippingLineSealNo, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.VehicleNo, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.VehicleNo, new { @class = "form-cotrol input-sm" })
+                                @Html.ValidationMessageFor(m => m.VehicleNo, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-4">
+                                <div class="col-md-1">
+                                    <label>CBT</label>
+                                </div>
+                                <div class="col-md-1">
+                                    <div class="boolean-container">
+                                        @Html.CheckBoxFor(m => m.IsCBT)
+                                        <label for="IsCBT"><i class="square"></i></label>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    @Html.TextBoxFor(x => x.TPNo, new { @class = "form-cotrol input-sm", @placeholder = "Enter TP No." })
+                                    <span id="errTP" class="Error_Msg"></span>
+                                </div>
+
+                            </div>
+                            <div class="col-md-1-5  padding_rt">
+                                <label>Challan No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.ChallanNo, new { @class = "form-cotrol input-sm" })
+                                @Html.ValidationMessageFor(m => m.ChallanNo, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    @*<div class="row">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-2">
+                                    @Html.LabelFor(m => m.CargoDescription, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="col-md-10">
+                                    @Html.TextAreaFor(m => m.CargoDescription, new { @class = "form-cotrol input-sm", @style = "width:100%;height:100px;" })
+                                    @Html.ValidationMessageFor(m => m.CargoDescription, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>*@
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            @Html.LabelFor(m => m.CargoType, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                        </div>
+                                        <div class="col-md-2-5">
+                                            @Html.DropDownListFor(m => m.CargoType, new List<SelectListItem>
+                                {
+                                    new SelectListItem { Text="HAZ",Value="1"},
+                                     new SelectListItem { Text="NON-HAZ",Value="2"}
+                                }, "----Select----", new { @class = "form-control input-sm dropdown" })
+                                            @Html.ValidationMessageFor(m => m.CargoType, "", new { @class = "Error_Msg" })
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>No of Packages:</label>
+                                        </div>
+                                        <div class="col-md-2-5">
+                                            @Html.TextBoxFor(m => m.NoOfPackages, new { @class = "form-control intpu-sm" })
+                                            @Html.ValidationMessageFor(m => m.NoOfPackages, "", new { @class = "Error_Msg" })
+                                        </div>
+                                        <div class="col-md-offset-4 col-md-1-5 col_cus_offset_3 col_cus_2">
+                                            @Html.LabelFor(m => m.GrossWeight, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                        </div>
+                                        <div class="col-md-2-5">
+                                            @Html.TextBoxFor(m => m.GrossWeight, new { @class = "form-control input-sm" })
+                                            @Html.ValidationMessageFor(m => m.GrossWeight, "", new { @class = "Error_Msg" })
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>Depositor Name:</label>
+                                        </div>
+                                        <div class="col-md-10-5 col_cus_10">
+                                            @Html.TextBoxFor(m => m.DepositorName, new { @class = "form-control intpu-sm", @maxlength = "100" })
+                                            @Html.ValidationMessageFor(m => m.DepositorName, "", new { @class = "Error_Msg" })
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            @Html.LabelFor(m => m.Remarks, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                        </div>
+                                        <div class="col-md-10-5 col_cus_10">
+                                            @Html.TextAreaFor(m => m.Remarks, new { @class = "form-control intpu-sm", @style = "width:100%;height:100px;" })
+                                            @Html.ValidationMessageFor(m => m.Remarks, "", new { @class = "Error_Msg" })
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-1-5 col_cus_2">
+                                            <label>Cargo Description:</label>
+                                        </div>
+                                        <div class="col-md-10-5 col_cus_10">
+                                            @Html.TextAreaFor(m => m.CargoDescription, new { @class = "form-cotrol input-sm", @style = "width:100%;height:100px;" })
+                                            @Html.ValidationMessageFor(m => m.CargoDescription, "", new { @class = "Error_Msg" })
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="stoke SignUp_space_top SignUp_space_bottom"></div>
+                                </div>
+                                <div class="row Form_Space_top">
+                                    <div class="col-md-12 SignUp_space_bottom">
+                                        <div class="col-md-offset-4 col-md-2">
+                                            <input type="submit" onclick="ValidedField();" value="Save" class="btn log_Btn_sm" id="btnSave" />
+                                        </div>
+                                        <div class="col-md-2">
+                                            @*<input type="button" value="Reset" id="btnReset" class="btn log_Btn_sm" onclick="ResetGateEntry()" />*@
+                                            <input type="button" value="Back" id="btnBack" class="btn log_Btn_sm" onclick="LoadGateEntryView()" />
+                                        </div>
+                                    </div>
+                                    <div class="logSuccMsg SignUp_space_bottom2" style="background-color:transparent">
+                                        <div id="DivEntryThroughGateMsg"></div>
+                                    </div>
+                                </div>
+
+                                <div id="ContainerModal" class="modal fade" role="dialog">
+                                    <div class="modal-dialog">
+                                        <!-- Modal content-->
+                                        <div class="modal-content popup_modal">
+                                            <div class="modal-header popup_header">
+                                                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                                                <h4 class="modal-title">Container</h4>
+                                            </div>
+                                            <div class="modal-body popup_body">
+                                                <input placeholder="Search Me" id="Containerbox" type="text" />
+                                                <ul class="navList" id="lstContainer">
+                                                    @{
+                                                        if (@ViewBag.Lstcontainer != null)
+                                                        {
+                                                            foreach (var item in @ViewBag.Lstcontainer)
+                                                            {
+                                                                <li id="@item.ContainerName">@item.ContainerName</li>
+                                                            }
+                                                        }
+                                                    }
+                                                </ul>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <div class="row">
+                                                    <div class="col-md-offset-6 col-md-6">
+                                                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div id="ReferenceModal" class="modal fade" role="dialog">
+                                    <div class="modal-dialog">
+                                        <!-- Modal content-->
+                                        <div class="modal-content popup_modal">
+                                            <div class="modal-header popup_header">
+                                                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                                                <h4 class="modal-title">Reference Number</h4>
+                                            </div>
+                                            <div class="modal-body popup_body">
+                                                <input placeholder="Search Me" id="ReferenceNobox" type="text" />
+                                                <ul class="navList" id="lstReferenceNo">
+                                                    @*@{
+                                                            if (@ViewBag.ViewBag.lstReferenceNumberList != null)
+                                                            {
+                                                                foreach (var item in @ViewBag.ViewBag.lstReferenceNumberList)
+                                                                {
+                                                                    <li id="@item.CartingAppId">@item.CartingNo</li>
+                                                                }
+                                                            }
+                                                        }*@
+                                                </ul>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <div class="row">
+                                                    <div class="col-md-offset-6 col-md-6">
+                                                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="modal fade" id="ShippingLineModal" role="dialog">
+                                    <div class="modal-dialog">
+                                        <!-- Modal content-->
+                                        <div class="modal-content popup_modal">
+                                            <div class="modal-header popup_header">
+                                                <button type="button" class="close" onclick="CloseEximTrade()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                                                <h4 class="modal-title">List of Shipping Line Name</h4>
+                                            </div>
+                                            <div class="modal-body popup_body" style="position:relative;">
+                                                <input placeholder="Search By Shipping Line Name Or Party Code" id="ShpngLinebox" type="text" />
+                                                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByPartyCode()"></i></span>
+                                                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th colspan="8" width="80%">Shipping Line Name</th>
+                                                            <th colspan="4" width="20%">Party Code</th>
+                                                        </tr>
+                                                    </thead>
+                                                </table>
+                                                <div id="slim_scroll">
+                                                    <table class="table dataTable table-bordered table-striped slim_tble" id="tbleSline">
+                                                        <tbody>
+                                                            @{
+                                                                if (ViewBag.lstShippingLine != null)
+                                                                {
+                                                                    foreach (var item in ViewBag.lstShippingLine)
+                                                                    {
+                                                                        <tr onclick="SelectShippingLine(@item.ShippingLineId,'@item.ShippingLineName','@item.PartyCode')">
+                                                                            <td colspan="8" width="80%" class="txt_wrp">@item.ShippingLineName</td>
+                                                                            <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                                                        </tr>
+                                                                    }
+                                                                }
+                                                            }
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                                                        {
+                                                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore">Load More Data</button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEximTrader()" class="btn log_Btn_sm" id="btnLoadMore" disabled>Load More Data</button>
+                                                        }
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <button type="button" class="btn log_Btn_sm" onclick="CloseEximTrade()">Close</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="modal fade" id="CHAModal" role="dialog">
+                                    <div class="modal-dialog">
+                                        <!-- Modal content-->
+                                        <div class="modal-content popup_modal">
+                                            <div class="modal-header popup_header">
+                                                <button type="button" class="close" onclick="CloseCHA()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                                                <h4 class="modal-title">List of CHA Name</h4>
+                                            </div>
+                                            <div class="modal-body popup_body" style="position:relative;">
+                                                <input placeholder="Search By CHA Name Or Party Code" id="Chabox" type="text" />
+                                                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchChaByPartyCode()"></i></span>
+                                                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th colspan="8" width="80%">CHA Name</th>
+                                                            <th colspan="4" width="20%">Party Code</th>
+                                                        </tr>
+                                                    </thead>
+                                                </table>
+                                                <div id="slim_scroll_1">
+                                                    <table class="table dataTable table-bordered table-striped slim_tble" id="tbleCha">
+                                                        @{
+                                                            if (ViewBag.lstCHA != null)
+                                                            {
+                                                                foreach (var item in ViewBag.lstCHA)
+                                                                {
+                                                                    <tr onclick="SelectCHA(@item.CHAId,'@item.CHAName')">
+                                                                        <td colspan="8" width="80%" class="txt_wrp">@item.CHAName</td>
+                                                                        <td colspan="4" width="20%" class="txt_wrp">@item.PartyCode</td>
+                                                                    </tr>
+                                                                }
+                                                            }
+                                                        }
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        @if (ViewBag.CHAState != null && Convert.ToBoolean(ViewBag.CHAState) == true)
+                                                        {
+                                                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreCHA()" class="btn log_Btn_sm" id="btnLoadCHA">Load More Data</button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreCHA()" class="btn log_Btn_sm" id="btnLoadCHA" disabled>Load More Data</button>
+                                                        }
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <button type="button" class="btn log_Btn_sm" onclick="CloseCHA()">Close</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                                            }
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="DivGateEntryList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+
+    function GetCHA(elem) {
+        debugger;
+        $('#CHAName').val($(elem).text());
+        $('#CHAId').val($(elem).attr('id'));
+        $("#CHAModal").modal("hide");
+    }
+    function GenerateLstCHA() {
+        debugger;
+        if ($('#CHAList').val() != "" || $('#CHAList').val() != null) {
+            var CHA = JSON.parse($('#CHAList').val());
+            var html = '';
+            $.each(CHA, function (i, item) {
+                html += '<li id="' + item.CHAId + '" " onclick="GetCHA(this)">' + item.CHAName + '</li>';
+            });
+            $('#lstCHA').html(html);
+        }
+
+    }
+    GenerateLstCHA();
+    function LoadGateEntryView() {
+        $('#DivBody').load('/GateOperation/VLDA_GateOperation/CreateEntryThroughGateLoadContainerTrain');
+    }
+
+    function ValidedField() {
+
+    }
+    $('#Containerbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstContainer > li').show();
+        else {
+            $('#lstContainer > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    $('#ReferenceNobox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstReferenceNo > li').show();
+        else {
+            $('#lstReferenceNo > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    var ContainerName = "";
+
+    $('#lstContainer > li').on("click", function () {
+        $('#ContainerNo').val($(this).text());
+        $('#ContainerId').val($(this).attr('id'));
+        $("#ContainerModal").modal("hide");
+        ContainerName = $('#ContainerNo').val();
+
+        if (ContainerName != null && ContainerName !="")
+        {
+            //alert(ContainerName);
+            AutoPopulate(ContainerName);
+        }
+
+
+    });
+
+
+    function AutoPopulate(ContainerName)
+    {
+        $.ajax({
+            url:  '/GateOperation/VLDA_GateOperation/GetFieldsForContainer',
+            type: 'GET',
+            async: false,
+           datatype:JSON,
+            data: { ContainerName: ContainerName },
+            success: function (data) {
+                debugger;
+                if (data != undefined || data != null) {
+                    debugger;
+                    //alert(data);
+
+                    populateJsondata(data);
+                    //$('.modal-backdrop').removeClass();
+                    //
+                    //$('#DivBody').html('');
+                   // $('#DivBody').html(data);
+
+                }
+                else {
+                    alert("fail");
+
+                }
+
+            }
+        });
+
+    }
+    function populateJsondata(data)
+    {
+        $("#EntryDateTime").val(data.EntryDateTime);
+        $("#ReferenceDate").val(data.ReferenceDate);
+
+        $("#time").val(data.EntryTime);
+        $("#ReferenceNo").val(data.ReferenceNo);
+
+        $("#ShippingLine").val(data.ShippingLine);
+        $("#CHAName").val(data.CHAName);
+        $("#ContainerNo").val(data.ContainerNo);
+        $("#Size").val(data.Size);
+        $("#CargoType").val(data.CargoType);
+
+    }
+
+    function GetRadioVal()
+    {
+        debugger;
+        var Radio = $('input[name=ContainerType]:checked').val();
+        // alert(Radio);
+        $("#ContainerNo1").val('');
+        $("#ContainerNo1").prop('readonly', true);
+        if (Radio == "Loaded") {
+            //$("#LoadedDiv").show();
+            //$("#EmptyDiv").hide();
+            var Status = true;
+            // alert(($("#txtContainerNo").val()));
+            if ($('#EntryDateTime').val() == "") {
+                $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+                Status = false;
+            }
+            if ($('#ReferenceDate').val() == "") {
+                $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+                Status = false;
+            }
+            //if ($('#ShippingLine').val() == "") {
+            //    $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            //    Status = false;
+            //}
+            //if ($('#CHAName').val() == "") {
+            //    $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            //    Status = false;
+            //}
+            //if ($('#ContainerNo').val() == "") {
+            //    $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            //    Status = false;
+            //}
+
+        }
+        else {
+            //$("#EmptyDiv").show();
+            // $("#LoadedDiv").hide();ContainerNo1
+            //$("#ContainerNo1Div").show();
+            $("#ContainerNo1").val('');
+            $("#ContainerNo1").removeAttr("readonly");
+        }
+
+    }
+    function ResetGateEntry() {
+        $('input[type="text"],textarea,select').val('');
+        $('input[type="checkbox"').prop('checked', false);
+        $('[data-valmsg-for]').html('');
+    }
+    //function GateEntryOnSuccess(data) { }
+   // function GateEntryOnFailure() { }
+
+
+    function GateEntryOnSuccess(data) {
+
+        debugger;
+        if (data.Status == 1 || data.Status == 2) {
+            ResetGateEntry();
+            if ($('#DivEntryThroughGateMsg').hasClass('logErrMsg'))
+                $('#DivEntryThroughGateMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivEntryThroughGateMsg').html(data.Message);
+            setTimeout(LoadGateEntryView, TimeInSeconds);
+            //GetEntryThroughGateList();
+        }
+        //else if (data.Status == 2) {
+        //    $('[data-valmsg-for="CountryName"]').html('<span>' + data.Message + '</span>');
+        //}
+        //else if (data.Status == 3) {
+        //    $('[data-valmsg-for="CountryAlias"]').html('<span>' + data.Message + '</span>');
+        //}
+        else {
+            if ($('#DivEntryThroughGateMsg').hasClass('logSuccMsg'))
+                $('#DivEntryThroughGateMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivEntryThroughGateMsg').html(data.Message);
+        }
+    }
+
+    function GateEntryOnFailure() {
+        alert("Please Refresh And Try Again");
+    }
+
+    $("#EntryDateTime").datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage:  "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        minDate:$("#ReferenceDate").val(),
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+    $("#ReferenceDate").datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage:  "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $(".Date_Img .Error_Msg").text("");
+            $('[data-valmsg-for="Data"]').html('<span></span>');
+        }
+    });
+    $('.clockpicker').clockpicker({
+        donetext: 'Done',
+        twelvehour: true
+    });
+    $(document).ready(function () {
+
+        var editTime = $("#EditTime").val();
+        //alert(editTime);
+        if (editTime != null && editTime != "") {
+            $("#time").val(editTime);
+        }
+    });
+
+    function GoToExport() {
+        $('#DivBody').load('/GateOperation/VLDA_GateOperation/CreateEntryThroughGateExportTrain');
+    }
+    function GoToImport() {
+        $('#DivBody').load('/GateOperation/VLDA_GateOperation/CreateEntryThroughGateByTrain');
+    }
+    function GoToBond() {
+        $('#DivBody').load('/GateOperation/VLDA_GateOperation/CreateEntryThroughGateBond');
+    }
+    function GoToLoaadedContainer() {
+        $('#DivBody').load('/GateOperation/VLDA_GateOperation/CreateEntryThroughGateLoadContainerTrain');
+    }
+</script>
+
+<script>
+    function TransPortModeFunc() {
+        var Radio = $('input[name=Mode]:checked').val();
+        if (Radio == "By Road") {
+            $('#TransportMode').val(2);
+            document.getElementById("Road").checked = true;
+        }
+        else {
+            $('#TransportMode').val(1);
+            document.getElementById("Train").checked = true;
+        }
+    }
+
+    var r = JSON.parse($("#hdnRights").val());
+    if (r.CanAdd == 1) {
+        // $('#btnSave').css('display', 'block');
+        $('#btnSave').removeAttr("disabled");
+
+
+    } else {
+        //$('#btnSave').css('display', 'none');
+        $('#btnSave').attr("disabled", true);
+        //$('.edit').css('pointer-events', 'none');
+
+    }
+
+    function GenerateLstReferenceNumber() {
+        debugger;
+        var parties = JSON.parse($('#lstReferenceNumberList').val());
+        var html = '';
+        $.each(parties, function (i, item) {
+            html += '<li id="' + item.LoadContReqId + '" " onclick="GetPayByDetails(this)">' + item.LoadContReqNo + '</li>';
+        });
+        debugger;
+        $('#lstReferenceNo').html(html);
+
+        var shippingLine = JSON.parse($('#lstShippingLine').val()); //JSON.parse('#lstShippingLine').val();
+        var html1 = '';
+        $.each(shippingLine, function (i, item) {
+            html1 += '<li id="' + item.ShippingLineId + '" " onclick="GetShippingLine(this)">' + item.ShippingLine + '</li>';
+        });
+        $('#lstShipping').html(html1);
+    }
+    GenerateLstReferenceNumber();
+
+    //$('#ShippingLinebox').keyup(function () {
+    //    var val = $(this).val().toLowerCase();
+    //    if (val == "")
+    //        $('#lstShipping > li').show();
+    //    else {
+    //        $('#lstShipping > li').each(function () {
+    //            var text = $(this).text().toLowerCase();
+    //            (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+    //        });
+    //    }
+    //});
+    function SelectShippingLine(ShippingLineId, ShippingLineName, PartyCode) {
+        debugger;
+        $('#ShippingLine').val(ShippingLineName);
+        $('#ShippingLineId').val(ShippingLineId);
+        $('#ShippingLineSealNo').val(PartyCode);
+        $("#ShippingLineModal").modal("hide");
+        $('#ShpngLinebox').val('');
+        LoadEximTrader();
+    }
+    var Page = 0;
+
+    function SearchByPartyCode() {
+        if ($('#ShpngLinebox').val() != '') {
+            $.ajax({
+                url: '/GateOperation/VLDA_GateOperation/SearchByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#ShpngLinebox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstShippingLine, function (item, elem) {
+                            html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName.replace(/\r?\n|\r/g, "") + '&quot;,&quot;' + elem.PartyCode.replace(/\r?\n|\r/g, "") + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleSline tbody').html('');
+                        $('#tbleSline tbody').html(html);
+                        $('#btnLoadMore').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleSline tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMore').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadEximTrader();
+    }
+
+
+    function LoadMoreEximTrader() {
+        debugger;
+        $.ajax({
+            url: '/GateOperation/VLDA_GateOperation/LoadEximtradeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName.replace(/\r?\n|\r/g, "") + '&quot;,&quot;' + elem.PartyCode.replace(/\r?\n|\r/g, "") + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleSline tbody').html(html);
+                    else
+                        $('#tbleSline tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadEximTrader() {
+        Page = 0;
+        $.ajax({
+            url: '/GateOperation/VLDA_GateOperation/LoadEximtradeList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstShippingLine, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectShippingLine(' + elem.ShippingLineId + ',&quot;' + elem.ShippingLineName.replace(/\r?\n|\r/g, "") + '&quot;,&quot;' + elem.PartyCode.replace(/\r?\n|\r/g, "") + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.ShippingLineName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    $('#tbleSline tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMore').prop('disabled', false);
+                    else $('#btnLoadMore').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function CloseEximTrade() {
+        $('#ShpngLinebox').val('');
+        $("#ShippingLineModal").modal("hide");
+        LoadEximTrader();
+    }
+
+    function LoadMoreCHA() {
+        debugger;
+        $.ajax({
+            url: '/GateOperation/VLDA_GateOperation/LoadCHAList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstCHA, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectCHA(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tbleCha tbody').html(html);
+                    else
+                        $('#tbleCha tbody').append(html);
+                    Page++;
+
+                    debugger;
+                    if (data.Data.State == true)
+                        $('#btnLoadCHA').prop('disabled', false);
+                    else $('#btnLoadCHA').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function LoadCHA() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/GateOperation/VLDA_GateOperation/LoadCHAList',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    var html = '';
+                    $.each(data.Data.lstCHA, function (item, elem) {
+                        debugger;
+                        html += '<tr onclick="SelectCHA(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+
+                    $('#tbleCha tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnLoadCHA').prop('disabled', false);
+                    else $('#btnLoadCHA').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+    function SelectCHA(CHAId, CHAName) {
+        debugger;
+        $('#CHAName').val(CHAName);
+        $('#CHAId').val(CHAId);
+        $("#CHAModal").modal("hide");
+        $('#Chabox').val('');
+        LoadCHA();
+    }
+
+    function SearchChaByPartyCode() {
+        if ($('#Chabox').val() != '') {
+            $.ajax({
+                url: '/GateOperation/VLDA_GateOperation/CHASearchByPartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#Chabox').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstCHA, function (item, elem) {
+                            html += '<tr onclick="SelectCHA(' + elem.CHAId + ',&quot;' + elem.CHAName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.CHAName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleCha tbody').html('');
+                        $('#tbleCha tbody').html(html);
+                        $('#btnLoadCHA').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tbleCha tbody').html('');
+                        Page = -1;
+                        $('#btnLoadCHA').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadCHA();
+    }
+
+    function CloseCHA() {
+        $('#Chabox').val('');
+        $("#CHAModal").modal("hide");
+        LoadCHA();
+    }
+
+
+    function GetShippingLine(elem) {
+
+        $('#ShippingLine').val($(elem).text());
+        $('#ShippingLineId').val($(elem).attr('id'));
+        $("#ShippingLineModal").modal("hide");
+    }
+
+    //function GetPayByDetails(elem) {
+
+    //    $('#ReferenceNo').val($(elem).text());
+    //    $('#ReferenceNoId').val($(elem).attr('id'));
+    //    var selectedReference = $('#ReferenceNo').val();
+    //    $("#ReferenceModal").modal("hide");
+    //    debugger;
+    //    //var parties = JSON.parse($('#lstGateEntryExport').val());
+    //    //var payby = $.grep(parties, function (item) { return item.ReferenceNo == selectedReference; })[0];
+
+    //    //$('#ReferenceDate').val(payby.ReferenceDate);
+    //    ////$('#ContainerSize').val(payby.ContainerSize);
+    //    //$('#CargoType').val(payby.CargoType);
+    //    //$('#CHAName').val(payby.CHAName);
+    //    //$('#CargoDescription').val(payby.CargoDescription);
+
+    //}
+
+
+    function GetPayByDetails(elem) {
+
+        $('#ReferenceNo').val($(elem).text());
+        $('#ReferenceNoId').val($(elem).attr('id'));
+        var selectedReference = $('#ReferenceNo').val();
+        var parties = JSON.parse($('#lstReferenceNumberList').val());
+        var refDate = $.grep(parties, function (item) { return item.LoadContReqId == $('#ReferenceNoId').val(); })[0];
+        $('#ReferenceDate').val(refDate.LoadContReqDate);
+        $("#EntryDateTime").datepicker("option", "minDate", $('#ReferenceDate').val());
+        $("#ReferenceModal").modal("hide");
+        var loadRefId = $('#ReferenceNoId').val();
+        if (loadRefId > 0) {
+            getLoadedContainerList(loadRefId);
+        }
+        debugger;
+
+
+        $('#CargoDescription').val('');
+
+        $('#Reefer').prop('checked', false);
+
+        $('#CargoType').val('');
+        $('#NoOfPackages').val('');
+        $('#ShippingLineName').val('');
+        $('#Size').val('');
+        $('#ContainerNo1').val('');
+        $('#ShippingLine').val('');
+        $('#ShippingLineId').val('');
+
+
+
+    }
+</script>

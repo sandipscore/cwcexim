@@ -1,0 +1,933 @@
+﻿@if (ViewBag.InvoiceList != null)
+{
+    <input type="hidden" id="hdnStuffingReq" value="@ViewBag.InvoiceList" />
+}
+else
+{
+    <input type="hidden" id="hdnStuffingReq" value="" />
+}
+@if (ViewBag.PaymentPayee != null)
+{
+    <input type="hidden" id="hdnPayee" value="@ViewBag.PaymentPayee" />
+    <input type="hidden" id="hdnPayerState" value="@ViewBag.StatePayer" />
+}
+else
+{
+    <input type="hidden" id="hdnPayee" value="" />
+    <input type="hidden" id="hdnPayerState" value="" />
+}
+<script src="~/Areas/Export/Scripts/App/Services/WFLD_ReeferService.js"></script>
+<script src="~/Areas/Export/Scripts/App/Controllers/WFLD_ReeferCtrl.js"></script>
+<style>
+    #ContainerModal .modal-content {
+        width: 100%;
+    }
+</style>
+@Html.AntiForgeryToken()
+<div id="DivReefer" ng-controller="RefInvoiceCtrl">
+    @Html.Hidden("ServiceType")
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-offset-0-5 col-md-11">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Reefer Plugin Request</h4>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-2 col_cus_2_5 col-md-offset-1-5 col_cus_offset_2">
+                                <div class="boolean-container">
+                                    @Html.RadioButton("InvoiceType", "Tax", new { id = "Tax", @checked = true, @onclick = "IVType('Tax')" })
+                                    <label for="Tax"><i class="circle"></i><span>Tax Invoice</span></label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="boolean-container">
+                                    @Html.RadioButton("InvoiceType", "Bill", new { id = "Bill", @onclick = "IVType('Bill')" })
+                                    <label for="Bill"><i class="circle"></i><span>Bill Of Supply</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Invoice No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                <input type="text" id="ReeferInvNo" ng-model="ReeferInvNo" readonly="readonly" />
+                            </div>
+                            <div class="col-md-1-5  col_cus_offset_3 col_cus_2">
+                                <label>Invoice Date:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @*@Html.Hidden("HdnDate", DateTime.Now.ToString("dd/MM/yyyy HH:mm"))*@
+                                <input type="text"  id="InvoiceDate" readonly="readonly" />
+                                <span style="color:red" id="spInvoiceDate" ng-model="spInvoiceDate"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Container No:</label>
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                <input type="text" id="ContainerNo" ng-model="ContainerNo" readonly="readonly" />
+                                <span class="search" ng-click="GetAllContainerNo()"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerModal"></i></span>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top" style="display:none;" >
+                        <div class="form-group Form_Input">
+                           
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Export Under:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                <select ng-model="ExportUnder" ng-disabled="IsCalculated==1" class="form-control input-sm">
+                                    <option value="">----Select----</option>
+                                    <option value="SEZ">SEZ</option>
+                                </select>
+                            </div>
+                          
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Exporter Name:</label>
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                <input type="hidden" id="ExporterId" ng-model="ExporterId" />
+                                <input type="text" id="ExporterName" ng-model="ExporterName" readonly="readonly" />
+                                <span class="search" ng-click="GetExporterList()" ><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ExporterModal"></i></span>
+                                <span style="color:red" id="spExporterName" ng-model="spExporterName"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top" style="display:none">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>CHA:</label>
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                <input type="hidden" id="CHAId" ng-model="CHAId" />
+                                <input type="text" id="CHAName" ng-model="CHAName" readonly="readonly" />
+                                @*<span class="search" ng-hide="IsCalculated==1"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CHAModal"></i></span>*@
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Party Name:</label>
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                <input type="hidden" id="PartyId" ng-model="PartyId" />
+                                <input type="text" id="PartyId" ng-model="PartyName" readonly="readonly" />
+                                <span class="search" ng-click="GetPartyList()"><i class="fa fa-search" aria-hidden="true" data-toggle="modal"  data-target="#PartyModal"></i></span>
+                                <span style="color:red" id="spPartyName" ng-model="spPartyName"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Payer Name:</label>
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                <input type="hidden" id="PayeeId" ng-model="PayeeId" />
+                                <input type="text" id="PayeeName" ng-model="PayeeName" readonly="readonly" />
+                                <span class="search" ng-click="GetPayeerList()"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PayerModal"></i></span>
+                                <span style="color:red" id="spPayeeName" ng-model="spPayeeName"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label> Place of supply:</label>
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                <input type="text" id="PartyState" ng-model="PartyState" readonly="readonly" />
+                            </div>
+
+
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label> GST No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                <input type="text" id="GSTNo" ng-model="GSTNo" readonly="readonly" />
+                            </div>
+                            <div class="col-md-1-5">
+                                <label>SEZ</label>
+                            </div>
+                            <div class="col-md-2">
+                                @Html.DropDownList("SEZ", new List<SelectListItem>
+                                        {
+                                        new SelectListItem { Text="SEZWP",Value="SEZWP"},
+                                        new SelectListItem {Text="SEZWOP",Value="SEZWOP" }
+
+                                        }, "---Select---", new { @class = "form-control input-sm dropdown" })
+                                @Html.ValidationMessage("SEZ", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+               
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>From Date Time:</label>
+                            </div>
+                            <div class="col-md-2-5 Date_Img">
+                                <input type="text" datepicker ng-model="PlugInDatetime" id="PlugInDatetime" readonly />
+                                <span style="color:red" id="spPlugInDatetime" ng-model="spPlugInDatetime"></span>
+                            </div> 
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>To Date Time:</label>
+                            </div>
+                            <div class="col-md-2-5 Date_Img">
+                                <input type="text"  ng-model="PlugOUTDatetime" readonly id="txtPlugOUTDatetime"  />
+                                <span style="color:red" id="spPlugOUTDatetime" ng-model="spPlugOUTDatetime"></span>
+                             </div>
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Hours:</label>
+                            </div>
+                            <div class="col-md-2-5 ">
+                                <input type="text" id="txtHours" ng-model="Hours" readonly />
+                            </div>
+                        </div>
+                    </div>
+                   
+                    <div class="row Form_Space_top">
+                        <div class="col-md-1-5 col_cus_2">
+                          
+                        </div>
+                        <div class="col-md-2-5 ">
+                         
+                        </div> 
+                            <div class="col-md-3">
+                                <input type="button" id="BtnAdd" class="btn log_Btn_sm" ng-click="AddContainer()" value="Add" style="display:none" />
+                            </div>
+                        </div>
+                   
+                   
+                    <div class="row Form_Space_top Form_Space_bottom">
+                        <div class="col-md-12">
+                            <table id="tblContainer" class="table table-bordered dataTable nowrap table-striped">
+                                <thead>
+                                    <tr>
+                                        <th style="width:8%;" class="text-center">Sl No</th>
+                                        <th>CFS Code</th>
+                                        <th>Container No</th>
+                                        <th>Size</th>
+                                        <th>PlugInDateTime</th>
+                                        <th>PlugOutDateTime</th>
+                                        <th>Hours</th>
+                                        <th class="text-center">@Html.DisplayName("Edit")</th>
+                                        <th class="text-center">@Html.DisplayName("Delete")</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="item in AllContainerList">
+                                        <td>{{$index+1}}</td>
+                                        <td>{{item.CFSCode}}</td>
+                                        <td>{{item.ContainerNo}}</td>
+                                        <td>{{item.Size}}</td>  
+                                        <td>{{item.PlugInDatetime}}</td>  
+                                        <td>{{item.PlugOutDatetime}}</td>  
+                                        <td>{{item.Hours}}</td>  
+                                       
+                                        <td class="text-center"><a id="ed" class="edit" href="#" ng-click="EditContainerNo($index)"><i class="fa fa-pencil-square Edit"></i></a></td>
+                                        <td class="text-center"><a id="di" class="delete" href="#" ng-click="DeleteContainerNo($index)"><i class="fa fa-window-close-o Delete"></i></a></td>
+
+
+                                            @*<a href="#" class="delete" ng-click="DeleteContainerNo($index)"><i class="fa fa-window-close-o Delete"></i></a>
+                                            <a href="#" class="edit" ng-click="EditContainerNo($index)"><i class="fa fa-window-edit-o Edit"></i></a>
+                                        </td>*@
+                                                                         </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <span style="color:red" ng-model="spContainer"></span>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>No of Container:</label>
+                            </div>
+                            <div class="col-md-2-5 ">
+                                <input type="text" ng-model="NOOfContainer" readonly />
+                            </div> 
+                            <div class="col-md-3">
+                                <input type="button" class="btn log_Btn_sm" ng-click="CalculateCharges()" value="Generate Invoice" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="Head_h5">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h5>Charges</h5>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="col-md-12">
+                                <table id="tblCWCCharges" class="table table-bordered table-striped dataTable Table_center">
+                                    <thead>
+                                        <tr>
+                                            <th rowspan="2">Charges</th>
+                                            <th rowspan="2">Value</th>
+                                            <th colspan="2" class="text-center">IGST</th>
+                                            <th colspan="2" class="text-center">CGST</th>
+                                            <th colspan="2" class="text-center">SGST</th>
+                                            <th rowspan="2" style="width:15%;">Total</th>
+                                        </tr>
+                                        <tr>
+                                            <th>%</th>
+                                            <th>Amt</th>
+                                            <th>%</th>
+                                            <th>Amt</th>
+                                            <th>%</th>
+                                            <th style="border-right:1px solid #ddd;">Amt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="c in InvoiceObj.lstPostPaymentChrg">
+                                            <td>{{c.Clause}}.{{c.ChargeName}} </td>
+                                            @*<td style="text-align:right;"><input type="text" ng-blur="ReCalculate(c,$index)" readonly ng-model="c.Taxable" /> </td>*@
+                                            <td style="text-align:right;"><input type="text" readonly ng-model="c.Taxable" /> </td>
+                                            <td style="text-align:right;"><input type="text" ng-model="c.IGSTPer" readonly /></td>
+                                            <td style="text-align:right;"><input type="text" ng-model="c.IGSTAmt" readonly /></td>
+                                            <td style="text-align:right;"><input type="text" ng-model="c.CGSTPer" readonly /></td>
+                                            <td style="text-align:right;"><input type="text" ng-model="c.CGSTAmt" readonly /></td>
+                                            <td style="text-align:right;"><input type="text" ng-model="c.SGSTPer" readonly /></td>
+                                            <td style="text-align:right;"><input type="text" ng-model="c.SGSTAmt" readonly /></td>
+                                            <td style="text-align:right;"><input type="text" ng-model="c.Total" readonly /></td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="8" class="text-right">Total Value:</td>
+                                            <td style="text-align:right;">
+                                                {{InvoiceObj.AllTotal | number : 2}}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="8" class="text-right">Round Up:</td>
+                                            <td style="text-align:right;">
+                                                {{InvoiceObj.RoundUp | number : 2}}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="8" class="text-right">Total Invoice Amount:</td>
+                                            <td style="text-align:right;">
+                                                {{InvoiceObj.InvoiceAmt | number : 2}}
+                                            </td>
+                                        </tr>
+
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5">
+                                <label>Remarks:</label>
+                            </div>
+                            <div class="col-md-10-5">
+                                <textarea type="text" style="height:75px;" maxlength="500" ng-model="InvoiceObj.Remarks"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row SignUp_space_bottom SignUp_space_top">
+                        <div class="stoke"></div>
+                    </div>
+                    <div class="logSuccMsg Form_Space_bottom" id="DivPaySheetCargoMsg" style="background-color:transparent">{{Message}}</div>
+                    <div class="row SignUp_space_bottom2">
+                        <div class="col-md-offset-1-5 col-md-2">
+                            <input type="button" id="btnSave" value="Save" ng-click="AddEditReeferInv()" ng-disabled="IsCalculated==0 || InvoiceObj.InvoiceAmt==0" class="btn log_Btn_sm" />
+                        </div>
+
+                        <div class="col-md-2">
+                            <input type="button" value="Reset" class="btn log_Btn_sm" onclick="ResetField()" />
+                        </div>
+                        <div class="col-md-3">
+                            <input type="button" id="BtnGenerateIRN" class="btn log_Btn_sm" value="Generate IRN" ng-click="GenerateIRN()" disabled="disabled" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" value="Print" class="btn log_Btn_sm" onclick="PrintInvoice()" id="btnPrint" disabled />
+                        </div>
+                    </div>
+                    <div class="row SignUp_space_bottom SignUp_space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-2">
+                                <button class="btn log_Btn_sm" onclick="ShowList()">Show List</button>
+                            </div>
+                            <div class="col-md-offset-2 col-md-2">
+                                <input type="text" placeholder="Container No" id="SearchContainerNo" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="text" placeholder="Search by Invoice No" id="SearchInvoiceNo" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="text" placeholder="Date (dd/mm/yyyy)" id="SearchInvoiceDate" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" value="Search" onclick="SearchInvoice()" class="btn log_Btn_sm" />
+                            </div>
+                            </div>
+                        </div>
+                    <div class="row SignUp_space_bottom SignUp_space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-12">
+                                <div id="divShowList"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="invoicemodal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Invoice No.</h4>
+                </div>
+                <div class="modal-body popup_body">
+                    <input placeholder="Search Me" id="Invnobox" type="text" ng-model="SearchInvNo" />
+                    <ul class="navList" id="lstInvNo">
+                        <li ng-repeat="p in InvoiceList | filter:{InvoiceNo:SearchInvNo}" ng-click="SelectInvoiceNo(p)">{{p.InvoiceNo}}</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  
+    <div id="ExporterModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal" style="width:100%;">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Exporter</h4>
+                </div>
+                <div class="modal-body popup_body" style="position:relative;">
+                    <input placeholder="Search By Exporter Name Or Exporter Code" id="Exporterbox" type="text" ng-model="ExporterCode" ng-keyup="SearchExporter()" autocomplete="off" />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" ng-click="SearchExporter()" ></i></span>
+                    <table class="table table-striped table-bordered dataTable tblhd1" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="4" width="40%">Exporter Name</th>
+                                <th colspan="8" width="60%">Exporter Code</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div id="slim_scroll_1">
+                        <table class="table dataTable table-bordered table-striped slim_tble" id="tbleExporter">
+                            <tbody>
+                                <tr ng-repeat="p in GetExporterListarr" ng-click="SelectExporter(p)">
+                                    <td colspan="4" width="40%" class="txt_wrp">{{p.PartyName}} </td>
+                                    <td colspan="8" width="60%" class="txt_wrp">{{p.PartyCode}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+
+                            <button ng-disabled="!StateParty" type="button" style="width:100%; margin-left:0;" ng-click="LoadMoreParty()" class="btn log_Btn_sm" id="btnLoadMore">Load More Exporter</button>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="PartyModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal" style="width:100%;">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Party</h4>
+                </div>
+                <div class="modal-body popup_body" style="position:relative;">
+                    <input placeholder="Search By Party Name Or Party Code" id="PartyCode" type="text" ng-model="PartyCode" ng-keyup="SearchParty()" autocomplete="off" />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" ng-click="SearchParty()" ></i></span>
+                    <table class="table table-striped table-bordered dataTable tblhd1" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="4" width="40%">Party Name</th>
+                                <th colspan="8" width="60%">Party Code</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div id="slim_scroll_11">
+                        <table class="table dataTable table-bordered table-striped slim_tble" id="tbleParty">
+                            <tbody>
+                                <tr ng-repeat="p in GetPartyListarr" ng-click="SelectParty(p)">
+                                    <td colspan="4" width="40%" class="txt_wrp">{{p.PartyName}} </td>
+                                    <td colspan="8" width="60%" class="txt_wrp">{{p.PartyCode}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+
+                            <button ng-disabled="!StateParty" type="button" style="width:100%; margin-left:0;" ng-click="LoadMoreParty()" class="btn log_Btn_sm" id="btnLoadMore">Load More Party</button>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm"  data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="PayerModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content popup_modal" style="width:100%;">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close" ng-click="ClosePayer()" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of Payer</h4>
+                </div>
+                <div class="modal-body popup_body" style="position:relative;">
+                    <input placeholder="Search By Payer Name Or Payer Code" id="Payerbox" type="text" ng-model="PayerCode" ng-keyup="SearchPayerByPayerCode()" autocomplete="off" />
+                    <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" ng-click="SearchPayerByPayerCode()" ></i></span>
+                    <table class="table table-striped table-bordered dataTable tblhd1" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="4" width="40%">Payer Name</th>
+                                <th colspan="8" width="60%">Payer Code</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div id="slim_scroll_12">
+                        <table class="table dataTable table-bordered table-striped slim_tble" id="tblePayer">
+                            <tbody>
+                                <tr ng-repeat="p in PayerList" ng-click="SelectPayer(p)">
+                                    <td colspan="4" width="40%" class="txt_wrp">{{p.PartyName}} </td>
+                                    <td colspan="8" width="60%" class="txt_wrp">{{p.PartyCode}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+
+                            <button ng-disabled="!StatePayer" type="button" style="width:100%; margin-left:0;" ng-click="LoadMorePayer()" class="btn log_Btn_sm" id="btnLoadMore">Load More Payer</button>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn log_Btn_sm" ng-click="ClosePayer()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ContainerModal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content popup_modal">
+                <div class="modal-header popup_header">
+                    <button type="button" class="close"  ng-click="hideModal()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                    <h4 class="modal-title">List of ContainerNo</h4>
+                </div>
+                @*<div class="modal-body popup_body">
+                    <table id="lstcfsCode" class="dataTable table table-bordered">
+                        <thead>
+                            <tr>
+                                
+                                <th>CFS Code</th>
+                                <th>Container No.</th>
+                              
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="item in GetAllContainerCFS" ng-click="GetConatinerNo(item)">
+                                
+                                <td>{{item.CFSCode}} </td>
+                                <td>{{item.ContainerNo}}</td> 
+                                                             
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>*@
+
+                <div class="modal-body popup_body" style="position:relative;">
+                    <input placeholder="Search By Container No Or CFS Code" id="Containerbox" type="text" ng-model="ContainerCode" ng-keyup="SearchContainerByCFSCode()" autocomplete="off" />
+                    @*<span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" ng-click="SearchContainerByCFSCode()"></i></span>*@
+                    <table class="table table-striped table-bordered dataTable tblhd1" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                        <thead>
+                            <tr>
+                                <th colspan="4" width="40%">CFS Code</th>
+                                <th colspan="8" width="60%">Container No.</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div id="slim_scroll_13">
+                        <table class="table dataTable table-bordered table-striped slim_tble" id="tbleContainer">
+                            <tbody>
+                                <tr ng-repeat="p in GetAllContainerCFS" ng-click="GetConatinerNo(p)">
+                                    <td colspan="4" width="40%" class="txt_wrp">{{p.CFSCode}} </td>
+                                    <td colspan="8" width="60%" class="txt_wrp">{{p.ContainerNo}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-offset-6 col-md-6">
+                            <button type="button" class="btn log_Btn_sm"  ng-click="hideModal()" >Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+        $('#slim_scroll_1').slimScroll({
+            allowPageScroll: true
+        });
+        $('#slim_scroll_2').slimScroll({
+            allowPageScroll: true
+        });
+        $('#slim_scroll_11').slimScroll({
+            allowPageScroll: true
+        });
+        $('#slim_scroll_12').slimScroll({
+            allowPageScroll: true
+        });
+        $('#slim_scroll_13').slimScroll({
+            allowPageScroll: true
+        });
+
+        //$('#InvoiceDate').datepicker({
+        //    showOn: "button",
+        //    buttonImage: "/Content/images/calendar.png",
+        //    buttonImageOnly: true,
+        //    dateFormat: "dd/mm/yy",
+        //    altField: "#slider_example_4andHalf_alt",           
+        //    onClose: function () {
+        //        $(".Date_Img .Error_Msg").text("");
+        //        $('[data-valmsg-for="Data"]').html('<span></span>');
+        //    }
+        //});
+
+        //$('#InvoiceDate').datepicker("setDate", new Date());
+        $('#InvoiceDate').datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            minDate: '-0D',
+            showAnima: "fadein",
+            onClose: function () {
+                $("[data-valmsg-for='ApplicationDate']").html('');
+            }
+        });
+        debugger;
+        var currentDate = new Date();
+        $('#InvoiceDate').datepicker("setDate", currentDate);
+
+        $.extend($.datepicker, { _checkOffset: function (inst, offset, isFixed) { return offset } });
+
+
+        $('#PlugInDatetime').datetimepicker({
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            dateFormat: "dd/mm/yy",
+            altField: "#slider_example_4andHalf_alt",
+            altFieldTimeOnly: false,
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+                $('[data-valmsg-for="Data"]').html('<span></span>');
+                calcHours();
+            }
+        });
+
+
+        $('#txtPlugOUTDatetime').datetimepicker({
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            dateFormat: "dd/mm/yy",
+            altField: "#slider_example_4andHalf_alt",
+            altFieldTimeOnly: false,
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+                $('[data-valmsg-for="Data"]').html('<span></span>');
+                calcHours();
+
+            }
+        });
+        
+        //
+        //$('#InvoiceDate').datepicker({ defaultDate: new Date() });
+    });
+
+    function calcHours()
+    {
+        debugger;
+
+        if($('#PlugInDatetime').val()!=''&&$('#txtPlugOUTDatetime').val()!='')
+        {
+            debugger;
+            
+
+            var plugInDatetime = $('#PlugInDatetime').val();
+            var PlugOUTDatetime = $('#txtPlugOUTDatetime').val();        
+           // var varplugInDatetime = new Date(plugInDatetime.substring(6, 10), parseInt(plugInDatetime.substring(3, 5)), plugInDatetime.substring(0, 2), plugInDatetime.substring(11, 13), plugInDatetime.substring(14, 16));
+            //var varPlugOUTDatetime = new Date(PlugOUTDatetime.substring(6, 10), parseInt(PlugOUTDatetime.substring(3, 5)), PlugOUTDatetime.substring(0, 2), PlugOUTDatetime.substring(11, 13), PlugOUTDatetime.substring(14, 16));
+
+            var varplugInDatetime = new Date(plugInDatetime.substring(6, 10), parseInt(plugInDatetime.substring(3, 5)) - 1, plugInDatetime.substring(0, 2), plugInDatetime.substring(11, 13), plugInDatetime.substring(14, 16));
+            var varPlugOUTDatetime = new Date(PlugOUTDatetime.substring(6, 10), parseInt(PlugOUTDatetime.substring(3, 5)) - 1, PlugOUTDatetime.substring(0, 2), PlugOUTDatetime.substring(11, 13), PlugOUTDatetime.substring(14, 16));
+
+            //var From = plugInDatetime;
+            //var To = PlugOUTDatetime;
+            //var SF = From.split('/');
+            //var ST = To.split('/');
+
+            //var SHF = From.split(':');
+            //var SHT = To.split(':');
+
+            //var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0],SHF[0],SHF[1]);
+            //var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0], SHT[0], SHT[1]);
+
+            //if (FromDate <= ToDate) {
+            //    alert('Period To DateTime must be greater than Period From DateTime');
+            //    $('#txtHours').val('');
+            //    return false;
+            //}
+
+            if (varPlugOUTDatetime.getTime() <= varplugInDatetime.getTime())
+            {
+                alert('Period To DateTime must be greater than Period From DateTime');
+                $('#txtHours').val('');
+                return false;
+            }
+            else
+            {
+                var timeDiff = Math.abs(varPlugOUTDatetime.getTime() - varplugInDatetime.getTime())
+                var HoursDays = Math.ceil(timeDiff / (1000 * 3600));
+                $('#txtHours').val(HoursDays);
+            }
+            
+       
+            //alert(diffDays)​;
+        }
+        
+
+        
+    }
+
+
+    function ShowList()
+    {
+        debugger;
+        $('#SearchInvoiceNo').val("");
+        $('#SearchInvoiceDate').val("");
+        $('#SearchContainerNo').val("");
+        //$('#divShowList').load('/Export/WFLD_CWCExport/GetReeferInvoiceList');
+        $('#divShowList').load('/Export/VLDA_CWCExport/GetReeferInvoiceList?Module=EXPREF');
+    }
+   
+    function SearchInvoice() {
+        var InvoiceNo = $('#SearchInvoiceNo').val().trim();
+        var InvoiceDate = $('#SearchInvoiceDate').val().trim();
+        var ContainerNo = $('#SearchContainerNo').val().trim();
+        if ($('#SearchInvoiceNo').val() == "" && $('#SearchInvoiceDate').val() == "" && $('#SearchContainerNo').val() == "")
+            alert("Enter Container No. or Invoice No. or Invoice Date to Search");
+        else if ($('#SearchInvoiceNo').val() != "" && $('#SearchInvoiceDate').val() != "" && Validate() == true)
+            $('#divShowList').load('/Export/VLDA_CWCExport/GetReeferInvoiceList?InvoiceNo=' + InvoiceNo + '&InvoiceDate=' + InvoiceDate + "&Module=EXPREF");
+        else if ($('#SearchInvoiceNo').val() != "")
+            $('#divShowList').load('/Export/VLDA_CWCExport/GetReeferInvoiceList?InvoiceNo=' + InvoiceNo + "&Module=EXPREF");
+        else if ($('#SearchContainerNo').val() != "")
+            $('#divShowList').load('/Export/VLDA_CWCExport/GetReeferInvoiceList?ContainerNo=' + ContainerNo + "&Module=EXPREF");
+        else if (Validate() == true)
+            $('#divShowList').load('/Export/VLDA_CWCExport/GetReeferInvoiceList?InvoiceDate=' + InvoiceDate + "&Module=EXPREF");
+    }
+
+    function Validate() {
+        debugger;
+        var date = document.getElementById("SearchInvoiceDate").value.split("/");
+        var day = date[0];
+        var month = date[1];
+        var dateString = document.getElementById("SearchInvoiceDate").value;
+        var regex = /^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/;
+        //if (regex.test(dateString) || dateString.length == 0) {
+        //    alert("Please enter correct date");
+        //    return false;
+        //}
+        if (day > 31) {
+            alert("Please enter correct date");
+            return false;
+        }
+        else
+            if (month > 12) {
+                alert("Please enter correct Month");
+                return false;
+            }
+        return true;
+    }
+</script>
+<script>
+    var Page = 0;
+    var Page1 = 0;
+    var TimeInSeconds;
+    $(document).ready(function () {
+        TimeInSeconds = 5000;
+        angular.bootstrap(document.getElementById('DivReefer'), ['CWCApp']);
+        //$('#InvoiceDate').datetimepicker({
+        //    showOn: "button",
+        //    buttonImage: "/Content/images/calendar.png",
+        //    buttonImageOnly: true,
+        //    dateFormat: "dd/mm/yy",
+        //    altField: "#slider_example_4andHalf_alt",
+        //    altFieldTimeOnly: false,
+        //    onClose: function () {
+        //        $(".Date_Img .Error_Msg").text("");
+        //        $('[data-valmsg-for="Data"]').html('<span></span>');
+        //    }
+        //});
+    });
+
+
+    $('#PartyCode').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#tbleParty tbody > tr').show();
+        else {
+            $('#tbleParty tbody >tr').each(function () {
+                var text = $(this).find('td').text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+
+    $('#Payerbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        debugger;
+        if (val == "")
+            $('#tblePayer tbody > tr').show();
+        else {
+            $('#tblePayer tbody >tr').each(function () {
+                var text = $(this).find('td').text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    $('#Containerbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        debugger;
+        if (val == "")
+            $('#tbleContainer tbody > tr').show();
+        else {
+            $('#tbleContainer tbody >tr').each(function () {
+                var text = $(this).find('td').text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    $('#Exporterbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        debugger;
+        if (val == "")
+            $('#tbleExporter tbody > tr').show();
+        else {
+            $('#tbleExporter tbody >tr').each(function () {
+                var text = $(this).find('td').text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+   
+
+
+    var Type = '@ViewData["InvType"]';
+    Type == 'Tax' ? $('#Tax').prop('checked', true) : $('#Bill').prop('checked', true);
+    function IVType(val) {
+        $('#DivBody').load('/Export/VLDA_CWCExport/CreateReeferPluginRequest?type=' + val);
+    }
+    function ResetField() {
+        $('#DivBody').load('/Export/VLDA_CWCExport/CreateReeferPluginRequest');
+    }
+    function PrintInvoice() {
+        var ReeferInvNo = $('#ReeferInvNo').val();
+        if (ReeferInvNo != '' && ReeferInvNo != null) {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("GetBulkInvoiceReport", "VLDA_ReportCWC", new { Area = "Report" }) ',
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                type: 'POST',
+                data: {
+                    InvoiceNumber: ReeferInvNo,
+                    InvoiceModule: 'EXPREF',
+                    PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                    PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                    InvoiceModuleName: 'Reefer Invoice',
+                },
+                success: function (data) {
+                    if (data.Status == 1)
+                        window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                    else
+                        alert(data.Data);
+                }
+            });
+        }
+    }
+</script>

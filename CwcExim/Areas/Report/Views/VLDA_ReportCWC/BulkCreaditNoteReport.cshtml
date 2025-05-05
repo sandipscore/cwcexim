@@ -1,0 +1,129 @@
+﻿
+@model CwcExim.Areas.Report.Models.BulkInvoiceReport
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-11 col-md-offset-0-5">
+            <div class="container-fluid">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Bulk Creadit Note</h4>
+                        </div>
+                    </div>
+                    <div class="Form_Space_top" style="padding:5px;">
+                        <div class="row">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Period From:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessage("PeriodFrom", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col_cus_2 col_cus_offset_3 col-md-offset-4 padding_rt">
+                                    <label>Period To:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                    @Html.ValidationMessage("PeriodTo", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row SignUp_space_top SignUp_space_bottom">
+                        <div class="stoke"></div>
+                    </div>
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-offset-5 col-md-2">
+                            <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnSubmit" onclick="GetBulkNote()" />
+                        </div>
+                    </div>
+                    <div class="logErrMsg Form_Space_bottom" id="DivErrMsg" style="background-color:transparent;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $("[data-valmsg-for='PeriodFrom']").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $("[data-valmsg-for='PeriodTo']").text("");
+            }
+        });
+    });
+    function Compare()
+    {
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val(); 
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        return true;
+    }
+    function GetBulkNote()
+    {
+        if ($('#PeriodFrom').val() == '')
+        {
+            $("[data-valmsg-for='PeriodFrom']").text("Select From date");
+        }
+        else if($('#PeriodTo').val() == '')
+        {
+            $("[data-valmsg-for='PeriodTo']").text("Select To date");
+        }
+        else if (Compare() == false)
+        { }
+        else
+        {
+            $('#DivErrMsg').html('');
+            var PD=new FormData();
+            PD.append("PeriodFrom",$('#PeriodFrom').val());
+            PD.append("PeriodTo", $('#PeriodTo').val());
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Report/VLDA_ReportCWC/PrintCRNote',
+                type: 'POST',
+                data: PD,
+                dataType: 'JSON',
+                headers: { "__RequestVerificationToken": Token },
+                processData: false,
+                contentType:false,
+                success:function(data)
+                {
+                    if (data.Status == 1) {
+                        window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                    }
+                    else
+                        $('#DivErrMsg').html(data.Message);
+                }
+            });
+        }
+    }
+</script>

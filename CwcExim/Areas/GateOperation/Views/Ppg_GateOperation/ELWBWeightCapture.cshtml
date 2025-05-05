@@ -1,0 +1,790 @@
+﻿@model CwcExim.Areas.GateOperation.Models.WeightCapture
+
+@{
+    AjaxOptions options = new AjaxOptions();
+    //options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "GateExitOnSuccess";
+    options.OnFailure = "GateExitOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<style>
+    #tbleSline.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    #tbleCha.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .slimScrollDiv {
+        height: 300px;
+    }
+
+    .table.tblhd {
+        border-bottom: 0;
+    }
+</style>
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+    });
+    $(function () {
+        $('#slim_scroll_1').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+    var TimeInSeconds;
+    $(document).ready(function () {
+        debugger;
+        //GetEntryThroughGateList();
+        TimeInSeconds = 3000;
+
+        var SystemDateTime = $('#SystemDateTime').val();
+        var SplitSysDateTime = SystemDateTime.split(' ', 3);
+        $('#SystemDateTime').val(SplitSysDateTime[0]);
+        $('#SysEditTime').val(SplitSysDateTime[1] + " " + SplitSysDateTime[2]);
+
+    });
+
+</script>
+<div id="divWeightCapture">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("AddEditELWBWeightCapture", "Ppg_GateOperation", options))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-12">
+                            <h4>ELWB Weight Capture</h4>
+                        </div>
+                    </div>
+
+                    <div class="content_wrp">
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                @Html.HiddenFor(m => m.ELEWId)
+                                @Html.HiddenFor(m => m.Material)
+                                @Html.HiddenFor(m => m.CustomerName)
+                                @Html.HiddenFor(m => m.Remarks)
+                                <div class="form-group">
+                                    <label>Ref No. :</label>
+                                </div>
+                                @Html.TextBoxFor(m => m.RefNo, new { @readonly = "true" })
+                                @Html.ValidationMessageFor(m => m.RefNo, "", new { @class = "Error_Msg" })
+                            </div>
+                                <div class="col-md-3 col-md-offset-6">
+                                    <div class="form-group">
+                                        <label>Date:</label>
+                                    </div>
+                                <div class="col-md-6 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.RefNoDate, new { placeholder = "dd/mm/yyyy", @readonly = true, Value = DateTime.Now.ToString("dd/MM/yyyy") })
+                                    @Html.ValidationMessageFor(m => m.RefNoDate, "", new { @class = "Error_Msg", Value = DateTime.Today.ToString("dd/MM/yyyy") })
+                                </div>
+                                <div class="col-md-6 col_cus_2_5">
+                                    <div class="input-group clockpicker" data-placement="left" data-align="top">
+                                        @Html.TextBoxFor(m => m.Time, new {  @value = "00:00", @style = "background-color:#fff;z-index:0;", @id = "time" })
+                                        <input type="hidden" id="EditTime" name="EditTime" value="@ViewBag.strTime" />
+                                        <span class="input-group-addon" style="padding:2px 10px;">
+                                            <span class="glyphicon glyphicon-time"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Container No:</label>
+                                </div>
+                                <div class="position-relative">
+                                    <div id="LoadedDiv">
+                                        @Html.HiddenFor(m => m.ContainerId, new { @value = "0" })
+                                        @Html.TextBoxFor(m => m.ContNo, new { @placeholder = "Container No", @readonly = true })
+                                        <span class="input_icon" id="ShippingLineSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerModal"></i></span>
+                                        @Html.ValidationMessageFor(m => m.ContNo)
+                                    </div>
+                                    <div id="EmptyDiv" style="display:none">
+                                        @Html.Hidden("ContainerNoIdEmp", "", new { @value = "0" })
+                                        @Html.TextBox("ContainerNoEmp", "", new { @placeholder = "Container No Emp", @readonly = true })
+                                        <span class="search" id="ShippingLineSearch"></span>
+                                        @Html.ValidationMessage("ContainerNoEmp")
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 col-md-offset-6">
+                                <div class="form-group">
+                                    <label>CFS Code :</label>
+                                </div>
+                                @Html.TextBoxFor(m => m.CFSCode, "", new { @readonly = true })
+                                @Html.ValidationMessageFor(m => m.CFSCode, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Vechicle No. :</label>
+                                </div>
+                                <div class="col-md-4" style="padding-right: 0px;">
+                                    @Html.TextBoxFor(m => m.VeichelNo, "", new { @placeholder = "Veichel No", @onblur = "VehicleNoFocusOut()" })
+                                    @Html.ValidationMessageFor(m => m.VeichelNo, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-6" style="padding-left: 0px;" id="divTxtVeichelNo">
+                                    @Html.TextBoxFor(m => m.VeichelNoOther, "", new { @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.VeichelNoOther, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-4" style="padding-left: 0px; display:none;" id="divddlVeichelNo">
+                                    @Html.DropDownListFor(m => m.VeichelNoList, new List<SelectListItem>
+                                   {
+                                       new SelectListItem { Text="----Select----",Value=""}
+                                   })
+                                    @Html.ValidationMessageFor(m => m.VeichelNoList, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Weight For :</label>                                    
+                                </div>
+                                <label class="Radiocontainer">
+                                    Gross
+                                    @Html.RadioButton("WeightFor", "Gross", new { @class = "", @id = "Gross", @onclick = "GetRadioVal();", @checked = true })
+                                    <span class="checkmark"></span>
+                                </label>
+                                <label class="Radiocontainer">
+                                    Tare
+                                    @Html.RadioButton("WeightFor", "Tare", new { @class = "", @id = "Tare", @onclick = "GetRadioVal();" })
+                                    <span class="checkmark"></span>
+                                </label>
+                                @*<div class="col-md-2">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("WeightFor", "Gross", new { @class = "", @id = "Gross", @onclick = "GetRadioVal();", @checked = true })
+                                        <label for="Gross"><i class="circle"></i><span>Gross</span></label>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="boolean-container">
+                                        @Html.RadioButton("WeightFor", "Tare", new { @class = "", @id = "Tare", @onclick = "GetRadioVal();" })
+                                        <label for="Tare"><i class="circle"></i><span>Tare</span></label>
+                                    </div>
+                                </div>*@
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Weight :</label>
+                                </div>
+                                @Html.TextBoxFor(m => m.WeightInKg, "", new { @readonly = true })
+                                @Html.ValidationMessageFor(m => m.WeightInKg, "", new { @class = "Error_Msg" })
+                            </div>
+                                <div class="col-md-1" style="margin-top: 30px;">
+                                    <label class="InputLabel"><b>Kg</b></label>
+                                </div>
+                            <div class="locationAddBtn">
+                                <div class="form-group">
+                                    <input type="button" id="btnPullWT" class="btn btn-primary mr-1 btn-100px" value="Pull WT" onclick="PullWeight()" />
+                                </div>
+                            </div>
+                        </div>
+                            <div class="Form_Space_top"></div>
+                            <div class="SignUp_space_bottom2"></div>
+                            <div class="d-flex justify-content-left">
+                                <input type="button" id="btnSave" class="btn btn-primary mr-1 btn-100px" value="Save" />
+                                <input type="button" id="btnReset" class="btn btn-primary-border btn-100px" value="Reset" onclick="ResetAllFields()" />
+                            </div>
+                        <div class="logErrMsg" style="background-color:transparent" id="divExtendGPErrMsg"></div>
+                        <div class="row">
+                            <div class="logSuccMsg Form_Space_top" id="DivMsg" style="background-color:transparent"></div>
+                            <div class="logSuccMsg SignUp_space_bottom2" style="background-color:transparent">
+                                <div id="DivExitThroughGateMsg" style="background-color:transparent"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="row Form_Space_top Form_Space_bottom">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-offset-5 col-md-4" style="text-align:right;">
+                                            <label></label>
+                                        </div>
+                                        <div class="col-md-3">
+                                            @Html.TextBox("GESearch", "", new { placeholder = "Search Here" })
+                                        </div>
+                                    </div>
+                                </div>
+                                <table class="table table-bordered table-striped" id="tblWeightCaptureList">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center" width="5%">@Html.DisplayName("View")</th>
+                                            <th class="text-center" width="5%">@Html.DisplayName("Edit")</th>
+                                            <th class="text-center" width="5%">@Html.DisplayName("Delete")</th>
+                                            <th class="text-center" width="5%">@Html.DisplayName("Print")</th>
+                                            <th class="text-center" width="5%">@Html.DisplayName("SL No")</th>
+                                            <th class="text-center" width="15%">@Html.DisplayName("Date")</th>
+                                            <th class="text-center" width="15%">Ref No.</th>
+                                            <th class="text-center" width="15%">Container No.</th>
+                                            <th class="text-center" width="10%">@Html.DisplayName("Type")</th>
+                                            <th class="text-center" width="10%">@Html.DisplayName("Weight")</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{
+                                            if (Model.ListData != null && Model.ListData.Count > 0)
+                                            {
+                                                var SerialNo = 1;
+                                                foreach (var elem in Model.ListData)
+                                                {
+                                                    <tr>
+                                                        <td class="text-center"><div class="table_icon"><a href="#" onclick="ViewGateExitDet('@elem.ELEWId')"><i class="fa fa-eye"></i></a></div></td>
+                                                        <td class="text-center"><div class="table_icon"><a href="#" onclick="EditGateExit('@elem.ELEWId')"><i class="fa fa-pencil"></i></a></div></td>
+                                                        <td class="text-center"><div class="table_icon"><a href="#" onclick="DeleteGateExitDet('@elem.ELEWId')"><i class="fa fa-trash-o"></i></a></div></td>
+                                                        <td class="text-center"><div class="table_icon"><a href="#" onclick="Print('@elem.ELEWId')"><i class="fa fa-file-pdf-o Edit"></i></a></div></td>
+                                                        <td class="text-center">@SerialNo.ToString()</td>
+                                                        <td class="text-center">@elem.Date</td>
+                                                        <td class="text-center">@elem.RefNo</td>
+                                                        <td class="text-center">@elem.ContNo</td>
+                                                        <td class="text-center">@elem.Weight</td>
+                                                        <td class="text-center">@elem.WeightInKg</td>
+                                                    </tr>
+                                                    SerialNo = SerialNo + 1;
+                                                }
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                }
+                    </div>
+        </div>
+    </div>
+</div>
+<div id="ContainerModal" class="modal fade" role="dialog" style="padding-top: 50px;">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">Container</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <input placeholder="Search Me" id="Containerbox" type="text" />
+                    </div>
+
+                </div>
+                <div class="row">
+                    <ul class="navList" id="lstContainer" style="height: 360px;">
+                        @{
+                            if (@ViewBag.ContList != null)
+                            {
+                                foreach (var item in @ViewBag.ContList)
+                                {
+                                    <li id="@item.ContainerNo" Material="@item.Material" Remarks="@item.Remarks" CustomerName="@item.CustomerName" onclick="AutoFill(this,'@item.ContainerNo','@item.CFSCode')">@item.ContainerNo</li>
+                                }
+                            }
+                        }
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-primary-border btn-100px" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    var Skip = 0;
+    $(document).ready(function () {
+        var TblWeightCapture = $('#tblWeightCaptureList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 10,
+            "aoColumns": [
+                { "sName": "View", "bSortable": false, "width": "8%" },
+                { "sName": "Edit", "bSortable": false, "width": "8%" },
+                { "sName": "Delete", "bSortable": false, "width": "8%" },
+                { "sName": "Print", "bSortable": false, "width": "8%" },
+                { "sName": "SL No", "width": "8%" },
+                { "sName": "Date" },
+                { "sName": "Ref No.", "width": "15%" },
+                { "sName": "Container No." },
+                { "sName": "Type" },
+                { "sName": "Weight" },
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(TblWeightCapture);
+        var editTime = $("#EditTime").val();
+        if (editTime != null && editTime != "") {
+            $("#time").val(editTime);
+        }
+        $("#GESearch").keyup(function () { tableFilter("GESearch", "tblWeightCaptureList") });
+        $("#RefNoDate").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            maxDate: new Date(),
+            changeYear: true,
+            showAnima: "fadein",
+            onSelect: function (dateText) {
+                var From = $('#RefNoDate').val();
+                var To = $('#RefNoDate').val().toString("dd/mm/yyyy");
+                var SF = From.split('/');
+                var ST = To.split('/');
+                var STyear = ST[2].split(" "); //Split Time and Year From InvoiceDate;
+                var FromDate = SF[1] + '/' + SF[0] + '/' + SF[2]; // Createing Date In DD/MM/YYYY;
+                var ToDate = ST[1] + '/' + ST[0] + '/' + STyear[0]; // Createing Date In DD/MM/YYYY;
+                var dt1 = new Date(FromDate);
+                var dt2 = new Date(ToDate);
+                if (dt1 > dt2) {
+                    alert("Gate Exit Date Must be Greater Than or Equal To Gate Entry Date !!");
+                    return false;
+                }
+                else
+                    return true;
+            },
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+                $('[data-valmsg-for="Data"]').html('<span></span>');
+            }
+        });
+
+        $('#ContainerModal').on('hidden.bs.modal', function () {
+            $('#Containerbox').val('');
+            $('#lstContainer > li').show();
+        })
+    });
+    function tableFilter(inputName, tableName) {
+        var input, filter, table, tr, td, i, txtValue;
+        input = document.getElementById(inputName);
+        filter = input.value.toUpperCase();
+        table = document.getElementById(tableName);
+        var tBody = table.getElementsByTagName('tbody')[0];
+        tr = tBody.getElementsByTagName("tr");
+        for (i = 0; i < tr.length; i++) {
+            debugger;
+            var tdCount = tr[i].getElementsByTagName("td").length;
+            var dcount = 0;
+            for (p = 0; p < tdCount; p++) {
+                td = tr[i].getElementsByTagName("td")[p];
+                if (td) {
+                    txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        dcount++;
+                    }
+                }
+            }
+            if (dcount == 0)
+                tr[i].style.display = "none";
+            else
+                tr[i].style.display = "";
+        }
+    }
+    function GateExitOnSuccess(data) {
+
+        debugger;
+        if (data.Status == 1 || data.Status == 2) {
+
+            if ($('#DivExitThroughGateMsg').hasClass('logErrMsg'))
+                $('#DivExitThroughGateMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivExitThroughGateMsg').html(data.Message);
+            
+            setTimeout(LoadGateExitView, TimeInSeconds);
+            //GetExitThroughGateList();
+        }
+
+        else {
+            if ($('#DivExitThroughGateMsg').hasClass('logSuccMsg'))
+                $('#DivExitThroughGateMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivExitThroughGateMsg').html(data.Message);
+        }
+    }
+    function GateExitOnFailure() {
+
+    }
+    function GetRadioVal() {
+
+    }
+    $('#btnSave').on("click", function () {
+        if ($('#ContNo').val() == "") {
+            alert("Select Container No !!");
+            return false;
+        }
+        else if ($('#RefNoDate').val() == "") {
+            alert("Select Date !!");
+            return false;
+        }
+        else if ($('#VeichelNo').val() == "") {
+            alert("Enter Veichel No !!");
+            return false;
+        }
+        else if ($('#VeichelNoList').is(":hidden") == false && $('#VeichelNoList option:selected').val() == "") {
+            alert("Select Veichel No !!");
+            return false;
+        }
+        else if ($('#VeichelNoOther').is(":hidden") == false && $('#VeichelNoOther').val() == "") {
+            alert("Enter Veichel No !!");
+            $('#VeichelNoOther').focus();
+            return false;
+        }
+        else {
+            var conf = confirm("Are You Want To Save?");
+            if (conf) {
+                //$('#btnSave').prop("disabled", true);
+                $('#btnSave').submit();
+                return true;
+            }
+            else
+                return false;
+        }
+    });
+    function LoadGateExitView() {
+        //debugger;
+        $('#DivBody').load('/GateOperation/Ppg_GateOperation/ELWBWeightCapture');
+    }
+    function EditGateExit(ELWBWeightCapID) {
+        $('#VeichelNoOther').val('');
+        $('#VeichelNoList').html('');
+        $('#divTxtVeichelNo').hide();
+        $('#divddlVeichelNo').hide();
+        $("#VeichelNoOther").attr("readonly", "readonly");
+        if (ELWBWeightCapID != null && parseInt(ELWBWeightCapID) > 0) {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("GetEditELWBWeightCapDetail", "Ppg_GateOperation", new { Area = "GateOperation" }) ',
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                type: 'POST',
+                data: { ELWBWeightCapID: ELWBWeightCapID },
+                success: function (data) {
+                    debugger;
+                    if (data.Status > 0) {
+                        debugger;
+                        $('#RefNo').val(data.Data.RefNo);
+                        $('#RefNoDate').val(data.Data.RefNoDate);
+                        $('#ContNo').val(data.Data.ContNo);
+                        $('#CFSCode').val(data.Data.CFSCode);
+                        $('#VeichelNo').val(data.Data.VeichelNo);
+
+                        $('#VeichelNoOther').val(data.Data.VeichelNoOther);
+                        //$('#VeichelNoList').val(data.Data.CFSCode);
+                        $('#time').val(data.Data.Time);
+                        $('#WeightFor').val(data.Data.WeightFor);
+                        $('#WeightInKg').val(data.Data.WeightInKg);
+                        $('#ELEWId').val(data.Data.ELEWId);
+                        $('#Material').val(data.Data.Material);
+                        $('#CustomerName').val(data.Data.CustomerName);
+                        $('#Remarks').val(data.Data.Remarks);
+                        if (data.Data.WeightFor == "Tare") {
+                            $("#Gross").attr('checked', false);
+                            $("#Tare").attr('checked', true);
+                        }
+                        else {
+                            $("#Tare").attr('checked', false);
+                            $("#Gross").attr('checked', true);
+                        }
+                        if (data.Status == 1 && data.Data.VechNoList != null && data.Data.VechNoList.length > 0) {
+                            if (data.Data.VechNoList.length > 1) {
+                                var _Html = '<option value="">----Select----</option>';
+                                $('#divddlVeichelNo').show();
+                                debugger;
+                                $.each(data.Data.VechNoList, function (i, item) {
+                                    debugger;
+                                    _Html += '<option value="' + item.VecholNo + '">' + item.VecholNo + '</option>';
+                                });
+                                $('#VeichelNoList').append(_Html);
+                                $('#VeichelNoList').val(data.Data.VeichelNoOther);
+                            }
+                            else {
+                                $('#divTxtVeichelNo').show();
+                                $('#VeichelNoOther').val(data.Data.VeichelNoOther);
+                            }
+                        }
+                        else if (data.Status != 1) {
+                            $('#divTxtVeichelNo').show();
+                            //$('#VeichelNoOther').removeAttr("readonly");
+                            alert(data.Message);
+                        }
+                        //$('#ContNo').removeAttr("readonly");
+                        //$('#VeichelNoOther').removeAttr("readonly");
+                    }
+                    else
+                        alert(data.Message);
+                },
+                error: function (ex) {
+                    alert(ex);
+                }
+            });
+        }
+        else
+            alert("No Data Found!!");
+    }
+    function ViewGateExitDet(ELWBWeightCapID) {
+        //debugger;
+        $('#DivBody').load('/GateOperation/Ppg_GateOperation/ViewELWBWeightCapture?ELWBWeightCapID=' + ELWBWeightCapID);
+    }
+    function DeleteGateExitDet(ELWBWeightCapID) {
+        if (ELWBWeightCapID != null && parseInt(ELWBWeightCapID) > 0) {
+            var conf = confirm("Do You Want To Delete?");
+            if (conf) {
+                var Token = $('input[name="__RequestVerificationToken"]').val();
+                $.ajax({
+                    url: '@Url.Action("DeleteELWBWeightCapEntry", "Ppg_GateOperation", new { Area = "GateOperation" }) ',
+                    headers: { "__RequestVerificationToken": Token },
+                    dataType: 'JSON',
+                    type: 'POST',
+                    data: { ELWBWeightCapID: ELWBWeightCapID },
+                    success: function (data) {
+                        debugger;
+                        if (data.Status > 0)
+                            LoadGateExitView();
+                        alert(data.Message);
+                    },
+                    error: function (ex) {
+                        alert(ex);
+                    }
+                });
+            }
+        }
+        else
+            alert("No Data Found!!");
+    }
+    function SelectedIndexChanged() {
+        var _ContNo = $('#ContNo').val();
+        $('#CFSCode').val('');
+        if (_ContNo != "") {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("GetELWBContainerNoWiseDetail", "Ppg_GateOperation", new { Area = "GateOperation" }) ',
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                type: 'POST',
+                data: { ContainerNo: _ContNo },
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1 && data.Data.length > 0)
+                        $('#CFSCode').val(data.Data[0].CFSCode);
+                    else if (data.Status != 1)
+                        alert(data.Message);
+                },
+                error: function (ex) {
+                    alert(ex);
+                }
+            });
+        }
+    }
+    function VehicleNoFocusOut() {
+        var _VehicleNo = $('#VeichelNo').val();
+        $('#VeichelNoOther').val('');
+        $('#VeichelNoList').html('');
+        $('#divTxtVeichelNo').hide();
+        $('#divddlVeichelNo').hide();
+        $("#VeichelNoOther").attr("readonly", "readonly");
+        if (_VehicleNo != "") {
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("GetELWBWCVechicleNoList", "Ppg_GateOperation", new { Area = "GateOperation" }) ',
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                type: 'POST',
+                data: { VehicleNo: _VehicleNo },
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1 && data.Data.length > 0) {
+                        if (data.Data.length > 1) {
+                            var _Html = '<option value="">----Select----</option>';
+                            $('#divddlVeichelNo').show();
+                            debugger;
+                            $.each(data.Data, function (i, item) {
+                                debugger;
+                                _Html += '<option value="' + item.VecholNo + '">' + item.VecholNo + '</option>';
+                            });
+                            $('#VeichelNoList').append(_Html);
+                        }
+                        else {
+                            $('#divTxtVeichelNo').show();
+                            $('#VeichelNoOther').val(data.Data[0].VecholNo);
+                        }
+                    }
+                    else if (data.Status != 1) {
+                        $('#divTxtVeichelNo').show();
+                        $('#VeichelNoOther').removeAttr("readonly");
+                        alert(data.Message);
+                    }
+                },
+                error: function (ex) {
+                    alert(ex);
+                }
+            });
+        }
+        else {
+            $('#divTxtVeichelNo').show();
+        }
+    }
+    $('.clockpicker').clockpicker({
+        donetext: 'Done',
+        twelvehour: true
+    });
+    function LoadMoreData() {
+        $('#Containerbox').val('');
+        if (Skip == -1)
+            $('#lstContainer').html('');
+        $.ajax({
+            url: '/GateOperation/Ppg_GateOperation/GetELWBWCContNo',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Search: '', Skip: Skip + 1 },
+            success: function (data) {
+                if (data.lstConatiner != null && data.lstConatiner != '' && data.lstConatiner != undefined && data.lstConatiner.length > 0) {
+                    Skip++;
+                    var P = "'";
+                    var htm = '';
+                    $.each(data.lstConatiner, function (i, item) {
+                        htm += '<li id="' + item.ContainerNo + '" Material="' + item.Material + '" Remarks="' + item.Remarks + '" CustomerName="' + item.CustomerName + '" onclick="AutoFill(this,' + P + item.ContainerNo + P + ',' + P + item.CFSCode + P + ')">' + item.ContainerNo + '</li>';
+                    });
+                    $('#lstContainer').append(htm);
+                }
+                else {
+                    alert('No more data avilable');
+                }
+            }
+        });
+    }
+    function AutoFill(ev, ContNo, CFSCode) {
+        debugger;
+        $('#ContNo').val(ContNo);
+        $('#CFSCode').val(CFSCode);
+        $("#ContainerModal").modal("hide");
+
+        $('#Material').val($(ev).attr("Material"));
+        $('#CustomerName').val($(ev).attr("CustomerName"));
+        $('#Remarks').val($(ev).attr("Remarks"));
+
+        $('#Containerbox').val('');
+        $('#VeichelNo').val('');
+        $('#VeichelNoOther').val('');
+        $('#VeichelNoList').html('');
+        $('#divTxtVeichelNo').hide();
+        $('#divddlVeichelNo').hide();
+        $("#VeichelNoOther").attr("readonly", "readonly");
+        $('#divTxtVeichelNo').show();
+    }
+    $('#Containerbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstContainer > li').show();
+        else {
+            $('#lstContainer > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    $('#VeichelNo').keyup(function () {
+        $(this).val($(this).val().toUpperCase());
+    });
+    function ResetAllFields() {
+        $('#RefNo').val('');
+        $('#ELEWId').val('');
+        $('#RefNoDate').val('');
+        $('#ContNo').val('');
+        $('#CFSCode').val('');
+        $('#VeichelNo').val('');
+
+        $('#VeichelNoOther').val('');
+        $('#time').val('');
+        $('#WeightFor').val('');
+        $('#WeightInKg').val('');
+        $("#Tare").attr('checked', false);
+        $("#Gross").attr('checked', true);
+
+        $('#Material').val('');
+        $('#CustomerName').val('');
+        $('#Remarks').val('');
+        LoadGateExitView();
+    }
+    function Print(_ELWBWeightCapID) {
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/GateOperation/Ppg_GateOperation/ELWBWeightCapPrint',
+            type: 'POST',
+            data: { ELWBWeightCapID: _ELWBWeightCapID },
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+    }
+    function Print(_ELWBWeightCapID) {
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '/GateOperation/Ppg_GateOperation/ELWBWeightCapPrint',
+            type: 'POST',
+            data: { ELWBWeightCapID: _ELWBWeightCapID },
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+    }
+
+    function PullWeight() {
+        debugger;
+        $.ajax({
+            url: 'https://localhost/getweight.php',
+            dataType: 'JSON',
+            type: 'GET',
+            data: {},
+            success: function (data) {
+                debugger;
+                let data1 = JSON.parse(data);                
+                $('#WeightInKg').val(data1.value);
+            },
+            error: function (err) {
+                console.log(err);
+                console.error("Error: " + err);
+                alert('Error :' + err);
+            }
+            
+        });
+
+    }
+
+    @*url: '@Url.Action("GetELWBWeight", "Ppg_GateOperation", new { Area = "GateOperation" }) ',
+    dataType: 'JSON',
+    type: 'GET',
+    data: {},
+    success: function (data) {
+        debugger;
+        if (data.Status == 1)
+            $('#WeightInKg').val(data.Data);
+    }*@
+
+</script>

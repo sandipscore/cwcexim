@@ -1,0 +1,358 @@
+﻿
+@model CwcExim.Areas.Report.Models.MonthlyCashBook
+
+
+@{
+
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "RptInvoiceReportDetails";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+
+}
+<script>
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+</script>
+@using (Ajax.BeginForm("GetMonthlyCashBookReportOld", "VRN_ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Monthly cash Book</h4>
+                            </div>
+                        </div>
+                        <div class="Form_Space_top" style="padding:5px;">
+                            <div class="row">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Period From:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col_cus_2 col_cus_offset_3 col-md-offset-4">
+                                        <label>Period To:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $('#BtnPreview').on("click", function () {
+        //alert("in");
+        //ValidateExitDet();
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        return true;
+    });
+    function RptConsumerListDtlOnFailure() { }
+    function RptInvoiceReportDetails(data) {
+        $('#DivDwnldWavMsg').html('')
+        //alert(data);
+        debugger;
+        if (data.Status == 1) {
+
+            debugger;
+            SaveReportPdf(data);
+
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+
+
+    function ValidateExitDet() {
+        var Status = true;
+
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="txtGrossWeight"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+
+        return Status;
+    }
+    function SaveReportPdf(data) {
+        debugger;
+        var FormDate = $("#PeriodFrom").val();
+        var ToDate = $("#PeriodTo").val();
+        var PostData = new FormData();
+        //var Html = '<div style="text-align: center;border: 1px solid #000;">Daily cash Book From ' + FormDate + ' To ' + ToDate + '</div>'
+        var Html = "<div style='float:left;'><img align='right' src='IMGSRC' width='90'/></div>";
+        Html += "<div style='text-align:center; float:left; width:100%;'><h1 style='font-size: 22px; margin: 0; padding: 0;'>CENTRAL WAREHOUSING CORPORATION</h1><label style='font-size: 12px;'>(A Govt. of India Undertaking)</label><br/><span style='font-size: 12px; padding-bottom: 10px;'> Plot No M50-54, Phase 3B</span><br/><span style='font-size: 12px; padding-bottom: 10px;'> Verna, Goa</span><br/><label style='font-size: 12px;'></label>";
+        Html += "<br/><label style='font-size: 14px; font-weight:bold;'>Monthly Cash Book From " + FormDate + " To " + ToDate + "</label></div>";
+        Html += "<div style='float:right;'><img align='right' src='ISO' width='90'/></div>";
+        Html += "<div><br/></div>";
+
+        Html += "<table style='margin-bottom:20px;width:100%;font-size:6.5pt;font-family:Verdana,Arial,San-serif;border:1px solid #000;border-collapse:collapse;'>";
+        Html += "<thead>";
+        Html += "<tr>";
+        Html += "<th rowspan='2' style='border-right:1px solid #000;text-align:center;'>Date</th>";
+        Html += "<th colspan='2' style='border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>Opening Balance</th>";
+        Html += "<th rowspan='2' style='border-right:1px solid #000;text-align:center;'>Cash Receipt No</th>";
+        Html += "<th colspan='14' style='border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>Tax Invoice (Delivery Basis)</th>";
+        Html += "<th colspan='3' style='border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>Bill of Supply<br/> (Delivery Basis)</th>";
+        Html += "<th rowspan='2' style='border-right:1px solid #000;text-align:center;'>PD / SD deposit</th>";
+        Html += "<th rowspan='2' style='border-right:1px solid #000;text-align:center;'>TDS</th>";
+        Html += "<th colspan='3' style='border-right:1px solid #000;text-align:center;border-bottom:1px solid #000;'>Days Total Collection</th>";
+        Html += "<th colspan='3' style='border-right:1px solid #000;text-align:center;border-bottom:1px solid #000;''>Bank Deposit</th>";
+        Html += "<th colspan='2' style='text-align:center;border-bottom:1px solid #000;'>Closing Balance</th>";
+        Html += "</tr>";
+
+        Html += "<tr>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Cash</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Cheque in hand</th>";
+
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Name of the Party</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Over Time Charges</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'></th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Other Commodity</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Bonded Goods</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>PCS</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>I.F Charges</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>MF Charges</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>oths</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Total before (GST)</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>CGST+SGST</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>IGST</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Round Up</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Total Taxable</th>";
+
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Foodgrains (Inc Ins)</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Others (Non GST)</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Total Bos</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Cash</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Cheque</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Bank</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Cash</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Cheque</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>NEFT</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Cash</th>";
+        Html += "<th style='border-right:1px solid #000;text-align:center;'>Cheque in hand</th>";
+        Html += "</tr>";
+
+        Html += "</thead>";
+        Html += "<tbody>";
+        var TotalDay = 0;
+        for (i = 0; i < data.Data.lstCashReceipt.length; i++) {
+            var totald = data.Data.lstCashReceipt[i].TotalCheque + data.Data.lstCashReceipt[i].TotalCash;
+            TotalDay = TotalDay + totald;
+            var tax = (parseFloat(data.Data.lstCashReceipt[i].Cgst) + parseFloat(data.Data.lstCashReceipt[i].Sgst));
+            var total = (parseFloat(data.Data.lstCashReceipt[i].Cgst) + parseFloat(data.Data.lstCashReceipt[i].Sgst) + parseFloat(data.Data.lstCashReceipt[i].Igst) + +parseFloat(data.Data.lstCashReceipt[i].Roundoff) + parseFloat(data.Data.lstCashReceipt[i].Taxable));
+            Html += "<tr>";
+       //     if (i == data.Data.lstCashReceipt.length - 1)
+         //       Html += "<td style='text-align: center;border: 1px solid #000;'></td>";
+         //   else
+                Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].ReceiptDate + " </td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].OpCash.toFixed(2) + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].OpChq.toFixed(2) + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].CRNo + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].Depositor + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].OTCharge.toFixed(2) + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'> </td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'></td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'></td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'></td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'></td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'></td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'></td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].Taxable.toFixed(2) + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + tax.toFixed(2) + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].Igst.toFixed(2) + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].Roundoff.toFixed(2) + "</td>";
+
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + total.toFixed(2) + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'></td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'></td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'></td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].TotalSD.toFixed(2) + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].Tds.toFixed(2) + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" +  data.Data.lstCashReceipt[i].TotalCash.toFixed(2) + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].TotalCheque.toFixed(2) + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].TotalBank.toFixed(2) + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].BankCash.toFixed(2) + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].BankChq.toFixed(2) + "</td>";
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].TotalBank.toFixed(2) + "</td>";
+
+            Html += "<td style='text-align: center;border-right: 1px solid #000;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].cloCash.toFixed(2) + "</td>";
+            Html += "<td style='text-align: center;border-top: 1px solid #000;'>" + data.Data.lstCashReceipt[i].clochq.toFixed(2) + "</td>";
+            Html += "</tr>";
+        }
+        Html += "</tbody></table>"
+
+        Html += "<table style='width:100%;font-size:6.5pt;font-family:Verdana,Arial,San-serif;'><tbody>";
+        Html += "<tr>";
+
+        Html += "<td colspan='3' width='30%' valign='top'>";
+        Html += "<table cellpadding='5' style='width:100%;font-size:6.5pt;font-family:Verdana,Arial,San-serif;border:1px solid #000;border-collapse:collapse;'>";
+        Html += "<thead>";
+        Html += "<tr><th colspan='12' style='text-align:center;'>Details of Cash receipts issued</th></tr>";
+        Html += "</thead>";
+        Html += "<tbody>";
+        Html += "<tr>";
+        Html += "<td colspan='6' style='width:50%;border-right: 1px solid #000;border-top: 1px solid #000;'>Starting SL No</td>";
+        Html += "<td colspan='6' style='width:50%;border-top: 1px solid #000;'>" + data.Data.StartRNo + "</td>";
+        Html += "</tr>";
+        Html += "<tr>";
+        Html += "<td colspan='6' style='width:50%;border-right: 1px solid #000;border-top: 1px solid #000;'>Ending SL No</td>";
+        Html += "<td colspan='6' style='width:50%;border-top: 1px solid #000;'>" + data.Data.LastRNo + "</td>";
+        Html += "</tr>";
+        Html += "<tr>";
+        Html += "<td colspan='6' style='width:50%;border-right: 1px solid #000;border-top: 1px solid #000;'>Total CR issued</td>";
+        Html += "<td colspan='6' style='width:50%;border-top: 1px solid #000;'>" + data.Data.TotalRNo + "</td>";
+        Html += "</tr>";
+        Html += "</tbody></table>"
+        Html += "</td>";
+
+        Html += "<td colspan='2' width='20%' valign='top'></td>";
+
+        Html += "<td colspan='5' width='50%'>";
+        Html += "<table cellpadding='5' style='width:100%;font-size:6.5pt;font-family:Verdana,Arial,San-serif;border:1px solid #000;border-collapse:collapse;'>";
+        Html += "<thead>";
+        Html += "<tr><th colspan='13' style='border-bottom:1px solid #000;text-align:center;'>Details of Cash receipts issued during the month</th></tr>";
+        Html += "<tr><th colspan='5' style='width:40%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>Particulars</th>";
+        Html += "<th colspan='2' style='width:20%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>Cash</th>";
+        Html += "<th colspan='2' style='width:20%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>Cheque</th>";
+        Html += "<th colspan='2' style='width:20%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>Bank</th>";
+        Html += "<th colspan='2' style='width:20%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>Total</th></tr>";
+        Html += "</thead>";
+        Html += "<tbody>";
+        Html += "<tr><td colspan='5' style='border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>Opening Balance</td>";
+        Html += "<td colspan='2' style='width:20%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>" + data.Data.OpCash.toFixed(2) + "</td>";
+        Html += "<td colspan='2' style='width:20%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>" + data.Data.OpChq.toFixed(2) + "</td>";
+        Html += "<td colspan='2' style='width:20%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>0</td>";
+        Html += "<td colspan='2' style='width:20%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>" + data.Data.TotalOp.toFixed(2) + "</td></tr>";
+
+        Html += "<tr><td colspan='5' style='width:40%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>Receipt during the month</td>";
+        Html += "<td colspan='2' style='width:20%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>" + data.Data.ReceiptCash.toFixed(2) + "</td>";
+        Html += "<td colspan='2' style='width:20%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>" + data.Data.ReceiptChq.toFixed(2) + "</td>";
+        Html += "<td colspan='2' style='width:20%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>" + data.Data.ReceiptBank.toFixed(2) + "</td>";
+
+        Html += "<td colspan='2' style='width:20%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>" + data.Data.TotalReceipt.toFixed(2) + "</td></tr>";
+
+        Html += "<tr><td colspan='5' style='width:40%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>Bank Deposit</td>";
+        Html += "<td colspan='2' style='width:20%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>" + data.Data.CashBank.toFixed(2) + "</td>";
+        Html += "<td colspan='2' style='width:20%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>" + data.Data.ChqBank.toFixed(2) + "</td>";
+        Html += "<td colspan='2' style='width:20%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>" + data.Data.ReceiptBank.toFixed(2) + "</td>";
+
+        Html += "<td colspan='2' style='width:20%;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;'>" + ( data.Data.CashBank+ data.Data.ChqBank+ data.Data.ReceiptBank).toFixed(2) + "</td></tr>";
+
+        Html += "<tr><td colspan='5' style='width:40%;border-right:1px solid #000;text-align:center;'>Closing Balance</td>";
+        Html += "<td colspan='2' style='width:20%;border-right:1px solid #000;text-align:center;'>" + data.Data.ClosingCash.toFixed(2) + "</td>";
+        Html += "<td colspan='2' style='width:20%;border-right:1px solid #000;text-align:center;'>" + data.Data.ClosingChq.toFixed(2) + "</td>";
+        Html += "<td colspan='2' style='width:20%;border-right:1px solid #000;text-align:center;'>0</td>";
+        Html += "<td colspan='2' style='width:20%;border-right:1px solid #000;text-align:center;'>" + data.Data.TotalClose.toFixed(2) + "</td></tr>";
+        Html += "</tbody></table>"
+        Html += "</td>";
+
+        Html += "</tr>";
+        Html += "</tbody></table>";
+
+        Html += "<table style='width:100%;font-size:6.5pt;font-family:Verdana,Arial,San-serif;'><tbody>";
+        Html += "<tr><td colspan='12'>The above closing balance of cash and cheque as on last day of the month has been personally verified by me and found to be correct.</td></tr>";
+        Html += "<tr><td><span><br/><br/><br/></span></td></tr>";
+        Html += "<tr>";
+        Html += "<th colspan='6' style='width:50%;'>Signature of Cashier</th>";
+        Html += "<th colspan='6' style='width:50%;' style='text-align:right;'>Signature of WHM / Incharge</th>";
+        Html += "</tr>";
+        Html += "</tbody></table>";
+
+
+        PostData.append("Page", Html);
+        // alert("PostData=" + PostData);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GenerateMonthlyCashBookPDF", "VRN_ReportCWC", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+
+            }
+        });
+    }
+
+</script>
+
+
+

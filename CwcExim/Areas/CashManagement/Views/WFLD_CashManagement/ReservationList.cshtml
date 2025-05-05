@@ -1,0 +1,184 @@
+﻿@model IEnumerable<CwcExim.Areas.CashManagement.Models.WFLD_ReservationDetails>
+<script>
+        $(document).ready(function(){
+            var tblReservation = $('#tblReservation').DataTable({
+                "bFilter": false,
+                "bInfo": false,
+                "pageLength": 10,
+                "aoColumns": [
+                        { "sName": "SL No","width": "8%" },
+                        { "sName": "Date" },
+                        { "sName": "Party" },
+                        { "sName": "Godown" },
+                        { "sName": "Total Space" },
+                        { "sName": "Amount" },
+                        { "sName": "CGST" },
+                        { "sName": "SGST" },
+                        { "sName": "IGST" },
+                        { "sName": "Total" },
+                        { "sName": "RoundOff" },
+                        { "sName": "Invoice Amount" },
+                        { "sName": "Invoice No" },
+                        { "sName": "Print", "bSortable": false, "width": "10%" }
+
+                ]
+            });
+            new $.fn.dataTable.FixedHeader(tblReservation);
+        });
+        function LoadReservationPage(){
+            $('#DivBody').load('/CashManagement/WFLD_CashManagement/ReservationInvoice');
+        }
+
+        function DeleteChargeName(ChargeNameId){
+            var Confirm=confirm("Are you sure you want to delete?")
+            if(Confirm==true)
+            {
+                var Token = $('input[name="__RequestVerificationToken"]').val();
+                $.ajax({
+                    url: '/Master/WFLDMaster/DeleteChargeNameDetail',
+                    headers: { '__RequestVerificationToken': Token },
+                    type:'POST',
+                    async:false,
+                    dataType:'JSON',
+                    data:{ChargeNameId:ChargeNameId},
+                    success:function(data){
+                        debugger;
+                        if(data.Status==1)
+                        {
+                            LoadReservationPage();
+                        }
+                        else {
+                            alert(data.Message);
+                        }
+                    }
+                });
+            }
+        }
+
+        function PrintResInvoice(invno,mn, yr) {
+            debugger
+            var firstDate = '';
+            var lastDate = '';
+            if (mn == 'Jan') {
+                firstDate = '01' + '/01/' + yr;
+                lastDate = '31' + '/01/' + yr;
+            }
+            else if (mn == 'Feb') {
+                firstDate = '01' + '/02/' + yr;
+                lastDate = '28' + '/02/' + yr;
+            }
+            else if (mn == 'Mar') {
+                firstDate = '01' + '/03/' + yr;
+                lastDate = '31' + '/03/' + yr;
+            }
+            else if (mn == 'Apr') {
+                firstDate = '01' + '/04/' + yr;
+                lastDate = '30' + '/04/' + yr;
+            }
+            else if (mn == 'May') {
+                firstDate = '01' + '/05/' + yr;
+                lastDate = '31' + '/05/' + yr;
+            }
+            else if (mn == 'Jun') {
+                firstDate = '01' + '/06/' + yr;
+                lastDate = '30' + '/06/' + yr;
+            }
+            else if (mn == 'Jul') {
+                firstDate = '01' + '/07/' + yr;
+                lastDate = '31' + '/07/' + yr;
+            }
+            else if (mn == 'Aug') {
+                firstDate = '01' + '/08/' + yr;
+                lastDate = '31' + '/08/' + yr;
+            }
+            else if (mn == 'Sep') {
+                firstDate = '01' + '/09/' + yr;
+                lastDate = '30' + '/09/' + yr;
+            }
+            else if (mn == 'Oct') {
+                firstDate = '01' + '/10/' + yr;
+                lastDate = '31' + '/10/' + yr;
+            }
+            else if (mn == 'Nov') {
+                firstDate = '01' + '/11/' + yr;
+                lastDate = '30' + '/11/' + yr;
+            }
+            else if (mn == 'Dec') {
+                firstDate = '01' + '/12/' + yr;
+                lastDate = '31' + '/12/' + yr;
+            }
+
+            PrintResInvoiceByDate(invno,firstDate, lastDate);
+
+        }
+
+        function PrintResInvoiceByDate(invno,fromdate,todate) {
+            debugger;
+
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("GetBulkInvoiceReport", "WFLD_ReportCWC", new { Area = "Report" }) ',
+                headers: { "__RequestVerificationToken": Token },
+                dataType: 'JSON',
+                type: 'POST',
+                data: {
+                    InvoiceNumber: invno,
+                    InvoiceModule: 'RESERV',
+                    PeriodFrom: fromdate,//'@DateTime.Now.ToString("dd/MM/yyyy")',
+                    PeriodTo: todate,//'@DateTime.Now.ToString("dd/MM/yyyy")',
+                    InvoiceModuleName: 'Reservation',
+                },
+                success: function (data) {
+                    if (data.Status == 1)
+                        window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                    else
+                        alert(data.Data);
+                }
+            });
+        }
+</script>
+<table id="tblReservation" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+    <thead>
+        <tr>
+            <th style="text-align:center">@Html.DisplayName("SL No")</th>
+            <th>Date</th>
+            <th>Party</th>
+            <th>Godown</th>
+            <th>Total Space</th>
+            <th>Amount</th>
+            <th>CGST</th>
+            <th>SGST</th>
+            <th>IGST</th>
+            <th>Total</th>
+            <th>RoundOff</th>
+            <th>Invoice Amount</th>
+            <th>Invoice No</th>
+            <th style="text-align:center;">@Html.DisplayName("Print")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td style="text-align:center">@SerialNo</td>
+                    <td>@Html.DisplayFor(m => item.InvoiceDate)</td>
+                    <td>@Html.DisplayFor(m => item.PartyName)</td>
+                    <td>@Html.DisplayFor(m => item.GodownName)</td>
+                    <td>@Html.DisplayFor(m => item.TotalSpace)</td>
+                    <td>@Html.DisplayFor(m => item.Amount)</td>
+                    <td>@Html.DisplayFor(m => item.CGST)</td>
+                    <td>@Html.DisplayFor(m => item.SGST)</td>
+                    <td>@Html.DisplayFor(m => item.IGST)</td>
+                    <td>@Html.DisplayFor(m => item.Total)</td>
+                    <td>@Html.DisplayFor(m => item.RoundOff)</td>
+                    <td>@Html.DisplayFor(m => item.InvoiceAmt)</td>
+                    <td>@Html.DisplayFor(m => item.InvoiceNo)</td>
+                    <td style="text-align:center"><a href="#" onclick="PrintResInvoice('@item.InvoiceNo' ,'@item.Mnth', @item.Yr)"><i class="fa fa-file-pdf-o Edit"></i></a></td>
+                </tr>
+                SerialNo = SerialNo + 1;
+            }
+        }
+    </tbody>
+</table>

@@ -1,0 +1,340 @@
+﻿@model CwcExim.Areas.GateOperation.Models.DSR_RevalidateDOValidity
+
+@{
+    AjaxOptions options = new AjaxOptions();
+    //options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnComplete = "SaveDisabled";
+    options.OnBegin = "SaveEnabled";
+    options.OnSuccess = "UpdateGpOnSuccess";
+    options.OnFailure = "UpdateGpOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<div id="divExtendGP" class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("SaveRevalidateDOValidity", "DSR_GatePass", options))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-12">
+                            <h4>Extend DO Validity Date</h4>
+                        </div>
+                    </div>
+                   
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                @Html.HiddenFor(m => m.InvoiceId) 
+                                @Html.HiddenFor(m=>m.CustomAppraisementId)
+                                @Html.LabelFor(m => m.InvoiceNo, new { @class = "InputLabel" })<label class="LabelColon">:</label>
+                            </div>
+                            <div class="col-md-3">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.InvoiceNo, "", new { @class = "form-control input-sm", @readonly = true, @onkeydown = "PopupActivate('InvoiceNoModal');" })
+                                <span class="search" id="SearchInvoice"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#InvoiceNoModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.InvoiceNo, "", new { @class = "Error_Msg" })
+
+                            </div>
+                            <div class="col-md-offset-2-5 col_cus_offset_2_5 col-md-1-5 col_cus_2 padding_rt">
+                                @Html.LabelFor(m => m.DeliveryDate, new { @class = "InputLabel" })<label class="LabelColon">:</label>
+                            </div>
+                            <div class="col-md-3-5">
+                                @Html.TextBoxFor(m => m.DeliveryDate, "", new { @class = "form-control input-sm", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.DeliveryDate, "", new { @class = "Error_Msg" })
+                            </div>
+                           
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label class="InputLabel">Old Valid Date :</label>
+                                </div>
+                                <div class="col-md-3">
+                                    @Html.TextBoxFor(m => m.ExpiryDT, "", new { @class = "form-control input-sm", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.ExpiryDT, "", new { @class = "Error_Msg" })
+                                </div>
+                           
+
+                            <div class="col-md-offset-2-5 col_cus_offset_2_5 col-md-1-5 col_cus_2 padding_rt">
+                                <label class="InputLabel">Extend Valid Date :</label>
+                            </div>
+                            <div class="col-md-3-5 Date_Img">
+                                <span class="ReQSimbol">*</span>
+                                @Html.TextBoxFor(m => m.ExtendDT, "", new { @class = "form-control input-sm", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.ExtendDT, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                    </div>
+                                <div class="row SignUp_space_bottom">
+                                    <div class="col-md-offset-4 col-md-2" style="text-align:center">
+                                        <input type="button" id="btnExtendDOValiditySave" value="Save" class="btn log_Btn_sm" />
+                                    </div>
+                                    <div class="col-md-2 SignUp_space_bottom">
+                                        <input type="button" class="btn log_Btn_sm" value="Reset" onclick="LoadExtendDOValidity()" />
+                                    </div>
+                                </div>
+                                    <div class="logErrMsg" style="background-color:transparent" id="divExtendDOVErrMsg"></div>
+                                    <div class="logSuccMsg SignUp_space_bottom2" style="background-color:transparent">
+                                        <div id="divExtendDOVMsg"></div>
+                                    </div>
+                                   
+                                    
+                }
+                
+            </div>
+
+            <div class="row Form_Space_top">
+                <div class="col-md-2">
+                    <input type="button" id="btnLoadGPExtend" value="Show List" class="btn log_Btn_sm" onclick="LoadGPExtendList()" />
+                </div>
+                <div class="col-md-offset-6 col-md-2">
+                    <input type="text" placeholder="Search by Invoice No" id="SearchInvoiceNo" />
+                </div>
+
+                <div class="col-md-2">
+                    <input type="button" value="Search" onclick="GetListOfInvoiceNo()" class="btn log_Btn_sm" />
+                </div>
+                  
+            </div>
+
+            <div class="row">
+                <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="divExtendDOValidityList">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade mTabindex" id="InvoiceNoModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Invoice No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="InvBox" type="text" tabindex="=401" />
+                <ul class="navList" id="InvoiceNoList"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+
+<script>
+    $(function () {
+        $('#InvoiceNo').focus();
+        //GenerateBlankTable();
+    });
+    function SaveEnabled() {
+        //$('#btnSave').attr('enabled', 'enabled');
+        $('#btnExtendDOValiditySave').prop("disabled", false);
+    };
+    function SaveDisabled() {
+        $('#btnExtendDOValiditySave').attr('disabled', 'disabled');
+    }
+
+    $('#ExtendDT').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='ExtendDT']").html('');
+        }
+    });
+
+    $('#InvBox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#InvoiceNoModal .navList > li').show();
+        } else {
+            $('#InvoiceNoModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+    function PopupActivate(Id) {
+        debugger;
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+
+        if (CharCode == 32) {
+
+            $('#' + Id).modal('show');
+
+            if (Id == "InvoiceNoModal") {
+                GenerateLstInvoice();
+                $('#InvBox').focus();
+            }
+            
+        }
+    }
+
+    $('#InvoiceNoModal').on('shown.bs.modal', function () {
+        $('#InvBox').focus();
+    });
+
+    $('.mTabindex').keydown(function (e) {
+        //debugger;
+        var $focusable = $(this).find("[tabindex]:not([tabindex='-1'])");
+        if ($focusable.last().is(":focus") && !e.shiftKey && e.key == "Tab") {
+            e.preventDefault();
+            $focusable.first().focus();
+        }
+        else
+            if ($focusable.first().is(":focus") && e.shiftKey && e.key == "Tab") {
+                e.preventDefault();
+                $focusable.last().focus();
+            }
+    });
+
+    $('#SearchInvoice').on("click", function () {
+        GenerateLstInvoice();
+    });
+
+    
+
+    function GenerateLstInvoice() {
+        Page = 0;
+        $('#InvoiceNoList').html('');
+        $.ajax({
+            url: '/GateOperation/DSR_GatePass/GetInvoiceNoforExtendValidity',
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                if (data.Data != '' && data.Data != null) {
+                    var html = '';
+                    var tab = 401;
+                    var jsondata = JSON.parse(JSON.stringify(data.Data));
+                    if (jsondata.length > 0) {
+                        $.each(jsondata, function (i, item) {
+                            html += '<li tabindex=' + tab + '_' + i + ' onkeypress="SelectInvoiceDetails(' + item.InvoiceId + ',' + item.CustomAppraisementId + ',&quot;' + item.InvoiceNo + '&quot;,&quot;' + item.ExpiryDT + '&quot;,&quot;' + item.DeliveryDate + '&quot;)" onclick="SelectInvoiceDetails(' + item.InvoiceId + ',' + item.CustomAppraisementId + ',&quot;' + item.InvoiceNo + '&quot;,&quot;' + item.ExpiryDT + '&quot;,&quot;' + item.DeliveryDate + '&quot;)">' + item.InvoiceNo + '</li>';
+                        });
+                    }
+                    $('#InvoiceNoList').html(html);
+                }
+
+            }
+        });
+    }
+
+
+    function SelectInvoiceDetails(InvoiceId, CustomAppraisementId, InvoiceNo, ExpiryDT, DeliveryDate)
+    {
+        $('#InvoiceNo').val(InvoiceNo);
+        $('#InvoiceId').val(InvoiceId);
+        $('#CustomAppraisementId').val(CustomAppraisementId);
+        $('#DeliveryDate').val(DeliveryDate);
+        $('#ExpiryDT').val(ExpiryDT);
+        $('#ExtendDT').val('');
+        $('#ExtendDT').focus();
+        $("#InvoiceNoModal").modal("hide");
+       
+    }
+
+    function UpdateGpOnSuccess(data) {
+        debugger;
+        //if (ValidateExpDate()) {
+            if (data.Status == 1) {
+                debugger;
+                $('#divExtendDOVMsg').html(data.Message);
+                setTimeout(LoadExtendDOValidity, 3000);
+            }
+            else {
+                $('#divExtendDOVErrMsg').html(data.Message);
+            }
+        }
+
+   // }
+
+    function UpdateGpOnFailure() { }
+
+    function LoadExtendDOValidity() {
+        $('#DivBody').load('/GateOperation/DSR_GatePass/ExtendDOValidity');       
+    }
+    //function GenerateBlankTable() {
+    //    tablehtml = '';
+    //    var tablehtml = '<table class="table table-bordered table-striped dataTable" id="tblEntryDet"><thead><tr><th class="text-center" style="width:10%;">SL No</th><th>Invoice No</th><th>Update Date</th><th>Old DO Validity Date</th><th>New DO Validity Date</th></tr></thead><tbody>';
+    //    $('#tblEntryDet').html(tablehtml);
+    //}
+    function LoadGPExtendList() {
+        $('#tblEntryDet').html('');
+        $('#SearchInvoiceNo').val('');
+        var InvoiceNo = "";
+        $('#divExtendDOValidityList').load('/GateOperation/DSR_GatePass/ListOfExtendDOValidity?InvoiceNo=' + InvoiceNo);
+    }
+
+    function GetListOfInvoiceNo() {
+        debugger;
+        $('#tblEntryDet').hide();
+
+        if ($('#SearchInvoiceNo').val().trim() == '') {
+            alert('Enter Gate Pass Number for searching');
+            return;
+        }
+        var InvoiceNo = encodeURI($('#SearchInvoiceNo').val().trim());
+        $('#divExtendDOValidityList').load('/GateOperation/DSR_GatePass/ListOfExtendDOValidity?InvoiceNo=' + InvoiceNo);
+    }
+
+    $('#btnExtendDOValiditySave').on("click", function () {
+        debugger;
+       
+        var VDate = $('#ExpiryDT').val();
+        var vdt = VDate.split('/');
+        var Fvdt = vdt[2] + '/' + vdt[1] + '/' + vdt[0];
+      
+        var EDate = $('#ExtendDT').val();
+        var edt = EDate.split('/');
+        var Fedt = edt[2] + '/' + edt[1] + '/' + edt[0];
+
+        if (Fvdt >= Fedt)
+        {
+            alert('Extend DO valid Date should greater than old DO valid Date');
+            return false;
+        }
+
+        if (confirm("Are You Sure You Want To Save?")) {
+            debugger;
+            $('#btnExtendDOValiditySave').attr('disabled', true);
+            $('#btnExtendDOValiditySave').submit();
+        }
+
+    });
+
+</script>
+

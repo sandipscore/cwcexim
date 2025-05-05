@@ -1,0 +1,1545 @@
+﻿@model CwcExim.Areas.Export.Models.WFLD_BBTContainer
+<script src="~/Scripts/Extended.Jquery.Plugins.js"></script>
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script>
+
+    function SearchInvoice() {
+
+        debugger;
+        var InvoiceNo = $('#SearchInvoiceNo').val().trim();
+        var InvoiceDate = $('#SearchInvoiceDate').val().trim();
+        var ContainerNo = $('#SearchContainerNo').val().trim();
+        if ($('#SearchInvoiceNo').val() == "" && $('#SearchInvoiceDate').val() == "" && $('#SearchContainerNo').val() == "")
+            alert("Enter Container No. or Invoice No. or Invoice Date to Search");
+        else if ($('#SearchInvoiceNo').val() != "" && $('#SearchInvoiceDate').val() != "" && Validate() == true)
+            $('#DivBTTContainerList').load('/Export/WFLD_CWCExport/GetBTTContainerSearchList?InvoiceNo=' + InvoiceNo + '&InvoiceDate=' + InvoiceDate + "&Module=BTTCon");
+        else if ($('#SearchInvoiceNo').val() != "")
+            $('#DivBTTContainerList').load('/Export/WFLD_CWCExport/GetBTTContainerSearchList?InvoiceNo=' + InvoiceNo + "&Module=BTTCon");
+        else if ($('#SearchContainerNo').val() != "")
+            $('#DivBTTContainerList').load('/Export/WFLD_CWCExport/GetBTTContainerSearchList?ContainerNo=' + ContainerNo + "&Module=BTTCon");
+        else if (Validate() == true)
+            $('#DivBTTContainerList').load('/Export/WFLD_CWCExport/GetBTTContainerSearchList?InvoiceDate=' + InvoiceDate + "&Module=BTTCon");
+    }
+
+    function Validate() {
+        debugger;
+        var date = document.getElementById("SearchInvoiceDate").value.split("/");
+        var day = date[0];
+        var month = date[1];
+        var dateString = document.getElementById("SearchInvoiceDate").value;
+        var regex = /^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/;
+        //if (regex.test(dateString) || dateString.length == 0) {
+        //    alert("Please enter correct date");
+        //    return false;
+        //}
+        if (day > 31) {
+            alert("Please enter correct date");
+            return false;
+        }
+        else
+            if (month > 12) {
+                alert("Please enter correct Month");
+                return false;
+            }
+        return true;
+    }
+
+    $('#InvoiceDate').datepicker({
+        dateFormat: "dd-mm-yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='StuffingDate']").html('');
+        }
+    });
+    $(document).ready(function () {
+        //var tblBTTCargo = $('#tblBTTContainerDtl').DataTable({
+        //    "bFilter": false,
+        //    "bInfo": false,
+        //    "lengthChange": false,
+        //    "paging": false,
+        //    "aoColumns": [
+        //               { "sName": "SL No", "bSortable": false },
+        //               { "sName": "Container No", "bSortable": false },
+        //               { "sName": "Size", "bSortable": false  },
+        //               { "sName": "SB No", "bSortable": false },
+        //                { "sName": "SB Date", "bSortable": false },
+        //               { "sName": "Commodity Name", "bSortable": false },
+        //               { "sName": "Cargo Type", "bSortable": false },
+        //             { "sName": "", "bSortable": false }
+
+        //    ]
+        //});
+        //new $.fn.dataTable.FixedHeader(tblBTTCargo);
+
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+
+        $('#slim_scroll1').slimScroll({
+            allowPageScroll: true
+        });
+
+        $("#chBttContainerDetails").click(function () {
+            
+            $(".checkBoxClass").prop('checked', $(this).prop('checked'));
+        });
+
+       
+
+
+    });
+
+
+    var partyPage = 1;
+    var payeePage = 1;
+
+   
+    function PartyBinding() {
+        debugger;
+        //pPage += 1;
+        $('#txtPartyCode').val('');
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/GetPartyNameForBTTContainer',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { 'Page': 1, 'PartyCode':'' },
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                    if (data.Data != null) {
+                        $('#hdnPartyPayee').val(JSON.stringify(data.Data));
+                        var EcJson = data.Data;
+
+
+                        var html = '';
+                        $.each(EcJson, function (i, item) {
+
+                            html += ''
+                            html += '<tr onclick="selectParty(' + item.PartyId + ');"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleParty').html(html);
+
+                    }
+                    else
+                    {
+                       // alert("Search Data is not found");
+                    }
+                    //var html = '';
+                    //$.each(EcJson, function (i, item) {
+                    //    html += ''
+                    //    html += '<tr onclick="selectPayee(' + item.PartyId + ');"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                    //});
+                    //$('#tblePayee').html(html);
+
+                }
+            }
+        });
+
+
+
+
+    }
+
+
+
+
+
+
+
+
+
+    function BindJson() {
+
+
+        if ($('#InvoiceValue').val() <= 0 || $('#InvoiceValue').val() <= 0.00) {
+            alert('Invoice Amount cannot be Zero or Negative');
+            return false;
+        }
+        else {
+            debugger;
+            var conf = confirm("Do you want to save ?");
+            if (conf) {
+                try {
+                    debugger;
+                    $('#btnSave').attr('disabled', true);
+                    //console.log(rawJson);
+                    $('form#PaymentSheetForm').submit();
+                }
+                catch (e) {
+                    $('#btnSave').removeAttr('disabled');
+                }
+            }
+        }
+    }
+
+
+
+
+
+
+    function PartySearchBinding() {
+        debugger;
+        //pPage += 1;
+
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/GetPartyNameForBTTContainer',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { 'Page': 1, 'PartyCode': $('#txtPartyCode').val() },
+            success: function (data) {
+                debugger;
+                var html = '';
+                if (data != '') {
+                    if (data.Data != null) {
+                        $('#hdnPartyPayee').val(JSON.stringify(data.Data));
+                        var EcJson = data.Data;
+
+
+                        var html = '';
+                        $.each(EcJson, function (i, item) {
+
+                            html += ''
+                            html += '<tr onclick="selectParty(' + item.PartyId + ');"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                        });
+                        $('#tbleParty').html(html);
+                    }
+                    else
+                    {
+                      
+                        $('#tbleParty').html(html);
+                    }
+
+                    //var html = '';
+                    //$.each(EcJson, function (i, item) {
+                    //    html += ''
+                    //    html += '<tr onclick="selectPayee(' + item.PartyId + ');"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                    //});
+                    //$('#tblePayee').html(html);
+
+                }
+            }
+        });
+
+
+
+
+    }
+
+
+
+
+    var pPage = 1;
+
+    function LoadPartyList() {
+        pPage += 1;
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/GetPartyNameForBTTContainer',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { 'Page': pPage, 'PartyCode': '' },
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                    var html = '';
+                    if (data.Data != null) {
+                        $('#hdnPartyPayee').val(data.Data);
+                        var EcJson = data.Data;
+
+
+
+                        $.each(EcJson, function (i, item) {
+
+                            html += ''
+                            html += '<tr onclick="selectParty(' + item.PartyId + ');"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                        });
+                        if ($('#tbleParty  tr').length > 0)
+                            $('#tbleParty').append(html);
+                        else $('#tbleParty').html(html);
+                        //var html = '';
+                        //$.each(EcJson, function (i, item) {
+                        //    html += ''
+                        //    html += '<tr onclick="selectPayee(' + item.PartyId + ');"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                        //});
+                        //$('#tblePayee').html(html);
+                    }
+                    else
+                    {
+                        $('#tbleParty').html(html);
+                    }
+                }
+            }
+        });
+
+    }
+
+
+    function PayeeBinding() {
+        debugger;
+        //pPage += 1;
+        $('#txtPayeeNameCode').val('');
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/GetPayerNameForBTTContainer',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { 'Page': 1, 'PartyCode':'' },
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                    $('#hdnPartyPayee').val(JSON.stringify(data.Data));
+                    var EcJson = data.Data;
+
+
+                    var html = '';
+                    $.each(EcJson, function (i, item) {
+
+                        html += ''
+                        html += '<tr onclick="selectPayee(' + item.PartyId + ');"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                    });
+                    $('#tblePayee').html(html);
+
+
+                }
+            }
+        });
+
+
+
+
+    }
+
+    function PayeeSearch() {
+        debugger;
+        //pPage += 1;
+
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/GetPayerNameForBTTContainer',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { 'Page': 1, 'PartyCode': $('#txtPayeeNameCode').val() },
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                    var html = '';
+                    if (data.Data != null) {
+                        $('#hdnPartyPayee').val(JSON.stringify(data.Data));
+                        var EcJson = data.Data;
+
+
+
+                        $.each(EcJson, function (i, item) {
+
+                            html += ''
+                            html += '<tr onclick="selectPayee(' + item.PartyId + ');"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                        });
+                        $('#tblePayee').html(html);
+                    }
+                    else
+                    {
+
+                        $('#tblePayee').html(html);
+                    }
+
+                }
+            }
+        });
+
+
+
+
+    }
+    var payeePage = 1;
+    function LoadPayeeList() {
+        payeePage += 1;
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/GetPayerNameForBTTContainer',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { 'Page': payeePage, 'PartyCode': '' },
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                    var html = '';
+                    if (data.Data != null) {
+
+                        $('#hdnPartyPayee').val(data.Data);
+                        var EcJson = data.Data;
+
+
+
+                        $.each(EcJson, function (i, item) {
+
+                            html += ''
+                            html += '<tr onclick="selectParty(' + item.PartyId + ');"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                        });
+                        if ($('#tblePayee  tr').length > 0)
+                            $('#tblePayee').append(html);
+                        else $('#tblePayee').html(html);
+
+
+                    }
+                    else
+                    {
+                        $('#tblePayee').html(html);
+                    }
+                }
+            }
+        });
+
+    }
+    function selectParty(id) {
+        debugger;
+        //   alert(id);
+
+        var PartyJson = $('#hdnPartyPayee').val();
+        //  alert(PartyJson);
+        var Party = $.grep(JSON.parse(PartyJson), function (item) { return item.PartyId == id; })[0];
+        // alert(PartyJson);
+        $('#PartyId').val(parseInt(Party.PartyId));
+        $('#PartyName').val(Party.PartyName);
+        $('#PartyAddress').val(Party.Address);
+        $('#GSTNo').val(Party.GST);
+        $('#City').val(Party.CityName);
+        $('#PartyState').val(Party.StateName);
+
+        PopulatedContainerDetails(Party.PartyId);
+        $("#PartyNameModal").modal("hide");
+
+
+    }
+
+
+    function selectPayee(id) {
+        debugger;
+        //   alert(id);
+
+        var PartyJson = $('#hdnPartyPayee').val();
+        //  alert(PartyJson);
+        var Party = $.grep(JSON.parse(PartyJson), function (item) { return item.PartyId == id; })[0];
+        // alert(PartyJson);
+        $('#PayeeId').val(parseInt(Party.PartyId));
+        $('#PayeeName').val(Party.PartyName);
+
+        $("#PayerNameModal").modal("hide");
+
+
+    }
+
+    $('#txtPartyCode').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#tbleParty > tr > td').show();
+        else {
+
+            setTimeout(PartySearchBinding, 4000);
+          //  PartySearchBinding();
+            //$('#tbleParty > tr >td').each(function () {
+            //    var text = $(this).text().toLowerCase();
+            //    (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            //});
+        }
+    });
+
+
+
+
+    $('#txtPayeeNameCode').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#tblePayee > tr > td').show();
+        else {
+
+            setTimeout(PayeeSearch, 4000);
+           
+            //$('#tblePayee > tr > td').each(function () {
+            //    var text = $(this).text().toLowerCase();
+            //    (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            //});
+        }
+    });
+
+    function GenerateIRN() {
+        $.ajax({
+            url: '/Import/Wfld_CWCImport/GetIRNForYardInvoice',
+            type: 'POST',
+            data: { InvoiceNo: $('#InvoiceNo').val(), SupplyType: $('#ServiceType').val() },
+            // headers:{"__RequestVerificationToken":Token},
+            dataType: 'JSON',
+            success: function (data) {
+
+                alert(data.Message);
+            }
+        });
+    }
+    function PopulatedContainerDetails(ExpoterId)
+    {
+        $('#tblContainerDetails').html("");
+        var html = '';
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/GetContainerDetailsForBTT',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { 'ExpoterId': ExpoterId },
+            success: function (data) {
+                debugger;
+                if (data.Status != 0) {
+                    $('#ContainerDetailsXml').val(JSON.stringify(data.Data));
+                    $('#tblContainerDetails').html('');
+                    var html = '';
+                    var k = 1;
+                    $.each(data.Data, function (i, item) {
+                        var odcval = 0;
+                        if (item.IsOdc == "ODC")
+                        {
+                            odcval = 1;
+                        }
+
+                        var haz = item.HazNonHaz == 1 ? 'HAZ' : item.HazNonHaz == 2 ? 'NON HAZ' : 'ODC';
+
+                        if (odcval == 1) {
+                            html += "<tr><td>" + k + "</td><td>" + item.ContrainerNo + "</td><td>" + item.Size + "</td><td>" + item.SbNo + "</td><td>" + item.SbDate + "</td><td>" + item.CommodityName + "</td><td>" + haz + "</td><td><input type='checkbox' class='checkBoxodcClass' checked id=od" + k + " /><label for=od" + k + "><span><i class='square'></i></span></label></td><td><input type='checkbox' class='checkBoxClass' id=Ch" + k + " /><label for=Ch" + k + "><span><i class='square'></i></span></label></td><td style='display:none;'>" + item.CFSCode + "</td><td style='display:none;'>" + item.EntryDate + "</td><td style='display:none;'>" + item.isLoadedContrainer + "</td><td style='display:none;'>" + item.IsOdc + "</td><td style='display:none;'>" + item.Weight + "</td><td style='display:none;'>" + item.ContainerStuffingId + "</td><td style='display:none;'>" + item.NoofPkg + "</td><td style='display:none;'>" + item.ShippingLineId + "</td><td style='display:none;'>" + item.ChargesFor + "</td><tr>";
+                        }
+                        else
+                        {
+                            html += "<tr><td>" + k + "</td><td>" + item.ContrainerNo + "</td><td>" + item.Size + "</td><td>" + item.SbNo + "</td><td>" + item.SbDate + "</td><td>" + item.CommodityName + "</td><td>" + haz + "</td><td><input type='checkbox' class='checkBoxodcClass'  id=od" + k + " /><label for=od" + k + "><span><i class='square'></i></span></label></td><td><input type='checkbox' class='checkBoxClass' id=Ch" + k + " /><label for=Ch" + k + "><span><i class='square'></i></span></label></td><td style='display:none;'>" + item.CFSCode + "</td><td style='display:none;'>" + item.EntryDate + "</td><td style='display:none;'>" + item.isLoadedContrainer + "</td><td style='display:none;'>" + item.IsOdc + "</td><td style='display:none;'>" + item.Weight + "</td><td style='display:none;'>" + item.ContainerStuffingId + "</td><td style='display:none;'>" + item.NoofPkg + "</td><td style='display:none;'>" + item.ShippingLineId + "</td><td style='display:none;'>" + item.ChargesFor + "</td><tr>";
+                        }
+                        k++;
+                    });
+                    $('#tblContainerDetails').html(html);
+
+                    $(".checkBoxClass").click(function () {
+
+                        if (!$(this).prop("checked")) {
+                            $("#chBttContainerDetails").prop("checked", false);
+                        }
+                    });
+
+                }
+            }
+        });
+    }
+
+    var flag = 0;
+
+    function GetAllCharge()
+    {
+        debugger;
+        if ($('#PayeeId').val() != 0 && $('#PartyId').val() != '') {
+            debugger;
+            var jsonData = [];
+            $("#tblContainerDetails").find("tr").each(function () {
+                if ($(this).find("td:eq(8)").find("input").is(':checked')) {
+                    jsonData.push({
+                        'ContrainerNo': $(this).find("td:eq(1)").text(),
+                        'Size': $(this).find("td:eq(2)").text(),
+                        'HazNonHaz': $(this).find("td:eq(6)").text() == "NON HAZ" ? 2 : $(this).find("td:eq(6)").text() == "HAZ"?1:3,
+                        'SbNo': $(this).find("td:eq(3)").text(),
+                        'SbDate': $(this).find("td:eq(4)").text(),
+                        'CFSCode': $(this).find("td:eq(9)").text(),
+                        'isLoadedContrainer': $(this).find("td:eq(11)").text(),
+                        'EntryDate': $(this).find("td:eq(10)").text(),
+                        'IsOdc': $(this).find("td:eq(7)").find("input").is(':checked')?"ODC":"No",
+                        'Weight': $(this).find("td:eq(13)").text(),
+                        'ContainerStuffingId': $(this).find("td:eq(14)").text(),
+                        'CommodityName': $(this).find("td:eq(5)").text(),
+                        'NoofPkg': $(this).find("td:eq(15)").text(),
+                        'ShippingLineId': $(this).find("td:eq(16)").text(),
+                        'ChargesFor': $(this).find("td:eq(17)").text(),
+
+                    });
+                }
+
+            });
+            if (jsonData.length > 0) {
+
+                var SEZ1 = $('#SEZ').val();
+                $('#SezValue').val(SEZ1);
+
+                $.ajax({
+                    url: '/Export/WFLD_CWCExport/GetBTTContanerCharge',
+                    type: 'POST',
+                    dataType: 'JSON',
+                    data: { 'vm': jsonData, 'InvoiceDate': $('#InvoiceDate').val(), 'InvoiceType':TaxType,'PartyId': $('#PartyId').val(), 'InvoiceId': $('#InvoiceID').val(), 'PayeeId': $('#PayeeId').val() ,'SEZ':SEZ1},
+                    success: function (data) {
+                        debugger;
+                        if (data != null && data != 'undefined') {
+                            $('#PaymentSheetModelJson').val(JSON.stringify(data));
+                            $('#IntercartingApplicable').prop("disabled", true);
+                            $('#ICDDestuffing').prop("disabled", true);
+                            var html = '';
+                            var html1 = '';
+                            //All H&T binding in modal
+                            debugger;
+                            var HTCharge = $.grep(data.lstPostPaymentChrg, function (item) { return item.ChargeType == "HT"; });
+                            $.each(HTCharge, function (i, item) {
+                                debugger;
+                                // var result = $.grep(data.ActualApplicable, function (e) { return e == item.Clause; });
+                                //if (result.length == 0) {
+                                html += '<li id="liAHT' + i + '"><div class="boolean-container"><input id="chkAHT' + i + '"  type="checkbox" data-val="' + btoa(JSON.stringify(item)) + '"/><label for="chkAHT' + i + '"><i class="square"></i> &nbsp; &nbsp; &nbsp;' + item.Clause + ' (<span style="font-size:8pt;">' + item.ChargeName + '</span>)' + '</label></div></li>';
+                                // }
+                                //  else {
+                                // html += '<li id="liAHT' + i + '"><div class="boolean-container"><input id="chkAHT' + i + '" type="checkbox" checked data-val="' + btoa(JSON.stringify(item)) + '"/><label for="chkAHT' + i + '"><i class="square"></i> &nbsp; &nbsp; &nbsp;' + item.Clause + ' (<span style="font-size:8pt;">' + item.ChargeName + '</span>)' + '</label></div></li>';
+                                //  }
+                                html1 += '<li id="liNHT' + i + '"><div class="boolean-container"><input id="chkNHT' + i + '" type="checkbox" data-val="' + btoa(JSON.stringify(item)) + '"/><label for="chkNHT' + i + '"><i class="square"></i> &nbsp; &nbsp; &nbsp;' + item.Clause + ' (<span style="font-size:8pt;">' + item.ChargeName + '</span>)' + '</label></div></li>';
+                            });
+                            $('#lstHT').html(html);
+                            $('#lstNewHT').html(html1);
+                            //$('#btnSave').removeAttr('disabled');
+                            //Container Binding
+                            html = '';
+                            debugger;
+                            $.each(data.lstPSCont, function (i, item) {
+                                html += '<tr><td>' + (i + 1) + '</td><td>' + item.CFSCode + '</td><td>' + item.ContainerNo + '</td><td>' + item.Size + '</td><td>' + (item.Insured == 0 ? 'No' : 'Yes') + '</td>';//
+                            });
+                            $('#tblContainer tbody').html(html);
+
+                            //CWC Charge Binding
+                            debugger;
+                            var CWCCharge = $.grep(data.lstPostPaymentChrg, function (item) { return item.ChargeType == "CWC"; });
+                            html = '';
+                            var TotalCWC = 0;
+                            $.each(CWCCharge, function (i, item) {
+                                TotalCWC += item.Total;
+                                //html += '<tr><td>' + item.Clause + '. ' + item.ChargeName + '</td>'
+                                html += '<tr><td>' + item.ChargeName + '</td>'
+                                        + '<td><input class="text-right" id="' + item.ChargeId + '" type="text" value="' + item.Amount.toFixed(2) + '" readonly /></td>'
+                                        + '<td><input class="text-right" id="IGSTP' + item.ChargeId + '" type="text" value="' + item.IGSTPer + '" readonly /></td>'
+                                        + '<td><input class="text-right" id="IGSTA' + item.ChargeId + '" type="text" value="' + item.IGSTAmt.toFixed(2) + '" readonly /></td>'
+                                        + '<td><input class="text-right" id="CGSTP' + item.ChargeId + '" type="text" value="' + item.CGSTPer + '" readonly /></td>'
+                                        + '<td><input class="text-right" id="CGSTA' + item.ChargeId + '" type="text" value="' + item.CGSTAmt.toFixed(2) + '" readonly /></td>'
+                                        + '<td><input class="text-right" id="SGSTP' + item.ChargeId + '" type="text" value="' + item.SGSTPer + '" readonly /></td>'
+                                        + '<td><input class="text-right" id="SGSTA' + item.ChargeId + '" type="text" value="' + item.SGSTAmt.toFixed(2) + '" readonly /></td>'
+                                        + '<td><input class="text-right" id="TOT' + item.ChargeId + '" type="text" value="' + item.Total.toFixed(2) + '" readonly /></td></tr>';
+                            });
+                            $('#tblBTTContainerCharges tbody').html(html);
+                            $('#CWCTotal').val((TotalCWC).toFixed(2));
+
+                            $('.search').css('display', 'none');
+                            $('#InvoiceDate').parent().find('img').css('display', 'none');
+                            $('#SEZ').attr('readonly', true);
+                            $('#SEZ').prop("disabled", true);
+                           
+                            $('.checkBoxClass').prop("disabled", true);
+                            $('#chBttContainerDetails').attr('readonly', true);
+                            $('#chBttContainerDetails').prop("disabled", true);
+                            $('#Tax').prop("disabled", true);
+                            $('#Bill').prop("disabled", true);
+                            $('.checkBoxodcClass').prop("disabled", true);
+                            
+                            //CalcTax(1);
+                        }
+                        else {
+                            $('#PaymentSheetModelJson').val('');
+                            $('#tblContainer tbody').html('');
+                            $('#tblCWCCharges tbody').html('');
+                            $('#tblHTCharges tbody').html('');
+                            $('#TOTCWCChrg').val('');
+                            $('#TOTHTChrg').val('');
+                            $('#AllTotal').val('');
+                            $('#RoundUp').val('');
+                        }
+                    }
+                });
+
+            }
+            else {
+                alert('Please select container number.')
+                $('#PaymentSheetModelJson').val('');
+                $('#tblContainer tbody').html('');
+                $('#tblCWCCharges tbody').html('');
+                $('#tblHTCharges tbody').html('');
+                $('#TOTCWCChrg').val('');
+                $('#TOTHTChrg').val('');
+                $('#AllTotal').val('');
+                $('#RoundUp').val('');
+            }
+            //alert(JSON.stringify(jsonData));
+        }
+        else {
+            alert('Please Select Party & Payer');
+        }
+
+    }
+
+    function BindHnTCharges() {
+        flag = 1;
+
+        debugger;
+        var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+        rawJson.lstPostPaymentChrg = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeType == "CWC"; });
+        var rowCount = rawJson.lstPostPaymentChrg.length;
+        var html = '';
+        var TotalHT = 0;
+        var htWithOutTax = 0;
+        //var htcharge = [];
+        for (var i = 0; i < $("#lstHT li").length; i++) {
+            if ($('#chkAHT' + i).prop("checked")) {
+                var item = JSON.parse(atob($('#chkAHT' + i).attr('data-val')));
+                //htcharge.push(item);
+                rawJson.lstPostPaymentChrg.push(item);
+                TotalHT += item.Total;
+                htWithOutTax += item.Amount;
+                html += '<tr><td>' + item.Clause + '. ' + item.ChargeName + '</td>'
+                                    + '<td><input class="text-right" id="' + item.ChargeId + '" type="text" value="' + item.Amount.toFixed(2) + '" readonly/></td>'
+                                    + '<td><input class="text-right" id="IGSTP' + item.ChargeId + '" type="text" value="' + item.IGSTPer + '"  readonly /></td>'
+                                    + '<td><input class="text-right" id="IGSTA' + item.ChargeId + '" type="text" value="' + item.IGSTAmt.toFixed(2) + '" readonly /></td>'
+                                    + '<td><input class="text-right" id="CGSTP' + item.ChargeId + '" type="text" value="' + item.CGSTPer + '"  readonly /></td>'
+                                    + '<td><input class="text-right" id="CGSTA' + item.ChargeId + '" type="text" value="' + item.CGSTAmt.toFixed(2) + '" readonly /></td>'
+                                    + '<td><input class="text-right" id="SGSTP' + item.ChargeId + '" type="text" value="' + item.SGSTPer + '"  readonly /></td>'
+                                    + '<td><input class="text-right" id="SGSTA' + item.ChargeId + '" type="text" value="' + item.SGSTAmt.toFixed(2) + '" readonly /></td>'
+                                    + '<td><input class="text-right" id="TOT' + item.ChargeId + '" type="text" value="' + item.Total.toFixed(2) + '" readonly /></td>'
+                                    + '<td class="text-center" onclick="RemoveHT(' + rowCount + ')"><i class="fa fa-times Delete"></i></td></tr>';
+                rowCount += 1;
+            }
+        }
+        $('#tblHTCharges tbody').html(html);
+        $('#TOTHTChrg').val((TotalHT).toFixed(2));
+        $('#rest-charge-details').removeClass('hide');
+        rawJson.HTTotal = TotalHT;
+        rawJson.TotalAmt = rawJson.CWCAmtTotal + htWithOutTax;
+        rawJson.HTAmtTotal = htWithOutTax;
+        rawJson.InvoiceType = TaxType;
+        $('#PaymentSheetModelJson').val(JSON.stringify(rawJson));
+        $('#btnShowHT').prop('disabled', true);
+        $('#btnAddExtraHT').removeAttr('disabled');
+        $('#btnSave').removeAttr('disabled');
+        CalcTax(1);
+    }
+
+    var indx = 0;
+    function AddHnTCharges() {
+        var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+        var rowCount = rawJson.lstPostPaymentChrg.length;
+        var html = '';
+        var TotalHT = 0;
+        var htWithOutTax = 0;
+        for (var i = 0; i < $("#lstNewHT li").length; i++) {
+            if ($('#chkNHT' + i).prop("checked")) {
+                $('#chkNHT' + i).removeAttr('checked');
+                var item = JSON.parse(atob($('#chkAHT' + i).attr('data-val')));
+                //item.ChargeId = item.ChargeId + '_' + indx;
+                rawJson.lstPostPaymentChrg.push(item);
+                TotalHT += item.Total;
+                htWithOutTax += item.Amount;
+                html += '<tr><td>' + item.Clause + '. ' + item.ChargeName + '</td>'
+                                    + '<td><input class="text-right" id="' + item.ChargeId + '_' + indx + '" type="text" value="' + item.Amount.toFixed(2) + '"  readonly /></td>'
+                                    + '<td><input class="text-right" id="IGSTP' + item.ChargeId + '" type="text" value="' + item.IGSTPer + '" readonly /></td>'
+                                    + '<td><input class="text-right" id="IGSTA' + item.ChargeId + '" type="text" value="' + item.IGSTAmt.toFixed(2) + '" readonly /></td>'
+                                    + '<td><input class="text-right" id="CGSTP' + item.ChargeId + '" type="text" value="' + item.CGSTPer + '"  readonly /></td>'
+                                    + '<td><input class="text-right" id="CGSTA' + item.ChargeId + '" type="text" value="' + item.CGSTAmt.toFixed(2) + '" readonly /></td>'
+                                    + '<td><input class="text-right" id="SGSTP' + item.ChargeId + '" type="text" value="' + item.SGSTPer + '"  readonly /></td>'
+                                    + '<td><input class="text-right" id="SGSTA' + item.ChargeId + '" type="text" value="' + item.SGSTAmt.toFixed(2) + '" readonly /></td>'
+                                    + '<td><input class="text-right" id="TOT' + item.ChargeId + '" type="text" value="' + item.Total.toFixed(2) + '" readonly /></td>'
+                                    + '<td class="text-center" onclick="RemoveHT(' + rowCount + ')"><i class="fa fa-times Delete"></i></td></tr>';
+                rowCount += 1;
+                indx += 1;
+            }
+        }
+        $('#tblHTCharges tbody').append(html);
+        rawJson.HTTotal += TotalHT;
+        rawJson.TotalAmt = rawJson.CWCAmtTotal + htWithOutTax;
+        rawJson.HTAmtTotal += htWithOutTax;
+        $('#PaymentSheetModelJson').val(JSON.stringify(rawJson));
+        CalcTax(1);
+    }
+
+    function RemoveHT(idx) {
+        var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+        rawJson.lstPostPaymentChrg.splice(idx, 1);
+        var rowCount = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeType == "CWC"; }).length;
+        var html = '';
+        var TotalHT = 0;
+        var htWithOutTax = 0;
+        var HTCharge = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeType == "HT"; });
+        $.each(HTCharge, function (i, item) {
+            TotalHT += item.Total;
+            htWithOutTax += item.Amount;
+            html += '<tr><td>' + item.Clause + '. ' + item.ChargeName + '</td>'
+                                + '<td><input class="text-right" id="' + item.ChargeId + '" type="text" value="' + item.Amount.toFixed(2) + '" readonly /></td>'
+                                + '<td><input class="text-right" id="IGSTP' + item.ChargeId + '" type="text" value="' + item.IGSTPer + '"  readonly /></td>'
+                                + '<td><input class="text-right" id="IGSTA' + item.ChargeId + '" type="text" value="' + item.IGSTAmt.toFixed(2) + '" readonly /></td>'
+                                + '<td><input class="text-right" id="CGSTP' + item.ChargeId + '" type="text" value="' + item.CGSTPer + '"  readonly /></td>'
+                                + '<td><input class="text-right" id="CGSTA' + item.ChargeId + '" type="text" value="' + item.CGSTAmt.toFixed(2) + '" readonly /></td>'
+                                + '<td><input class="text-right" id="SGSTP' + item.ChargeId + '" type="text" value="' + item.SGSTPer + '" readonly /></td>'
+                                + '<td><input class="text-right" id="SGSTA' + item.ChargeId + '" type="text" value="' + item.SGSTAmt.toFixed(2) + '" readonly /></td>'
+                                + '<td><input class="text-right" id="TOT' + item.ChargeId + '" type="text" value="' + item.Total.toFixed(2) + '" readonly /></td>'
+                                + '<td class="text-center" onclick="RemoveHT(' + rowCount + ')"><i class="fa fa-times Delete"></i></td></tr>';
+            rowCount += 1;
+        });
+        $('#tblHTCharges tbody').html(html);
+        rawJson.HTTotal = TotalHT;
+        rawJson.TotalAmt = rawJson.CWCAmtTotal + htWithOutTax;
+        rawJson.HTAmtTotal = htWithOutTax;
+        $('#PaymentSheetModelJson').val(JSON.stringify(rawJson));
+        CalcTax(1);
+    }
+    var TaxType = 'Tax';
+    function CalcTax(elem) {
+        debugger;
+        var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+        var MAmt = Number($('#' + elem).val());
+        var IP = 0;
+        var CP = 0;
+        var SP = 0;
+        //if (rawJson.InvoiceType == "Tax") {
+        if (TaxType == "Tax") {
+            /*if (rawJson.PartyStateCode==''|| rawJson.PartyStateCode == rawJson.CompStateCode) {
+                CP = Number($('#CGSTP' + elem).val());
+                SP = Number($('#SGSTP' + elem).val());
+            }
+            else {
+                IP = Number($('#IGSTP' + elem).val());
+            }*/
+            if (parseFloat(rawJson.lstPostPaymentChrg[0].CGSTAmt) > 0 || parseFloat(rawJson.lstPostPaymentChrg[0].SGSTAmt) > 0) {
+                CP = Number($('#CGSTP' + elem).val());
+                SP = Number($('#SGSTP' + elem).val());
+            }
+            else if (parseFloat(rawJson.lstPostPaymentChrg[0].IGSTAmt) > 0) {
+                IP = Number($('#IGSTP' + elem).val());
+            }
+        }
+        var CWCCharge = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeType == "CWC"; });
+
+        $('#IGSTA' + elem).val((MAmt * (IP / 100)).toFixed(2));
+        $('#CGSTA' + elem).val((MAmt * (CP / 100)).toFixed(2));
+        $('#SGSTA' + elem).val((MAmt * (SP / 100)).toFixed(2));
+        $('#TOT' + elem).val((MAmt + (MAmt * (IP / 100)) + (MAmt * (CP / 100)) + (MAmt * (SP / 100))).toFixed(2));
+
+        //var selectedItem = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeId == elem; })[0];
+        //if (selectedItem == undefined)
+        //    selectedItem = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeId + '_' + (indx - 1) == elem; })[0];
+        //selectedItem.Amount = MAmt;
+        //selectedItem.Taxable = MAmt;
+        ////selectedItem.IGSTPer = IP;
+        //selectedItem.IGSTAmt = MAmt * (IP / 100);
+        ////selectedItem.CGSTPer = CP;
+        //selectedItem.CGSTAmt = MAmt * (CP / 100);
+        ////selectedItem.SGSTPer = SP;
+        //selectedItem.SGSTAmt = MAmt * (SP / 100);
+        //selectedItem.Total = (MAmt + (MAmt * (IP / 100)) + (MAmt * (CP / 100)) + (MAmt * (SP / 100)));
+
+
+
+        var TotalCWC = 0;
+        //var CWCCharge = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeType == "CWC"; });
+
+        rawJson.TotalCGST = 0;
+        rawJson.TotalSGST = 0;
+        rawJson.TotalIGST = 0;
+        rawJson.TotalAmt = 0;
+
+        $.each(CWCCharge, function (i, item) {
+            rawJson.TotalAmt += item.Amount;
+            rawJson.TotalCGST += item.CGSTAmt;
+            rawJson.TotalSGST += item.SGSTAmt;
+            rawJson.TotalIGST += item.IGSTAmt;
+            TotalCWC += item.Total;
+        });
+        $('#TOTCWCChrg').val((TotalCWC).toFixed(2));
+        //$('#TOTCWCTDS').val(((TotalCWC * 10) / 100).toFixed(2));
+        rawJson.CWCTotal = TotalCWC;
+        var TotalHT = 0;
+        var HTCharge = $.grep(rawJson.lstPostPaymentChrg, function (item) { return item.ChargeType == "HT"; });
+
+        $.each(HTCharge, function (i, item) {
+            rawJson.TotalAmt += item.Amount;
+            rawJson.TotalCGST += item.CGSTAmt;
+            rawJson.TotalSGST += item.SGSTAmt;
+            rawJson.TotalIGST += item.IGSTAmt;
+            TotalHT += item.Total;
+        });
+        $('#TOTHTChrg').val((TotalHT).toFixed(2));
+        //$('#TOTHTTDS').val(((TotalHT * 2) / 100).toFixed(2));
+        rawJson.HTTotal = TotalHT;
+        $('#AllTotal').val((TotalCWC + TotalHT).toFixed(2));
+        rawJson.AllTotal = (TotalCWC + TotalHT);
+        $('#PaymentSheetModelJson').val(JSON.stringify(rawJson));
+        CalcInvoice();
+    }
+
+    function CalcInvoice() {
+        var Total = Number($('#AllTotal').val());
+        var cwcTDS = 0;// Number($('#TOTCWCTDS').val());
+        var htTDS = 0;//Number($('#TOTHTTDS').val());
+        var grandTDS = 0;//cwcTDS + htTDS;
+        //$('#TotalTDS').val(grandTDS.toFixed(2));
+        var RoundUp = 0;
+        $('#InvoiceAmt').val((Total - (grandTDS + RoundUp)).toFixed(2));
+
+        var rawJson = JSON.parse($('#PaymentSheetModelJson').val());
+        //console.clear();
+        //console.log(JSON.stringify(rawJson));
+        //rawJson.AllTotal = Total;
+        rawJson.CWCTDS = cwcTDS;
+        rawJson.HTTDS = htTDS;
+        rawJson.TDS = grandTDS;
+        rawJson.RoundUp = RoundUp;
+        rawJson.InvoiceAmt = rawJson.AllTotal - (rawJson.TDS + rawJson.RoundUp).toFixed(2);
+
+        rawJson.AllTotal = (rawJson.CWCTotal + rawJson.HTTotal);
+        var round =0;
+        rawJson.InvoiceAmt = rawJson.AllTotal;
+
+        $('#AllTotal').val(rawJson.AllTotal.toFixed(2));
+        $('#RoundUp').val(round.toFixed(2));
+        $('#InvoiceAmt').val(rawJson.InvoiceAmt.toFixed(2));
+        $('#InvoiceValue').val(rawJson.InvoiceAmt.toFixed(2))
+        $('#PaymentSheetModelJson').val(JSON.stringify(rawJson));
+        //$('#rest-charge-details').removeClass('hide');
+    }
+
+
+    function BTTContainerOnSuccess(data)
+    {
+        debugger;
+        if (data.Status == 1 || data.Status == 2) {
+            if ($('#DivContainerStuffingErrMsg').hasClass('logErrMsg'))
+                $('#DivContainerStuffingMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+           // $('#InvoiceNo').val(data.Data);
+            var AppValues = data.Data.split(",")
+            $('#InvoiceNo').val(AppValues[0]);
+            $('#ServiceType').val(AppValues[1]);
+
+            $('#BtnGenerateIRN').removeAttr('disabled');
+
+            $('#PaymentSheetModelJson').val(JSON.stringify(data.Data));
+            $('#DivContainerStuffingMsg').html(data.Message);
+            $('#btnSave').attr('disabled', 'disabled');
+            $('#BtnPrint').removeAttr('disabled');
+            //  setTimeout(ResetField, TimeInSeconds);
+        }
+        else {
+            if ($('#DivContainerStuffingErrMsg').hasClass('logSuccMsg'))
+                $('#DivContainerStuffingMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivContainerStuffingErrMsg').html(data.Message);
+        }
+    }
+
+    function BTTContainerFailure() {
+
+    }
+
+    function ResetAllFields()
+    {
+        $('#DivBody').load('/Export/WFLD_CWCExport/BTTContainer');
+    }
+
+
+    function ShowList()
+    {
+        $('#DivBTTContainerList').load("/Export/WFLD_CWCExport/GetBTTContainerList");
+    }
+
+
+
+    var TaxType = '@ViewData["InvType"].ToString()';
+    function IVType(Type) {
+        debugger;
+        TaxType = Type;
+        $('#DivBody').load('/Export/WFLD_CwcExport/BTTContainer?type=' + Type);
+    }
+    if (TaxType == 'Tax')
+        $('#Tax').prop('checked', true);
+    else
+        $('#Bill').prop('checked', true);
+
+
+
+    function Print() {
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetBulkInvoiceReport", "WFLD_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                InvoiceNumber: $('#InvoiceNo').val(),
+                InvoiceModule: 'BTTCon',
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                InvoiceModuleName: 'BTT Container',
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }
+
+</script>
+
+@{
+    AjaxOptions options = new AjaxOptions();
+  //  options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "BTTContainerOnSuccess";
+    options.OnFailure = "BTTContainerFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+
+<div class="container-fluid">
+    <div style="width:90%;margin-left:auto;margin-right:auto;">
+        <div class="row clearfix">
+            @using (Ajax.BeginForm("AddEditBTTContainer", "WFLD_CWCExport", options, new { @Id = "PaymentSheetForm" }))
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="panel with-nav-tabs panel-primary cwc_panel">
+                    <div class="panel-heading cwc_panel_heading">
+                        <ul class="nav nav-tabs" id="DivTabs">
+                            <li class="active"><a href="#DivContainerStuffing" data-toggle="tab">BTT Container</a></li>                           
+                        </ul>
+                    </div>                   
+                    @Html.HiddenFor(x=>x.PayeeId)
+                    @Html.HiddenFor(x=>x.PartyId)
+                    @Html.HiddenFor(x=>x.ContainerDetailsXml)
+                    @Html.HiddenFor(x=>x.InvoiceID,new { Value = 0})
+                    @Html.Hidden("ContainerJson")
+                    @Html.Hidden("PaymentSheetModelJson")
+                    @Html.Hidden("hdnAddress")
+                    @Html.Hidden("hdnState")
+                    @Html.Hidden("hdnStateCode")                    
+                    @Html.Hidden("TotalTaxable")
+                    @Html.Hidden("TotalCGST")
+                    @Html.Hidden("TotalSGST")
+                    @Html.Hidden("TotalIGST")
+                    @Html.Hidden("SezValue")
+                  @Html.Hidden("ServiceType")
+                  
+                   
+                    @Html.Hidden("InvoiceAmt")
+
+                    <input type="hidden" class="hidden" id="hdnPartyPayee" />
+                    
+                    <div class="panel-body">
+                        <div class="tab-content">
+                            <div class="tab-pane fade in active" id="DivContainerStuffing">
+                                <div id="DivAddBTTContainer"> 
+
+
+                                    <div class="row Form_Space_top">
+                                        <div class="form-group Form_Input">
+                                            <div class="col-md-1-5 col-md-offset-1-5 col_cus_offset_2 col_cus_2">
+                                                <div class="boolean-container">
+                                                    @*@Html.RadioButtonFor(m => m.InvoiceType, "Tax", new { id = "Tax", @checked = true, @onclick = "IVType('Tax')" })*@
+                                                    @Html.RadioButton("InvoiceType", "Tax", new { id = "Tax", @checked = true, @onclick = "IVType('Tax')" })
+                                                    <label for="Tax"><i class="circle"></i><span>Tax Invoice</span></label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2 col_cus_3">
+                                                <div class="boolean-container">
+                                                    @*@Html.RadioButtonFor(m => m.InvoiceType, "Bill", new { id = "Bill", @onclick = "IVType('Bill')" })*@
+                                                    @Html.RadioButton("InvoiceType", "Bill", new { id = "Bill", @onclick = "IVType('Bill')" })
+                                                    <label for="Bill"><i class="circle"></i><span>Bill Of Supply</span></label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                    <div class="row Form_Space_top">
+                                        <div class="form-group Form_Input">
+                                            <div class="col-md-1-5 col_cus_2">
+                                                <label>Invoice No:</label>
+                                            </div>
+                                            <div class="col-md-2-5">
+                                               
+                                                @Html.TextBoxFor(m => m.InvoiceNo, new { @class = "form-control input-sm", @readonly = true })                                                
+                                                @Html.ValidationMessageFor(m => m.InvoiceNo, "", new { @class = "Error_Msg" })
+                                            </div>
+                                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                                <label>Invoice Date:</label>
+                                            </div>
+                                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                                @Html.TextBoxFor(m => m.InvoiceDate, new { @class = "form-control input-sm", @readonly = true, Value = DateTime.Now.ToString("dd-MM-yyyy") })
+                                                @Html.ValidationMessageFor(m => m.InvoiceDate, "", new { @class = "Error_Msg" })
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row Form_Space_top">
+                                        <div class="form-group Form_Input">
+                                            <div class="col-md-1-5 col_cus_2">
+                                                <label>Party Name:</label>
+                                            </div>
+                                            <div class="col-md-10-5 col_cus_10">
+                                                @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control input-sm", @readonly = true })
+                                                <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="PartyBinding()" data-target="#PartyNameModal"></i></span>
+                                                @Html.ValidationMessageFor(m => m.PartyName, "", new { @class = "Error_Msg" })
+                                            </div>
+                                          
+                                        </div>
+                                    </div>                                   
+
+                                    <div id="DivShippingLine" class="row Form_Space_top">
+                                        <div class="form-group Form_Input">
+                                            <div class="col-md-1-5 col_cus_2">
+                                                <label>Party Address:</label>
+                                            </div>
+                                            <div class="col-md-10-5 col_cus_10">
+                                                @Html.TextBoxFor(x=>x.PartyAddress, new { @class = "form-control input-sm", @readonly = true })
+                                              
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row Form_Space_top">
+                                        <div class="form-group Form_Input">
+                                            <div class="col-md-1-5 col_cus_2">
+                                                <label>GST:</label>
+                                            </div>
+                                            <div class="col-md-2-5">
+                                                
+                                                @Html.TextBoxFor(m => m.GSTNo, new { @class = "form-control input-sm", @readonly = true })
+                                                @Html.ValidationMessageFor(m => m.GSTNo, "", new { @class = "Error_Msg" })
+                                            </div>
+                                            <div class="col-md-1-5">
+                                                <label>City:</label>
+                                            </div>
+                                            <div class="col-md-2">
+                                                @Html.TextBoxFor(m => m.City, new { @class = "form-control input-sm", @readonly = true })
+                                                @Html.ValidationMessageFor(m => m.City, "", new { @class = "Error_Msg" })
+                                            </div>
+
+                                            <div class="col-md-1-5">
+                                                <label>SEZ:</label>
+                                            </div>
+                                            <div class="col-md-2">
+
+                                                @Html.DropDownList("SEZ", new List<SelectListItem>
+                                        {
+                                        new SelectListItem { Text="SEZWP",Value="SEZWP"},
+                                        new SelectListItem {Text="SEZWOP",Value="SEZWOP" }
+
+                                        }, "---Select---", new { @class = "form-control input-sm dropdown" })
+                                                @Html.ValidationMessage("SEZ", new { @class = "Error_Msg" })
+                                            </div>   
+                                        </div>
+                                    </div>
+                                    <div id="DivShippingLine" class="row Form_Space_top">
+                                        <div class="form-group Form_Input">
+                                            <div class="col-md-1-5 col_cus_2">
+                                                <label>Payer:</label>
+                                            </div>
+                                            <div class="col-md-10-5 col_cus_10">
+                                                @Html.TextBoxFor(x => x.PayeeName, new { @class = "form-control input-sm", @readonly = true })
+                                                <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="PayeeBinding()" data-target="#PayerNameModal"></i></span>
+
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row Form_Space_top">
+                                        <div class="form-group Form_Input">
+                                            <div class="col-md-1-5 col_cus_2">
+                                                <label> Place of supply:</label>
+                                            </div>
+                                            <div class="col-md-10-5 col_cus_10">
+                                                <input type="text" id="PartyState" name="PartyState" readonly="readonly" />
+                                            </div>
+
+
+                                        </div>
+                                    </div>
+
+
+
+                                    <div class="row Form_Space_top">
+                                        <div class="form-group Form_Input">
+                                            <div class="col-md-12">
+                                                <table class="table table-bordered table-striped dataTable Table_center" id="tblBTTContainerDtl" style="width:100%;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>SL No</th>
+                                                            <th>Container No</th>
+                                                            <th>Size</th>
+                                                            <th>SB No</th>
+                                                            <th>SB Date</th>
+                                                            <th>Commodity Name</th>                                                            
+                                                            <th>Cargo Type</th> 
+                                                            <th>IsODC</th>
+                                                            <th><input class="checkBoxClass" type="checkbox" id="chBttContainerDetails" /><label for="chBttContainerDetails"><span><i class="square"></i></span></label></th>                                                          
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="tblContainerDetails">
+                                                       
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                           
+                                        </div>
+                                    </div>
+                                    <div class="row Form_Space_top">
+                                        <div class="form-group Form_Input">
+                                            <div class="col-md-3 col-md-offset-4-5">
+                                                <input type="button" class="btn log_Btn_sm" value="Generate Invoice" onclick="GetAllCharge()" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="Head_h5">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <h5>CWC Charges</h5>
+                                            </div>
+                                        </div>
+                                        <div class="row Form_Space_top">
+                                            <div class="col-md-12">
+                                                <table id="tblBTTContainerCharges" class="table table-bordered table-striped dataTable Table_center">
+                                                    <thead>
+                                                        <tr>
+                                                            <th rowspan="2">Charges</th>
+                                                            <th rowspan="2">Value</th>
+                                                            <th colspan="2" class="text-center">IGST</th>
+                                                            <th colspan="2" class="text-center">CGST</th>
+                                                            <th colspan="2" class="text-center">SGST</th>
+                                                            <th rowspan="2" style="width:15%;">Total</th>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>%</th>
+                                                            <th>Amt</th>
+                                                            <th>%</th>
+                                                            <th>Amt</th>
+                                                            <th>%</th>
+                                                            <th style="border-right:1px solid #ddd;">Amt</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="tbltbodyCharge"></tbody>
+                                                    <tfoot>
+                                                        <tr>
+                                                            <td colspan="8" style="text-align:right;">Total:</td>
+                                                            <td class="Table_right">
+                                                                <input type="text" id="CWCTotal" value="0" readonly>
+                                                            </td>
+                                                        </tr>
+
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        </div>
+                                        <div class="row SignUp_space_bottom2 SignUp_space_top2">
+                                            <div class="col-md-offset-2 col-md-4">
+                                                <button id="btnShowHT" type="button" class="btn log_Btn_sm" data-toggle="modal" data-target="#HnTModal">
+                                                    <span class="glyphicon glyphicon-search" aria-hidden="true"></span> Show H&amp;T Charges
+                                                </button>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <button id="btnAddExtraHT" type="button" class="btn log_Btn_sm" data-toggle="modal" data-target="#NewHnTModal" disabled>
+                                                    <span class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span> Add Extra H&amp;T
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <section id="rest-charge-details" class="hide">
+                                            <div class="row Form_Space_top">
+                                                <div class="col-md-12">
+                                                    <h5>H & T Charges</h5>
+                                                </div>
+                                            </div>
+                                            <div class="row Form_Space_top">
+                                                <div class="col-md-12">
+                                                    <table id="tblHTCharges" class="table table-bordered table-striped dataTable Table_center">
+                                                        <thead>
+                                                            <tr>
+                                                                <th rowspan="2" width="40%">Charges</th>
+                                                                <th rowspan="2" width="11%">Value</th>
+                                                                <th colspan="2" width="10%" class="text-center">IGST</th>
+                                                                <th colspan="2" width="10%" class="text-center">CGST</th>
+                                                                <th colspan="2" width="10%" class="text-center">SGST</th>
+                                                                <th rowspan="2" width="15%">Total</th>
+                                                                <th rowspan="2" class="text-center" style="width:15px;"></th>
+                                                            </tr>
+                                                            <tr>
+                                                                <th width="4%">%</th>
+                                                                <th width="9%">Amt</th>
+                                                                <th width="4%">%</th>
+                                                                <th width="9%">Amt</th>
+                                                                <th width="4%">%</th>
+                                                                <th width="9%" style="border-right:1px solid #ddd;">Amt</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody></tbody>
+                                                        <tfoot>
+                                                            <tr>
+                                                                <td colspan="8" class="text-right">Total:</td>
+                                                                <td><input type="text" id="TOTHTChrg" value="0" class="text-right" readonly="readonly"></td>
+                                                                <td></td>
+                                                            </tr>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            <div class="row Form_Space_top">
+                                                <div class="form-group Form_Input">
+                                                    <div class="col-md-offset-8 col-md-1-5">
+                                                        <label>Total Value:</label>
+                                                    </div>
+                                                    <div class="col-md-2-5">
+                                                        @Html.TextBox("AllTotal", "0", new { @readonly = true, @style = "text-align:right;" })
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row Form_Space_top">
+                                                <div class="form-group Form_Input">
+                                                    <div class="col-md-offset-8 col-md-1-5">
+                                                        <label>Round Up:</label>
+                                                    </div>
+                                                    <div class="col-md-2-5">
+                                                        @Html.TextBox("RoundUp", "0", new { @style = "text-align:right;", @readonly = true })
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row Form_Space_top">
+                                                <div class="form-group Form_Input">
+                                                    <div class="col-md-offset-8 col-md-1-5">
+                                                        <label>Invoice Value:</label>
+                                                    </div>
+                                                    <div class="col-md-2-5">
+                                                        @Html.TextBox("InvoiceValue", "0", new { @readonly = true, @style = "text-align:right;" })
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row Form_Space_top">
+                                                <div class="form-group Form_Input">
+                                                    <div class="col-md-1-5">
+                                                        <label>Remarks:</label>
+                                                    </div>
+                                                    <div class="col-md-10-5">
+                                                        <textarea type="text" style="height:75px;" maxlength="500" id="Remarks" name="Remarks"></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </section>
+
+                                    </div>
+                            </div>
+                           
+                        </div>
+
+                    </div>
+
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-offset-1-5 col-md-2 SignUp_space_bottom">
+                            <input type="button" onclick="BindJson()"  class="btn log_Btn_sm" value="Save" id="btnSave" disabled />
+                        </div>
+
+                        <div class="col-md-3">
+                            <input type="button" id="BtnGenerateIRN" class="btn log_Btn_sm" value="Generate IRN" onclick="GenerateIRN()" disabled="disabled" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Reset" onclick="ResetAllFields()" />
+                        </div>
+
+                         <div class="col-md-2">
+                                <input type="button" id="BtnPrint" class="btn log_Btn_sm" value="Print" disabled onclick="Print()" />
+                            </div>
+                    </div>
+                    <div class="logSuccMsg" style="background-color:transparent" id="DivContainerStuffingMsg"></div>
+                    <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivContainerStuffingErrMsg"></div>
+                    <div class="row Form_Space_top">
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Show List" onclick="ShowList()">
+                        </div>
+
+                        <div class="col-md-offset-2 col-md-2">
+                            <input type="text" placeholder="Container No" id="SearchContainerNo" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="text" placeholder="Search by Invoice No" id="SearchInvoiceNo" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="text" placeholder="Date (dd/mm/yyyy)" id="SearchInvoiceDate" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" value="Search" onclick="SearchInvoice()" class="btn log_Btn_sm" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div id="DivBTTContainerList"></div>
+                        </div>
+                    </div>
+                </div>
+            }
+            @Scripts.Render("~/bundles/jqueryval")
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="DivContainerStuffingList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    var ViewCHAShippingLine = [];
+  
+</script>
+
+
+
+
+
+
+
+<div id="PartyNameModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal" onclick="LoadPartyList()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">Choose Party Name</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Party Name Or Party Code" type="text" id="txtPartyCode" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="PartySearchBinding()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;text-align:left;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" style="text-align:left;" width="80%">Party Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll">
+                    <table class="table dataTable table-bordered table-striped slim_tble">
+                        <tbody id="tbleParty"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadPartyList()" class="btn log_Btn_sm">Load More Data</button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal" onclick="LoadShippingList()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="PayerNameModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">Choose Payer Name</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Party Name Or Party Code" type="text" id="txtPayeeNameCode" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="PayeeSearch()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;text-align:left;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" style="text-align:left;" width="80%">Payer Name</th>
+                            <th colspan="4" width="20%">Payer Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll1">
+                    <table class="table dataTable table-bordered table-striped slim_tble">
+                        <tbody id="tblePayee"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadPayeeList()" class="btn log_Btn_sm">Load More Data</button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="HnTModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of H&amp;T Charges</h4>
+            </div>
+            <div class="modal-body popup_body">
+                @*<input placeholder="Search Me" id="stuffingbox" type="text" />*@
+                <ul class="navList" id="lstHT">
+                    @*@{
+                        foreach (var item in Model.lstGodownList)
+                        {
+                        <li id="@item.GodownId">@item.GodownName</li>
+                        }
+                        }*@
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal" onclick="BindHnTCharges()">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="NewHnTModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of H&amp;T Charges</h4>
+            </div>
+            <div class="modal-body popup_body">
+                @*<input placeholder="Search Me" id="stuffingbox" type="text" />*@
+                <ul class="navList" id="lstNewHT">
+                    @*@{
+                        foreach (var item in Model.lstGodownList)
+                        {
+                        <li id="@item.GodownId">@item.GodownName</li>
+                        }
+                        }*@
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal" onclick="AddHnTCharges()">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+

@@ -1,0 +1,236 @@
+﻿@model CwcExim.Areas.CashManagement.Models.OnlinePaymentReceipt
+
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>Online Payment Acknowledgement Against Invoice</h4>
+                    </div>
+                </div>
+                <div class="Form_Space_top" style="padding:5px;">
+                    <div class="row">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Received Date:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                            </div>
+
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                            </div>
+                            @*<div class="col-md-offset-4 col-md-2">
+                                    <input type="button" id="btnProceedAck" value="Proceed" onclick="ProceedAck()" class="btn log_Btn_sm" />
+                                </div>*@
+                            <div class="col-md-offset-0-5 col-md-2">
+                                <input type="button" id="btnProceedAck" value="Proceed" onclick="ProceedAck()" class="btn log_Btn_sm" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" id="btnResetAck" value="Reset" onclick="ResetAck()" class="btn log_Btn_sm" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" id="btnResetAck" value="Pull" onclick="PullAck()" class="btn log_Btn_sm" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+
+                <div class="row">
+                    <div class="stoke SignUp_space_top2 SignUp_space_bottom2">
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div id="DivOPPaymentDetails" class="col-md-12 ClearFix SignUp_space_bottom">
+                    </div>
+                </div>
+                <div class="row Form_Space_top SignUp_space_bottom">
+                    <div class="col-md-offset-4 col-md-2">
+                        <input type="button" id="btnProceedGenerated" value="Generate" onclick="Generated()" class="btn log_Btn_sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="button" id="btnResetAck" value="Reset" onclick="ResetAck()" class="btn log_Btn_sm" />
+                    </div>
+                </div>
+            </div>            
+            <div class="row Form_Space_top">
+                <div class="form-group Form_Input">
+                    <div class="col-md-2">
+                        <input type="button" value="Show List" class="btn log_Btn_sm" id="BtnPrint" onclick="ShowList()" />
+                    </div>
+                    <div class="col-md-offset-5 col-md-3">
+                        <input type="text" placeholder="Search by Receipt No" id="SearchValue" />
+                    </div>
+
+                    <div class="col-md-2">
+                        <input type="button" value="Search" onclick="SearchReceipt()" class="btn log_Btn_sm" />
+                    </div>
+
+                </div>
+            </div>
+            <div class="row Form_Space_top">
+                <div class="form-group Form_Input">
+                    <div class="col-md-12">
+                        <div id="divOnlineReceiptList"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+    function Validate()
+    {
+        //debugger;
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        return true;
+    }
+    function ProceedAck() {
+       // debugger;
+        if (Validate())
+        {
+            var From = $('#PeriodFrom').val();
+            var To = $('#PeriodTo').val();
+            if (From != "" && To != "") {
+                $('#DivOPPaymentDetails').load('/CashManagement/LNSM_CashManagement/OnlinePaymentReceiptDetailsAgainstInvoice?PeriodFrom=' + From + '&PeriodTo=' + To);
+            }
+            else {
+                $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('Date range should not blank');
+                return false;
+            }
+        }
+
+    }
+    function ShowList() {
+        //debugger;
+        var SearchValue = "";
+        $('#divOnlineReceiptList').load('/CashManagement/LNSM_CashManagement/OnlinePaymentReceiptListAgainstInvoice?SearchValue=' + SearchValue);
+    }
+
+    function SearchReceipt() {
+        var SearchValue = $('#SearchValue').val().trim();
+        if (SearchValue != "") {
+            $('#divOnlineReceiptList').load('/CashManagement/LNSM_CashManagement/OnlinePaymentReceiptListAgainstInvoice?SearchValue=' + SearchValue);
+        }
+    }
+
+    function ResetAck()
+    {
+        $('#DivBody').load('/CashManagement/LNSM_CashManagement/OnlinePaymentReceiptAgainstInvoice');
+    }
+    function Generated() {
+        debugger;
+        ArrayOrderID = [];
+        $('#tbltbodyReceiptOnline tr').each(function () {
+            var Chk = $(this).find('input[type="checkbox"]');
+            debugger;
+            if ($(Chk).is(':checked')) {
+
+                var PartyName = $(this).find("td").eq(1).html();
+                var PaymentDate = $(this).find("td").eq(10).html();
+                var PayerRemarks = $(this).find("td").eq(4).html();
+                var AmountPaid = $(this).find("td").eq(5).html();
+                var PayerId = $(this).find("td").eq(7).html();
+                var OnlineFacCharges = $(this).find("td").eq(8).html();
+                var PaymentAmount = $(this).find("td").eq(9).html();
+
+                var OrderId = {
+                    "ReferenceNo": $(Chk).attr('id'),
+                    "PayerName": PartyName,
+                    "PaymentDate": PaymentDate,
+                    "PayerRemarks": PayerRemarks,
+                    "AmountPaid": AmountPaid,
+                    "PayerId": PayerId,
+                    "OnlineFacCharges": OnlineFacCharges,
+                    "PaymentAmount": PaymentAmount
+
+
+                }
+
+
+
+
+                ArrayOrderID.push(OrderId);
+            }
+        });
+        if (ArrayOrderID.length > 0) {
+            $.ajax({
+                url: '/CashManagement/LNSM_CashManagement/GeneratedCashReceiptAginstInvoice',
+                type: 'POST',
+                data: {
+                    lstOnlinePaymentReceipt: ArrayOrderID
+                },
+                dataType: 'JSON',
+                success: function (data) {
+                    if (data.Status == '1') {
+                        $('#btnProceedGenerated').prop("disabled", true);
+                        $('.AllCheck').prop("disabled", true);
+
+                        //
+                        $('#DivDwnldWavMsg').removeClass('logErrMsg').addClass('logSuccMsg').html(data.Message);
+                        setTimeout(function () {
+
+                            ResetAck();
+                            // GetPayByDetailsPda();
+                        }, 6000);
+                    }
+
+                }
+            });
+        }
+        else {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('Please select atleast one order.');
+        }
+
+
+    }
+</script>

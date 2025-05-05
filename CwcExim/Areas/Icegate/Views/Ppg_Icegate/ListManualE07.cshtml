@@ -1,0 +1,157 @@
+﻿@model IEnumerable<CwcExim.Areas.Icegate.Models.IcegateManualE07>
+<table class="table table-bordered table-striped" id="tblList" style="width:100%">
+    <thead>
+        <tr>
+            <th class="text-center">@Html.DisplayName("View")</th>
+            <th class="text-center">@Html.DisplayName("Download")</th>
+            <th class="text-center">@Html.DisplayName("Resend")</th>
+            <th class="text-center">@Html.DisplayName("Sl No")</th>
+            <th>Container No</th>
+            <th>ICDCode</th>
+            <th>Size</th>
+            <th>Manual Date</th>
+            <th>Vehicle No</th>
+            <th>Sla Alias</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{ var Serial = 1;
+            foreach (var data in Model)
+            {
+                <tr>
+                    <td class="text-center"><div class="table_icon"><a href="#" class="view" onclick="View(@data.SerialNo)"><i class="fa fa-eye"></i></a></div></td>
+                    <td class="text-center"><div class="table_icon"><a href="#" class="view" onclick="DownloadE07('@data.FileName')"><i class="fa fa-download"></i></a></div></td>
+                    <td class="text-center"><div class="table_icon"><a href="#" class="view" onclick="ResendE07('@data.FileName','@data.FileCode','@data.ContainerNo','@data.CFSCode')"><i class="fa fa-repeat"></i></a></div></td>
+                    <td class="text-center">@Serial.ToString()</td>
+                    <td>@data.ContainerNo</td>
+                    <td>@data.CFSCode</td>
+                    @if (data.CarrierAgencyCode[0] == '2')
+                    {
+                        <td>20</td>
+                    }
+                    else if (data.CarrierAgencyCode[0] == '4')
+                    {
+                        <td>40</td>
+                    }
+                    else
+                    {
+                        <td></td>
+                    }
+                    <td>@data.SendOn</td>
+                    <td>@data.Train_VehicleNo</td>
+                    <td>@data.ShippingLineCode</td>
+                </tr>
+                Serial++;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="btn btn-primary btn-100px" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>
+<script>
+    $(document).ready(function () {
+        var tblList = $('#tblList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns": [
+                       { "sName": "View", "bSortable": false },
+                       { "sName": "Download", "bSortable": false },
+                       { "sName": "Resend", "bSortable": false },
+                       { "sName": "SL No" },
+                       { "sName": "Container No" },
+                       { "sName": "ICDCode", "bSortable": false },
+                       { "sName": "Size" },
+                       { "sName": "Manual Date", "bSortable": false },
+                       { "sName": "Vehicle No" },
+                       { "sName": "Sla Alias" }
+            ],
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td:eq(0),td:eq(1),td:eq(2),td:eq(3)', nRow).addClass("text-center");
+                $('td:eq(0),td:eq(1),td:eq(2),td:eq(3)', nRow).css("width", "5%");
+                $('td:eq(4)', nRow).css("width", "10%");
+                $('td:eq(5)', nRow).css("width", "10%");
+                $('td:eq(6)', nRow).css("width", "10%");
+                $('td:eq(7)', nRow).css("width", "10%");
+                $('td:eq(8)', nRow).css("width", "10%");
+                $('td:eq(9)', nRow).css("width", "10%");
+            }
+        });
+        new $.fn.dataTable.FixedHeader(tblList);
+    });
+    function View(id) {
+        $('#DivBody').load('/Icegate/Ppg_Icegate/ViewManualE07FileCreate?id=' + id);
+    }
+    var Page = 0;
+    function LoadMoreListData() {
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Icegate/Ppg_Icegate/LoadMoreListManualE07',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#tblList').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        let size = item.CarrierAgencyCode[0];
+                        if (size == '2')
+                            size = '20';
+                        else if (size == '4')
+                            size = '40';
+                        else size = '';
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        '<div class="table_icon"><a href="#" onclick=View(' + [item.SerialNo] + ')><i class="fa fa-eye"></i></a></div>',
+        '<div class="table_icon"><a href="#" onclick=DownloadE07("' + [item.FileName] + '")><i class="fa fa-download"></i></a></div>',
+        '<div class="table_icon"><a href="#" onclick=ResendE07("' + [item.FileName] + '","' + [item.FileCode] + '","' + [item.ContainerNo] + '","' + [item.CFSCode] + '")><i class="fa fa-repeat"></i></a></div>',
+        len,
+        [item.ContainerNo],
+        [item.CFSCode],
+        [size],
+        [item.SendOn],
+        [item.Train_VehicleNo],
+        [item.ShippingLineCode],
+
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+    function DownloadE07(FileName) {
+        $.ajax({
+            url: '/Icegate/Ppg_Icegate/DownloadFile',
+            type: 'POST',
+            data: {
+                "FilePath": "'@System.Configuration.ConfigurationManager.AppSettings["Ppg_MsgFileContExit"].ToString()'",
+                "FileName": FileName
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Data);
+            }
+        });
+    }
+    function ResendE07(FileName, FileCode, ContainerNo, CFSCode) {
+        $.ajax({
+            url: '/Icegate/Ppg_Icegate/ResendE07',
+            type: 'POST',
+            data: {
+                "FilePath": "'@System.Configuration.ConfigurationManager.AppSettings["Ppg_MsgFileContExit"].ToString()'",
+                "FileName": FileName,
+                "FileCode": FileCode,
+                "ContainerNo": ContainerNo,
+                "CFSCode": CFSCode
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    alert('File Resend Successful');
+            }
+        });
+    }
+</script>

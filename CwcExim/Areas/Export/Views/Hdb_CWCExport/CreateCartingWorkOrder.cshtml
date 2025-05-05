@@ -1,0 +1,424 @@
+﻿@model CwcExim.Areas.Export.Models.Hdb_CartingWorkOrder
+
+<script>
+    var TimeInSeconds;
+    $(function () {
+        TimeInSeconds = 5000;
+       // GetWorkOrderList();
+        $('#DivTblCartingDetail').hide();
+    });
+    $('#WorkOrderDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='WorkOrderDate']").html('');
+        }
+    });
+    function GetWorkOrderList() {
+        $('#DivWorkOrderList').load('/Hdb_CWCExport/GetCartingWorkOrderList');
+        
+    }
+
+
+
+    function SearchCartingList() {
+        debugger;
+        var Shipping_CHA = $('#SearchCarting').val().trim();
+        var Carting_ApplicationDate = $('#SearchCartingDate').val().trim();
+        if (Shipping_CHA == "" && Carting_ApplicationDate == "")
+            $('#DivWorkOrderList').load('/Export/Hdb_CWCExport/GetCartingWorkOrderList');
+        else if (Carting_ApplicationDate != "" && Validate() == true)
+            $('#DivWorkOrderList').load('/Export/Hdb_CWCExport/GetCartingWorkOrderListByDate?CartingDate=' + Carting_ApplicationDate);
+        else if (Shipping_CHA != "")
+            var Sword = Shipping_CHA.trim().split(" ");
+              var SearchWord = Sword[0];
+                 $('#DivWorkOrderList').load('/Export/Hdb_CWCExport/GetCartingWorkOrderListByCHA?ShiipingChA=' + SearchWord);
+
+    }
+
+    function Validate() {
+        debugger;
+        var date = document.getElementById("SearchCartingDate").value.split("/");
+        var day = date[0];
+        var month = date[1];
+        var dateString = document.getElementById("SearchCartingDate").value;
+        var regex = /^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/;
+        //if (regex.test(dateString) || dateString.length == 0) {
+        //    alert("Please enter correct date");
+        //    return false;
+        //}
+        if (day > 31) {
+            alert("Please enter correct date");
+            return false;
+        }
+        else
+            if (month > 12) {
+                alert("Please enter correct Month");
+                return false;
+            }
+        return true;
+    }
+    function ResetAllFields() {
+        $('#DivAddCatingWorkOrder').find('input:text,textarea').val('');
+        $('#DivAddCatingWorkOrder #DivWorkOrderMsg').html('');
+        $('#DivAddCatingWorkOrder #DivWorkOrderErrMsg').html('');
+        $('[data-valmsg-for]').html('<span><span>');
+        $('#TblCartingDetail').html('');
+    }
+    function LoadWorkOrderPage() {
+        $('#DivBody').load('/Hdb_CWCExport/CreateCartingWorkOrder');
+    }
+    function WorkOrderOnSuccess(data) {
+        if (data.Status == 1) {
+            $('#DivWorkOrderMsg').html(data.Message);
+            $('#CartingNoList #' + $('#CartingAppId').val()).remove();
+            setTimeout(LoadWorkOrderPage, TimeInSeconds);
+            GetWorkOrderList();
+        }
+        else {
+            $('#DivWorkOrderErrMsg').html(data.Message);
+        }
+    }
+    function WorkOrderOnFailure() { }
+    $('#CartingNoBox').keyup(function () {
+        debugger;
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#DivModalCartingNo .navList > li').show();
+        }
+        else {
+            $('#DivModalCartingNo .navList > li').each(function () {
+                debugger;
+                var Text = $(this).text().toLowerCase();
+                (Text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('#GodownBox').keyup(function () {
+        debugger;
+        var Value = $(this).val().toLowerCase();
+        if (Value == "") {
+            $('#DivModalGodown .navList > li').show();
+        }
+        else {
+            $('#DivModalGodown .navList > li').each(function () {
+                debugger;
+                var Text = $(this).text().toLowerCase();
+                (Text.indexOf(Value) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    $('#DivModalCartingNo .navList li').on("click", function () {
+        debugger;
+        var CartingNo = $(this).text();
+        var CartingAppId = $(this).attr('id');
+        $('#CartingNo').val(CartingNo.split('-')[0]);
+        $('#CartingAppId').val(CartingAppId);
+        $('#DivModalCartingNo').modal("hide");
+        GetCartingDetails(CartingAppId);
+    });
+    $('#DivModalGodown .navList li').on("click", function () {
+        debugger;
+        var GodownName = $(this).text();
+        var GodownId = $(this).attr('id');
+        $('#GodownName').val(GodownName);
+        $('#GodownId').val(GodownId);
+        $('#DivModalGodown').modal("hide");
+    });
+    function GetCartingDetails(CartingAppId) {
+        debugger;
+        $.ajax({
+            url:  '/Export/CWCExport/GetCartingDetForWorkOrder',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { CartingAppId: CartingAppId },
+            async: false,
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    GenerateCartingTable(data.Data);
+                }
+                else {
+                    $('#TblCartingDetail >tbody').html('');
+                }
+            }
+        });
+    }
+    function GenerateCartingTable(Data) {
+        debugger;
+        var Table = '';
+        $.each(Data, function (i, item) {
+            debugger;
+            Table += '<tr><td style="text-align:center">' + (i + 1) + '</td><td>' + item.CommodityName + '</td><td>' + item.CargoDescription + '</td><td class="text-right">' + item.NoOfUnits + '</td><td class="text-right">' + item.Weight + '</td></tr>'
+        });
+        $('#TblCartingDetail >tbody').html(Table);
+        $('#DivTblCartingDetail').show();
+        $('#CartingDate').val(Data[0].CartingDate);
+    }
+</script>
+
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "WorkOrderOnSuccess";
+    options.OnFailure = "WorkOrderOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("AddEditCartingWorkOrderDet", "CWCExport", options))
+                {
+                    <div id="DivAddCatingWorkOrder">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Carting Work Order</h4>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2 padding_rt">
+                                    <label>Work Order No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.WorkOrderNo, new { @class = "form-control input-sm", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.WorkOrderNo, "", new { @class = "Error_Msg" })
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                                    <label>Work Order Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5 Date_Img">
+                                    @Html.TextBoxFor(m => m.WorkOrderDate, new { @class = "form-control input-sm", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.WorkOrderDate, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Carting No:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.CartingNo, new { @class = "form-control input-sm", @readonly = true })
+                                    @Html.ValidationMessageFor(m => m.CartingNo, "", new { @class = "Error_Msg" })
+                                    @Html.HiddenFor(m => m.CartingAppId)
+                                    <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#DivModalCartingNo"></i></span>
+                                </div>
+                                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                    <label>Carting Date:</label>
+                                </div>
+                                <div class="col-md-2 col_cus_2_5">
+                                    @Html.TextBoxFor(m => m.CartingDate, new { @class = "form-control input-sm", @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Godown:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextBoxFor(m => m.GodownName, new { @class = "form-control input-sm", Readonly = true })
+                                    @Html.ValidationMessageFor(m => m.GodownName, "", new { @class = "Error_Msg" })
+                                    @Html.HiddenFor(m => m.GodownId)
+                                    <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#DivModalGodown"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5 col_cus_2">
+                                    <label>Remarks:</label>
+                                </div>
+                                <div class="col-md-10-5 col_cus_10">
+                                    @Html.TextAreaFor(m => m.Remarks, new { @style = "width:100%;height:100px" })
+                                    @Html.ValidationMessageFor(m => m.Remarks, "", new { @class = "Error_Msg" })
+                                </div>
+                            </div>
+                        </div>
+                        @*<div id="DivCartingNoDetail" class="Head_h5">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h5>Work Order Details</h5>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>Commodity Name:</label>
+                                    </div>
+                                    <div class="col-md-4">
+                                        @Html.TextBoxFor(m => m.CommodityName, new { @class = "form-control input-sm", @readonly = "true" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Cargo Description:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10">
+                                        @Html.TextAreaFor(m => m.CargoDescription, new { @style = "width:100%;height:100px", @disabled = true })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2">
+                                        <label>No of Units:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBoxFor(m => m.NoOfUnits, new { @class = "form-control input-sm", @readonly = true })
+                                    </div>
+                                    <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                        <label>Weight:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.TextBoxFor(m => m.Weight, new { @class = "form-control input-sm", @readonly = true })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-offset-4 col-md-2 SignUp_space_bottom">
+                                    <input type="button" id="BtnAddCartingDetail" class="btn log_Btn_sm" value="Add" />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="button" id="BtnResetCartingDetail" class="btn log_Btn_sm" value="Reset" />
+                                </div>
+                            </div>*@
+                            <div class="row Form_Space_bottom" id="DivTblCartingDetail">
+                                <div class="col-md-12">
+                                    <table id="TblCartingDetail" class="table table-striped table-bordered nowrap dataTable" style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center" style="width:8%;">@Html.DisplayName("SL No")</th>
+                                                <th>Commodity Name</th>
+                                                <th>@Html.DisplayName("Cargo Description")</th>
+                                                <th class="text-center" style="width:12%;">@Html.DisplayName("No of Units")</th>
+                                                <th class="text-center" style="width:12%;">@Html.DisplayName("Weight")</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    
+                                <div class="row">
+                                    <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-offset-4 col-md-2 SignUp_space_bottom">
+                                        <input type="submit" class="btn log_Btn_sm" value="Save" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="button" class="btn log_Btn_sm" value="Reset" onclick="ResetAllFields()" />
+                                    </div>
+                                </div>
+                                <div class="logSuccMsg" style="background-color:transparent" id="DivWorkOrderMsg"></div>
+                                <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivWorkOrderErrMsg"></div>
+
+
+                                <div class="row Form_Space_top">
+                                    <div class="form-group Form_Input">
+                                        <div class="col-md-2">
+                                            <input type="button" id="BtnLoad" value="Show List" class="btn log_Btn_sm" onclick="GetWorkOrderList()"  />
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="text" placeholder="Search by Shipping Bill No/CHA Name" id="SearchCarting" />
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="text" placeholder="Carting Work Order Date (dd/mm/yyyy)" id="SearchCartingDate" />
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="button" value="Search" onclick="SearchCartingList()" class="btn log_Btn_sm" />
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                }
+                @Scripts.Render("~/bundles/jqueryval")
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="DivWorkOrderList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="DivModalCartingNo" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List Of Carting No.</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="CartingNoBox" type="text" />
+                <ul class="navList" id="CartingNoList">
+                    @{
+                        foreach (var item in Model.LstCarting)
+                        {
+                            <li id="@item.CartingAppId">@item.CartingNo</li>
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="DivModalGodown" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List Of Godown</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="GodownBox" type="text" />
+                <ul class="navList" id="GodownList">
+                    @{
+                        foreach (var item in Model.LstGodown)
+                        {
+                            <li id="@item.GodownId">@item.GodownName</li>
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

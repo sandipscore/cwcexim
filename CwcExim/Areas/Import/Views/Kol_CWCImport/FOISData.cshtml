@@ -1,0 +1,689 @@
+﻿@model CwcExim.Areas.Import.Models.RakeWagonHdr
+
+
+@using (Ajax.BeginForm("AddEditRakeCargo", "Kol_CWCImport", new AjaxOptions { Confirm = "Are you sure you want to Save?", HttpMethod = "POST", OnSuccess = "RakeCargoOnSuccess", OnFailure = "RakeCargoOnFailure" }))
+{    
+    @Html.AntiForgeryToken()
+    <div class="Head_h4">
+        <div class="row">
+            <div class="col-md-12">
+                <h4>FOIS Data Entry</h4>
+            </div>
+        </div>
+
+        @if (ViewBag.listInvoice != null)
+        {
+            <input type="hidden" id="listInvoiceJson" name="listInvoiceJson" value="@ViewBag.listInvoice.ToString()" />
+        }
+        else
+        {
+            <input type="hidden" id="listInvoiceJson" name="listInvoiceJson" value="" />
+        }
+
+        @Html.HiddenFor(m=>m.RWHdrId)
+        <div class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-1-5 col_cus_2">                    
+                    <label>Invoice No:</label>
+                    @Html.HiddenFor(x=>x.WgonDetailsJS)
+                </div>
+                <div class="col-md-2-5 col_cus_2_5">
+                    <span class="search" id="InvoiceNoSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#InvoiceModal"></i></span>
+                    @Html.HiddenFor(m=>m.InvoiceId)
+                    @Html.TextBoxFor(m => m.InvoiceNo, new { @class = "form-control", @readonly = true })
+                    @Html.ValidationMessageFor(m => m.InvoiceNo, "", new { @class = "Error_Msg" })
+                </div>
+
+                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                    <label>Rake ID:</label>
+                </div>
+                <div class="col-md-2-5">
+                    @Html.TextBoxFor(m => m.RakeId, new { @class = "form-control input_sm", @readonly = true })
+                    @Html.ValidationMessageFor(m => m.RakeId, "", new { @class = "Error_Msg" })
+                </div>
+            </div>
+        </div>
+
+        <div class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-1-5 col_cus_2">
+                    <label>Station From:</label>
+                </div>
+                <div class="col-md-2-5">
+                    @Html.TextBoxFor(m => m.StationFrom, new { @class = "form-control input_sm", @readonly = true })
+                    @Html.ValidationMessageFor(m => m.StationFrom, "", new { @class = "Error_Msg" })
+                </div>
+                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                    <label>Station To:</label>
+                </div>
+                <div class="col-md-2-5">
+                    @Html.TextBoxFor(m => m.StationTO, new { @class = "form-control input_sm", @readonly = true })
+                    @Html.ValidationMessageFor(m => m.StationTO, "", new { @class = "Error_Msg" })
+                </div>
+            </div>
+        </div>
+
+        <div class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-1-5 col_cus_2">
+                    <label>No of Wagon:</label>
+                </div>
+                <div class="col-md-2-5">
+                    @Html.TextBoxFor(m => m.NoOfWagon, new { @class = "form-control input_sm", @readonly = true })
+                    @Html.ValidationMessageFor(m => m.NoOfWagon, "", new { @class = "Error_Msg" })
+                </div>
+                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                    <label>Rake Name:</label>
+                </div>
+                <div class="col-md-2-5">
+                    @Html.TextBoxFor(m => m.RakeName, new { @class = "form-control input_sm", @readonly = true })
+                    @Html.ValidationMessageFor(m => m.RakeName, "", new { @class = "Error_Msg" })
+                </div>
+            </div>
+        </div>
+
+        <div class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-1-5 col_cus_2">
+                    <label>First Operating Placement Time:</label>
+                </div>
+                <div class="col-md-2-5">
+                    @Html.TextBoxFor(m => m.FstOprPlcTime, new { @class = "form-control input_sm", @readonly = true })
+                    @Html.ValidationMessageFor(m => m.FstOprPlcTime, "", new { @class = "Error_Msg" })
+                </div>
+                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2 padding_rt">
+                    <label>Last Release Time:</label>
+                </div>
+                <div class="col-md-2-5">
+                    @Html.TextBoxFor(m => m.LstRelsTime, new { @class = "form-control input_sm", @readonly = true })
+                    @Html.ValidationMessageFor(m => m.LstRelsTime, "", new { @class = "Error_Msg" })
+                </div>
+            </div>
+        </div>
+
+        <div class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-1-5 col_cus_2">
+                    <label>Import From Excel:</label>
+                </div>
+                <div class="col-md-2">
+                    <input type="file" id="inputGroupFile" accept=".xlsx,.xls">
+                    <label class="custom-file-label" for="inputGroupFile"></label>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" id="btnFOISExcelUpload" onclick="AddExcelDataToTempTable()" class="btn log_Btn_sm">Upload</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row Form_Space_top Form_Space_bottom">
+            <div class="col-md-12">
+                <div style="overflow-x: auto; height: 300px;">
+                    <table id="tblContainer" class="table table-bordered table-striped dataTable bigger_table">
+                        <thead>
+                            <tr>
+                                <th width="50px;"></th>
+                                <th width="70px;">Wagon ID</th>
+                                <th width="100px;">Container No</th>
+                                <th width="50px;">Container L/E Flag</th>
+                                <th width="50px;">Container Size</th>
+                                <th width="70px;">Container Position</th>
+                                <th width="50px;">Commodity Loaded</th>
+                                <th width="50px;">Traffic Type</th>
+                                <th width="50px;">Commodity Statistical Code</th>
+                                <th width="50px;">Container Tare Weight</th>
+                                <th width="50px;">Container Loaded Weight</th>
+                                <th width="50px;">SMTP Number</th>
+                                <th width="100px;">SMTP Date</th>
+                                <th width="70px;">HSN Code</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+         
+        
+        <div class="row">
+            <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+        </div>       
+        <div class="logSuccMsg Form_Space_bottom" id="DivBBTTCargoMsg" style="background-color:transparent"></div>
+
+        <div class="row SignUp_space_bottom" style="display: flex; justify-content: center;">
+            <div class="col-md-2">
+                <button id="BtnSaveDelvApp" type="submit" class="btn log_Btn_sm">Save</button>
+            </div>
+            <div class="col-md-2">
+                <input id="btnSendRLDtl" type="button" class="btn log_Btn_sm" value="Send" disabled onclick="SendRakeLoadingDetails()" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-2 SignUp_space_bottom">
+                <input type="button" id="BtnCommodityLoad" value="Show List" class="btn log_Btn_sm" onclick="LoadFOISEntryList()" />
+    </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div id="tblEntryDet"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div id="FOISEntryList"></div>
+            </div>
+        </div>
+
+    </div>    
+}
+<style>
+    .Date_Img img{right: 5px;top: 5px;}
+    </style>
+
+<div id="InvoiceModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">Invoice List</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="InvoiceListBox" type="text" />
+                <ul class="navList" id="lstInvoiceList"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+<script>
+    GenerateBlankTable();
+
+    function GenerateBlankTable() {
+        tablehtml = '';
+        var tablehtml = '<table id="tblEntryDet" class="table table-striped table-bordered dataTable" style="width:100%;"><thead><tr><th class="text-center">SL No</th><th>Invoice No</th><th>Rake ID</th><th>Station From</th><th>Station To</th><th class="text-center">Edit</th><th class="text-center">View</th><th class="text-center">Status</th></tr></thead><tbody>';
+        tablehtml += '</tbody></table>';
+        $('#tblEntryDet').html(tablehtml);
+    }
+   
+    function LoadFOISEntryList() {
+        $('#tblEntryDet').html('');
+        $('#FOISEntryList').load('/Import/Kol_CWCImport/ListOfFOISEntry');
+        }
+  
+
+    function RakeCargoOnSuccess(data) {
+        alert(data.Message);
+        $('#btnSendRLDtl').prop('disabled', false);
+        $('#BtnSaveDelvApp').prop('disabled', true);
+
+    }
+    function RakeCargoOnFailure() { }
+
+    populateList();
+
+    function populateList()
+    {
+        debugger;
+        var jsonval = JSON.parse($('#listInvoiceJson').val());
+        var html = '';
+        $.each(jsonval, function (i, item) {
+            debugger;
+            html += '<li id="' + item.InvoiceNo + '" " onclick="SelectInvoiceNo(this,'+item.InvoiceId+')">' + item.InvoiceNo + '</li>';
+        });
+        debugger;
+        $('#lstInvoiceList').html(html);
+    }
+
+    $('#InvoiceListBox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstInvoiceList > li').show();
+        else {
+            $('#lstInvoiceList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    function SelectInvoiceNo(elem,_InvoiceId) {
+        debugger;
+        $('#InvoiceNo').val($(elem).text());
+        $('#InvoiceId').val(_InvoiceId);
+        $("#InvoiceModal").modal("hide");
+        GetFoisData();
+    }
+    function GetFoisData() {
+        debugger;
+        var html = '';
+        $('#tblContainer tbody').html('');
+        var InvoiceNo = $('#InvoiceNo').val();
+        var html = '';
+        $.ajax({
+            url: '/Import/Kol_CWCImport/GetFoisData',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { InvoiceNo: InvoiceNo },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    $('#InvoiceNo').val(data.Data.InvoiceNo);
+                    $('#RakeId').val(data.Data.RakeId);
+                    $('#StationFrom').val(data.Data.StationFrom);
+                    $('#StationTO').val(data.Data.StationTO);
+                    $('#NoOfWagon').val(data.Data.NoOfWagon);
+                    $('#RakeName').val(data.Data.RakeName);
+                    $('#FstOprPlcTime').val(data.Data.FstOprPlcTime);
+                    $('#LstRelsTime').val(data.Data.LstRelsTime);
+                    $('#RWHdrId').val(data.Data.RWHdrId);
+                    $.each(data.Data.lstWgon, function (i, item) {
+                        html += '<tr id=' + item.ID + '>';
+                        html += '<td style="display:none;">' + item.ID + '</td><td><a href="#" onclick="Add(' + item.ID + ',&quot;' + item.WgonId + '&quot;)"><span class="glyphicon glyphicon-plus"></span><a/></td> <td>' + item.WgonId + '</td>';
+                        html += '<td><input type="text" id="ContNo", maxlength = "23"  value="' + item.ContNo + '"/></td>';
+                        html += '<td><input type="text" id="ContFlg", maxlength = "1" value="' + item.ContFlg + '"/></td>';
+                        html += '<td><input type="text" id="ContSize" , maxlength = "2" value="' + item.ContSize + '"/></td>';
+                        html += '<td><input type="text" id="ContPosn", maxlength = "2" value="' + item.ContPosn + '"/></td>;'
+                        html += '<td><select><option value="CTNR">CTNR</option></select></td>';
+                        html += '<td><input type="text" id="TrafficType", maxlength = "5" value="' + item.TrafficType + '"/></td>';
+                        html += '<td><input type="text" id="CommodityCode", maxlength = "4" value="' + item.CommodityCode + '"/></td>';
+                        html += '<td><input type="text" id="ContLodWt" , maxlength = "11" value="' + item.ContLodWt + '" style="text-align: right;"/></td>';
+                        html += '<td><input type="text" id="ContTareWt" , maxlength = "11" value="' + item.ContTareWt + '" style="text-align: right;"/></td>';
+                        html += '<td><input type="text" id="SmtpNo" , maxlength = "15" value="' + item.SmtpNo + '"/></td>';
+                        html += '<td style="position: relative;" class ="Date_Img"><input type="text" class="SmtpDt" id="SmtpDt' + i + '" disabled value="' + item.SmtpDt + '"/></td>';
+                        html += '<td><input type="text" id="HsnCode" value="' + item.HsnCode + '"/></td>';
+                        html += '<td style="display:none;">' + item.ID + '</td>';
+                        html += '</tr>';
+                    });
+                    $('#tblContainer tbody').html(html);
+                  
+                    $(".SmtpDt").datepicker({
+                        dateFormat: "dd/mm/yy",
+                        showOn: "button",
+                        buttonImage: "/Content/images/calendar.png",
+                        buttonImageOnly: true,
+                        buttonText: "Select date",
+                        changeMonth: true,
+                        changeYear: true,
+                        showAnima: "fadein",
+                        onClose: function () {
+                            $(".Date_Img .Error_Msg").text("");
+                            $('[data-valmsg-for="Data"]').html('<span></span>');
+                        }
+                    });
+                }
+            }
+        });
+    }
+    function Remove(tr) {
+        debugger;
+        tr.parentNode.parentNode.remove();
+    }
+    function Add(ID, WgonId)
+    {
+        debugger;
+        const d = new Date();
+        var i = d.getHours() + d.getHours() + d.getMinutes() + d.getSeconds() + d.getMilliseconds();
+        debugger;
+        var html = '';
+        html += '<tr>';
+        html += '<td style="display:none;">0</td><td><a href="#" onclick="Remove(this)"><span class="glyphicon glyphicon-minus"></span><a/></td> <td>' + WgonId + '</td>';
+        html += '<td><input type="text" id="ContNo", maxlength = "23" /></td>';
+        html += '<td><input type="text" id="ContFlg", maxlength = "1" /></td>';
+        html += '<td><input type="text" id="ContSize" , maxlength = "2" /></td>';
+        html += '<td><input type="text" id="ContPosn", maxlength = "2" /></td>;'
+        html += '<td><select><option value="CTNR">CTNR</option></select></td>';
+        html += '<td><input type="text" id="TrafficType", maxlength = "5" /></td>';
+        html += '<td><input type="text" id="CommodityCode", maxlength = "4" /></td>';
+        html += '<td><input type="text" id="ContLodWt" , maxlength = "11" style="text-align: right;"/></td>';
+        html += '<td><input type="text" id="ContTareWt" , maxlength = "11" style="text-align: right;"/></td>';
+        html += '<td><input type="text" id="SmtpNo" , maxlength = "15" /></td>';
+        html += '<td style="position: relative;" class ="Date_Img"><input type="text" class="SmtpDt" id="SmtpDt' + i + '" disabled /></td>';
+        html += '<td><input type="text" id="HsnCode" /></td>';
+        html += '<td style="display:none;">' + ID + '</td>';
+        html += '</tr>';
+
+        $('#' + ID).after(html);
+        $(".SmtpDt").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+                $('[data-valmsg-for="Data"]').html('<span></span>');
+            }
+        });
+    }
+
+   
+
+    $('#BtnSaveDelvApp').on("click", function () {
+        var flag = 0;
+        debugger;
+        var ArrayOfDeliveryApp = [];
+        $('#tblContainer>tbody tr').each(function () {
+
+            var Id = $(this).find("td").eq(0).html();
+            var wagonID = $(this).find("td").eq(2).html();
+            var ContainerNo = $(this).find("td").eq(3).find('input').val();
+            var ContainerFlag = $(this).find("td").eq(4).find('input').val();
+            var ContainerSize = $(this).find("td").eq(5).find('input').val();
+            var ContainerPosition = $(this).find("td").eq(6).find('input').val();
+            var CommodityLoaded = $(this).find("td").eq(7).find('select').val();
+            var TrafficType = $(this).find("td").eq(8).find('input').val();
+            var CommodityStatisticalCode = $(this).find("td").eq(9).find('input').val();
+            var ContainerTareWeight = $(this).find("td").eq(10).find('input').val();
+            var ContainerLoadedWeight = $(this).find("td").eq(11).find('input').val();
+            var SMTPNumber = $(this).find("td").eq(12).find('input').val();
+            var SMTPDate = $(this).find("td").eq(13).find('input').val();
+            var HSNCode = $(this).find("td").eq(14).find('input').val();
+            var ParentId = $(this).find("td").eq(15).html();
+            ArrayOfDeliveryApp.push({
+                'ParentId': ParentId, 'ID': Id, 'WgonId': wagonID, 'ContNo': ContainerNo,
+                'ContFlg': ContainerFlag, 'ContSize': ContainerSize, 'ContPosn': ContainerPosition,
+                'Commodity': CommodityLoaded, 'TrafficType': TrafficType, 'CommodityCode': CommodityStatisticalCode,
+                'ContLodWt': ContainerLoadedWeight, 'ContTareWt': ContainerTareWeight, 'SmtpNo': SMTPNumber,
+                'SmtpDt': SMTPDate, 'HsnCode': HSNCode
+            });
+        });
+        $.each(ArrayOfDeliveryApp, function (key, val) {
+            if (val.SmtpDt == '') {
+               
+                flag = 1;
+            }
+        });
+
+        if (flag == 0)
+        {
+            $('#WgonDetailsJS').val(JSON.stringify(ArrayOfDeliveryApp));
+            return true;
+        }
+        else
+        {
+            alert('Please select all smtp date');
+            return false;
+        }
+
+       
+      //  return true;
+
+    });
+
+    function SendRakeLoadingDetails() {
+        debugger;
+        var _RWHdrId = $('#RWHdrId').val();
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: "/Import/Kol_CWCImport/SendLoadingDetails",
+            type: "POST",
+            dataType: "JSON",
+            data: { RWHdrId: _RWHdrId },
+            headers: { "__RequestVerificationToken": Token },
+            async: false,
+            success: function (data) {
+                if (data.Status == 1) {
+                    $('#btnSendRLDtl').prop('disabled', true);
+                    alert(data.Message);
+                }
+                else {
+                    alert(data.Message);
+                }
+            }
+        });
+    }
+
+    $('#inputGroupFile').on('change', function () {
+        debugger;
+        var fileName = $(this).val();
+        files = $('#inputGroupFile').prop("files");
+        $(this).next('.custom-file-label').html(files[0].name);
+        var Filename = files[0].name;
+        var Fileextension = Filename.split('.').pop().toLowerCase();
+        if (Fileextension != "xlsx" && Fileextension != "xls") {
+            alert("File Format Not support Please Upload Excel File!");
+
+            return false;
+        }
+        $("#inputGroupFile").removeClass('is-invalid');
+        $(this).parent('div').removeAttr('data-tip');
+
+    });
+
+    function AddExcelDataToTempTable() {
+        var error = 0;
+        var ContainerNo = '';
+        var AlreadyUploadedExcel = 0;
+
+        // Clear existing table data
+        //$('#tblContainer tbody').html('');
+        var _InvoiceId = $('#InvoiceId').val();
+        var _InvoiceNo = $('#InvoiceNo').val();
+
+        // Validate Invoice Number
+        if (_InvoiceNo == "") {
+            error = 1;
+            alert('Please Select Invoice');
+            return false;
+        }
+
+        var files = $('#inputGroupFile').prop("files");
+
+        // Check if a file is uploaded
+        if (files.length === 0) {
+            alert('Please upload an Excel file.');
+            return false;
+        }
+
+        // Check if container data is already uploaded
+        //$('#tblContainer>tbody tr').each(function () {
+        //    ContainerNo = $(this).find("td").eq(3).find('input').val();
+        //});
+        //if (ContainerNo != '') {
+        //    AlreadyUploadedExcel = 1;
+        //}
+        //if (AlreadyUploadedExcel == 1) {
+        //    $('#inputGroupFile').val('');
+        //    $('.custom-file-label').html('');
+        //    alert('The previously uploaded Excel sheet related to this invoice.');
+        //    return false;
+        //}
+
+
+        var reader = new FileReader();
+
+        reader.onload = function (event) {
+            var data = new Uint8Array(event.target.result);
+
+            try {
+                if (typeof XLSX === 'undefined') {
+                    console.error('XLSX library not loaded');
+                    alert('XLSX library is missing or not loaded.');
+                    return;
+                }
+
+                var workbook = XLSX.read(data, { type: 'array' });
+                var sheetName = workbook.SheetNames[0];
+                var sheet = workbook.Sheets[sheetName];
+
+                var headerMapping = {
+                    "Wagon No.": "WagonNo",
+                    "Container No.": "ContainerNo",
+                    "Container L/E Flag": "ContainerFlag",
+                    "Container Size": "ContainerSize",
+                    "Container Position": "ContainerPosition",
+                    "Commodity Loaded": "CommodityLoaded",
+                    "Traffic Type": "TrafficType",
+                    "Commodity Statistical Code": "CommodityStatisticalCode",
+                    "Container Tare Weight": "ContainerTareWeight",
+                    "Container Loaded Weight": "ContainerLoadedWeight",
+                    "SMTP Number": "SMTPNumber",
+                    "SMTP Date": "SMTPDate",
+                    "HSN Code": "HSNCode"
+                };
+
+                // Convert the Excel sheet to JSON
+                var jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                var headers = jsonData[0].map(header => header.trim());
+                var missingHeaders = Object.keys(headerMapping).filter(header => !headers.includes(header));
+
+                // Check if required headers are missing
+                if (missingHeaders.length > 0) {
+                    alert("Invalid Excel file. Missing required columns: " + missingHeaders.join(", "));
+                    return false;
+                }
+
+                // Map the rows into an object based on the header mapping
+                var objData = jsonData.map((row, index) => {
+                    if (index === 0) return null; // Skip header row
+                    var rowObj = {};
+
+                    jsonData[0].forEach((header, i) => {
+                        var customKey = headerMapping[header.trim()] || header.trim();
+                        var cellValue = row[i];
+
+                        if (cellValue === undefined || cellValue === null) {
+                            cellValue = "";
+                        }
+
+                        if (customKey === "SMTPDate" && typeof cellValue === "number") {
+                            var dateString = cellValue.toString().trim();
+                            if (dateString.length === 8) {
+                                debugger;
+                                var day = dateString.substring(0, 2);
+                                var month = dateString.substring(2, 4);
+                                var year = dateString.substring(4, 8);
+                                cellValue = `${day}/${month}/${year}`;
+                            }
+                            else if (dateString.length === 7) {
+                                debugger;
+                                var day = dateString.substring(0, 1);
+                                var month = dateString.substring(1, 3);
+                                var year = dateString.substring(3, 7);
+                                cellValue = `${day}/${month}/${year}`;
+                            }
+                        }
+
+                        rowObj[customKey] = cellValue;
+                    });
+
+                    return rowObj;
+                }).filter(row => row !== null); // Filter out null (header row)
+
+                // Check for missing "Wagon No." or "Container No."
+                var missingFields = [];
+                objData.forEach((row, index) => {
+                    if (!row.WagonNo || !row.ContainerNo) {
+                        missingFields.push(index + 2); // +2 because Excel rows are 1-based, and we're skipping the header row
+                    }
+                });
+
+                if (missingFields.length > 0) {
+                    error = 1;
+                    alert('Please fill in complete Wagon No. and Container No. for the following rows: ' + missingFields.join(", "));
+                    return false;
+                }
+
+                // Proceed to send the data via AJAX
+                if (error == 0) {
+                    var html = '';
+                    $('#tblContainer tbody').html('');
+                    $.ajax({
+                        url: "/Import/Kol_CWCImport/AddExcelDataToTempTable",
+                        type: "POST",
+                        data: { InvoiceId: _InvoiceId, InvoiceNo: _InvoiceNo, WgonDetailsJS: JSON.stringify(objData) },
+                        dataType: "json",
+                        success: function (data) {
+                            if (data.Status == 1) {
+                                // Populate form fields with returned data
+                                $('#InvoiceNo').val(data.Data.InvoiceNo);
+                                $('#RakeId').val(data.Data.RakeId);
+                                $('#StationFrom').val(data.Data.StationFrom);
+                                $('#StationTO').val(data.Data.StationTO);
+                                $('#NoOfWagon').val(data.Data.NoOfWagon);
+                                $('#RakeName').val(data.Data.RakeName);
+                                $('#FstOprPlcTime').val(data.Data.FstOprPlcTime);
+                                $('#LstRelsTime').val(data.Data.LstRelsTime);
+                                $('#RWHdrId').val(data.Data.RWHdrId);
+
+                                // Render the table rows
+                                $.each(data.Data.lstWgon, function (i, item) {
+                                    html += '<tr id=' + item.ID + '>';
+                                    if (item.ID == 0) {
+                                        html += '<td style="display:none;">' + item.ID + '</td><td><a href="#" onclick="Remove(this)"><span class="glyphicon glyphicon-minus"></span><a/></td> <td>' + item.WgonId + '</td>';
+                                    } else {
+                                        html += '<td style="display:none;">' + item.ID + '</td><td><a href="#" onclick="Add(' + item.ID + ',&quot;' + item.WgonId + '&quot;)"><span class="glyphicon glyphicon-plus"></span><a/></td> <td>' + item.WgonId + '</td>';
+                                    }
+                                    html += '<td><input type="text" id="ContNo", maxlength = "23" value="' + item.ContNo + '" /></td>';
+                                    html += '<td><input type="text" id="ContFlg", maxlength = "1" value="' + item.ContFlg + '"/></td>';
+                                    html += '<td><input type="text" id="ContSize" , maxlength = "2" value="' + item.ContSize + '"/></td>';
+                                    html += '<td><input type="text" id="ContPosn", maxlength = "2" value="' + item.ContPosn + '"/></td>;'
+                                    html += '<td><select><option value="' + item.Commodity + '">CTNR</option></select></td>';
+                                    html += '<td><input type="text" id="TrafficType", maxlength = "5" value="' + item.TrafficType + '"/></td>';
+                                    html += '<td><input type="text" id="CommodityCode", maxlength = "4" value="' + item.CommodityCode + '"/></td>';
+                                    html += '<td><input type="text" id="ContLodWt" , maxlength = "11" value="' + item.ContLodWt + '" style="text-align: right;"/></td>';
+                                    html += '<td><input type="text" id="ContTareWt" , maxlength = "11" value="' + item.ContTareWt + '" style="text-align: right;"/></td>';
+                                    html += '<td><input type="text" id="SmtpNo" , maxlength = "15" value="' + item.SmtpNo + '"/></td>';
+                                    html += '<td style="position: relative;" class ="Date_Img"><input type="text" class="SmtpDt" id="SmtpDt' + i + '" disabled value="' + item.SmtpDt + '"/></td>';
+                                    html += '<td><input type="text" id="HsnCode" value="' + item.HsnCode + '"/></td>';
+                                    html += '<td style="display:none;">' + item.ParentId + '</td>';
+                                    html += '</tr>';
+                                });
+                                debugger;
+                                $('#tblContainer tbody').html(html);
+
+                                $(".SmtpDt").datepicker({
+                                    dateFormat: "dd/mm/yy",
+                                    showOn: "button",
+                                    buttonImage: "/Content/images/calendar.png",
+                                    buttonImageOnly: true,
+                                    buttonText: "Select date",
+                                    changeMonth: true,
+                                    changeYear: true,
+                                    showAnima: "fadein",
+                                    onClose: function () {
+                                        $(".Date_Img .Error_Msg").text("");
+                                        $('[data-valmsg-for="Data"]').html('<span></span>');
+                                    }
+                                });
+                            }
+                        },
+                        error: function (req, status, error) {
+                            console.error("Error:", error);
+                            $('#inputGroupFile').val('');
+                            $('.custom-file-label').html('');
+                        },
+                        complete: function () {
+                            $('#inputGroupFile').val('');
+                            $('.custom-file-label').html('');
+                        }
+                    });
+                }
+
+            } catch (error) {
+                console.error("Error processing Excel file:", error);
+                alert("An error occurred while processing the Excel file.");
+                $('#inputGroupFile').val('');
+                $('.custom-file-label').html('');
+            }
+        };
+
+        reader.readAsArrayBuffer(files[0]);
+    }
+
+
+</script>

@@ -1,0 +1,1550 @@
+﻿@model CwcExim.Areas.Export.Models.WLFD_Pallatisation
+
+
+<style>
+    #tbleCommodity.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .slimScrollDiv {
+        height: 300px;
+    }  
+
+    .table.tblhd {
+        border-bottom: 0;
+    }
+</style>
+@if (ViewBag.GodownList != null)
+{
+    <input type="hidden" id="hdnGodownList" value="@ViewBag.GodownList" />
+}
+else
+{
+    <input type="hidden" id="hdnGodownList" value="" />
+}
+<div class="container-fluid">
+    <div class="col-md-offset-0-5 col-md-11">
+        <div class="Head_h4">
+            <div id="DivAddPallatisation">
+    <input type="text" id="hdnPartyPayee" style="display:none;" />
+
+    @using (Ajax.BeginForm("AddEditPallatisation", "WFLD_CWCExport", new AjaxOptions { HttpMethod = "POST", OnBegin = "$('#BtnSavePallatisation').prop('disabled', true)", OnSuccess = "RegisterOnSuccess", OnFailure = "RegisterOnFailure" }, new { @Id = "frmCartingReg" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(x => x.PallatisationSBDetails)
+        @Html.HiddenFor(x => x.PalletSBDetails)
+        @Html.HiddenFor(x => x.PallatisationNewSBDetails)
+        @Html.HiddenFor(x => x.PalletSBNewDetails)
+
+        
+        @Html.HiddenFor(x => x.PallatisationCharge)
+
+
+        @Html.HiddenFor(x => x.TotalCGST)
+        @Html.HiddenFor(x => x.TotalSGST)
+        @Html.HiddenFor(x => x.TotalIGST)
+        @Html.HiddenFor(x => x.TotalTaxable)
+        @Html.HiddenFor(x => x.Total)
+        @Html.HiddenFor(x => x.CartingRegisterId)
+        @Html.HiddenFor(x => x.LocationId)
+        @Html.HiddenFor(x => x.InvoiceID)
+        @Html.HiddenFor(x => x.SEZ)
+        @Html.Hidden("ServiceType")
+        @Html.Hidden("InvoiceNo")
+
+        <div class="row">
+            <div class="col-md-12">
+                <h4>Pallatisation</h4>
+            </div>
+        </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>SB No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.SBNo, new { @class = "form-control input-sm", @readonly = true })
+                                <span class="search" id="SBSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="GetSBData()" data-target="#myModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.SBNo, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                <label>SB Date:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBoxFor(m => m.SBDate, new { @class = "form-control input-sm", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.SBDate, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-sm-12">
+                                <table class="table table-striped table-bordered" id="tblRegisterDtl" style="width:100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>SL No</th>
+                                            <th>SB No.</th>
+                                            <th>SB Date</th>
+                                            <th>Godown Name</th>
+                                            <th>Location Name</th>
+                                            <th>Qty</th>
+                                            <th>PkgType</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbltbody"></tbody>
+                                </table>
+                            </div>
+
+
+                        </div>
+
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Godown Name:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.GodownNewName, new { @class = "form-control input-sm", @readonly = true })
+                                @Html.HiddenFor(m => m.GodownNewID)
+                                <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="GodownBinding()" data-target="#godownModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.GodownNewName, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                <label>Location:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBoxFor(m => m.LocationName, new { @class = "form-control input-sm", @readonly = true })
+                                <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#LocationModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.LocationName, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>No Of Pallet:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.NoOfPallet, new { @class = "form-control input-sm" })
+                                @Html.ValidationMessageFor(m => m.NoOfPallet, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                <label>UOM:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.DropDownList("PkgType", new List<SelectListItem>
+                                  {
+                                   new SelectListItem { Text="Pallets",Value="Pallets"},
+                                   
+                                  }, new { @class = "form-control input-sm dropdown" })
+                                @Html.ValidationMessage("PkgType", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Reserve CBM:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.ReserveCBM, new { @class = "form-control input-sm", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.ReserveCBM, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                <label>General CBM:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 ">
+                                @Html.TextBoxFor(m => m.GeneralCBM, new { @class = "form-control input-sm", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.GeneralCBM, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                
+                            </div>
+                            <div class="col-md-2-5">
+                            </div>
+                            <div class="col-md-4">
+                                <input type="button" id="BtnAdd" value="Add" onclick="GetAdd()" class="btn log_Btn_sm" />
+                            </div>
+                            <div class="col-md-2">
+                                <div class="boolean-container">
+                                 
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-sm-12">
+                                <table class="table table-striped table-bordered" id="tblRegistermulDtl" style="width:100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>SL No</th>
+                                            <th>SB No.</th>
+                                            <th>SB Date</th>
+                                            <th>Godown Name</th>
+                                            <th>Location Name</th>
+                                            <th>No. Of Pallet</th>
+                                            <th>UOM</th>
+
+                                            <th>Reserve CBM</th>
+                                            <th>General CBM</th>
+                                            
+
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbltmulbody"></tbody>
+                                </table>
+                            </div>
+
+
+                        </div>
+
+                    </div>
+
+
+
+
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Party Name:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control input-sm", @readonly = true })
+                                @Html.HiddenFor(x => x.PartyID)
+                                <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="PartyBinding()" data-target="#PartyModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.PartyName, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                <label>Payer Name:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBoxFor(m => m.PayeeName, new { @class = "form-control input-sm", @readonly = true })
+                                @Html.HiddenFor(x => x.PayeeID)
+                                <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="PayeeBinding()" data-target="#PayeeModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.PayeeName, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                <label>Invoice No.:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.Invoice, new { @class = "form-control input-sm", @readonly = true })
+                            </div>
+                            <div class="col-md-4">
+                                <input type="button" value="Calculate Charges" onclick="GetCalculateCharge()" class="btn log_Btn_sm" />
+                            </div>
+                            <div class="col-md-1-5">
+                            <label>SEZ:</label>
+                            </div>
+                            <div class="col-md-2">
+                                @Html.DropDownList("chkSEZ", new List<SelectListItem>
+                                        {
+                                        new SelectListItem { Text="SEZWP",Value="SEZWP"},
+                                        new SelectListItem {Text="SEZWOP",Value="SEZWOP" }
+
+                                        }, "---Select---", new { @class = "form-control input-sm dropdown" })
+                                @Html.ValidationMessage("chkSEZ", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="col-md-12">
+                            <table id="tblPallatisattionCharges" class="table table-bordered table-striped dataTable Table_center">
+                                <thead>
+                                    <tr>
+                                        <th rowspan="2">Charges</th>
+                                        <th rowspan="2">Value</th>
+                                        <th colspan="2" class="text-center">IGST</th>
+                                        <th colspan="2" class="text-center">CGST</th>
+                                        <th colspan="2" class="text-center">SGST</th>
+                                        <th rowspan="2" style="width:15%;">Total</th>
+                                    </tr>
+                                    <tr>
+                                        <th>%</th>
+                                        <th>Amt</th>
+                                        <th>%</th>
+                                        <th>Amt</th>
+                                        <th>%</th>
+                                        <th style="border-right:1px solid #ddd;">Amt</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbltbodyCharge"></tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="8" style="text-align:right;">Total:</td>
+                                        <td class="Table_right">
+                                            <input type="text" id="AllTotal" value="0" readonly>
+                                        </td>
+                                    </tr>
+                                    @*<tr>
+                                            <td colspan="8" style="text-align:right;">TDS %:</td>
+                                            <td class="Table_right"><input type="text" id="CWCTDSPer" value="0" onblur="CalcInvoice()"></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="8" style="text-align:right;">TDS Amount:</td>
+                                            <td class="Table_right"><input type="text" id="TOTCWCTDS" value="0" readonly></td>
+                                        </tr>*@
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-offset-1-5 col-md-2">
+                            <button type="submit" class="btn log_Btn_sm" id="BtnSavePallatisation" disabled>Save</button>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Reset"  onclick="ResetAll()"/>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="button" id="BtnGenerateIRN" class="btn log_Btn_sm" value="Generate IRN" onclick="GenerateIRN()" disabled="disabled" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" id="btnPrint" class="btn log_Btn_sm" disabled value="Print" onclick="Print()" />
+                        </div>
+                    </div>
+                    <div id="DivPallatisationMsg" class="logSuccMsg" style="background-color:transparent"></div>
+                    <div id="DivPallatisationErrMsg" class="logErrMsg" style="background-color:transparent"></div>
+                    
+                    <div class="row Form_Space_top">
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Show List" onclick="ShowList()">
+                        </div>
+                        <div class="col-md-2-5 col-md-offset-0-5">
+                            <input class="form-control input-sm" type="text" placeholder="Search by Invoice No" id="SearchInvoiceNo" />
+                        </div>
+                        <div class="col-md-2-5">
+                            <input class="form-control input-sm" type="text" placeholder="Date (dd/mm/yyyy)" id="SearchInvoiceDate" />
+                        </div>
+                        <div class="col-md-2-5">
+                            <input class="form-control input-sm" type="text" placeholder="Search by ShippingBillNO" id="SearchSBNO" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" value="Search" onclick="SearchInvoice()" class="btn log_Btn_sm" />
+                        </div>
+                    </div>
+
+             
+    }
+                        </div>
+            <div class="row">
+                <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+            </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div id="DivPallatisationList"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+</div>
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of SB No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="SBNobox" type="text" />
+                <ul class="navList" id="SBNoList">
+                   
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="LocationModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Godown Wise Location</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <div class="row">
+                    <div class="form-group Form_Input" id="DivLocationDet">
+                        @*@{
+                                foreach (var item in Model.lstGdnWiseLctn)
+                                {
+                                    @Html.Label(item.Row + " " + item.Column, new { @for = item.LocationId })
+                                    @Html.CheckBox(@item.LocationId.ToString())
+                                }
+                            }*@
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="godownModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Godown</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Godownbox" type="text" />
+                <ul class="navList" id="lstGodown"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="PartyModal" class="modal fade mTabindex" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal" onclick="closePartyModel()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">Choose Party Name</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Party Name Or Party Code" type="text" id="txtPartyCode" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="PartySearch()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;text-align:left;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" style="text-align:left;" width="80%">Party Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll">
+                    <table class="table dataTable table-bordered table-striped slim_tble">
+                        <tbody id="tbleParty"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="button" id="txtLoadMoreParty" style="width:100%; margin-left:0;" onclick="LoadPartyList()" class="btn log_Btn_sm">Load More Data</button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="closePartyModel()" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="PayeeModal" class="modal fade mTabindex" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" onclick="closePayeeModel()" aria-hidden="true"></i></button>
+                <h4 class="modal-title">Choose Payee Name</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Party Name Or Party Code" type="text" id="txtPayeeNameCode" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="PayeeSearch()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;text-align:left;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" style="text-align:left;" width="80%">Payee Name</th>
+                            <th colspan="4" width="20%">Payee Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll1">
+                    <table class="table dataTable table-bordered table-striped slim_tble">
+                        <tbody id="tblePayee"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="button"  id="txtLoadMorePayee" style="width:100%; margin-left:0;" onclick="LoadPayeeList()" class="btn log_Btn_sm">Load More Data</button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="closePayeeModel()" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/Scripts/Extended.Jquery.Plugins.js"></script>
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#SearchInvoiceDate').mask("99/99/9999");
+        $('#slim_scroll_2').slimScroll({
+            allowPageScroll: true
+        });
+
+        $('#slim_scroll1').slimScroll({
+            allowPageScroll: true
+        });
+
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+
+        //$('#SBDate').datepicker({
+        //    dateFormat: "dd-mm-yy",
+        //    showOn: "button",
+        //    buttonImage: "/Content/images/calendar.png",
+        //    buttonImageOnly: true,
+        //    buttonText: "Select date",
+        //    changeMonth: true,
+        //    changeYear: true,
+        //    showAnima: "fadein",
+        //    onClose: function () {
+        //        $("[data-valmsg-for='SBDate']").html('');
+        //    }
+        //});
+
+        //$("#SBDate").datepicker("setDate", new Date());
+
+        $('#NoOfPallet').ForceNumeric();
+
+
+        var tblRegisterDtl = $('#tblRegisterDtl').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "lengthChange": false,
+            "paging": false,
+            "aoColumns": [
+                       { "sName": "SL No", "width": "8%", "bSortable": false },
+                        { "sName": "SB No",  "bSortable": false },
+                        { "sName": "SB Date", "bSortable": false },
+                       { "sName": "Godown Name", "bSortable": false },
+                       { "sName": "Location Name", "bSortable": false },
+                       { "sName": "Qty", "bSortable": false },
+                       { "sName": "Weight", "bSortable": false }
+
+            ],
+            language: {
+                "zeroRecords": "."
+            },
+        });
+        new $.fn.dataTable.FixedHeader(tblRegisterDtl);
+
+
+        var tblRegistermulDtl = $('#tblRegistermulDtl').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "lengthChange": false,
+            "paging": false,
+            "aoColumns": [
+                       { "sName": "SL No", "width": "8%", "bSortable": false },
+                        { "sName": "SB No", "bSortable": false },
+                        { "sName": "SB Date", "bSortable": false },
+                       { "sName": "Godown Name", "bSortable": false },
+                       { "sName": "Location Name", "bSortable": false },
+                       { "sName": "No.Of Pallet", "bSortable": false },
+                       { "sName": "UOM", "bSortable": false },
+                        { "sName": "Reserve CBM", "bSortable": false },
+                         { "sName": "General CBM", "bSortable": false }
+
+            ],
+            language: {
+                "zeroRecords": "."
+            },
+        });
+        new $.fn.dataTable.FixedHeader(tblRegistermulDtl);
+
+
+
+    });
+
+
+
+    $('#Godownbox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#lstGodown > li').show();
+        } else {
+            $('#lstGodown > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+    $('#SBNobox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#SBNoList > li').show();
+        } else {
+            $('#SBNoList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+
+
+    function GetSBData()
+    {
+        $.ajax({
+
+            url: '/Export/WFLD_CWCExport/GetSbNoForPallatisation',
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                $('#SBNoList').html('');
+                if(data.Status==1)
+                {
+                    var html = '';
+                    $.each(data.Data, function (i, item) {
+                        html += '<li onclick="GetAllDetails(' + item.CartingRegisterId + ',&quot;' + item.SBNo + '&quot;,&quot;' + item.SBDate + '&quot;)">' + item.SBNo + '</li>'
+                    });
+                    $('#SBNoList').html(html);
+                }
+
+            }
+        });
+    }
+    var ArrayOfSBOldDetails = [];
+    var ArrayOfSBNewDetails = [];
+
+    function GetAllDetails(CartingRegisterId, SBNo, SBDate)
+    {
+
+        debugger;
+        $('#SBSearch').css('display', 'none');
+
+        $('#myModal').modal('hide');
+        $('#SBDate').val(SBDate);
+        $('#SBNo').val(SBNo)
+
+        var SBdt = SBDate.split("-");
+        var SbDtValue = SBdt[2] + "-" + SBdt[1] + "-" + SBdt[0];
+        $('#CartingRegisterId').val(CartingRegisterId)
+
+        $.ajax({
+
+            url: '/Export/WFLD_CWCExport/GetSbNoDetailsForPallatisation',
+            type: 'GET',
+            dataType: 'JSON',
+            data: {CartingRegisterId: CartingRegisterId },
+            success: function (data) {
+                debugger;
+                $('#tbltbody').html('');
+
+
+                $('#PallatisationSBDetails').val(JSON.stringify(data.Data));
+                $('#PalletSBDetails').val(JSON.stringify(data.Data));
+                var SBDetails = {
+                    "SBNo": SBNo,
+                    "SBDate": SbDtValue,
+                    "GodownID": data.Data[0].GodownID,
+                    "GodownName": data.Data[0].GodownName,
+                    "Qty": data.Data[0].Qty,
+                    "Weight": data.Data[0].Weight,
+                    "SQM": data.Data[0].SQM,
+                    "FOB": data.Data[0].FOB,
+                    "Rate": data.Data[0].Rate,
+                    "LocationName": data.Data[0].LocationName,
+                    "LocationId": data.Data[0].LocationId,
+                    "RefID": data.Data[0].RefID,
+                    "PartyId": data.Data[0].PartyId,
+                    "ComodityId": data.Data[0].ComodityId,
+                    "ShippingLineId": data.Data[0].ShippingLineId,
+                    "Vol": data.Data[0].Vol,
+                    "Item": data.Data[0].Item,
+                    "PartyName": data.Data[0].PartyName,
+                    "PkgType": data.Data[0].PkgType,
+                    "GeneralCBM": data.Data[0].GeneralCBM,
+                    "ReserveCBM": data.Data[0].ReserveCBM
+
+
+                };
+                var html = '';
+                if(data.Status==1)
+                {
+
+                    var flag = 0;
+                    $.each(ArrayOfSBOldDetails, function (i, item) {
+                        if (item.SBNo == SBDetails.SBNo) {
+                            flag = 1;
+
+                        }
+
+                    });
+
+
+                    if (flag == 0) {
+                        ArrayOfSBOldDetails.push(SBDetails);
+                     //   id = id + 1;
+                        // TotalAmt = parseFloat(TotalAmt)+ parseFloat($('#Amount').val());
+                    }
+                    else
+                        alert('Shipping Bill Already Added');
+
+
+
+
+
+
+                    var k = 1;
+
+
+
+
+                    $.each(ArrayOfSBOldDetails, function (i, item) {
+                        html += "<tr><td>" + k + "</td><td>" + item.SBNo + "</td><td>" + item.SBDate + "</td><td>" + item.GodownName + "</td><td>" + item.LocationName + "</td><td>" + item.Qty + "</td><td>" + item.PkgType + "</td><tr>";
+                        k++;
+                    });
+                    $('#tbltbody').html(html);
+
+                    $('#GodownNewName').val(data.Data[0].GodownName);
+                    $('#LocationName').val(data.Data[0].LocationName);
+                    $('#PartyName').val(data.Data[0].PartyName);
+                    $('#PayeeName').val(data.Data[0].PartyName);
+                    $('#PartyID').val(data.Data[0].PartyId);
+                    $('#PayeeID').val(data.Data[0].PartyId);
+                    $('#GodownNewID').val(data.Data[0].GodownID);
+                    $('#LocationId').val(data.Data[0].LocationId);
+                    $('#ReserveCBM').val(data.Data[0].ReserveCBM);
+                    $('#GeneralCBM').val(data.Data[0].GeneralCBM);
+
+                }
+
+
+            }
+        });
+
+
+    }
+    function GodownBinding() {
+        if ($('#hdnGodownList').val() != '') {
+            var GodownJson = JSON.parse($('#hdnGodownList').val());
+            var html = '';
+            $.each(GodownJson, function (i, item) {
+                html += '<li id="' + item.GodownId + '" onclick="selectGodown(' + item.GodownId + ');">' + item.GodownName + '</li>';
+            });
+            $('#lstGodown').html(html);
+
+        }
+    }
+
+    var LocationDetails='';
+    function selectGodown(gid) {
+        $('[data-valmsg-for="Location"]').html('<span></span>');
+        $('#hdnGodownId').val(gid);
+        var GodownJson = JSON.parse($('#hdnGodownList').val());
+        //console.log(GodownJson);
+        debugger;
+        if (GodownJson == null || GodownJson == undefined || GodownJson == "") {
+
+        }
+        else {
+            var gname = $.grep(GodownJson, function (item) { return item.GodownId == gid; })[0];
+            if (gname != undefined) {
+                $("#GodownNewName").val(gname.GodownName);
+                $('#GodownNewID').val(gname.GodownId)
+                $('#LocationName').val('');
+                $('#LocationId').val('');
+            }
+        }
+        $.ajax({
+
+            url: '/Export/WFLD_CWCExport/GetLocationDetailsByGodownId',
+            type: 'GET',
+            data: { GodownId: gid },
+            dataType: 'JSON',
+            success: function (data) {
+
+                LocationDetails = data;
+                console.log(data);
+                LocationDet();
+            }
+        });
+
+        $('#godownModal').modal('hide');
+    }
+    function LocationDet() {
+
+        debugger;
+        var htm = '';
+        $.each(LocationDetails, function (i, data) {
+            //if (data.IsOccupied)
+            //    htm += '<div class="col-md-4"><div class="boolean-container"><input type="checkbox" onclick="CheckBoxChange()" disabled id="' + data.LocationId + '"/><label for="' + data.LocationId + '">' + data.Row + ' ' + data.Column + '<i class="square" style="margin-left:10px;"></i></label></div></div>';
+            //else
+            htm += '<div class="col-md-4"><div class="boolean-container"><input type="checkbox" onclick="CheckBoxChange()" id="' + data.LocationId + '"/><label for="' + data.LocationId + '">' + data.LocationName + '<i class="square" style="margin-left:10px;"></i></label></div></div>';
+        });
+        $('#DivLocationDet').html(htm);
+    }
+    function CheckBoxChange() {
+        debugger;
+        var Locationtext = '';
+        var LocationtextID = '';
+        $('#DivLocationDet').find('input[type="checkbox"]:checked').each(function () {
+            if (Locationtext == '')
+            {
+                Locationtext = $('label[for="' + $(this).prop('id') + '"]').text();
+                LocationtextID = $(this).prop('id');
+            }
+
+            else {
+                Locationtext += ',' + $('label[for="' + $(this).prop('id') + '"]').text();
+                LocationtextID += ',' + $(this).prop('id');
+            }
+        });
+        $('#LocationName').val(Locationtext);
+        $('#LocationId').val(LocationtextID);
+    }
+
+
+
+
+
+    var partyPage = 1;
+    var payeePage = 1;
+
+
+    function PartyBinding() {
+        debugger;
+        //pPage += 1;
+        $('#txtPartyCode').val('');
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/GetPartyNameForPallatisation',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { 'Page': 1, 'PartyCode': '' },
+            success: function (data) {
+                debugger;
+                if (data.Data != '' && data.Data != null) {
+                    //$('#hdnPartyPayee').val(JSON.stringify(data.Data.LstPartyDetails));
+                    var EcJson = data.Data.LstPartyDetails;
+
+
+                    var html = '';
+                    $.each(EcJson, function (i, item) {
+
+                        html += ''
+                        html += '<tr onclick="selectParty(' + item.PartyId + ',&quot;' + item.PartyName + '&quot;);"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                    });
+                    $('#tbleParty').html(html);
+                    if(data.Data.StatePayer==true)
+                    {
+                        $('#txtLoadMoreParty').prop("disabled", false);
+                    }
+                    else
+                    {
+                        $('#txtLoadMoreParty').prop("disabled", true);
+                    }
+
+                }
+            }
+        });
+
+
+
+
+    }
+
+    function PartySearch() {
+        debugger;
+        //pPage += 1;
+
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/GetPartyNameForPallatisation',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { 'Page': 1, 'PartyCode': $('#txtPartyCode').val() },
+            success: function (data) {
+                debugger;
+                if (data.Data != '' && data.Data != null) {
+                    //$('#hdnPartyPayee').val(JSON.stringify(data.Data.LstPartyDetails));
+                    var EcJson = data.Data.LstPartyDetails;
+
+
+                    var html = '';
+                    $.each(EcJson, function (i, item) {
+
+                        html += ''
+                        html += '<tr onclick="selectParty(' + item.PartyId + ',&quot;' + item.PartyName + '&quot;);"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                    });
+                    $('#tbleParty').html(html);
+                    if (data.Data.StatePayer == true) {
+                        $('#txtLoadMoreParty').prop("disabled", false);
+                    }
+                    else {
+                        $('#txtLoadMoreParty').prop("disabled", true);
+                    }
+
+                }
+            }
+        });
+
+
+
+
+    }
+    var pPage = 0;
+    function LoadPartyList() {
+        pPage += 1;
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/GetPartyNameForPallatisation',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { 'Page': pPage, 'PartyCode': '' },
+            success: function (data) {
+                debugger;
+                if (data.Data != '' && data.Data != null) {
+                    //$('#hdnPartyPayee').val(data.Data.LstPartyDetails);
+                    var EcJson = data.Data.LstPartyDetails;
+
+
+                    var html = '';
+                    $.each(EcJson, function (i, item) {
+
+                        html += ''
+                        html += '<tr onclick="selectParty(' + item.PartyId + ',&quot;' + item.PartyName + '&quot;);"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                    });
+                    $('#tbleParty').append(html);
+                    if (data.Data.StatePayer == true) {
+                        $('#txtLoadMoreParty').prop("disabled", false);
+                    }
+                    else {
+                        $('#txtLoadMoreParty').prop("disabled", true);
+                    }
+
+                }
+            }
+        });
+
+    }
+
+
+    function PayeeBinding() {
+        debugger;
+        //pPage += 1;
+        $('#txtPayeeNameCode').val('');
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/GetPartyNameForPallatisation',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { 'Page': 1, 'PartyCode': '' },
+            success: function (data) {
+                debugger;
+                if (data.Data != '' && data.Data != null) {
+                    //$('#hdnPartyPayee').val(JSON.stringify(data.Data.LstPartyDetails));
+                    var EcJson = data.Data.LstPartyDetails;
+
+
+                    var html = '';
+                    $.each(EcJson, function (i, item) {
+
+                        html += ''
+                        html += '<tr onclick="selectPayee(' + item.PartyId + ',&quot;' + item.PartyName + '&quot;);"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                    });
+                    $('#tblePayee').html(html);
+                    if (data.Data.StatePayer == true) {
+                        $('#txtLoadMorePayee').prop("disabled", false);
+                    }
+                    else {
+                        $('#txtLoadMorePayee').prop("disabled", true);
+                    }
+
+                }
+            }
+        });
+
+
+
+
+    }
+
+    function PayeeSearch() {
+        debugger;
+        //pPage += 1;
+
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/GetPartyNameForPallatisation',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { 'Page': 1, 'PartyCode': $('#txtPayeeNameCode').val() },
+            success: function (data) {
+                debugger;
+                if (data.Data != '' && data.Data != null) {
+                   // $('#hdnPartyPayee').val(JSON.stringify(data.Data.LstPartyDetails));
+                    var EcJson = data.Data.LstPartyDetails;
+
+
+                    var html = '';
+                    $.each(EcJson, function (i, item) {
+
+                        html += ''
+                        html += '<tr onclick="selectPayee(' + item.PartyId + ',&quot;' + item.PartyName + '&quot;);"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                    });
+                    $('#tblePayee').html(html);
+                    if (data.Data.StatePayer == true) {
+                        $('#txtLoadMorePayee').prop("disabled", false);
+                    }
+                    else {
+                        $('#txtLoadMorePayee').prop("disabled", true);
+                    }
+
+                }
+            }
+        });
+
+
+
+
+    }
+    function LoadPayeeList() {
+        payeePage += 1;
+        $.ajax({
+            url: '/Export/WFLD_CWCExport/GetPartyNameForPallatisation',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { 'Page': payeePage, 'PartyCode': '' },
+            success: function (data) {
+                debugger;
+                if (data.Data != '' && data.Data != null) {
+                   // $('#hdnPartyPayee').val(data.Data.LstPartyDetails);
+                    var EcJson = data.Data.LstPartyDetails;
+
+
+                    var html = '';
+                    $.each(EcJson, function (i, item) {
+
+                        html += ''
+                        html += '<tr onclick="selectPayee(' + item.PartyId + ',&quot;' + item.PartyName + '&quot;);"><td colspan="8" width="80%">' + item.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + item.PartyCode + '</td></tr>';
+                    });
+                    $('#tblePayee').append(html);
+                    if (data.Data.StatePayer == true) {
+                        $('#txtLoadMorePayee').prop("disabled", false);
+                    }
+                    else {
+                        $('#txtLoadMorePayee').prop("disabled", true);
+                    }
+
+                }
+            }
+        });
+
+    }
+    function selectParty(PartyId, PartyName) {
+        debugger;
+        //   alert(id);
+
+        //var PartyJson = $('#hdnPartyPayee').val();
+        //  alert(PartyJson);
+        //var Party = $.grep(JSON.parse(PartyJson), function (item) { return item.PartyId == id; })[0];
+        // alert(PartyJson);
+        $('#PartyID').val(PartyId);
+        $('#PartyName').val(PartyName);
+
+        $("#PartyModal").modal("hide");
+
+
+    }
+
+
+    function selectPayee(PartyId, PartyName) {
+        debugger;
+        //   alert(id);
+
+        //var PartyJson = $('#hdnPartyPayee').val();
+        //  alert(PartyJson);
+        //var Party = $.grep(JSON.parse(PartyJson), function (item) { return item.PartyId == id; })[0];
+        // alert(PartyJson);
+        $('#PayeeID').val(PartyId);
+        $('#PayeeName').val(PartyName);
+
+        $("#PayeeModal").modal("hide");
+
+
+    }
+
+    $('#txtPartyCode').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#tbleParty > tr > td').show();
+        else {
+            $('#tbleParty > tr >td').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+
+    function closePartyModel()
+    {
+        partyPage = 1;
+        $("#PartyModal").modal("hide");
+    }
+
+    function closePayeeModel()
+    {
+        pPage = 0;
+        $("#PayeeModal").modal("hide");
+    }
+
+    $('#txtPayeeNameCode').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#tblePayee > tr > td').show();
+        else {
+            $('#tblePayee > tr > td').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    function GetCalculateCharge()
+    {
+        if (validation())
+        {
+
+            var NoOfPal = 0;
+            for (i = 0; i < ArrayOfSBNewDetails.length; i++)
+            {
+                NoOfPal = NoOfPal + Number(ArrayOfSBNewDetails[i].Qty);
+            }
+
+
+
+
+            $.ajax({
+                url: '/Export/WFLD_CWCExport/GetPallatisationCharge',
+                type: 'GET',
+                dataType: 'JSON',
+                data: {
+                    'PartyId': $('#PartyID').val(), 'Pallet': NoOfPal,
+                    SEZ: $('#chkSEZ').val()
+                },
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        var tamt = 0;
+                        var taxAmt = 0; 
+                        var TotalCgst = 0;
+                        var TotalSgst=0;
+                        var TotalIgst = 0;
+                        $('#SEZ').val($('#chkSEZ').val())
+                        $('#PalletSBNewDetails').val(JSON.stringify(ArrayOfSBNewDetails));
+                        $('#PalletSBDetails').val(JSON.stringify(ArrayOfSBOldDetails));
+
+                        $('#PallatisationCharge').val(JSON.stringify(data.Data));
+                        var html = '';
+                        $('#tbltbodyCharge').html('');
+                        $.each(data.Data, function (i, item) {
+
+                            tamt = parseFloat(tamt) + parseFloat(item.Total.toFixed(2));
+                            taxAmt = parseFloat(taxAmt) + parseFloat(item.Amount.toFixed(2));
+                            TotalCgst = parseFloat(TotalCgst) + parseFloat(item.CGSTAmt.toFixed(2));
+                            TotalSgst = parseFloat(TotalSgst) + parseFloat(item.SGSTAmt.toFixed(2));
+                            TotalIgst = parseFloat(TotalIgst) + parseFloat(item.IGSTAmt.toFixed(2));
+
+                            html += '<tr><td>' + item.Clause + '. ' + item.ChargeName + '</td>'
+                                    + '<td class="Table_right"><input id="' + item.ChargeId + '" type="text"  value="' + item.Amount.toFixed(2) + '" readonly/></td>'
+                                    + '<td class="Table_right"><input id="IGSTP' + item.ChargeId + '" type="text" value="' + item.IGSTPer + '" readonly /></td>'
+                                    + '<td class="Table_right"><input id="IGSTA' + item.ChargeId + '" type="text" value="' + item.IGSTAmt.toFixed(2) + '" readonly /></td>'
+                                    + '<td class="Table_right"><input id="CGSTP' + item.ChargeId + '" type="text" value="' + item.CGSTPer + '"  readonly /></td>'
+                                    + '<td class="Table_right"><input id="CGSTA' + item.ChargeId + '" type="text" value="' + item.CGSTAmt.toFixed(2) + '" readonly /></td>'
+                                    + '<td class="Table_right"><input id="SGSTP' + item.ChargeId + '" type="text" value="' + item.SGSTPer + '"  readonly /></td>'
+                                    + '<td class="Table_right"><input id="SGSTA' + item.ChargeId + '" type="text" value="' + item.SGSTAmt.toFixed(2) + '" readonly /></td>'
+                                    + '<td class="Table_right"><input id="TOT' + item.ChargeId + '" type="text" value="' + item.Total.toFixed(2) + '" readonly /></td></tr>';
+                        });
+                        $('#tbltbodyCharge').html(html);
+                        $('#AllTotal').val(tamt.toFixed(2));
+                        $('#Total').val(tamt.toFixed(2))
+                        $('#TotalTaxable').val(taxAmt.toFixed(2));
+                        $('#TotalCGST').val(TotalCgst.toFixed(2));
+                        $('#TotalSGST').val(TotalSgst.toFixed(2));
+                        $('#TotalIGST').val(TotalIgst.toFixed(2));
+
+
+                        $('span>i').addClass('hidden');
+                        $('#NoOfPallet').attr('readonly', true);
+                        $('#BtnSavePallatisation').prop("disabled", false);
+                        $('#BtnAdd').prop("disabled", false);
+
+                        $('#chkSEZ').prop("disabled", true);
+
+                    }
+                }
+            });
+        }
+
+
+
+
+
+
+
+    }
+
+
+    function validation()
+    {
+        debugger;
+        var flag = true;
+
+        if (ArrayOfSBNewDetails.length == 0)
+        {
+            alert("Please Add SB Details");
+            flag = false;
+        }
+        //if ($('#SBNo').val() == '' || $('#SBNo').val() == null)
+        //{
+        //    flag = false;
+        //    $('span[data-valmsg-for="SBNo"]').html("<span>Fill The Field<span>");
+        //    $('span[data-valmsg-for="SBNo"]').addClass('field-validation-error');
+
+        //}
+        //else
+        //{
+        //    $('span[data-valmsg-for="SBNo"]').html('');
+        //    $('span[data-valmsg-for="SBNo"]').removeClass('field-validation-error');
+        //}
+        //if ($('#GodownNewName').val() == '' || $('#GodownNewName').val() == null) {
+        //    flag = false;
+        //    $('span[data-valmsg-for="GodownNewName"]').html("<span>Fill The Field<span>");
+        //    $('span[data-valmsg-for="GodownNewName"]').addClass('field-validation-error');
+
+        //}
+        //else {
+        //    $('span[data-valmsg-for="GodownNewName"]').html('');
+        //    $('span[data-valmsg-for="GodownNewName"]').removeClass('field-validation-error');
+        //}
+
+        //if ($('#NoOfPallet').val() == '' || $('#NoOfPallet').val() == null) {
+        //    flag = false;
+        //    $('span[data-valmsg-for="NoOfPallet"]').html("<span>Fill The Field<span>");
+        //    $('span[data-valmsg-for="NoOfPallet"]').addClass('field-validation-error');
+
+        //}
+        //else {
+        //    $('span[data-valmsg-for="NoOfPallet"]').html('');
+        //    $('span[data-valmsg-for="NoOfPallet"]').removeClass('field-validation-error');
+        //}
+
+
+
+
+        //if ($('#PkgType').val() == '' || $('#PkgType').val() == null) {
+        //    flag = false;
+        //    $('span[data-valmsg-for="PkgType"]').html("<span>Fill The Field<span>");
+        //    $('span[data-valmsg-for="PkgType"]').addClass('field-validation-error');
+
+        //}
+        //else {
+        //    $('span[data-valmsg-for="PkgType"]').html('');
+        //    $('span[data-valmsg-for="PkgType"]').removeClass('field-validation-error');
+        //}
+        //if ($('#PartyName').val() == '' || $('#PartyName').val() == null) {
+        //    flag = false;
+        //    $('span[data-valmsg-for="PartyName"]').html("<span>Fill The Field<span>");
+        //    $('span[data-valmsg-for="PartyName"]').addClass('field-validation-error');
+
+        //}
+        //else {
+        //    $('span[data-valmsg-for="PartyName"]').html('');
+        //    $('span[data-valmsg-for="PartyName"]').removeClass('field-validation-error');
+        //}
+        //if ($('#PayeeName').val() == '' || $('#PayeeName').val() == null) {
+        //    flag = false;
+        //    $('span[data-valmsg-for="PayeeName"]').html("<span>Fill The Field<span>");
+        //    $('span[data-valmsg-for="PayeeName"]').addClass('field-validation-error');
+
+        //}
+        //else {
+        //    $('span[data-valmsg-for="PayeeName"]').html('');
+        //    $('span[data-valmsg-for="PayeeName"]').removeClass('field-validation-error');
+        //}
+
+        return flag
+    }
+
+    function RegisterOnSuccess(data)
+    {
+        debugger;
+        if (data.Status == 1) {
+            var appmessage = data.Message.split(",")
+
+            $('#DivPallatisationMsg').html(appmessage[0]);
+            var AppValues = data.Message.substring(46).split(",")
+            $('#InvoiceNo').val(AppValues[0]);
+            $('#Invoice').val(AppValues[0]);
+            $('#ServiceType').val(AppValues[1]);
+            $('#btnPrint').prop("disabled", false);
+            $('#BtnGenerateIRN').removeAttr('disabled');
+            $('#InvoiceID').val(data.Data);
+            ShowList();
+            //LoadRegisterList();
+            //setTimeout(ResetCartingRegister, 5000);
+
+        }
+        else {
+            $('#DivPallatisationErrMsg').html(data.Message);
+
+        }
+    }
+
+    function ResetAll()
+    {
+        $('#DivBody').load('/Export/WFLD_CWCExport/Pallatisation');
+    }
+
+    function ShowList()
+    {
+        $('#SearchInvoiceNo').val("");
+        $('#SearchInvoiceDate').val("");
+        $('#SearchSBNO').val("");
+        $('#DivPallatisationList').load('/Export/WFLD_CWCExport/GetAllPallatisationList');
+    }
+    function GenerateIRN() {
+        $.ajax({
+            url: '/Import/Wfld_CWCImport/GetIRNForYardInvoice',
+            type: 'POST',
+            data: { InvoiceNo: $('#InvoiceNo').val(), SupplyType: $('#ServiceType').val() },
+            // headers:{"__RequestVerificationToken":Token},
+            dataType: 'JSON',
+            success: function (data) {
+
+                alert(data.Message);
+            }
+        });
+    }
+
+
+    @*function Print(invoiceno)
+    {
+        debugger;
+
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetInvoicePrint", "WFLD_CWCExport", new { Area = "Export" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                InvoiceId: $('#InvoiceID').val()
+
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Data);
+            }
+        });
+    }*@
+
+
+    function Print() {
+        debugger;
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetBulkInvoiceReport", "WFLD_ReportCWC", new { Area = "Report" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                InvoiceNumber: $('#Invoice').val(),
+                InvoiceModule: 'Pallatisation',
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                //InvoiceModuleName: 'Export Payment Sheet',
+            },
+            success: function (data) {
+                if (data.Status == 1) {
+                    window.open(data.Data + "?_t=" + (new Date().getTime()), "_blank");                   
+                }
+                else
+                    alert(data.Data);
+            }
+        });
+
+    }
+
+
+    //$('#chkSEZ').change(function (event) {
+    //    debugger;
+    //    $('#SEZ').val($('#chkSEZ').is(":checked") == true ? 'SEZ' : '');
+    //});
+
+    function GetAdd()
+
+    {
+        if ($('#NoOfPallet').val() == '') {
+            alert("Please put No. Of Pallet");
+        }
+        else {
+            $('#SBSearch').css('display', 'block');
+
+            var SBdt = $('#SBDate').val().split("-");
+            var SbDtValue = SBdt[2] + "-" + SBdt[1] + "-" + SBdt[0];
+
+            var SBNewDetails = {
+                "SBNo": $('#SBNo').val(),
+                "SBDate": SbDtValue,
+                "GodownID": $('#GodownNewID').val(),
+                "GodownName": $('#GodownNewName').val(),
+                "Qty": $('#NoOfPallet').val(),
+                "Weight": 0,
+                "SQM": 0,
+                "FOB": 0,
+                "Rate": 0,
+                "LocationName": $('#LocationName').val(),
+                "LocationId": $('#LocationId').val(),
+                "RefID":0,
+                "PartyId": $('#PartyID').val(),
+                "ComodityId": 0,
+                "ShippingLineId":0,
+                "Vol": 0,
+                "Item": '',
+                "PartyName": $('#PartyName').val(),
+                "PkgType": $('#PkgType').val(),
+                "GeneralCBM": $('#GeneralCBM').val(),
+                "ReserveCBM": $('#ReserveCBM').val()
+
+
+            };
+            var html = '';
+
+                var flag = 0;
+                $.each(ArrayOfSBNewDetails, function (i, item) {
+                    if (item.SBNo == SBNewDetails.SBNo) {
+                        flag = 1;
+
+                    }
+
+                });
+
+
+                if (flag == 0) {
+                    ArrayOfSBNewDetails.push(SBNewDetails);
+                    //   id = id + 1;
+                    // TotalAmt = parseFloat(TotalAmt)+ parseFloat($('#Amount').val());
+                }
+                else
+                    alert('Shipping Bill Already Added');
+
+
+
+
+
+
+                var k = 1;
+
+
+
+
+                $.each(ArrayOfSBNewDetails, function (i, item) {
+                    html += "<tr><td>" + k + "</td><td>" + item.SBNo + "</td><td>" + item.SBDate + "</td><td>" + item.GodownName + "</td><td>" + item.LocationName + "</td><td>" + item.Qty + "</td><td>" + item.PkgType + "</td><td>" + item.ReserveCBM + "</td><td>" + item.GeneralCBM + "</td><tr>";
+                    k++;
+                });
+                $('#tbltmulbody').html(html);
+
+                $('#SBNo').val('');
+                $('#SBDate').val('');
+                $('#GodownNewName').val('');
+                $('#LocationName').val('');
+                $('#NoOfPallet').val('');
+                $('#PkgType').val('');
+                $('#ReserveCBM').val('0');
+                $('#GeneralCBM').val('0');
+
+        }
+
+    }
+    function SearchInvoice() {
+        debugger;
+        var InvoiceNo = $('#SearchInvoiceNo').val().trim();
+        var InvoiceDate = $('#SearchInvoiceDate').val().trim();
+        var ShippingBillNo = $('#SearchSBNO').val().trim();
+        if ($('#SearchInvoiceNo').val() == "" && $('#SearchInvoiceDate').val() == "" && $('#SearchSBNO').val() == "")
+            alert("Enter Invoice No. or Invoice Date or ShippingBill No to Search");
+        else if ($('#SearchInvoiceNo').val() != "" && $('#SearchInvoiceDate').val() != "" && $('#SearchSBNO').val() != "" && Validate() == true)
+            $('#DivPallatisationList').load('/Export/WFLD_CWCExport/GetAllPallatisationList?InvoiceNo=' + InvoiceNo + '&InvoiceDate=' + InvoiceDate + '&ShippingBillNo=' + ShippingBillNos);
+        else if ($('#SearchInvoiceNo').val() != "" && $('#SearchInvoiceDate').val() !== "" && $('#SearchSBNO').val() == "")
+            $('#DivPallatisationList').load('/Export/WFLD_CWCExport/GetAllPallatisationList?InvoiceNo=' + InvoiceNo +'&InvoiceDate=' + InvoiceDate);
+        else if ($('#SearchInvoiceNo').val() != "" &&  $('#SearchSBNO').val() !== "" && $('#SearchInvoiceDate').val() == "" )
+            $('#DivPallatisationList').load('/Export/WFLD_CWCExport/GetAllPallatisationList?InvoiceNo=' + InvoiceNo + '&ShippingBillNo=' + ShippingBillNo);
+        else if ( $('#SearchInvoiceDate').val() !== "" && $('#SearchSBNO').val() !== "" && $('#SearchInvoiceNo').val() == "" )
+            $('#DivPallatisationList').load('/Export/WFLD_CWCExport/GetAllPallatisationList?&InvoiceDate=' + InvoiceDate + '&ShippingBillNo=' + ShippingBillNo);
+        else if ($('#SearchInvoiceNo').val() != "" && $('#SearchInvoiceDate').val() == "" && $('#SearchSBNO').val() == "")
+            $('#DivPallatisationList').load('/Export/WFLD_CWCExport/GetAllPallatisationList?InvoiceNo=' + InvoiceNo);
+        else if ($('#SearchInvoiceDate').val() != "" && $('#SearchInvoiceNo').val()== "" && $('#SearchSBNO').val()== "")
+            $('#DivPallatisationList').load('/Export/WFLD_CWCExport/GetAllPallatisationList?InvoiceDate=' + InvoiceDate);
+        else if ($('#SearchSBNO').val() != "" && $('#SearchInvoiceDate').val() == "" && $('#SearchInvoiceNo').val()== "")
+            $('#DivPallatisationList').load('/Export/WFLD_CWCExport/GetAllPallatisationList?ShippingBillNo=' + ShippingBillNo);
+
+        else if (Validate() == true)
+            $('#DivPallatisationList').load('/Export/WFLD_CWCExport/GetAllPallatisationList?InvoiceDate=' + InvoiceDate);
+    }
+    function Validate() {
+        debugger;
+        var date = document.getElementById("SearchInvoiceDate").value.split("/");
+        var day = date[0];
+        var month = date[1];
+        var dateString = document.getElementById("SearchInvoiceDate").value;
+        var regex = /^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/;
+        //if (regex.test(dateString) || dateString.length == 0) {
+        //    alert("Please enter correct date");
+        //    return false;
+        //}
+        if (day > 31) {
+            alert("Please enter correct date");
+            return false;
+        }
+        else
+            if (month > 12) {
+                alert("Please enter correct Month");
+                return false;
+            }
+        return true;
+    }
+</script>

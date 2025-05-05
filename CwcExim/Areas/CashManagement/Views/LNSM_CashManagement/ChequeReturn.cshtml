@@ -1,0 +1,754 @@
+﻿@model CwcExim.Areas.CashManagement.Models.LNSM_ChequeReturn
+<script>
+   
+    $(function () {
+        $('#btnPrint').attr('disabled', true);
+    });
+    $(document).ready(function () {
+        //LoadCheckReturn();
+        $("#BtnSaveCustomAppraisement").click(function () {
+
+            if ($("#PartyName").val() == "") {
+                $('#ErrPartyName').html('Fill Out This Field');
+                return false;
+            }
+            if ($("#ChequeNo").val() == "") {
+                $('#ErrChequeNo').html('Fill Out This Field');
+                return false;
+            }
+
+        });
+    });
+    //function LoadCheckReturn() {
+    //    debugger;
+    //    $('#CheckReturnList').load('/CashManagement/LNSM_CashManagement/ListOfChequeReturn');
+    //}
+    function ShowChequeReturnList() {
+        $('#SearchReceiptNo').val('');
+        $('#DivChequeReturnList').load('/CashManagement/LNSM_CashManagement/ListOfChequeReturn');
+    }
+
+    function SearchByChequeReturn() {
+        var ReceiptNo = $('#SearchReceiptNo').val();
+        $('#DivChequeReturnList').load('/CashManagement/LNSM_CashManagement/ListOfChequeReturn?ReceiptNo=' + ReceiptNo);
+    }
+
+    $("#Amount").change(function () {
+        debugger;
+        $('#ErrAmount').html('');
+        var a = parseFloat($('#Amount').val());
+        var b = parseFloat($('#Balance').val());
+       
+        if (a <= 0) {
+            $('#ErrAmount').html('Amount should be greater than 0');
+            return false;
+                     
+        }
+        else
+            Calculate();
+    });
+    function OnSuccess(data) {
+        if (data.Status) {
+            $('#DivSucMsg').html(data.Message).delay(5000).fadeOut('slow');
+            $('#ReceiptNo').val(data.Data);
+            $('#PartyName').val("");
+            $('#SdNo').val(""),
+           $('#Balance').val(""),
+           $('#ChequeNo').val(""),
+          $('#DraweeBank').val(""),
+            $('#Amount').val(""),
+          $('#AdjustedBalance').val(""),
+                $('#Narration').val(""),
+           $('#btnPrint').prop('disabled', false);
+            ShowChequeReturnList();
+            $('#BtnSaveCustomAppraisement').attr('disabled', true);
+
+        }
+    }
+
+   
+    $('#ChequeReturnDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+        }
+    });
+    $('#ChequeDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+        }
+    });
+    for (var i = 0; i < 5; i++) {
+        $('#Details_' + i + '__Date').datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+            }
+        });
+    }
+    
+    function GetChequeDetail(elem) {
+        debugger;
+        $('#ChequeNo').val(SdNo);
+        $('#PartyId').val($(elem).attr('id'));
+        $("#ChequeList").modal("hide");
+
+    }
+
+    
+    function GetChequeDetail(elem) {
+        debugger;
+        var Party = $(elem).text(ChequeName);
+        $('#ChequeNo').val(Party);
+        $('#PartyId').val($(elem).attr('id'));
+        $("#ChequeList").modal("hide");
+
+    }
+
+    function GetPartyDetail(elem) {
+        debugger;
+        if (ChequeNo != "")
+            document.getElementById("ErrPartyName").innerHTML = "";
+        var Party = $(elem).text();
+        var PartyName = Party.split('_');
+        $('#PartyName').val(PartyName[0]);
+        $('#PartyId').val($(elem).attr('id'));
+        var parties = JSON.parse($('#Parties').val());
+        var party = $.grep(parties, function (item) { return item.ChequeId == $(elem).attr('id'); })[0];
+        $('#Balance').val(party.ChequeBalance);
+        $('#SdNo').val(party.ChequeSdNo);
+        $('#ChequeNo').val("");
+        $('#ChequeNo').val(""),
+       $('#DraweeBank').val(""),
+        $('#ChequeDate').val(""),
+         $('#Amount').val(""),
+       $('#AdjustedBalance').val(""),
+
+        $("#PartyList").modal("hide");
+
+    }
+    function GetChequeDetail() {
+        debugger;
+        PartyId = $('#PartyId').val();
+
+
+
+        $.ajax({
+            url: '/CashManagement/LNSM_CashManagement/GetChequeDetail',
+            type: 'GET',
+            datatype: JSON,
+            data: { PartyId: PartyId },
+            success: function (data) {
+                debugger;
+                // ViewCHAShippingLine = data;
+                var html = '';
+                $.each(data, function (i, item) {
+                    html += '<tr id="' + item.Id + '" " onclick="GetChequeDetailed(' + item.Id + ',&quot;' + item.Cheque + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + item.Cheque + '</td></tr>';
+
+                });
+                $('#tblePayee').html(html);
+
+
+            }
+
+
+        });
+    }
+
+
+    function GetChequeDetailed(Id, Cheque) {
+        debugger;
+        $('#PartyId').val(Id);
+        $('#ChequeNo').val(Cheque);
+       
+        ChequeNo = $('#ChequeNo').val();
+
+        $("#ChequeList").modal("hide");
+        if (ChequeNo != "")
+            document.getElementById("ErrChequeNo").innerHTML = "";
+        GetCheque();
+    }
+    $('#ChequePartySearch').on("click", function () {
+        debugger;
+        LoadParty();       
+
+    });
+
+
+    function SearchByPartyCode() {
+        if ($('#boxParty').val() != '') {
+            $.ajax({
+                url: '/LNSM_CashManagement/SearchByChequePartyCode',
+                type: 'GET',
+                data: { PartyCode: $('#boxParty').val() },
+                success: function (data) {
+                    if (data.Status == 1) {
+                        var html = '';
+                        $.each(data.Data.lstCheque, function (i, elem) {
+                            html += '<tr onclick="SelectParty(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;,&quot;' + elem.ChequeSdNo + '&quot;,&quot;' + elem.ChequeBalance + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                        });
+                        $('#tblParty tbody').html('');
+                        $('#tblParty tbody').html(html);
+                        $('#btnLoadMoreParty').prop('disabled', false);
+                        Page = -1;
+                    }
+                    else {
+                        $('#tblParty tbody').html('');
+                        Page = -1;
+                        $('#btnLoadMoreParty').prop('disabled', false);
+                    }
+
+                }
+            });
+        }
+        else
+            LoadParty();
+    }
+
+    function LoadMoreParty() {
+        debugger;
+        $.ajax({
+            url: '/LNSM_CashManagement/LoadChequeParty',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page + 1 },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.lstCheque, function (i, elem) {
+                        html += '<tr onclick="SelectParty(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;,&quot;' + elem.ChequeSdNo + '&quot;,&quot;' + elem.ChequeBalance + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    if (Page == -1)
+                        $('#tblParty tbody').html(html);
+                    else
+                        $('#tblParty tbody').append(html);
+                    Page++;
+
+                    if (data.Data.State == true)
+                        $('#btnLoadMoreParty').prop('disabled', false);
+                    else $('#btnLoadMoreParty').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+
+
+    function LoadParty() {
+        debugger;
+        Page = 0;
+        $.ajax({
+            url: '/LNSM_CashManagement/LoadChequeParty',
+            type: 'GET',
+            data: { PartyCode: "", Page: Page },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.lstCheque, function (i, elem) {
+                        html += '<tr onclick="SelectParty(' + elem.PartyId + ',&quot;' + elem.PartyName + '&quot;,&quot;' + elem.ChequeSdNo + '&quot;,&quot;' + elem.ChequeBalance + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PartyName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.PartyCode + '</td></tr>';
+                    });
+                    $('#tblParty tbody').html(html);
+                    if (data.Data.State == true)
+                        $('#btnLoadMoreParty').prop('disabled', false);
+                    else $('#btnLoadMoreParty').prop('disabled', true);
+                }
+            }
+        });
+    }
+
+
+    function SelectParty(Id, PartyName, SdNo, Balance) {
+        debugger;
+        $('#PartyName').val(PartyName);
+        $('#PartyId').val(Id);
+        $('#SdNo').val(SdNo);
+        $('#Balance').val(Balance);
+        //LoadParty();
+        $("#PartyModal").modal("hide");
+        $('#boxParty').val('');
+        $('#ChequeNo').val("");
+        $('#ChequeNo').val(""),
+       $('#DraweeBank').val(""),
+        $('#ChequeDate').val(""),
+         $('#Amount').val(""),
+       $('#AdjustedBalance').val(""),
+            $('#Narration').val("")
+    }
+    function CloseParty() {
+        debugger;
+        $('#boxParty').val('');
+        $("#PartyModal").modal("hide");
+        LoadParty();
+    }
+
+
+    function GetCheque() {
+        debugger;
+        ChequeNo = $('#ChequeNo').val();
+
+
+        $.ajax({
+            url: '/CashManagement/LNSM_CashManagement/GetChequeDetails',
+            type: 'GET',
+            async: false,
+            datatype: JSON,
+            data: { ChequeNo: ChequeNo },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    //StateList = data.Data;
+                    $.each(data.Data, function (i, item) {
+                        $("#DraweeBank").val(item.DraweeBank);
+
+                        $("#Amount").val(item.Amount);
+                        $("#ChequeDate").val(item.ChequeDate);
+
+
+                    })
+                }
+                else {
+                    alert("fail");                   
+                }
+
+                Calculate();
+
+            }
+        });
+    }
+
+    function SearchByChequeNo() {
+        debugger;
+
+        PartyId = $('#PartyId').val();
+        ChequeNo = $('#CHbox').val();
+
+        $.ajax({
+            url: '/CashManagement/LNSM_CashManagement/SearchChequeNo',
+            type: 'GET',
+            async: false,
+            datatype: JSON,
+            data: { PartyId: PartyId, ChequeNo: ChequeNo },
+            success: function (data) {
+                var html = '';
+                $.each(data, function (i, item) {
+                    debugger;
+                    html += '<tr id="' + item.Id + '" " onclick="SelectChequeName(' + item.Id + ',&quot;' + item.SdNo + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + item.SdNo + '</td></tr>';
+
+                });
+
+                $('#tblePayee').html(html);
+
+
+            }
+
+        });
+    }
+
+    function SelectChequeName(PartyId, ChequeNo) {
+        debugger;
+
+        $('#PartyId').val(PartyId);
+        $('#ChequeNo').val(ChequeNo);
+
+        $("#ChequeList").modal("hide");
+        GetCheque();
+    }
+   
+
+    function Calculate() {
+
+        $("#AdjustedBalance").val($('#Balance').val() - $('#Amount').val());
+    }
+    function Print() {
+       
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            url: '@Url.Action("GetBulkReceiptReport", "LNSM_CashManagement", new { Area = "CashManagement" }) ',
+            headers: { "__RequestVerificationToken": Token },
+            dataType: 'JSON',
+            type: 'POST',
+            data: {
+                PeriodFrom: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                PeriodTo: '@DateTime.Now.ToString("dd/MM/yyyy")',
+                ReceiptNumber: $('#ReceiptNo').val(),
+            },
+            success: function (data) {
+                if (data.Status == 1)
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), "_blank");
+                else
+                    alert(data.Message);
+            }
+        });
+    }
+    function Reset() {
+
+        $('#PartyName').val("");
+        $('#SdNo').val(""),
+       $('#Balance').val(""),
+       $('#ChequeNo').val(""),
+      $('#DraweeBank').val(""),
+       $('#ChequeDate').val(""),
+        $('#Amount').val(""),
+      $('#AdjustedBalance').val("")
+    }
+
+    function CloseCheques() {
+        $('#CHbox').val('');
+        $("#ChequeList").modal("hide");
+
+    }
+
+</script>
+@Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript" src="/scripts/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#slim_scroll').slimScroll({
+            allowPageScroll: true
+        });
+        $('#slim_scroll_1').slimScroll({
+            allowPageScroll: true
+        });
+
+
+    });
+   
+     
+ 
+</script>
+
+
+
+@using (Ajax.BeginForm("AddChequeReturn", "LNSM_CashManagement", new AjaxOptions { HttpMethod = "POST", Confirm = "Are you sure you want to Save?", OnSuccess = "OnSuccess", LoadingElementDuration = 1000, LoadingElementId = "divProgress" }))
+{
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>DISHONOUR CHEQUE </h4>
+                        </div>
+                    </div>
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.PartyId, new { Value = "0000000000" })
+
+
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-1-5">
+                                @Html.LabelFor(m => m.ReceiptNo)
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.ReceiptNo, new { Value = "000000", @readonly = true })
+                            </div>
+                            <div class="col-md-offset-4 col-md-1-5">
+                                @Html.LabelFor(m => m.ChequeReturnDate)
+                            </div>
+                            <div class="col-md-2 Date_Img">
+                                @Html.TextBoxFor(m => m.ChequeReturnDate, new { Value = DateTime.Today.ToString("dd/MM/yyyy"), @readonly = true })
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.PartyName)
+                            </div>
+                            <div class="col-md-10-5 col_cus_10">
+                                
+                                @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control input-sm", @readonly = true })
+                               
+                                <span class="search" id="ChequePartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>
+
+                                <span style="color:red" id="ErrPartyName"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-1-5">
+                                @Html.LabelFor(m => m.SdNo)
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.SdNo, new { @readonly = true })
+                                @Html.ValidationMessageFor(m => m.SdNo)
+                            </div>
+                            <div class="col-md-offset-4 col-md-1-5">
+                                @Html.LabelFor(m => m.Balance)
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.Balance, new { @readonly = true })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-1-5">
+                                @Html.LabelFor(m => m.ChequeNo)
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.ChequeNo, new { @class = "form-control input-sm" })
+                                @Html.ValidationMessageFor(m => m.ChequeNo)
+                                <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="GetChequeDetail()" data-target="#ChequeList"></i></span>
+                                <span style="color:red" id="ErrChequeNo"></span>
+
+                            </div>
+                            <div class="col-md-offset-4 col-md-1-5">
+                                @Html.LabelFor(m => m.DraweeBank)
+                            </div>
+                            <div class="col-md-2-5">
+                          
+                                @Html.TextBoxFor(m => m.DraweeBank, new { })
+                                @Html.ValidationMessageFor(m => m.DraweeBank)
+                                <span style="color:red" id="ErrDrawee"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-1-5">
+                                @Html.LabelFor(m => m.ChequeDate)
+                            </div>
+                            
+                                <div class="col-md-2-5 Date_Img">
+                                    @Html.TextBoxFor(m => m.ChequeDate, new { Value = DateTime.Today.ToString("dd/MM/yyyy"), @readonly = true })
+                                </div>
+                             
+                            <div class="col-md-offset-4 col-md-1-5">
+                                @Html.LabelFor(m => m.Amount)
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.Amount, new { })
+                                @Html.ValidationMessageFor(m => m.Amount)
+                                <span style="color:red" id="ErrAmount"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="Form_Input form-group">
+                            <div class="col-md-1-5">
+                                <label>Adjusted Balance:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.AdjustedBalance, new { @readonly = true })
+                            </div>
+                        </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-1-5" style="padding-right:0px;">
+                                    <label>Narration:</label>
+                                </div>
+                                <div class="col-md-10-5">
+                                    @Html.TextAreaFor(m => m.Narration, new { maxlength = 500, @class = "form-control input_sm", @style = "width:100%;height:100px;" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-offset-3 col-md-2 SignUp_space_bottom">
+                                <input type="submit" class="btn log_Btn_sm" value="Save" id="BtnSaveCustomAppraisement" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" class="btn log_Btn_sm" value="Print" id="btnPrint" onclick="Print()" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" class="btn log_Btn_sm" value="Reset" id="btnReset" onclick="Reset()" />
+                            </div>
+                           
+                        </div>
+                    <div class="logSuccMsg Form_Space_top" id="DivSucMsg" style="background-color:transparent"></div>
+                    <div class="logErrMsg Form_Space_bottom" id="DivErrMsg" style="background-color:transparent"></div>
+                    </div>
+            
+
+                <div class="row Form_Space_top Form_Space_bottom">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-2">
+                            <input type="button" id="btnReceiptShowList" value="Show List" class="btn log_Btn_sm" onclick="ShowChequeReturnList()" />
+                        </div>
+                        <div class="col-md-offset-3 col-md-4" style="text-align:right;">
+                            <label>Receipt No:</label>
+                        </div>
+                        <div class="col-md-3">
+                            @Html.TextBox("SearchReceiptNo", "", new { placeholder = "Search Here" })
+                            <span class="search"><i class="fa fa-search" aria-hidden="true" onclick="SearchByChequeReturn()"></i></span>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-12">
+                            <div id="DivChequeReturnList"></div>
+                        </div>
+                    </div>
+                </div>
+                @*<div class="row">
+                    <div class="col-md-12">
+                        <div id="CheckReturnList"></div>
+                    </div>
+                </div>*@
+            </div>
+            </div>
+        </div>
+   
+}
+
+<div id="PayeeModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Payee</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Payeebox" type="text" />
+                <ul class="navList" id="lstPayee">
+                   
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="ChequeList" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseCheques()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Cheques</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Cheque No" id="CHbox" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByChequeNo()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Cheque No</th>
+
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tblePayee">
+                        <tbody>
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+
+
+
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseCheques()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="PartyModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseParty()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Party</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Party Name Or Party Code" id="boxParty" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchByPartyCode()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Party Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scroll_1">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tblParty">
+                        <tbody>
+                            @if (ViewBag.lstParty != null)
+                            {
+                                foreach (var i in ViewBag.lstParty)
+                                {
+
+                                    <tr onclick="SelectEximTrader(@i.EximTraderId,'@i.EximTraderName','@i.ChequeSdNo','@i.ChequeBalance')">
+                                        <td colspan="8" width="80%" class="txt_wrp">@i.EximTraderName</td>
+                                        <td colspan="4" width="20%" class="txt_wrp">@i.PartyCode</td>
+                                    </tr>
+
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (ViewBag.State != null && Convert.ToBoolean(ViewBag.State) == true)
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreParty()" class="btn log_Btn_sm" id="btnLoadMoreParty">Load More Data</button>
+                        }
+                        else
+                        {
+                            <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreParty()" class="btn log_Btn_sm" id="btnLoadMoreParty" disabled>Load More Data</button>
+                        }
+                    </div>
+                    <div class="col-md-offset-2 col-md-4">
+                        <button type="button" style="width:100%; margin-left:0;" class="btn log_Btn_sm" onclick="CloseParty()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+
+

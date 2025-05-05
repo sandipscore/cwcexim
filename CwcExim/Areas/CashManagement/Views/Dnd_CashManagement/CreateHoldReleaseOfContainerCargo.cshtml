@@ -1,0 +1,516 @@
+﻿@model CwcExim.Areas.CashManagement.Models.Dnd_HoldRelease
+@if (ViewBag.EmptyContList != null)
+{
+    <input type="hidden" id="hdnEmptyContList" value="@ViewBag.EmptyContList" />
+}
+else
+{
+    <input type="hidden" id="hdnEmptyContList" value="" />
+
+}
+
+<style>
+    .mendtry_fld {
+        color: red;
+        font-size: 10px;
+        left: 23px;
+        position: absolute;
+        bottom: -8px;
+    }
+</style>
+@using (Ajax.BeginForm("AddEditHoldReleaseOfContainerCargo", "Dnd_CashManagement", new AjaxOptions
+{
+    Confirm = "Are you sure you want to Save?",
+    HttpMethod = "POST",
+    OnSuccess = "HoldOnSuccess",
+    OnFailure = "HoldOnFailure"
+}))
+{ 
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-offset-0-5 col-md-11">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Cargo/Container Hold</h4>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 postn_rel">
+                                @Html.RadioButton("DeliveryType", "1", new { @class = "", @id = "Cargo", @onchange = "ChangeType()" })
+                                <label for="Cargo"><i class="circle"></i><span> Cargo</span></label>
+                                @Html.ValidationMessageFor(m => m.DeliveryType)
+                            </div>
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.RadioButton("DeliveryType", "2", new { @class = "", @id = "Container", @onchange = "ChangeType()" ,@checked =true})
+                                <label for="Container"><i class="circle"></i><span> Container</span></label>
+                            </div>
+
+
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div id="divcargo" class="col-md-1-5 col_cus_2">
+                                @Html.RadioButton("CargoType", "1", new { @class = "", @id = "OBL", @onchange = "ChangeType()" })
+                                <label for="OBL"><i class="circle"></i><span> OBL</span></label>
+                            </div>
+                            <div id="divsb" class="col-md-1-5 col_cus_2">
+                                @Html.RadioButton("CargoType", "2", new { @class = "", @id = "SB", @onchange = "ChangeType()"})
+                                <label for="SB"><i class="circle"></i><span> SB</span></label>
+                                <span style="color:red" id="ErrCargoType"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.RadioButton("StatusType", "1", new { @class = "", @id = "Hold", @onchange = "ChangeType()" ,@checked = true})
+                                <label for="Hold"><i class="circle"></i><span> Hold</span></label>
+                                @Html.ValidationMessageFor(m => m.StatusType)
+                            </div>
+                            <div class="col-md-1-5 col_cus_2">
+                                @Html.RadioButton("StatusType", "2", new { @class = "", @id = "Release", @onchange = "ChangeType()" })
+                                <label for="Release"><i class="circle"></i><span> Release</span></label>
+                            </div>
+                            </div>
+                        </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5">
+                                        <label>No:</label>
+                                    </div>
+                                    <div class="col-md-2-5">
+                                        @Html.Hidden("Id")
+                                        @Html.TextBox("No", "", new { @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.No)
+                                        <span class="search" id="stuffingsearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="IVType()" data-target="#EmptyContainerdtl"></i></span>
+                                    </div>
+
+                                    <div class="col-md-1 col-md-offset-5">
+                                        <label>Date:</label>
+                                    </div>
+                                    <div class="col-md-2 Date_Img">
+                                        <input class="form-control input_sm" id="Date" name="Date" readonly="readonly" type="text" value="">
+                                    </div>
+                                </div>
+                            </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5">
+                                <label>CFSCode:</label>
+                            </div>
+                            <div class="col-md-10-5">
+                                @Html.TextBoxFor(m => m.CFSCode, new { @class = "form-control input-sm", @readonly = "true", tabindex = 3 })
+                                <span style="color:red" id="ErrReason"></span>
+                            </div>
+                        </div>
+                    </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5">
+                                        <label>Reason:</label>
+                                    </div>
+                                    <div class="col-md-10-5">
+                                        <textarea class="form-control input_sm" cols="20" id="Reason" maxlength="500" name="Reason" rows="2" style="width:100%;height:100px;"></textarea>
+                                        <span style="color:red" id="ErrReason"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                            </div>
+
+                            <div class="row SignUp_space_top2">
+                                <div class="col-md-offset-4 col-md-2">
+                                    <input type="submit" id="btnSave" class="btn log_Btn_sm" onclick="Validate()" value="Save" />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="button" id="btnReset" class="btn log_Btn_sm" value="Reset" onclick="ResetAllField()" />
+                                </div>
+                            </div>
+                            <div class="logSuccMsg Form_Space_top" id="DivSucMsg" style="background-color:transparent"></div>
+                            <div class="logErrMsg Form_Space_bottom" id="DivErrMsg" style="background-color:transparent"></div>
+                            <div class="row SignUp_space_top"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div id="CargoSeizeList"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    </div>
+}
+
+<div id="EmptyContainerdtl" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="EcCfsCodeBox" type="text" />
+                <ul class="navList" id="lstEcont"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+
+    function ResetAllField() {
+        $('#DeliveryType').val('');
+        $('#CargoType').val('');
+        $('#StatusType').val('');
+        $('#Reason').val('');
+        $('#Date').val('');
+        $('#No').val('');
+        $('#CFSCode').val('');
+        $('#ErrStatusType').html('');
+        $('#ErrDeliveryType').html('');
+        $('#ErrNo').html('');
+        $('#ErrReason').html('');
+        $('[data-valmsg-for]').html('<span></span>');
+    }
+    function HoldOnSuccess(data) {
+        if (data.Status == 1) {
+            if ($('#DivInsMsg').hasClass('logErrMsg'))
+                $('#DivInsMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivSucMsg').html(data.Message).delay(5000).fadeOut('slow');;
+            ResetAllField()
+            $('#OBL').val('');
+            $('#SB').val('');
+            $('#Hold').val('');
+            $('#Release').val('');
+            $('#OBL').prop("checked", false);
+            $('#SB').prop("checked", false);
+            $('#Hold').prop("checked", false);
+            $('#Release').prop("checked", false);
+            $('#Cargo').prop("checked", false);
+            $('#Container').prop("checked", false);
+            LoadHoldReleaseList();
+            LoadHoldRelease()
+        }
+        else {
+            if ($('#DivInsMsg').hasClass('logSuccMsg'))
+                $('#DivInsMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivInsMsg').html(data.Message);
+        }
+        setTimeout(function () { $('#DivInsMsg').html(''); }, 5000);
+    }
+    function InsuranceOnFailure() { }
+    $('#box').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('.navList > li').show();
+        } else {
+            $('.navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+    function LoadHoldReleaseList() {
+        debugger;
+        $('#CargoSeizeList').load('/CashManagement/Dnd_CashManagement/ListOfHoldRelease');
+    }
+    function LoadHoldRelease() {
+        debugger;
+        $('#DivBody').load('/CashManagement/Dnd_CashManagement/createholdreleaseofcontainercargo');
+    }
+    $('.navList li').on("click", function () {
+        $('#SacCode').val($(this).text());
+        $("#myModal").modal("hide");
+    });
+    function ChangeType() {
+        debugger;
+        if ($('#Cargo').is(':checked')) {
+            if (($('#OBL').is(':checked') == false)){
+                $('#SB').prop('checked',true);
+            }            
+            $('#No').val('');
+            $('#Date').val('');
+            $('#Reason').val('');
+            $('#divcargo').show();
+            $('#divsb').show();
+            $('#CFSCode').val('');
+            $('#EcCfsCodeBox').val('');
+            $('#lstEcont').html('');
+        }
+        else if ($('#Container').is(':checked') && $('#Hold').is(':checked')) {
+            $('#No').val('');
+            $('#Date').val('');
+            $('#Reason').val('');
+            $('#divcargo').hide();
+            $('#divsb').hide();
+            $('#CargoType').val('');
+            $('#CFSCode').val('');
+            $('#EcCfsCodeBox').val('');
+            $('#lstEcont').html('');
+        }
+        else if ($('#Container').is(':checked') && $('#Release').is(':checked')) {
+            $('#No').val('');
+            $('#Date').val('');
+            $('#Reason').val('');
+            $('#divcargo').hide();
+            $('#divsb').hide();
+            $('#CargoType').val('');
+            $('#CFSCode').val('');
+            $('#EcCfsCodeBox').val('');
+            $('#lstEcont').html('');
+        }
+        else if ($('#Container').is(':checked') && $('#Release').is(':checked')) {
+            $('#No').val('');
+            $('#Date').val('');
+            $('#Reason').val('');
+            $('#divcargo').hide();
+            $('#divsb').hide();
+            $('#CargoType').val('');
+            $('#CFSCode').val('');
+            $('#EcCfsCodeBox').val('');
+            $('#lstEcont').html('');
+        }
+     else if ($('#SB').is(':checked') ){
+            $('#No').val('');
+            $('#Date').val('');
+            $('#Reason').val('');
+            $('#divcargo').show();
+            $('#divsb').show();
+            $('#CFSCode').val('');
+            $('#EcCfsCodeBox').val('');
+            $('#lstEcont').html('');
+     }
+     else if ($('#OBL').is(':checked')) {
+         $('#No').val('');
+         $('#Date').val('');
+         $('#Reason').val('');
+         $('#divcargo').show();
+         $('#divsb').show();
+         $('#CFSCode').val('');
+         $('#EcCfsCodeBox').val('');
+         $('#lstEcont').html('');
+     }
+        //if ($('#Cargo').is(':checked') && $('#SB').is(':checked') && $('#Hold').is(':checked')) {
+        //    $('#No').val('');
+        //    $('#Date').val('');
+        //    $('#Reason').val('');
+        //    $('#divcargo').show();
+        //    $('#divsb').show();
+        //    $('#CFSCode').val('');
+        //    $('#EcCfsCodeBox').val('');
+        //    $('#lstEcont').html('');
+        //}
+        //if ($('#Cargo').is(':checked') && $('#SB').is(':checked') && $('#Release').is(':checked')) {
+        //    $('#No').val('');
+        //    $('#Date').val('');
+        //    $('#Reason').val('');
+        //    $('#divcargo').show();
+        //    $('#divsb').show();
+        //    $('#CFSCode').val('');
+        //    $('#EcCfsCodeBox').val('');
+        //    $('#lstEcont').html('');
+        //}
+        
+        else if ($('#Release').is(':checked')) {
+            $('#No').val('');
+            $('#Date').val('');
+            $('#Reason').val('');
+            $('#divcargo').hide();
+            $('#divsb').hide();
+            $('#CargoType').val('');
+            $('#CFSCode').val('');
+            $('#EcCfsCodeBox').val('');
+            $('#lstEcont').html('');
+        }
+        else if ($('#Hold').is(':checked')) {
+            $('#No').val('');
+            $('#Date').val('');
+            $('#Reason').val('');
+            $('#divcargo').hide();
+            $('#divsb').hide();
+            $('#CargoType').val('');
+            $('#CFSCode').val('');
+            $('#EcCfsCodeBox').val('');
+            $('#lstEcont').html('');
+        }
+    };
+    function IVType(Type) {
+        debugger;
+
+        //check if container/cargo or Hold/Release or SB/OBL is selected or not
+        //if (($('#Container').prop('checked') == false) || ($('#Cargo').prop('checked') == false))
+        //{
+        //    alert("Please Select cargo or Container");
+        //    return false;
+        //}
+        //if (($('#Hold').prop('checked') == false) || ($('#Release').prop('checked') == false)) {
+        //    alert("Please Select hold or release");
+        //    return false;
+        //}
+
+        var prm = ''; var stattype = '';
+        if ($('#Container').prop('checked') == true) {
+            prm = 1;
+        }
+        else if ($('#OBL').prop('checked') == true) {
+            prm = 2;
+        }
+        else if ($('#SB').prop('checked') == true) {
+            prm = 3;
+        }
+        if ($('#Hold').prop('checked') == true) {
+            stattype = 1;
+        }
+        else if ($('#Release').prop('checked') == true) {
+            stattype = 2;
+        }
+        $.ajax({
+            url: '/CashManagement/Dnd_CashManagement/CargoBinding',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { CargoType: prm, Stats: stattype },
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                    $('#hdnEmptyContList').val(data);
+                    var HcJson = "";
+                    HcJson = JSON.parse(data);
+                    var html = '';
+
+                    $.each(HcJson, function (i, item) {
+                        debugger;
+                        html += '<li id="' + item.Id + '" onclick="SelectEmptyCont(' + item.Id + ');">' + item.No + '</li>';
+                    });
+
+                    $('#lstEcont').html(html);
+                }
+            }
+        });
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    $('#EcCfsCodeBox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstEcont > li').show();
+        else {
+            $('#lstEcont > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    function SelectEmptyCont(id) {
+        debugger;
+        var HcJson = "";
+        HcJson = JSON.parse($('#hdnEmptyContList').val());
+        var cfscodeobj = $.grep(HcJson, function (item) { return item.Id == id; })[0];
+        $('#Id').val(cfscodeobj.Id);
+        $('#No').val(cfscodeobj.No);
+        $('#Date').val(cfscodeobj.Date);
+        $('#CFSCode').val(cfscodeobj.CFSCode);
+        //$('#StatusType').val(cfscodeobj.StatusType);
+        $("#EmptyContainerdtl").modal("hide");
+       /* var status = $('#StatusType').val();
+        if (cfscodeobj.StatusType == 1)
+        {
+            $('#Hold').prop("checked", true);
+        }
+      */
+
+    }
+
+    //function selectEmptyCont(id) {
+    //    debugger;
+    //    var EcJson = JSON.parse($('#hdnEmptyContList').val());
+    //    var cfscodeobj = $.grep(data, function (item) { return item.Id == id; })[0];
+    //    $('#No').val(cfscodeobj.No);
+    //    $('#StuffingReqDate').val(cfscodeobj.Date);
+    //    $("#EmptyContainerdtl").modal("hide");
+
+
+    //}
+    //function CargoBinding() {
+    //    var CargoType=$('#CargoType').val();
+    //    debugger;
+    //    $.ajax({
+    //        url: '/CashManagement/Dnd_CashManagement/CargoBinding',
+    //        type: 'GET',
+    //        dataType: 'JSON',
+    //        data: { CargoType: CargoType },
+    //        success: function (data) {
+    //            debugger;
+    //            if (data.status == 1) {
+    //                $('#No').val(data.data.No);
+    //                $('#Date').val(data.data.Date);
+    //            }
+    //        }
+    //    });
+    //}
+    function Validate() {
+        debugger;
+        //if ($('#DeliveryType').prop('checked') != true) {
+        //    $('#ErrDeliveryType').html('Fill Out This Field');
+        //    return false;
+        //}
+        //if ($('#StatusType').prop('checked') != true) {
+        //    $('#ErrStatusType').html('Fill Out This Field');
+        //    return false;
+        //}
+        //if ($("#No").val() == "") {
+        //    $('#ErrNo').html('Fill Out This Field');
+        //    return false;
+        //}
+       
+    };
+    $(document).ready(function () {
+        LoadHoldReleaseList();
+
+        $('#divcargo').hide();
+        $('#divsb').hide();
+    });
+
+    //$('#Date').datepicker({
+    //    dateFormat: "dd/mm/yy",
+    //    showOn: "button",
+    //    buttonImage: "/Content/images/calendar.png",
+    //    buttonImageOnly: true,
+    //    buttonText: "Select Date",
+    //    changeMonth: true,
+    //    changeYear: true,
+    //    showAnima: "fadein",
+    //    onClose: function () {
+    //        $('[data-valmsg-for="EffectiveDate"]').html('');
+    //    }
+    //});
+
+</script>
+

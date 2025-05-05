@@ -1,0 +1,129 @@
+﻿@model IEnumerable<CwcExim.Areas.CashManagement.Models.Hdb_AcknowledgementViewList>
+
+<table id="tblCashReceiptList" class="table table-bordered table-striped" style="width:100%">
+    <thead>
+        <tr>
+            <th class="text-center">Print</th>
+            <th class="text-center">SL. No.</th>
+            <th>Order ID</th>
+            <th>Tracking ID</th>
+            <th>Bank Reference No.</th>
+            <th>Order Status</th>
+            <th>Amount</th>
+            <th>Transaction Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{ var Serial = 1;
+            if (Model != null)
+            {
+                foreach (var data in Model)
+                {
+                    <tr>
+                        <td class="text-center"><div class="table_icon"><a href="#" onclick="SaveReportPdf('@data.OrderId','@data.TransId','@data.BankRef','@data.Response','@data.TotalPaymentAmount','@data.TransactionDate','@data.Response')"><i class="fa fa-file-pdf-o Edit"></i></a></div></td>
+                        <td class="text-center">@Serial.ToString()</td>
+                        <td>@data.OrderId</td>
+                        <td>@data.TransId</td>
+                        <td>@data.BankRef</td>
+                        <td>@data.Response</td>
+                        <td>@data.TotalPaymentAmount</td>
+                        <td>@data.TransactionDate</td>
+                    </tr>
+                    Serial++;
+                }
+            }
+        }
+    </tbody>
+</table>
+<script type="text/javascript">
+    $(document).ready(function () {
+        var tblPartyWiseTDSDeposit = $('#tblCashReceiptList').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "aoColumns": [
+                           { "sName": "SL No", "width": "10%" },
+                           { "sName": "Order ID", "width": "20%" },
+                           { "sName": "Tracking ID" },
+                           { "sName": "Bank Reference No.", "bSortable": false },
+                           { "sName": "Order Status", "bSortable": false },
+                           { "sName": "Amount", "bSortable": false },
+                           { "sName": "Transaction Date", "bSortable": false },
+                           { "sName": "Print", "bSortable": false }
+            ]
+        });
+        new $.fn.dataTable.FixedHeader(tblPartyWiseTDSDeposit);
+    });
+
+
+    function SaveReportPdf(OrderId, tracking_id, bank_ref_no, PageFor, amount, trans_date, order_status) {
+
+        var html = "";
+        html = html + '<h6 style="text-align:center;"><img src="~/Content/Images/green_tick.png" /></h6>';
+        if (PageFor == 'Success')
+        {
+            html = html + '<h3 style="text-align:center; color:#2fab73; font-size:22px; font-weight:normal;">PAYMENT SUCCESSFUL</h3>';
+        }
+        else if (PageFor == 'Failure')
+        {
+
+            html = html + '<h3 style="text-align:center; color:#2fab73; font-size:22px; font-weight:normal;">PAYMENT FAILURE</h3>';
+        }
+        else {
+            html = html + '<h3 style="text-align:center; color:#2fab73; font-size:22px; font-weight:normal;">PAYMENT CANCEL</h3>';
+        }
+        html = html + '<div id="tblsucess">';
+        html = html + '<table cellspacing="0" cellpadding="10" style="width:90%; border: 1px solid #656565; color:#656565; font-size:14px; margin:15px auto 0; font-family: Arial, Helvetica, sans-serif;">';
+        html = html + '<tbody>';
+        html = html + '<tr>';
+        html = html + '<th style="padding:10px 0; border-bottom:1px solid #656565; border-right:1px solid #656565;" align="left" colspan="6" width="50%">Order ID :</th>';
+        html = html + '<td style="padding:10px 0; border-bottom:1px solid #656565;" align="right" colspan="6" width="50%">'+OrderId+'</td>';
+        html = html + '</tr>';
+        html = html + '<tr>';
+        html = html + '<th style="padding:10px 0; border-bottom:1px solid #656565; border-right:1px solid #656565;" align="left" colspan="6" width="50%">Tracking ID :</th>';
+        html = html + '<td style="padding:10px 0; border-bottom:1px solid #656565;" align="right" colspan="6" width="50%">'+tracking_id+'</td>';
+        html = html + '</tr>';
+        html = html + '<tr>';
+        html = html + '<th style="padding:10px 0; border-bottom:1px solid #656565; border-right:1px solid #656565;" align="left" colspan="6" width="50%">Bank Reference No :</th>';
+        html = html + '<td style="padding:10px 0; border-bottom:1px solid #656565;" align="right" colspan="6" width="50%">'+bank_ref_no+'</td>';
+        html = html + '</tr>';
+        html = html + '<tr>';
+        html = html + '<th style="padding:10px 0; border-bottom:1px solid #656565; border-right:1px solid #656565;" align="left" colspan="6" width="50%">Order Status :</th>';
+        html = html + '<td style="padding:10px 0; border-bottom:1px solid #656565;" align="right" colspan="6" width="50%">'+order_status+'</td>';
+        html = html + '</tr>';
+        html = html + '<tr>';
+        html = html + '<th style="padding:10px 0; border-bottom:1px solid #656565; border-right:1px solid #656565;" align="left" colspan="6" width="50%">Amount :</th>';
+        html = html + '<td style="padding:10px 0; border-bottom:1px solid #656565;" align="right" colspan="6" width="50%">'+amount+'</td>';
+        html = html + '</tr>';
+        html = html + '<tr>';
+        html = html + '<th style="padding:10px 0; border-right:1px solid #656565;" align="left" colspan="6" width="50%">Transaction Date :</th>';
+        html = html + '<td style="padding:10px 0;" align="right" colspan="6" width="50%">'+trans_date+'</td>';
+        html = html + '</tr>';
+        html = html + '</tbody>';
+        html = html + '</table>';
+        html = html + '</div>';
+
+        var PostData = new FormData();
+        PostData.append("Page", html);
+
+        PostData.append("OrderId", OrderId);
+
+        // alert("PostData=" + PostData);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GenerateDeStuffingReportPDF", "Ppg_CashManagement")',
+            // headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+
+            }
+        });
+    }
+</script>

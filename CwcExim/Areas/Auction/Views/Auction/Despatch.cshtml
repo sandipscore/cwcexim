@@ -1,0 +1,237 @@
+﻿@model CwcExim.Areas.Auction.Models.Despatch
+<style>
+    .Date_Img img {
+       
+        right: 33px!important;
+    }
+
+    .search {
+     
+        right: 36px;
+    }
+</style>
+
+<script src="~/Scripts/Extended.Jquery.Plugins.js"></script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    //options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "DespatchFinalizationOnSuccess";
+    options.OnFailure = "DespatchFinalizationFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+
+}
+@using (Ajax.BeginForm("Despatch", "Auction", options))
+{
+    @Html.AntiForgeryToken()
+    //'/Auction/Bid/BidFinalization'
+    if (@ViewBag.lstNoticeList != null && @ViewBag.lstNoticeList != "")
+    {
+        <input type="hidden" id="JsonNotice" value="@ViewBag.lstNoticeList" />
+    }
+    else
+    {
+        <input type="hidden" id="JsonNotice" />
+    }
+    @Html.HiddenFor(x => x.NoticeID);
+
+<div class="container-fluid">
+    <div style="width:90%;margin-left:auto;margin-right:auto;">
+        <div class="Head_h4">
+            <div class="row">
+                <div class="col-md-12">
+                    <h4>Notice Despatch</h4>
+                </div>
+            </div>
+            <div class="row SignUp_space_top2">
+                <div class="col-md-1-5 col_cus_2">
+                   
+                    <label>Despatch No :<span style="color:red;">*</span></label>
+                </div>
+                <div class="col-md-2-5">
+                    @Html.EditorFor(model => model.DespatchNo, new { htmlAttributes = new { } })
+                    @Html.ValidationMessageFor(m => m.DespatchNo, "", new { @class = "Error_Msg" })
+                   
+                </div>
+                <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                    <label>Date : <span style="color:red;">*</span></label>
+                </div>
+                <div class="col-md-2-5 Date_Img">
+                    @Html.EditorFor(model => model.DespatchDate, new { htmlAttributes = new { placeholder = "dd/mm/yyyy", @readonly = true } })
+                    @Html.ValidationMessageFor(m => m.DespatchDate, "", new { @class = "Error_Msg", Value = DateTime.Today.ToString("dd/MM/yyyy") })
+                 
+                </div>
+            </div>
+
+            <div class="row SignUp_space_top2">
+                <div class="col-md-1-5">
+
+                    <label>Notice No : <span style="color:red;">*</span></label>
+                </div>
+                <div class="col-md-2-5">
+                    @Html.EditorFor(model => model.NoticeNo, new { htmlAttributes = new { @readonly = true } })
+                    <span class="search" id="NoticeNoModalid"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#NoticeNoModal"></i></span>
+                    @Html.ValidationMessageFor(m => m.NoticeNo, "", new { @class = "Error_Msg" })
+                
+
+                </div>
+              </div>
+                <div class="row SignUp_space_bottom SignUp_space_top">
+                    <div class="col-md-12">
+                        <div class="stoke"></div>
+                    </div>
+                </div>
+                <div class="logSuccMsg Form_Space_bottom" id="msgDiv" style="background-color:transparent"></div>
+                <div class="row" style="padding-bottom:15px;">
+                    <div class="col-md-offset-4 col-md-2">
+                        <input type="submit" value="Save" class="btn log_Btn_sm" id="btnSave"  />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="button" value="Reset" class="btn log_Btn_sm" id="btnReset" onclick="Reset()" />
+                    </div>
+                </div>
+                <div class="row SignUp_space_top2 SignUp_space_bottom2">
+                    <div class="col-md-12">
+                        <div class="stoke"></div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 SignUp_space_bottom">
+                        <div id="DivNoticeList">
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+</div>
+
+}
+@Scripts.Render("~/bundles/jqueryval")
+
+<div id="NoticeNoModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">Notice Number</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="NoticeNobox" type="text" />
+                <ul class="navList" id="lstNoticeNo"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+
+    
+
+    $(document).ready(function () {
+        $("#DespatchDate").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            minDate: 0,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+                $('[data-valmsg-for="Data"]').html('<span></span>');
+            }
+        });
+        $("#DespatchDate").datepicker().datepicker("setDate", new Date());
+
+
+     
+    });
+
+    function GetNoticeList()
+    {
+        debugger;
+        var html1 = '';
+        var lotlist = JSON.parse($('#JsonNotice').val());
+        $.each(lotlist, function (i, item) {
+            html1 += '<li id="' + item.AuctionNoticeId + '"onclick="GetAuctionDetails(this)">' + item.NoticeNo + '</li>';
+        });
+        $('#lstNoticeNo').html(html1);
+    }
+    $('#NoticeNobox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstNoticeNo > li').show();
+        else {
+            $('#lstNoticeNo > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+
+    var TimeInSeconds = 3000;
+    function DespatchFinalizationOnSuccess(data) {
+
+        debugger;
+        if (data.Status == 1 || data.Status == 2) {
+            TableArray = [];
+            if ($('#msgDiv').hasClass('logErrMsg'))
+                $('#msgDiv').removeClass('logErrMsg').addClass('logSuccMsg text-center');
+            $('#msgDiv').html(data.Message);
+           // setTimeout(LoadBiFinalization, TimeInSeconds);
+            Reset();
+            LoadDespatchList();
+            //GetExitThroughGateList();
+        }
+
+        else {
+            if ($('#msgDiv').hasClass('logSuccMsg'))
+                $('#msgDiv').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#msgDiv').html(data.Message);
+        }
+    }
+    function DespatchFinalizationFailure() {
+        //alert("Error");
+        //LoadBiFinalization();
+    }
+
+    function Reset()
+    {
+        $('#DespatchNo').val('');
+        $('#NoticeNo').val('');        
+        $('#NoticeID').val(0);
+        $("#DespatchDate").datepicker().datepicker("setDate", new Date());
+
+       // location.href = '/Auction/Auction/Despatch';
+    }
+
+
+    function GetAuctionDetails(elm)
+    {
+        debugger;
+        var id = $(elm).attr('id')
+        $('#NoticeID').val(id);
+        $('#NoticeNo').val($(elm).text());
+
+
+        $('#NoticeNoModal').modal('hide');
+
+    }
+
+
+    function LoadDespatchList() {
+        $('#DivNoticeList').load('/Auction/Auction/GetAllDespatch');
+    }
+
+
+</script>
+

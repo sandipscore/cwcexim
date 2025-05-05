@@ -1,0 +1,169 @@
+﻿@model CwcExim.Areas.Report.Models.InventoryReportModel
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "OnFailure";
+    options.OnSuccess = "OnSuccess";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<script>
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+</script>
+@using (Ajax.BeginForm("GetCargoStockRegister", "Kdl_ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+
+        <div class="row">
+            <div class="col-md-12">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Cargo Stock Register</h4>
+                            </div>
+                        </div>
+                        <div class="content_wrp">
+                            <div class="row Form_Space_top">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Period From:</label>
+                                    </div>
+                                    <div class="position-relative Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodFrom, new { @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3 col-md-offset-6">
+                                    <div class="form-group">
+                                        <label>Period To:</label>
+                                    </div>
+                                    <div class="position-relative Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodTo, new { @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row SignUp_space_top SignUp_space_bottom">
+                                <div class="stoke"></div>
+                            </div>
+                            <div class="d-flex justify-content-left">
+                                <input type="submit" value="Print" name="Command" class="btn btn-primary btn-100px" id="BtnPreview" />
+                            </div>
+                            <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+        $('#BtnPreview').on("click", function () {
+            //alert("in");
+            //ValidateExitDet();
+            $('#DivDwnldWavMsg').html('');
+            var From = $('#PeriodFrom').val();
+            var To = $('#PeriodTo').val();
+            var SF = From.split('/');
+            var ST = To.split('/');
+            var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+            var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+            if (FromDate > ToDate) {
+                $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+                return false;
+            }
+            return true;
+        });
+        function OnFailure() { }
+        function OnSuccess(data) {
+            $('#DivDwnldWavMsg').html('')
+            //alert(data);
+            debugger;
+            if (data.Status == 1) {
+                SaveReportPdf(data);
+            }
+            else {
+                $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+            }
+        }
+
+        function SaveReportPdf(data) {
+            debugger;
+            var FormDate = $("#PeriodFrom").val();
+            var ToDate = $("#PeriodTo").val();
+            var PostData = new FormData();
+            var Html = '<div style="text-align: center;border: 1px solid #000;">Cargo Stock Register From Date ' + FormDate + ' To Date ' + ToDate + '</div>'
+            Html += "<table style='width:100%;font-size:7pt;font-family:Verdana,Arial,San-serif;border-collapse:collapse;'><thead><tr><th colspan='5' style='font-weight:600;font-size:10pt;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:5px;'>EXPORT</th></tr><tr><th style='font-weight:600;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>Ship Bill No/Check List/ Commercial Invoice</th>";
+            Html += "<th style='font-weight:600;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;width:10%;'>Date</th><th style='font-weight:600;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;width:10%;'>No of Packages</th><th style='font-weight:600;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;width:15%;'>Commodity</th><th style='font-weight:600;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;width:15%;'>Remarks</th></tr></thead><tbody>";
+           
+            for (i = 0; i < data.Data.exportCargoStocklst.length; i++) {
+                Html += "<tr><td style='text-align:left;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>" + data.Data.exportCargoStocklst[i].shippingBillNo + "</td><td style='text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>" + data.Data.exportCargoStocklst[i].Date + "</td><td style='text-align:right;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>" + data.Data.exportCargoStocklst[i].NoOfPackage + "</td><td style='text-align:left;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>" + data.Data.exportCargoStocklst[i].Commodity + "</td><td style='text-align:left;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>" + data.Data.exportCargoStocklst[i].Remarks + "</td></tr>";
+            }
+            Html += "</tbody></table>"
+            Html += "<br/><br/><table style='width:100%;font-size:7pt;font-family:Verdana,Arial,San-serif;border-collapse:collapse;'><thead><tr><th colspan='5' style='font-weight:600;font-size:10pt;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:5px;padding-top:50px;'>IMPORT</th></tr><tr><th style='font-weight:600;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>BL/BOE</th><th style='font-weight:600;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;width:10%;'>Date</th>";
+            Html += "<th style='font-weight:600;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;width:10%;'>No of Packages</th><th style='font-weight:600;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;width:15%;'>Commodity</th><th style='font-weight:600;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;width:15%;'>Remarks</th></tr></thead><tbody>";
+            for (i = 0; i < data.Data.importCargoStocklst.length; i++) {
+                Html += "<tr><td style='text-align:left;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>" + data.Data.importCargoStocklst[i].BOE + "</td><td style='text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>" + data.Data.importCargoStocklst[i].Date + "</td><td style='text-align:right;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>" + data.Data.importCargoStocklst[i].NoOfPackage + "</td><td style='text-align:left;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>" + data.Data.importCargoStocklst[i].Commodity + "</td><td style='text-align:left;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>" + data.Data.importCargoStocklst[i].Remarks + "</td></tr>";
+            }
+
+            Html += "</tbody></table><br/><br/>";
+            //--
+            Html += "<table style='width:100%;font-size:7pt;font-family:Verdana,Arial,San-serif;border-collapse:collapse;'><thead><tr><th colspan='5' style='font-weight:600;font-size:10pt;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:5px;padding-top:50px;'>BOND</th></tr><tr><th style='font-weight:600;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>Warehousing/BL</th><th style='font-weight:600;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;width:10%;'>Date</th>";
+            Html += "<th style='font-weight:600;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;width:10%;'>No of Packages</th><th style='font-weight:600;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;width:15%;'>Commodity</th><th style='font-weight:600;text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;width:15%;'>Remarks</th></tr></thead><tbody>";
+            for (i = 0; i < data.Data.bondCargoStocklst.length; i++) {
+                Html += "<tr><td style='text-align:left;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>" + data.Data.bondCargoStocklst[i].Warehouse + "</td><td style='text-align:center;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>" + data.Data.bondCargoStocklst[i].Date + "</td><td style='text-align:right;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>" + data.Data.bondCargoStocklst[i].NoOfPackage + "</td><td style='text-align:left;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>" + data.Data.bondCargoStocklst[i].Commodity + "</td><td style='text-align:left;border:1px solid #000;border-bottom:1px solid #000;padding:3px;'>" + data.Data.bondCargoStocklst[i].Remarks + "</td></tr>";
+            }
+
+            Html += "</tbody></table>";
+
+            PostData.append("Page", Html);
+            // alert("PostData=" + PostData);
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                type: 'POST',
+                url: '@Url.Action("GenerateCargoStockRegisterPDF", "Kdl_ReportCWC", new { area = "Report" })',
+                headers: { '__RequestVerificationToken': Token },
+                data: PostData,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    if (data.Status == 1) {
+                        debugger;
+                        window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                    }
+                }
+            });
+        }
+</script>
+
+
+

@@ -1,0 +1,281 @@
+﻿@model CwcExim.Areas.ExpSealCheking.Models.CHN_ShutOut
+
+<script>
+    $(function () {
+        debugger;
+        LoadShutOutList();
+    });
+
+    function LoadShutOutList()
+    {
+        $('#DivShutOutList').load('/ExpSealCheking/ExpSealCheking/GetShutOutCargoList');
+    }
+        //$('#TruckSlipDate').datepicker({
+        //    dateFormat: "dd/mm/yy",
+        //    showOn: "button",
+        //    buttonImage: "/Content/images/calendar.png",
+        //    buttonImageOnly: true,
+        //    buttonText: "Select date",
+        //    changeMonth: true,
+        //    changeYear: true,
+        //    showAnima: "fadein",
+        //    onClose: function () {
+        //        $("[data-valmsg-for='ShutOutDate']").html('');
+        //    }
+        //});
+        function LoadShutOutPage() {
+            $('#DivBody').load('/ExpSealCheking/ExpSealCheking/CreateShutOutCargo');
+        }
+        function ShutOutOnSuccess(data) {
+            debugger;
+            if (data.Status == 2) {
+                if ($('#DivsucMsg').hasClass('logErrMsg'))
+                    $('#DivsucMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+                $('#DivCreateShutOut #DivsucMsg').html(data.Message);
+                ShutOutReset();
+                LoadShutOutList();
+                setTimeout(LoadShutOutPage, 5000);
+            }
+            else {
+                $('#DivShutOutErrMsg').html(data.Message);
+            }
+        }
+
+        function ShutOutOnFailure() { }
+
+        function ShutOutReset() {
+            $('#DivShutOutErrMsg').html('');
+            $('#DivShutOutMsg').html('');
+            $('[data-valmsg-for]').html('<span></span>');
+            $('#DivCreateShutOut').find('input:text').val('');
+            $('input[type="text"],textarea,select').val('');
+            $('#DivCreateShutOut').find('input:hidden').val('');
+        }
+
+        function ClearCheckBoxValidation() {
+            debugger;
+            $('[data-valmsg-for="CheckBoxValidation"]').html('<span></span>');
+        }
+    // populate data on basis of truck slip no
+
+        $('#TruckSlipBox').keyup(function () {
+            debugger;
+            var valThis = $(this).val().toLowerCase();
+            if (valThis == "") {
+                $('#TruckSlipModal .navList > li').show();
+            } else {
+                $('#TruckSlipModal .navList > li').each(function () {
+                    var text = $(this).text().toLowerCase();
+                    (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+                });
+            };
+        });
+
+        $('#TruckSlipSearch').on("click", function () {
+            debugger;
+            $.ajax({
+                url: "/ExpSealCheking/ExpSealCheking/GetTruckSlipListForShutOutCargo",
+                type: "GET",
+                dataType: "JSON",
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        var Html = '';
+                        $.each(data.Data, function (i, item) {
+
+                            Html += '<li id=' + item.TruckSlipNo + ' onclick="FillTruckSlipTxtBox(&quot;' + item.TruckSlipNo + '&quot;)">' + item.TruckSlipNo + '</li>';
+                        });
+                        $('#TruckSlipList').html(Html);
+                    }
+                }
+
+            });
+        });
+
+        function FillTruckSlipTxtBox(TruckSlipNo) {
+            debugger;
+            $('#TruckSlipNo').val(TruckSlipNo);
+            $("#TruckSlipModal").modal("hide");
+            GetContainerDetails(TruckSlipNo);
+        }
+
+        function GetContainerDetails(TruckSlipNo) {
+            debugger;
+            $.ajax({
+                url: '/ExpSealCheking/ExpSealCheking/GetTruckSlipDetails',
+                type: 'GET',
+                dataType: 'JSON',
+                async: false,
+                data: { TruckSlipNo: TruckSlipNo },
+                success: function (data) {
+                    debugger;
+                    if (data.Status == 1) {
+                        $('#ContainerNo').val(data.Data.ContainerNo);
+                        $('#TruckSlipDate').val(data.Data.TruckSlipDate);
+                        $('#Size').val(data.Data.Size);
+                        var ContArray = [];
+                        var Object = {
+                            ContainerNo: data.Data.ContainerNo,
+                            Size: data.Data.Size,
+                            TruckSlipDate: data.Data.TruckSlipDate
+                        };
+                        ContArray.push(Object);
+                        $('#ContainerNo').val(data.Data.ContainerNo);
+                        $('#Size').val(data.Data.Size);
+                        $('#TruckSlipDate').val(data.Data.TruckSlipDate);
+                        //data.Data.AppraisementStatus == 1 ? $('#Pass').prop("checked", true) : $('#Fail').prop("checked", true);
+                    }
+                }
+            });
+        }
+
+</script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.HttpMethod = "POST";
+    options.OnSuccess = "ShutOutOnSuccess";
+    options.OnFailure = "ShutOutOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+
+<div id="DivCreateShutOut" class="container-fluid">
+    <div class="row">
+        <div class="col-md-offset-0-5 col-md-11">
+            <div class="Head_h4">
+                @using (Ajax.BeginForm("AddEditShutOut", "ExpSealCheking", options))
+                {
+                    @Html.HiddenFor(m => m.ShutOutId)
+                    @Html.AntiForgeryToken()
+
+                    <div class="row SignUp_space_bottom">
+                        <div class="col-md-12">
+                            <h4>Shut Out Cargo</h4>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2 padding_rt">
+                                @Html.LabelFor(m => m.TruckSlipNo, new { @class = "InputLabel" })<label class="LabelColon">:</label>
+                            </div>
+                            <div class="col-md-3">
+                                @Html.TextBoxFor(m => m.TruckSlipNo, "", new { @class = "form-control input-sm", @readonly = true })
+                                <span class="search" id="TruckSlipSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#TruckSlipModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.TruckSlipNo, "", new { @class = "Error_Msg" })
+
+                            </div>
+                            <div class="col-md-offset-3-5 col_cus_offset_2_5 col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.TruckSlipDate, new { @class = "InputLabel" })<label class="LabelColon">:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5 Date_Img">
+                                @Html.TextBoxFor(m => m.TruckSlipDate, "", new { @class = "form-control input-sm", @readonly = true })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Container/CBT No:</label>
+                            </div>
+                            <div class="col-md-3">
+                                @Html.TextBoxFor(m => m.ContainerNo, "", new { @class = "form-control input-sm", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.ContainerNo, "", new { @class = "Error_Msg" })
+
+                            </div>
+                            <div class="col-md-offset-3-5 col_cus_offset_2_5 col-md-1-5 col_cus_2">
+                                @Html.LabelFor(m => m.Size, new { @class = "InputLabel" })<label class="LabelColon">:</label>
+                            </div>
+                            <div class="col-md-2 col_cus_2_5">
+                                @Html.TextBoxFor(m => m.Size, "", new { @class = "form-control input-sm", @readonly = true })
+                            </div>
+                        </div>
+                    </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Reason:</label>
+                                    </div>
+                                    <div class="col-md-10-5 col_cus_10" id="PresentSealNoDiv">
+                                        @Html.TextAreaFor(m => m.Reason, new { @class = "form-cotrol input-sm" })
+                                        @Html.ValidationMessageFor(m => m.Reason, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row Form_Space_top">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>ShutOut:</label>
+                                    </div>
+                                    <div class="col-md-1 padding_rt">
+                                        <div class="boolean-container">
+                                            @Html.CheckBoxFor(m => m.ShutOut, new { @onclick = "ClearCheckBoxValidation()", @checked = "checked" })
+                                            <label for="ShutOut"><i class="square"></i></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                            </div>
+                            <div class="row SignUp_space_bottom">
+                                <div class="col-md-offset-4 col-md-2">
+                                    <input type="submit" id="BtnShutOutSave" class="btn log_Btn_sm" value="Save" />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="button" id="BtnShutOutReset" class="btn log_Btn_sm" value="Reset" onclick="ShutOutReset()" />
+                                </div>
+                            </div>
+
+                            <div id="DivsucMsg" class="logErrMsg Form_Space_top Form_Space_bottom" style="background-color:transparent"></div>
+
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div id="DivShutOutList"></div>
+                                </div>
+                            </div>
+
+
+                }
+
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="TruckSlipModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Truck Slip No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="TruckSlipBox" type="text" />
+                <ul class="navList" id="TruckSlipList"></ul>
+                @*<ul class="navList" id="TruckSlipList">
+                        @{
+                            if (ViewBag.TruckSlipNoList != null)
+                            {
+                                foreach (var item in ViewBag.TruckSlipNoList)
+                                {
+                                    <li id="@item.Value">@item.Text</li>
+                                }
+                            }
+                        }
+                    </ul>*@
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+
+

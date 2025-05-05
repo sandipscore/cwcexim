@@ -1,0 +1,399 @@
+﻿@model CwcExim.Areas.Report.Models.LNSM_CashChequeDDSummary
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "RptConsumerListDtlOnFailure";
+    options.OnSuccess = "RptInvoiceReportDetails";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<script>
+    $(function () {
+
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+</script>
+@using (Html.BeginForm("GetChequeDdPoSdSummaryReportExcel", "LNSM_ReportCWC",FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Cheque Summary Report</h4>
+                            </div>
+                        </div>
+                        <div class="Form_Space_top" style="padding:5px;">
+                            <div class="row">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Period From:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodFrom, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodFrom, "", new { @class = "Error_Msg" })
+                                    </div>
+
+                                    <div class="col-md-1-5 col_cus_2 col_cus_offset_3 col-md-offset-4">
+                                        <label>Period To:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.PeriodTo, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.PeriodTo, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="Form_Space_top" style="padding:5px;">
+                            <div class="row">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Type :</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.DropDownListFor(m => m.Type, new List<SelectListItem>
+                                            {
+                                                 new SelectListItem { Text="ALL",Value="ALL"},
+                                                 new SelectListItem { Text="CASH",Value="CASH"},
+                                                 new SelectListItem { Text="NEFT",Value="NEFT"},
+                                                 new SelectListItem { Text="CHEQUE",Value="CHEQUE"},
+                                                 new SelectListItem { Text="DRAFT",Value="DRAFT"},
+                                                 new SelectListItem { Text="PO",Value="PO"},
+                                                 new SelectListItem { Text="ONLINE",Value="ONLINE"},
+                                                 new SelectListItem { Text="CHALLAN",Value="CHALLAN"},
+                                                 new SelectListItem { Text="CREDIT NOTE",Value="CREDIT NOTE"}
+                                               
+
+                                            }, new { @class = "form-control input-sm dropdown" })
+                                        @Html.ValidationMessageFor(m => m.Type, "", new { @class = "Error_Msg" })
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-4 col-md-2">
+                                <input type="button" value="Print" name="Command" class="btn log_Btn_sm" onclick="GetPrint()" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="submit" value="Excel" name="Command" class="btn log_Btn_sm" id="BtnPreview" />
+                            </div>
+                        </div>
+                        <div class="logSuccMsg Form_Space_bottom" id="DivDwnldWavMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+}
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    $('#BtnPreview').on("click", function () {
+        //alert("in");
+        //ValidateExitDet();
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        }
+        return true;
+    });
+
+
+    function GetPrint()
+    {
+        
+        var Status = true;
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="PeriodFrom"]').html('<span>Fill Out This Field</span>');
+            Status= false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="PeriodTo"]').html('<span>Fill Out This Field</span>');
+            Status= false;
+        }
+        
+
+
+
+        $('#DivDwnldWavMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivDwnldWavMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('To Date must be greater than From Date');
+            return false;
+        } else {
+            if (Status == true)
+            {
+                $.ajax({
+                    url: '/Report/LNSM_ReportCWC/GetChequeDdPoSdSummaryReport',
+                    type: 'POST',
+                    data: { PeriodFrom: $('#PeriodFrom').val(), PeriodTo: $('#PeriodTo').val(), Type: $('#Type').val() },
+                    success: function (data) {
+                        $('#DivDwnldWavMsg').html('')
+                        if (data.Status == 1) {
+
+                            debugger;
+                            SaveReportPdf(data);
+
+                        }
+                        else {
+                            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+                        }
+                    }
+                });
+            }
+
+           
+          
+        }
+    }
+
+
+    function RptConsumerListDtlOnFailure() { }
+    function RptInvoiceReportDetails(data) {
+        $('#DivDwnldWavMsg').html('')
+        //alert(data);
+        debugger;
+        if (data.Status == 1) {
+
+            debugger;
+            SaveReportPdf(data);
+
+        }
+        else {
+            $('#DivDwnldWavMsg').html("No Data Found").removeClass('logSuccMsg').addClass('logErrMsg');
+        }
+    }
+
+
+    function ValidateExitDet() {
+        var Status = true;
+
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="txtGrossWeight"]').html('<span>Fill Out This Field</span>');
+            Status = false;
+        }
+
+
+        return Status;
+    }
+    function SaveReportPdf(data)
+    {
+        debugger;
+        var FormDate = $("#PeriodFrom").val();
+        var ToDate = $("#PeriodTo").val();
+        var PostData = new FormData();
+        var dropdownVal = $("#Type").val();
+        //alert(dropdownVal);
+        //debugger;
+        var Html = '';
+        if (dropdownVal == 'ALL')
+        {
+            Html = '<div style="text-align: center;border: 1px solid #000;">STATEMENT OF CASH/CHEQUE/POS ETC SUMMARY REPORT FROM DATE ' + FormDate + ' TO DATE ' + ToDate + ' </div>'
+        }
+        else
+        {
+            Html = '<div style="text-align: center;border: 1px solid #000;">STATEMENT OF ' + dropdownVal + ' SUMMARY REPORT FROM DATE ' + FormDate + ' TO DATE ' + ToDate + '</div>'
+        }
+        
+        Html += "<table style='width:100%;font-size:7pt;font-family:Verdana,Arial,San-serif;border: 1px solid #000;border-collapse: collapse;margin-top:10px;'>";
+        Html += "<thead>";
+        Html += "<tr><th rowspan='2' style='text-align: center;border: 1px solid #000;font-weight:600;width:80px;'>Sl. No.</th>";
+        Html += "<th rowspan='2' style='text-align: center;border: 1px solid #000;font-weight:600;width:200px;'>Date</th>";
+        Html += "<th rowspan='2' style='text-align: center;border: 1px solid #000;font-weight:600;width:300px;'>Party</th>";
+        Html += "<th rowspan='2' style='text-align: center;border: 1px solid #000;font-weight:600;width:150px;'>InvoiceNo.</th>";
+        Html += "<th rowspan='2' style='text-align: center;border: 1px solid #000;font-weight:600;width:150px;'>ReceiptNo</th>";
+        Html += "<th rowspan='2' style='text-align: center;border: 1px solid #000;font-weight:600;width:300px;'>Bank Name</th>";
+        Html += "<th rowspan='2' style='text-align: center;border: 1px solid #000;font-weight:600;width:150px;'>Cheque Number</th>";
+        //Html += "<th rowspan='2' style='text-align: center;border: 1px solid #000;font-weight:600;width:300px;'>Amount</th>";
+        Html += "<th colspan='5' style='text-align: center;border: 1px solid #000;font-weight:600; width:800px;'>Invoice Amount</th>";
+        Html += "<th colspan='5' style='text-align: center;border: 1px solid #000;font-weight:600; width:800px;'>SD Receipt Amount</th>";
+        Html += "<th colspan='5' style='text-align: center;border: 1px solid #000;font-weight:600; width:800px;'>Grand Total</th></tr>";
+
+        Html += "<tr>";
+       
+        Html += "<th style='text-align: center;border: 1px solid #000;font-weight: 600;width: 200px;'>Cash</th>";
+        Html += "<th style='text-align: center;border: 1px solid #000;font-weight: 600;width: 200px;'>Cheque</th>";
+        Html += "<th style='text-align: center;border: 1px solid #000;font-weight: 600;width: 200px;'>Pos</th>";
+        Html += "<th style='text-align: center;border: 1px solid #000;font-weight: 600;width: 200px;'>Online</th>";
+        Html += "<th style='text-align: center;border: 1px solid #000;font-weight: 600;width: 200px;'>OTHERS (Draft/ Challan etc)</th>";
+
+        Html += "<th style='text-align: center;border: 1px solid #000;font-weight: 600;width: 200px;'>Cash</th>";
+        Html += "<th style='text-align: center;border: 1px solid #000;font-weight: 600;width: 200px;'>Cheque</th>";
+        Html += "<th style='text-align: center;border: 1px solid #000;font-weight: 600;width: 200px;'>Pos</th>";
+        Html += "<th style='text-align: center;border: 1px solid #000;font-weight: 600;width: 200px;'>Online</th>";
+        Html += "<th style='text-align: center;border: 1px solid #000;font-weight: 600;width: 200px;'>OTHERS (Draft/ Challan etc)</th>";
+      
+
+        Html += "<th style='text-align: center;border: 1px solid #000;font-weight: 600;width: 200px;'>Cash</th>";
+        Html += "<th style='text-align: center;border: 1px solid #000;font-weight: 600;width: 200px;'>Cheque</th>";
+        Html += "<th style='text-align: center;border: 1px solid #000;font-weight: 600;width: 200px;'>Pos</th>";
+        Html += "<th style='text-align: center;border: 1px solid #000;font-weight: 600;width: 200px;'>Online</th>";
+        Html += "<th style='text-align: center;border: 1px solid #000;font-weight: 600;width: 200px;'>OTHERS (Draft/ Challan etc)</th>";
+        Html += "</tr>";
+
+        Html += "</thead>";
+
+        Html += "<tbody>";
+        var sdcashamount = 0; sdchequeamount = 0; sdposamount = 0; sdonlineamount = 0; sdamount = 0; receiptcashamount = 0; receiptchequeamount = 0; receiptposamount = 0; receiptonlineamount = 0; receiptamount = 0;
+        for (i = 0; i < data.Data.length-1; i++) {
+            Html += '<tr><td style="text-align: center;border: 1px solid #000;">' + (i+1).toString() + '</td>'
+            Html += '<td style="text-align: center;border: 1px solid #000;">' + data.Data[i].Date + '</td>'
+            Html += '<td style="text-align: center;border: 1px solid #000;">' + data.Data[i].Party + '</td>'
+            Html += '<td style="text-align: center;border: 1px solid #000;">' + data.Data[i].InvoiceNumber + '</td>'
+            Html += '<td style="text-align: center;border: 1px solid #000;">' + data.Data[i].ReceiptNo + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].Bank + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].ChequeNumber + '</td>'
+            //Html += '<td style="text-align: right;border: 1px solid #000;">' + data.Data[i].Amount + '</td>'
+            if (data.Data[i].InvoiceNumber == '')
+            {
+                Html += '<td style="text-align: left;border: 1px solid #000;"></td>'
+                Html += '<td style="text-align: left;border: 1px solid #000;"></td>'
+                Html += '<td style="text-align: left;border: 1px solid #000;"></td>'
+                Html += '<td style="text-align: left;border: 1px solid #000;"></td>'
+                Html += '<td style="text-align: left;border: 1px solid #000;"></td>'
+            }
+            else
+            {
+                Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].CashAmount + '</td>'
+                Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].ChequeAmount + '</td>'
+                Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].POSAmount + '</td>'
+                Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].OnlineAmount + '</td>'
+                Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].Amount + '</td>'
+                sdcashamount = sdcashamount + data.Data[i].CashAmount;
+                sdchequeamount = sdchequeamount + data.Data[i].ChequeAmount;
+                sdposamount = sdposamount + data.Data[i].POSAmount;
+                sdonlineamount = sdonlineamount + parseFloat(data.Data[i].OnlineAmount);
+                sdamount = sdamount + parseFloat(data.Data[i].Amount);
+
+            }
+            if (data.Data[i].InvoiceNumber == '') {
+                Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].CashAmount + '</td>'
+                Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].ChequeAmount + '</td>'
+                Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].POSAmount + '</td>'
+                Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].OnlineAmount + '</td>'
+                Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].Amount + '</td>'
+                receiptcashamount = receiptcashamount + data.Data[i].CashAmount;
+                receiptchequeamount = receiptchequeamount + data.Data[i].ChequeAmount;
+                receiptposamount = receiptposamount + data.Data[i].POSAmount;
+                receiptonlineamount = receiptonlineamount + parseFloat(data.Data[i].OnlineAmount);
+                receiptamount = receiptamount + parseFloat(data.Data[i].Amount);
+             
+            }
+            else {
+                Html += '<td style="text-align: left;border: 1px solid #000;"></td>'
+                Html += '<td style="text-align: left;border: 1px solid #000;"></td>'
+                Html += '<td style="text-align: left;border: 1px solid #000;"></td>'
+                Html += '<td style="text-align: left;border: 1px solid #000;"></td>'
+                Html += '<td style="text-align: left;border: 1px solid #000;"></td>'
+            }
+
+           
+
+           
+
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].GCashAmount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].GChequeAmount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].GPOSAmount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].GOnlineAmount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[i].GOthersAmount + '</td></tr>'
+        }
+        for (i = data.Data.length - 1; i < data.Data.length; i++) {
+            Html += '<tr><td colspan="7" style="text-align: left;border: 1px solid #000;">' + data.Data[data.Data.length - 1].ChequeNumber + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' +sdcashamount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + sdchequeamount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + sdposamount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + sdonlineamount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + sdamount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + receiptcashamount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + receiptchequeamount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + receiptposamount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + receiptonlineamount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + receiptamount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[data.Data.length - 1].GCashAmount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[data.Data.length - 1].GChequeAmount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[data.Data.length - 1].GPOSAmount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[data.Data.length - 1].GOnlineAmount + '</td>'
+            Html += '<td style="text-align: left;border: 1px solid #000;">' + data.Data[data.Data.length - 1].GOthersAmount + '</td></tr>'
+        }
+
+        Html += "</tbody></table>"
+        PostData.append("Page", Html);
+       // alert("PostData=" + PostData);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GenerateChequeDdPoSdSummaryReportPDF", "LNSM_ReportCWC", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+
+            }
+        });
+    }
+
+</script>
+
+
+
+
+

@@ -1,0 +1,210 @@
+﻿@model CwcExim.Areas.GateOperation.Models.Dnd_AddExportVehicle
+
+<style>
+    .popover{
+        z-index: 9999 !important;
+    }
+</style>
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "VehicleEntryOnSuccess";
+    options.OnFailure = "VehicleEntryOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<div class="row">
+    <div class="col-md-12 SignUp_head">
+        <h4 style="margin: 5px !important;background: none !important;">Add New Vehicle</h4>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-md-12" style="padding-bottom:0px;">
+        <div class="singup_body">
+@using (Ajax.BeginForm("AddEditEntryThroughGateVehicle", "Dnd_GateOperation", options))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.EntryId)
+    @Html.HiddenFor(m => m.DtlEntryId)
+    @Html.HiddenFor(m=>m.VehicleEntryTime)
+    @Html.HiddenFor(m=>m.TotalNoOfPkg)
+    @Html.HiddenFor(m=>m.TotalGrWt)
+            <div class="Head_h4 postn_rel">
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-2-5 col_cus_2 padding_rt">
+                            <label>Reference No:</label>
+                        </div>
+                        <div class="col-md-2-5">
+                            @Html.TextBoxFor(m => m.ExportReferenceNo, new { @class = "form-control input-sm", @readonly = true })
+                        </div>
+                        <div class="col-md-1-5 col_cus_2 col-md-offset-1 col_cus_offset_3 padding_rt">
+                            <label>CFSCode:</label>
+                        </div>
+                        <div class="col-md-2-5">
+                            @Html.TextBoxFor(m => m.ExportCFSCode, new { @class = "form-control input-sm", @readonly = true })
+                        </div>
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-2-5 col_cus_2 padding_rt">
+                            <label>Vehicle No:</label>
+                        </div>
+                        <div class="col-md-2-5">
+                            @Html.TextBoxFor(m => m.ExportVehicleNo, new { @class = "form-control input-sm" ,@readonly=true})
+                            @Html.ValidationMessageFor(m => m.ExportVehicleNo)
+                        </div>
+                        <div class="col-md-1-5 col_cus_2 col-md-offset-1 col_cus_offset_3 padding_rt">
+                            <label>Entry Date & Time:</label>
+                        </div>
+                        <div class="col-md-2-5 Date_Img">
+                            @Html.TextBoxFor(m => m.VehicleEntryDt, new { @class = "form-control", placeholder = "dd/mm/yyyy", @readonly = true, Value = DateTime.Now.ToString("dd/MM/yyyy") })
+                            @Html.ValidationMessageFor(m => m.VehicleEntryDt, "", new { @class = "Error_Msg" })
+                        </div>
+                        <div class="col-md-2 col_cus_2_5">
+                            <div class="input-group clockpicker" data-placement="left" data-align="top" id="VehicleClock">
+                                <input type="text" id="vehicleTime" name="vehicleTime" class="form-control" value="00:00" readonly="readonly" style="background-color:#fff;z-index:0; padding: 3px 7px;" />
+                                <input type="hidden" id="EditvehicleTime" name="EditvehicleTime" value="@ViewBag.strTime" />
+                                <span class="input-group-addon" style="padding:2px 10px;">
+                                    <span class="glyphicon glyphicon-time"></span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row Form_Space_top">
+                    <div class="form-group Form_Input">
+                        <div class="col-md-2-5 col_cus_2 padding_rt">
+                            <label>No Of Packages :</label>
+                        </div>
+                        <div class="col-md-2-5">
+                            @Html.TextBoxFor(m => m.ExportNoOfPkg, new { @class = "form-control input-sm", @onkeypress = "return AllowOnlyInteger(event)" , @readonly = true })
+                        </div>
+                        <div class="col-md-1-5 col_cus_2 col-md-offset-1 col_cus_offset_3 padding_rt">
+                            <label>Gross. weight:</label>
+                        </div>
+                        <div class="col-md-2-5">
+                            @Html.TextBoxFor(m => m.ExportGrWeight, new { @class = "form-control input-sm",@onkeypress = "return AllowOnlyDecimal(event)", @readonly = true })
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                   <br />
+                </div>
+            </div>
+}          
+          
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="DivVehicleEntryList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>    
+
+    $(document).ready(function () {
+        LoadVehicleList();
+        var editTime = $("#EditvehicleTime").val();
+        //alert(editTime);
+        if (editTime != null && editTime != "") {
+            $("#vehicleTime").val(editTime);
+        }
+
+    });
+
+    $('#VehicleClock').clockpicker({
+        donetext: 'Done',
+        twelvehour: true
+    });
+
+    //$("#VehicleEntryDt").datepicker({
+    //    dateFormat: "dd/mm/yy",
+    //    showOn: "button",
+    //    buttonImage: "/Content/images/calendar.png",
+    //    buttonImageOnly: true,
+    //    buttonText: "Select date",
+    //    changeMonth: true,
+    //    maxDate: new Date(),
+    //    changeYear: true,
+    //    showAnima: "fadein",
+    //    onClose: function () {
+    //        $(".Date_Img .Error_Msg").text("");
+    //        $('[data-valmsg-for="Data"]').html('<span></span>');
+    //    }
+    //});
+
+    function VehicleEntryOnSuccess(data)
+    {
+        debugger;
+        if(data.Status==1) 
+        {
+            alert("Vehicle Added Successfully!!");
+            $('#ExportVehicleNo').val('');
+            $('#ExportNoOfPkg').val('');
+            $('#ExportGrWeight').val('');
+            LoadVehicleList();
+
+
+        }
+        else if(data.Status==2)
+        {
+            alert("Vehicle Updated Successfully!!");
+            $('#ExportVehicleNo').val('');
+            $('#ExportNoOfPkg').val('');
+            $('#ExportGrWeight').val('');
+            LoadVehicleList();
+        }
+        else 
+        {
+            alert(data.Message);
+        }
+        
+    }
+
+
+    function VehicleEntryOnFailure()
+    {
+        alert("Error");
+    }
+
+    function LoadVehicleList() {
+        var EntryId = $('#EntryId').val();
+        $('#DivVehicleEntryList').load('/GateOperation/Dnd_GateOperation/ViewGetVehicleDtlById?EntryId=' + EntryId);
+    }
+    function AllowOnlyInteger(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+    function AllowOnlyDecimal(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || (CharCode == 46) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+</script>

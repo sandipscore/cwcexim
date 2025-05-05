@@ -1,0 +1,37 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.ComponentModel.DataAnnotations;
+namespace CwcExim.Areas.Report.Models
+{
+   
+    public class Ppg_EmptyConPayRpt
+    {
+        [Required(ErrorMessage = "Fill Out This Field")]
+        public string FromDate { get; set; }
+
+        [Required(ErrorMessage = "Fill Out This Field")]
+        public string ToDate { get; set; }
+        List<Ppg_EmptyConPayRptDtl> lstEmptyContDtl = new List<Ppg_EmptyConPayRptDtl>();
+
+    }
+
+    public class Ppg_EmptyConPayRptDtl
+    {
+        public int InvoiceId { get; set; }
+        public string InvoiceNo { get; set; }
+        public string InvoiceDate { get; set; }
+        public string ImporterName { get; set; }
+        public string PayeeName { get; set; }
+        public string ContainerNo { get; set; }
+        public string Size { get; set; }
+        public decimal LOE { get; set; }
+        public decimal GRE { get; set; }
+        public decimal CGST { get; set; }
+        public decimal SGST { get; set; }
+        public decimal IGST { get; set; }
+        public int TotalDays { get; set; }
+        public decimal Total { get; set; }
+    }
+}

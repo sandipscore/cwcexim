@@ -1,0 +1,157 @@
+﻿@model CwcExim.Areas.Master.Models.CHNInsurance
+<script>
+
+    $('#InsuranceEffectiveDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage:  "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select Date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $('[data-valmsg-for="EffectiveDate"]').html('');
+        }
+    });
+</script>
+@using (Ajax.BeginForm("AddEditInsurance", "CHNMaster", new AjaxOptions
+{
+    Confirm = "Are you sure you want to Save?",
+    HttpMethod = "POST",
+    OnSuccess = "InsuranceOnSuccess",
+    OnFailure = "InsuranceOnFailure"
+}))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.InsuranceId)
+    <div class="container-fluid">
+        <div class="row SignUp_space_bottom">
+            <div class="col-md-12 cwc_body">
+                <h5>Insurance Charge<span class="triangle"></span></h5>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group Form_Input">
+                <div class="col-md-1-5">
+                    <label>Effective Date:</label>
+                </div>
+                <div class="col-md-2 Date_Img">
+                    <span class="ReQSimbol">*</span>
+                    @Html.TextBoxFor(m => m.EffectiveDate, new { @class = "form-control input-sm", @id = "InsuranceEffectiveDate", @readonly = true })
+                    @Html.ValidationMessageFor(m => m.EffectiveDate, "", new { @class = "Error_Msg" })
+                </div>
+                <div class="col-md-1-5 col-md-offset-2">
+                    @Html.LabelFor(m => m.Charge, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                </div>
+                <div class="col-md-2">
+                    <span class="ReQSimbol">*</span>
+                    @Html.TextBoxFor(m => m.Charge, new { @class = "form-control input-sm" })
+                    @Html.ValidationMessageFor(m => m.Charge, "", new { @class = "Error_Msg" })
+                </div>
+                <div class="col-md-2 col_cus_3 padding_rt">
+                    <label>/Rs 1000/Week In Paise</label>
+                </div>
+            </div>
+        </div>
+        <div class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-1-5">
+                    <label>SAC Code:</label>
+                </div>
+                <div class="col-md-2">
+                    <span class="ReQSimbol">*</span>
+                    @Html.TextBoxFor(m => m.SacCode, new { @class = "form-control input-sm", @readonly = true })
+                    <span class="search"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#myModal"></i></span>
+                    @Html.ValidationMessageFor(m => m.SacCode, "", new { @class = "Error_Msg" })
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+        </div>
+        <div class="row">
+            <div class="col-md-offset-4 col-md-2">
+                <input type="submit" value="Save" class="btn log_Btn_sm" />
+            </div>
+            <div class="col-md-2">
+                <input type="button" value="Back" class="btn log_Btn_sm" onclick="LoadInsurancePage()" />
+            </div>
+        </div>
+        <div class="logSuccMsg Form_Space_top SignUp_space_bottom2" id="DivInsMsg" style="background-color:transparent;"></div>
+    </div>
+}
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of SAC Code</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="box" type="text" />
+                <ul class="navList" id="PartyList">
+                    @{
+                        if (ViewBag.ListOfSAC != null)
+                        {
+                            foreach (var item in ViewBag.ListOfSAC)
+                            {
+                                <li id="@item">@item</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    function LoadInsurancePage()
+    {
+        $('#DivInsurance').load('/Master/CHNMaster/CreateInsurance');
+    }
+    function InsuranceOnSuccess(data)
+    {
+        if(data.Status==1)
+        {
+            if ($('#DivInsMsg').hasClass('logErrMsg'))
+                $('#DivInsMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivInsMsg').html(data.Message);
+            setTimeout(LoadInsurancePage, 5000);
+        }
+        else
+        {
+            if ($('#DivInsMsg').hasClass('logSuccMsg'))
+                $('#DivInsMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivInsMsg').html(data.Message);
+        }
+        setTimeout(function () { $('#DivInsMsg').html(''); },5000);
+    }
+    function InsuranceOnFailure() { }
+    $('#box').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('.navList > li').show();
+        } else {
+            $('.navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+    $('.navList li').on("click", function () {
+        $('#SacCode').val($(this).text());
+        $("#myModal").modal("hide");
+    });
+</script>

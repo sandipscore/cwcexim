@@ -1,0 +1,342 @@
+﻿@model CwcExim.Areas.Export.Models.WFLD_PostPalletizationCBM
+
+
+<div class="container-fluid">
+    <div class="col-md-offset-0-5 col-md-11">
+        <div class="Head_h4">
+            <div id="divEditPalletizationCBM">
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>Post Palletization CBM Updation</h4>
+                    </div>
+                </div>
+                @using (Ajax.BeginForm("SaveEditPalletizationCBM", "VLDA_CWCExport", new AjaxOptions
+                {
+                    //OnComplete = "SaveDisabled",
+                    //OnBegin = "SaveEnabled",
+                    //Confirm = "Are you sure you want to Save?",
+                    HttpMethod = "POST",
+                    OnSuccess = "OnSuccess",
+                    OnFailure = "OnFailure"
+                }, new { id = "frmEditPCBM" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(x => x.PalletizationId)
+                    @Html.HiddenFor(x => x.CartingdtlId)
+                    @Html.HiddenFor(x => x.StockId)
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>SB No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.SBNo, new { @class = "form-control input-sm", @readonly = true })
+                                <span class="search" id="SBSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="GetSBData()" data-target="#SBModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.SBNo, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                <label>SB Date:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.SBDate, new { @class = "form-control input-sm", @readonly = true })
+                                @Html.ValidationMessageFor(m => m.SBDate, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-sm-12">
+                                <table class="table table-striped table-bordered" id="tblPalletiseSBDtl" style="width:100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>SL No</th>
+                                            <th>SB No.</th>
+                                            <th>SB Date</th>
+                                            <th>Qty</th>
+                                            <th>Old Reserve CBM</th>
+                                            <th>Old General CBM</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbltbody"></tbody>
+                                </table>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>Reserve CBM:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.ReservedCBM, new { @class = "form-control input-sm", @onkeypress = "return AllowOnlyDecimal(event)" })
+                                @Html.ValidationMessageFor(m => m.ReservedCBM, "", new { @class = "Error_Msg" })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4 col_cus_offset_3 col_cus_2">
+                                <label>General CBM:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.GeneralCBM, new { @class = "form-control input-sm", @onkeypress = "return AllowOnlyDecimal(event)" })
+                                @Html.ValidationMessageFor(m => m.GeneralCBM, "", new { @class = "Error_Msg" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+                    </div>
+
+                    <div id="divPalletizationMsg" class="logSuccMsg" style="background-color:transparent"></div>
+                    <div id="divPalletizationErrMsg" class="logErrMsg" style="background-color:transparent"></div>
+
+                    <div class="row">
+                        <div class="col-md-offset-3-5 col-md-2">
+                            <input type="button" class="btn log_Btn_sm" id="btnSave" value="Save" onclick="UpdateCBM()" />
+                            @*<button type="submit" class="btn log_Btn_sm" id="btnSave">Save</button>*@
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Reset" onclick="ResetAll()" />
+                        </div>
+
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="col-md-2">
+                            <input type="button" class="btn log_Btn_sm" value="Show List" onclick="ShowList()">
+                        </div>
+                        
+                        <div class="col-md-offset-5 col-md-2-5">
+                            <input class="form-control input-sm" type="text" placeholder="Shippingbill No" id="SearchSBNO" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" value="Search" onclick="SearchShippBill()" class="btn log_Btn_sm" />
+                        </div>
+                    </div>
+
+                }
+            </div>
+            <div class="row">
+                <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="divPalletizationCBMList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="modal fade mTabindex" id="SBModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of SB No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="SBNobox" type="text" tabindex="401" />
+                <ul class="navList" id="SBNoList"></ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    //function SaveEnabled() {
+    //    $('#btnSave').attr('enabled', 'enabled');
+    //};
+    //function SaveDisabled() {
+    //    $('#btnSave').attr('disabled', 'disabled');
+
+    //}
+
+    function UpdateCBM()
+    {
+        debugger;
+        var Validation = true;
+
+        if (Number($('#ReservedCBM').val()) == 0 && Number($('#GeneralCBM').val() == 0)) {
+            $('#divPalletizationMsg').html('<span>Fill Out CBM Field</span>');
+            Validation = false;
+        }
+
+        if (Validation == true) {
+            var conf = confirm("Do you want to save ?");
+            if (conf) {
+                $('#frmEditPCBM').submit();
+                $('#btnSave').prop("disabled", true);
+            }
+        }
+    }
+
+    function OnSuccess(data) {
+        debugger;
+        if (data.Status == 1) {
+            $('#divPalletizationMsg').html(data.Message);
+            setTimeout(ResetAll, 3000);
+        }
+        else {
+            $('#divPalletizationErrMsg').html(data.Message);
+        }
+    }
+
+    function OnFailure() {
+    }
+    function ResetAll() {
+        $('#DivBody').load('/Export/VLDA_CWCExport/PostPalletizationCBMUpdate');
+    }
+
+    var tblPalletiseSBDtl = $('#tblPalletiseSBDtl').DataTable({
+        "bFilter": false,
+        "bInfo": false,
+        "lengthChange": false,
+        "paging": false,       
+        "aoColumns": [
+                   { "sName": "SL No", "width": "8%", "bSortable": false },
+                   { "sName": "SB No", "bSortable": false },
+                   { "sName": "SB Date", "bSortable": false },
+                   { "sName": "Qty", "bSortable": false },
+                   { "sName": "Reserve CBM","width": "15%", "bSortable": false },
+                   { "sName": "General CBM","width": "15%", "bSortable": false }
+
+
+        ],
+        language: {
+            "zeroRecords": "."
+        },
+    });
+    new $.fn.dataTable.FixedHeader(tblPalletiseSBDtl);
+   
+
+    $('#SBNobox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#SBNoList > li').show();
+        } else {
+            $('#SBNoList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+
+    function GetSBData() {
+        $.ajax({
+
+            url: '/Export/VLDA_CWCExport/GetSbNoEditPalletizationCBM',
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                $('#SBNoList').html('');
+                if (data.Status == 1) {
+                    var html = '';
+                    var tab = 401;
+                    $.each(data.Data, function (i, item) {
+                        html += '<li tabindex='+ tab +'_'+ i +' onclick="SelectSBDetails(' + item.PalletizationId + ',' + item.CartingdtlId +',' + item.StockId+ ',' + item.Qty + ',' + +item.ReservedCBM + ',' + item.GeneralCBM + ',&quot;' + item.SBNo + '&quot;,&quot;' + item.SBDate + '&quot;)">' + item.SBNo + '</li>'
+                    });
+                    $('#SBNoList').html(html);
+                }
+
+            }
+        });
+    }
+
+    var ArrayOfSBOldDetails = [];
+    function SelectSBDetails(PalletizationId, CartingdtlId,StockId, Qty, ReservedCBM, GeneralCBM, SBNo, SBDate) {
+
+        debugger;
+        $('#SBSearch').css('display', 'none');
+        $('#SBModal').modal('hide');
+        $('#SBDate').val(SBDate);
+        $('#SBNo').val(SBNo)
+
+        $('#PalletizationId').val(PalletizationId);
+        $('#CartingdtlId').val(CartingdtlId);
+        $('#StockId').val(StockId);
+
+        var SBDetails = {
+            "SBNo": SBNo,
+            "SBDate": SBDate,
+            "Qty": Qty,
+            "GeneralCBM": GeneralCBM,
+            "ReservedCBM": ReservedCBM
+        };
+
+
+        ArrayOfSBOldDetails.push(SBDetails);
+        debugger;
+        $('#tbltbody').html('');
+
+        var html = '';
+
+        var k = 1;
+        $.each(ArrayOfSBOldDetails, function (i, item) {
+            html += "<tr><td>" + k + "</td><td>" + item.SBNo + "</td><td>" + item.SBDate + "</td><td>" + item.Qty + "</td><td>" + item.ReservedCBM + "</td><td>" + item.GeneralCBM + "</td><tr>";
+            k++;
+        });
+        $('#tbltbody').html(html);
+
+        $('#ReservedCBM').val(ReservedCBM);
+        $('#GeneralCBM').val(GeneralCBM);
+
+    }
+
+    $('.mTabindex').keydown(function (e) {
+        //debugger;
+        var $focusable = $(this).find("[tabindex]:not([tabindex='-1'])");
+        if ($focusable.last().is(":focus") && !e.shiftKey && e.key == "Tab") {
+            e.preventDefault();
+            $focusable.first().focus();
+        }
+        else
+            if ($focusable.first().is(":focus") && e.shiftKey && e.key == "Tab") {
+                e.preventDefault();
+                $focusable.last().focus();
+            }
+    });
+
+ 
+    function ShowList() {
+
+        $('#SearchSBNO').val("");
+        $('#divPalletizationCBMList').load('/Export/VLDA_CWCExport/GetGetPostPalletizationCBMList');
+    }
+    function SearchShippBill() {
+        var SearchValue= $('#SearchSBNO').val().trim();
+        $('#divPalletizationCBMList').load('/Export/VLDA_CWCExport/GetGetPostPalletizationCBMList?SearchValue=' + SearchValue);
+    }
+
+    function AllowOnlyDecimal(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || (CharCode == 46) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+
+</script>

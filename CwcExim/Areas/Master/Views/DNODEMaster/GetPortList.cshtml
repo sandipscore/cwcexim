@@ -1,0 +1,137 @@
+﻿@model IEnumerable<CwcExim.Areas.Master.Models.DNDPort>
+
+<script>
+    var Page = 0;
+    $(document).ready(function(){
+        var TblPort = $('#TblPort').DataTable({
+            "bFilter": false,
+            "bInfo": false,
+            "pageLength": 50,
+            "aoColumns": [
+                    { "sName": "SL No","width": "8%" },
+                    { "sName": "Port Name" },
+                    { "sName": "Port Alias", "bSortable": false },
+                    { "sName": "Country Name", "bSortable": false },
+                    { "sName": "State Name", "bSortable": false },
+                    { "sName": "View", "bSortable": false, "width": "10%" },
+                    { "sName": "Edit", "bSortable": false, "width": "10%" },
+                    { "sName": "Delete", "bSortable": false, "width": "10%" }
+            ],
+             "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                 $('td:eq(0)', nRow).addClass("text-center");
+              //   $('td:eq(7),td:eq(8),td:eq(9)', nRow).addClass("text-center");
+                 $('td:eq(0)', nRow).css("width", "5%");
+                 $('td:eq(1)', nRow).css("width", "8%");
+                 $('td:eq(2)', nRow).css("width", "10%");
+                 $('td:eq(3)', nRow).css("width", "10%");
+                 $('td:eq(4)', nRow).css("width", "10%");
+                 $('td:eq(5)', nRow).css("width", "10%");
+                 $('td:eq(6)', nRow).css("width", "10%");
+             }
+        });
+        new $.fn.dataTable.FixedHeader(TblPort);
+    });
+    function LoadPortPage(){
+        $('#DivBody').load('/Master/DNODEMaster/CreatePort');
+    }
+    function ViewPort(PortId){
+        $('#DivBody').load('/Master/DNODEMaster/ViewPort?PortId='+PortId);
+    }
+    function EditPort(PortId){
+        $('#DivBody').load('/Master/DNODEMaster/EditPort?PortId='+PortId);
+    }
+    function DeletePort(PortId){
+        //debugger;
+        var Confirm=confirm("Are You Sure You Want To Delete?")
+        if(Confirm==true)
+        {
+            var Token=$('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url:'/Master/DNODEMaster/DeletePortDetail',
+                headers:{'__RequestVerificationToken':Token},
+                dataType:'JSON',
+                type:'POST',
+                data:{PortId:PortId},
+                async:false,
+                success:function(data){
+                    if(data.Status==1){
+                        alert("Port has been deleted successfully");
+                        LoadPortPage();
+                    }
+                    else if(data.Status==2)
+                    {
+                        alert(data.Message);
+                    }
+                }
+            });
+        }
+    }
+    function LoadMoreListData() {
+        debugger;
+        //Page = Page + 1;
+        $.ajax({
+            url: '/Master/DNODEMaster/LoadPortMoreListData',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { Page: Page + 1 },
+            success: function (data) {
+                debugger;
+                if (data != null && data != '' && data != undefined && data.length > 0) {
+                    Page++;
+                    var html = '';
+                    var dt = $('#TblPort').dataTable();
+                    var len = dt.fnGetData().length;
+                    $.each(data, function (i, item) {
+                        debugger;
+                        len++;
+                        dt.fnAddData([
+        len,
+        [item.PortName],
+        [item.PortAlias],
+        [item.CountryName],
+        [item.StateName],
+        ['<a href="#" onclick=ViewEximTrader(' + [item.PortId] + ')><i class="fa fa-search-plus Edit"></i></a>'],
+        ['<a href="#" onclick=EditEximTrader(' + [item.PortId] + ')><i class="fa fa-pencil-square Edit"></i></a>'],
+        ['<a href="#" onclick=DeleteEximTrader(' + [item.PortId] + ')><i class="fa fa-window-close-o Delete"></i></a>'],
+                        ]);
+                    });
+                }
+                else alert('No more data available');
+            }
+        });
+    }
+    </script>
+<table id="TblPort" class="table table-bordered table-striped nowrap" cellspacing="0" width="100%">
+    <thead>
+        <tr>
+            <th style="text-align:center">@Html.DisplayName("SL No")</th>
+            <th>@Html.DisplayNameFor(m => m.PortName)</th>
+            <th>@Html.DisplayNameFor(m => m.PortAlias)</th>
+            <th>@Html.DisplayNameFor(m => m.CountryId)</th>
+            <th>@Html.DisplayNameFor(m => m.StateId)</th>
+            <th style="text-align:center">@Html.DisplayName("View")</th>
+            <th style="text-align:center">@Html.DisplayName("Edit")</th>
+            <th style="text-align:center">@Html.DisplayName("Delete")</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var SerialNo = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td style="text-align:center">@SerialNo</td>
+                    <td>@Html.DisplayFor(m => item.PortName)</td>
+                    <td>@Html.DisplayFor(m => item.PortAlias)</td>
+                    <td>@Html.DisplayFor(m => item.CountryName)</td>
+                    <td>@Html.DisplayFor(m => item.StateName)</td>
+                    <td style="text-align:center"><a href="#" onclick="ViewPort(@item.PortId)"><i class="fa fa-search-plus Edit" aria-hidden="true"></i></a></td>
+                    <td style="text-align:center"><a href="#" onclick="EditPort(@item.PortId)"><i class="fa fa-pencil-square Edit" aria-hidden="true"></i></a></td>
+                    <td style="text-align:center"><a href="#" onclick="DeletePort(@item.PortId)"><i class="fa fa-window-close-o Delete"></i></a></td>
+                </tr>
+                SerialNo = SerialNo + 1;
+            }
+        }
+    </tbody>
+</table>
+<div class="col-md-3"><input class="col-xs-12 btn log_Btn_sm pos_ab" type="button" value="Load More Data" onclick="LoadMoreListData()" /></div>

@@ -1,0 +1,478 @@
+﻿@model CwcExim.Areas.Import.Models.PPG_Custom_AppraiseApproval
+
+<script>
+    var ArrayOfCustomAppraisement = [];
+    $(function () {debugger;
+        // $('#Seize').click(function() {
+        if ('@Model.IsApproved'=='3' || '@Model.IsApproved'=='4') {
+            $('#BtnSaveCstmAppraiseApproval').attr('disabled', 'disabled');
+        }
+        //else {
+        //    $('#BtnSaveCstmAppraiseApproval').removeAttr('disabled');
+        //}
+        // });
+        if(@Model.IsApproved==1){
+            $('#Approved').prop("checked",true);
+        }
+        else if(@Model.IsApproved==2){
+            $('#Hold').prop("checked",true);
+        }
+        else if(@Model.IsApproved==3){
+            $('#Seize').prop("checked",true);
+        }
+
+        else if(@Model.IsApproved==4){
+            $('#Cancel').prop("checked",true);
+        }
+        $('#TblCustomAppraisementDet').hide();
+        ArrayOfCustomAppraisement=@Html.Raw(Json.Encode(Model.LstAppraisementDtl));
+        GenerateCstmAppraiseTable();
+    });
+    function ListOfApprsmntAppr() {
+        $('#DivBody').load('/Import/Ppg_CWCImport/ListOfApprsmntAppr');
+    }
+
+    function GenerateCstmAppraiseTable() {
+        debugger;
+        $('#TblCustomAppraisementDet').hide();
+        var Html = '';
+        if (ArrayOfCustomAppraisement.length != 0) {
+            $.each(ArrayOfCustomAppraisement, function (i, item) {
+                debugger;
+                Html += '<tr><td class="text-center">' + (i + 1) + '</td><td>' + item.CFSCode + '</td><td>' + item.ContainerNo + '</td><td class="text-center"><a href="#" class="table_icon" onclick="ViewCstmAppraise(' + i + ')"><i class="fa fa-eye" aria-hidden="true"></i></a></td></tr>';
+            });
+            $('#TblCustomAppraisementDet>tbody').html(Html);
+            $('#TblCustomAppraisementDet').show();
+        }
+    }
+    function ViewCstmAppraise(Index) {
+        debugger;
+        $('#ContainerNo').val(ArrayOfCustomAppraisement[Index].ContainerNo);
+        $('#CFSCode').val(ArrayOfCustomAppraisement[Index].CFSCode);
+        $('#Size').val(ArrayOfCustomAppraisement[Index].Size);
+        $('#LCLFCL').val(ArrayOfCustomAppraisement[Index].LCLFCL);
+        $('#LineNo').val(ArrayOfCustomAppraisement[Index].LineNo);
+        $('#BOENo').val(ArrayOfCustomAppraisement[Index].BOENo);
+        $('#BOEDate').val(ArrayOfCustomAppraisement[Index].BOEDate);
+        $('#CHA').val(ArrayOfCustomAppraisement[Index].CHA);
+        $('#Importer').val(ArrayOfCustomAppraisement[Index].Importer);
+        $('#CargoDescription').val(ArrayOfCustomAppraisement[Index].CargoDescription);
+        $('#NoOfPackages').val(ArrayOfCustomAppraisement[Index].NoOfPackages);
+        $('#GrossWeight').val(ArrayOfCustomAppraisement[Index].GrossWeight);
+        //  $('#Vessel').val(ArrayOfCustomAppraisement[Index].Vessel);
+        // $('#Voyage').val(ArrayOfCustomAppraisement[Index].Voyage);
+        $('#Duty').val(ArrayOfCustomAppraisement[Index].Duty);
+        $('#CIFValue').val(ArrayOfCustomAppraisement[Index].CIFValue);
+        $('#CustomAppraisementDtlId').val(ArrayOfCustomAppraisement[Index].CustomAppraisementDtlId);
+    }
+
+    @*@{
+        AjaxOptions options = new AjaxOptions();
+        options.Confirm = "Are You Sure You Want To Save?";
+        options.OnSuccess = "ApprovalOnSuccess";
+        options.OnFailure = "ApprovalOnFailure";
+        options.InsertionMode = InsertionMode.InsertAfter;
+    }
+    function ApprovalOnFailure(){}
+    function ApprovalOnSuccess(data){
+        if(data.Status==1){
+            $('#DivCstmAppraiseApprovalMsg').html(data.Message);
+        }
+        else{
+            $('#DivCstmAppraiseApprovalErrMsg').html(data.Message);
+        }
+    }*@
+
+    //$(function() {
+    //    $('#Seize').click(function() {
+    //        if ($(this).is(':checked')) {
+    //            $('#BtnSaveCstmAppraiseApproval').attr('disabled', 'disabled');
+    //        } else {
+    //            $('#BtnSaveCstmAppraiseApproval').removeAttr('disabled');
+    //        }
+    //    });
+    //});
+    $('#BtnSaveCstmAppraiseApproval').on("click",function(){
+        debugger;
+        if($('#Hold').prop("checked")==false && $('#Approved').prop("checked")==false && $('#Seize').prop("checked")==false && $('#Cancel').prop("checked")==false){
+            $('#DivCstmAppraiseApprovalErrMsg').html('One Of The CheckBox Must Be Ticked');
+        }
+
+        else
+        {
+            if($('#Hold').prop("checked")==true){
+                var IsApproved=2
+            }
+            else if($('#Seize').prop("checked")==true){
+                var IsApproved=3
+            }
+            else if($('#Cancel').prop("checked")==true){
+                var IsApproved=4
+            }
+            else
+            {
+                var IsApproved=1
+            }
+            //var IsApproved=$('#Hold').prop("checked")==true?2:1;
+            //var IsApproved=$('#Seize').prop("checked")==true?3:1;
+            var CustomAppId =$('#CustomAppraisementId').val();
+            var Token = $('input[name="__RequestVerificationToken"]').val();
+            var Confirm=confirm("Are You Sure You Want To Save?");
+            if(Confirm==true){
+                $.ajax({
+                    url:'/Import/Ppg_CWCImport/AddCstmAppraiseApproval',
+                    type:'POST',
+                    dataType:'JSON',
+                    data: {CstmAppraiseAppId:CustomAppId, IsApproved: IsApproved },
+                    async:false,
+                    headers:{'__RequestVerificationToken':Token},
+                    success:function(data){
+                        debugger;
+                        if(data.Status==1){
+                            $('#DivCstmAppraiseApprovalMsg').html(data.Message);
+                            $('#BtnSaveCstmAppraiseApproval').attr('disabled', 'disabled');
+                            setTimeout(ListOfApprsmntAppr,5000);
+                            //ListOfApprsmntAppr();
+                        }
+
+
+                        else{
+                            $('#DivCstmAppraiseApprovalErrMsg').html(data.Message);
+                        }
+                    }
+                });
+            }
+        }
+    });
+
+    function CheckBoxChange(Id){
+        debugger;
+        $('#Seize').prop("checked",false);
+        $('#Hold').prop("checked",false);
+        $('#Approved').prop("checked",false);
+        $('#Cancel').prop("checked",false);
+        $('#'+Id.name).prop("checked",true);
+        $('#BtnSaveCstmAppraiseApproval').prop("disabled", false);
+
+
+
+
+    }
+</script>
+
+
+<div class="col-md-12">
+
+    <div class="row Form_Space_top">
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>Appraisement No:</label>
+                @Html.TextBoxFor(m => m.AppraisementNo, new { @class = "", @readonly = true })
+                @Html.HiddenFor(m => m.CustomAppraisementId)
+                @Html.ValidationMessageFor(m => m.AppraisementNo, "", new { @class = "Error_Msg" })
+            </div>
+        </div>
+
+        <div class="col-md-4 col-md-offset-4">
+            <div class="form-group">
+                <label>Appraisement Date:</label>
+                <div class="position-relative Date_Img">
+                    @Html.TextBoxFor(m => m.AppraisementDate, new { @class = "", @readonly = true })
+                    @Html.ValidationMessageFor(m => m.AppraisementDate, "", new { @class = "Error_Msg" })
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="DivShippingLine">
+        <div class="row Form_Space_top">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label>Shipping Line:</label>
+                    @Html.TextBoxFor(m => m.ShippingLine, new { @class = "", @readonly = true })
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="DivShippingLine">
+        <div class="row Form_Space_top">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label>Vessel:</label>
+                    @Html.TextBoxFor(m => m.Vessel, new { @class = "", @readonly = true })
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="DivRotation">
+        <div class="row Form_Space_top">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Rotation:</label>
+                    @Html.TextBoxFor(m => m.Rotation, new { @class = "", @readonly = true })
+                </div>
+            </div>
+
+            <div class="col-md-4 col-md-offset-4">
+                <div class="form-group">
+                    <label>Voyage:</label>
+                    @Html.TextBoxFor(m => m.Voyage, new { @class = "", @readonly = true })
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row Form_Space_top">
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>FOB:</label>
+                @Html.TextBoxFor(m => m.Fob, new { @class = "", @readonly = true })
+            </div>
+        </div>
+
+        <div class="col-md-4 col-md-offset-4">
+            <div class="form-group">
+                <label>Gross Duty:</label>
+                @Html.TextBoxFor(m => m.GrossDuty, new { @class = "", @readonly = true })
+            </div>
+        </div>
+    </div>
+
+    <div class="row Form_Space_top">
+        <div class="col-md-12">
+            <div class="form-group">
+                <label class="Radiocontainer">
+                    Cargo Delivery
+                    @Html.RadioButtonFor(m => m.DeliveryType, "1", new { @class = "", @id = "CargoDelivery", @disabled = true })
+                    <span class="checkmark"></span>
+                </label>
+                <label class="Radiocontainer">
+                    Container / CBT Delivery
+                    @Html.RadioButtonFor(m => m.DeliveryType, "2", new { @class = "", @id = "ContainerDelivery", @disabled = true })
+                    <span class="checkmark"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div id="DivCstmAppraiseWorkOrderDet" class="Head_h5">
+        <div class="row Form_Space_top">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>ICD Code:</label>
+                    @Html.TextBox("CFSCode", "", new { @class = "", @readonly = true })
+                </div>
+            </div>
+        </div>
+
+        <div class="row Form_Space_top">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Container / CBT No:</label>
+                    @Html.TextBox("ContainerNo", "", new { @class = "", @readonly = true })
+                </div>
+            </div>
+
+            <div class="col-md-4 col-md-offset-4">
+                <div class="form-group">
+                    <label>Size:</label>
+                    @Html.DropDownList("Size", new List<SelectListItem> {
+                                       new SelectListItem { Text="20",Value="20"},
+                                       new SelectListItem {Text="40",Value="40" },
+                                       new SelectListItem {Text="ODC",Value="ODC" }
+                                       }, "---Select---", new { @class = " dropdown", @disabled = true })
+                    @Html.ValidationMessage("Size", new { @class = "Error_Msg" })
+                </div>
+            </div>
+        </div>
+
+        <div class="row Form_Space_top">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Line No:</label>
+                    @Html.TextBox("LineNo", "", new { @class = "", @readonly = true })
+                    @Html.ValidationMessage("LineNo", "", new { @class = "Error_Msg" })
+                </div>
+            </div>
+
+            <div class="col-md-4 col-md-offset-4">
+                <div class="form-group">
+                    <label>FCL / LCL:</label>
+                    @Html.DropDownList("LCLFCL", new List<SelectListItem>{
+                                        new SelectListItem {Text="FCL",Value="FCL" },
+                                        new SelectListItem {Text="LCL",Value="LCL" }
+                                      }, "---Select---", new { @class = " dropdown", @disabled = true })
+                </div>
+            </div>
+        </div>
+
+        <div class="row Form_Space_top">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>BOE No:</label>
+                    @Html.TextBox("BOENo", "", new { @class = "", @readonly = true })
+                </div>
+            </div>
+
+            <div class="col-md-4 col-md-offset-4">
+                <div class="form-group">
+                    <label>BOE Date:</label>
+                    @Html.TextBox("BOEDate", "", new { @class = "", @readonly = true })
+                </div>
+            </div>
+        </div>
+
+        <div class="row Form_Space_top">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label>CHA Name:</label>
+                    @Html.TextBox("CHA", "", new { @class = "", @readonly = true })
+                </div>
+            </div>
+        </div>
+
+        <div class="row Form_Space_top">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label>Importer Name:</label>
+                    @Html.TextBox("Importer", "", new { @class = "", @readonly = true })
+                </div>
+            </div>
+        </div>
+
+        <div class="row Form_Space_top">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label>Cargo Description:</label>
+                    @Html.TextArea("CargoDescription", "", new { @style = "width:100%;height:100px", @disabled = true })
+                </div>
+            </div>
+        </div>
+
+        <div class="row Form_Space_top">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>No of Packages:</label>
+                    @Html.TextBox("NoOfPackages", "", new { @class = "", @readonly = true })
+                </div>
+            </div>
+
+            <div class="col-md-4 col-md-offset-4">
+                <div class="form-group">
+                    <label>Gross Weight(Kg):</label>
+                    @Html.TextBox("GrossWeight", "", new { @class = "", @readonly = true })
+                </div>
+            </div>
+        </div>
+
+        <div class="row Form_Space_top">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>CIF Value:</label>
+                    @Html.TextBox("CIFValue", "", new { @class = "", @readonly = true })
+                </div>
+            </div>
+
+            <div class="col-md-4 col-md-offset-4">
+                <div class="form-group">
+                    <label>Duty:</label>
+                    @Html.TextBox("Duty", "", new { @class = "", @readonly = true })
+                </div>
+            </div>
+        </div>
+
+        <div class="row Form_Space_top">
+            <div class="col-md-12">
+                <table class="table table-striped table-bordered dataTable" id="TblCustomAppraisementDet" style="width:100%;">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width:8%;">@Html.DisplayName("SL No")</th>
+                            <th>@Html.DisplayName("ICD No")</th>
+                            <th>@Html.DisplayName("Container / CBT No")</th>
+                            <th class="text-center" style="width:10%;">@Html.DisplayName("View")</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+
+        <div class="row Form_Space_top">
+            <div class="col-md-12">
+                <label style="margin-top: 4px;">Appraisement Status:</label>
+                <div class="form-group">
+                    <label class="Radiocontainer">
+                        Approved
+                        @Html.CheckBox("Approved", new { @onclick = "CheckBoxChange(this)", @id = "Approved" })
+                        <span class="checkmark"></span>
+                    </label>
+                    <label class="Radiocontainer">
+                        Hold
+                        @Html.CheckBox("Hold", new { @onclick = "CheckBoxChange(this)", @id = "Hold" })
+                        <span class="checkmark"></span>
+                    </label>
+                    <label class="Radiocontainer">
+                        Seize
+                        @Html.CheckBox("Seize", new { @onclick = "CheckBoxChange(this)", @id = "Seize" })
+                        <span class="checkmark"></span>
+                    </label>
+                    <label class="Radiocontainer">
+                        Cancel
+                        @Html.CheckBox("Cancel", new { @onclick = "CheckBoxChange(this)", @id = "Cancel" })
+                        <span class="checkmark"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        @*<div class="row Form_Space_top">
+            <div class="form-group Form_Input">
+                <div class="col-md-3 pr-0">
+                    <label style="margin-top: 4px;">Appraisement Status:</label>
+                </div>
+                <div class="col-md-2">
+                    <div class="boolean-container">
+                        @Html.CheckBox("Approved", new { @onclick = "CheckBoxChange(this)", @id = "Approved" })
+                        <label for="Approved" style="text-align:center;"><span>Approved</span><i class="square"></i></label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="boolean-container">
+                        @Html.CheckBox("Hold", new { @onclick = "CheckBoxChange(this)", @id = "Hold" })
+                        <label for="Hold" style="text-align:center;"><span>Hold</span><i class="square"></i></label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="boolean-container">
+                        @Html.CheckBox("Seize", new { @onclick = "CheckBoxChange(this)", @id = "Seize" })
+                        <label for="Seize" style="text-align:center;"><span>Seize</span><i class="square"></i></label>
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <div class="boolean-container">
+                        @Html.CheckBox("Cancel", new { @onclick = "CheckBoxChange(this)", @id = "Cancel" })
+                        <label for="Cancel" style="text-align:center;"><span>Cancel</span><i class="square"></i></label>
+                    </div>
+                </div>
+            </div>
+        </div>*@
+    </div>
+
+    <div class="row">
+        <div class="stoke SignUp_space_bottom2 SignUp_space_top2"></div>
+    </div>
+
+    <div class="d-flex justify-content-left">
+        <input type="submit" id="BtnSaveCstmAppraiseApproval" class="btn btn-primary mr-1 btn-100px" value="Save">
+        <input type="button" class="btn btn-primary-border btn-100px" value="Reset">
+    </div>
+
+    <div class="logSuccMsg" style="background-color:transparent" id="DivCstmAppraiseApprovalMsg"></div>
+    <div class="logErrMsg Form_Space_bottom" style="background-color:transparent" id="DivCstmAppraiseApprovalErrMsg"></div>
+    @*}*@
+    @Scripts.Render("~/bundles/jqueryval")
+</div>

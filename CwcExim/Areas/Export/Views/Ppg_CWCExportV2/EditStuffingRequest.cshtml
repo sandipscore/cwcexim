@@ -1,0 +1,2096 @@
+﻿@model CwcExim.Areas.Export.Models.PPG_StuffingRequest
+<style>
+    #tblSHP.dataTable tbody > tr > td,
+    #tblEXP.dataTable tbody > tr > td,
+    #tblCHA.dataTable tbody > tr > td {
+        cursor: pointer;
+    }
+
+    .tblSearch {
+        top: 7px !important;
+        right: 6px !important;
+    }
+
+    .dataTable tbody > tr > td {
+        padding: 2px !important;
+    }
+
+    .modal_pad {
+        padding: 3px 14px 3px 3px !important;
+    }
+</style>
+<script>
+    $(function(){
+        $('#slim_scrollCHA').slimScroll({
+            allowPageScroll: true
+        });
+        $('#slim_scrollEXP').slimScroll({
+            allowPageScroll: true
+        });
+        $('#slim_scrollSHP').slimScroll({
+            allowPageScroll: true
+        });
+        $('#slim_scrollFRD').slimScroll({
+            allowPageScroll: true
+        });
+        $('#slim_scrollSHPH').slimScroll({
+            allowPageScroll: true
+        });
+    });
+
+    $('#ShippingDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='ShippingBillDate']").html('');
+        }
+    });
+    $('#RequestDate').datepicker({
+        dateFormat: "dd/mm/yy",
+        showOn: "button",
+        buttonImage: "/Content/images/calendar.png",
+        buttonImageOnly: true,
+        buttonText: "Select date",
+        changeMonth: true,
+        changeYear: true,
+        showAnima: "fadein",
+        onClose: function () {
+            $("[data-valmsg-for='ShippingBillDate']").html('');
+        }
+    });
+
+    var cid = 0;
+    var editflag = 0;
+    $('#box').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#myModal .navList > li').show();
+        } else {
+            $('#myModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+    $('#ShippingLineList li').on("click", function () {
+        $('#ShippingLine').val($(this).text());
+        $('#ShippingLineId').val($(this).attr('id'));
+        $("#ShippingLineModal").modal("hide");
+    });
+
+
+
+    $('#ContainerBox').keyup(function () {
+        var valThis = $(this).val().toLowerCase();
+        if (valThis == "") {
+            $('#ContainerModal .navList > li').show();
+        } else {
+            $('#ContainerModal .navList > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(valThis) >= 0) ? $(this).show() : $(this).hide();
+            });
+        };
+    });
+
+
+    //$('#ContainerList  li').on("click", function () { debugger;
+    function SelectContainer(elem)
+    {
+        //$('#ContainerNo').val($(this).text().split('-')[0]);
+        //$('#CFSCode').val($(this).attr('id'));
+        $('#ContainerNo').val(elem.split('-')[0]);
+        $('#CFSCode').val(elem.split('-')[1]);
+        var CFSCode=$('#CFSCode').val();
+        $("#ContainerModal").modal("hide");
+        $('[data-valmsg-for="ContainerNo"]').html('');
+        GetContainerDet(CFSCode);
+        $('#BtnAddContainer').prop("disabled", false);
+    }
+    //});
+
+    function StuffingReqOnSuccess(data)
+    {
+        searchclick=0;
+        if (data.Status == 1 /*||data.Status == 2*/ )
+        {
+            $('#DivStuffingMsg').html(data.Message);
+
+            setTimeout(LoadStuffingRequestPage, 5000);
+            //LoadStuffingRequestPage();
+        }
+        else
+        {
+            $('#DivStuffingErrMsg').html(data.Message);
+        }
+
+        editflag=0;
+    }
+    $('#btnSubmit').on("click", function ()
+    {
+        debugger;
+        /*if ($('#TblStuffingReq >tbody').html() == '') {
+            $('#DivTblStuffingErrMsg').html('Please Add Atleast One Record In Order To Save Stuffing Request Detail');
+            return false;
+        }
+        else*/ if ($('#TblStuffingContr >tbody').html() == '') {
+            $('#DivTblContrErrMsg').html('Please Add Atleast One Record In Order To Save Stuffing Request Detail');
+            return false;
+        }
+        else if($('#ShippingBillNo').val()!='' && $('#BtnAddStuffingDtl').prop("disabled")==false){
+            $('#DivTblStuffingErrMsg').html('Please Add The Above Records');
+            return false;
+        }
+        else if($('#ContainerNo').val()!='' && $('#BtnAddContainer').prop("disabled")==false){
+            $('#DivTblContrErrMsg').html('Please Add The Above Records');
+            return false;
+        }
+       
+        else
+        {
+            $('#StuffingXML').val(JSON.stringify(RequestDet));
+            $('#ContainerXML').val(JSON.stringify(ContainerDet));
+        }
+    });
+    function LoadStuffingRequestPage()
+    {
+        $('#DivBody').load( '/Export/Ppg_CWCExportV2/CreateStuffingRequest');
+    }
+</script>
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.Confirm = "Are You Sure You Want To Save?";
+    options.OnSuccess = "StuffingReqOnSuccess";
+    options.OnFailure = "StuffingReqOnFailure";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<div id="DivEditStuffingReq">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="Head_h4">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>Stuffing Request</h4>
+                    </div>
+                </div>
+                <div class="content_wrp">
+                    @using (Ajax.BeginForm("AddEditStuffingReq", "Ppg_CWCExportV2", options))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.ContainerXML)
+                        @Html.HiddenFor(m => m.StuffingXML)
+                        @Html.Hidden("CFSCode")
+                        @Html.HiddenFor(m => m.StuffingReqId)
+                        @Html.Hidden("PackUQCId");
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Request No:</label>
+                                </div>
+                                @Html.TextBoxFor(m => m.StuffingReqNo, new { @placeholder = "Request No", @readonly = true })
+                            </div>
+                            <div class="col-md-3 col-md-offset-6">
+                                <div class="form-group">
+                                    <label>Request Date:</label>
+                                </div>
+                                <div class="position-relative Date_Img">
+                                    @Html.TextBoxFor(m => m.RequestDate, new { @placeholder = "Request Date", @value = ViewBag.Date, @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.StuffingPlanNo, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="position-relative">
+                                    <span class="ReQSimbol"></span>
+                                    @Html.TextBoxFor(m => m.StuffingPlanNo, new { @placeholder = "Search Stuffing Plan No", @readonly = "readonly", @onkeydown = "PopupActivate('StuffingPlanModal')" })
+                                    <span class="input_icon" id="spStuffingPlanNo"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#StuffingPlanModal"></i></span>
+                                    @Html.HiddenFor(m => m.StuffingPlanId)
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top" style="display:none">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.CHA, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="position-relative">
+                                    @Html.TextBoxFor(m => m.CHA, new { @readonly = true })
+                                    <span class="input_icon"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#CHAHdrModal"></i></span>
+                                    @Html.HiddenFor(m => m.CHAId)
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.ShippingHdrLine, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="position-relative">
+                                    @Html.TextBoxFor(m => m.ShippingHdrLine, new { @placeholder = "Search Shipping Line", @readonly = "readonly" })
+                                    <span class="input_icon"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="LoadMoreSHPH()" data-target="#ShippingLineHdrModal"></i></span>
+                                    @Html.HiddenFor(m => m.ShippingHdrLineId)
+
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Forwarder, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                <div class="position-relative">
+                                    <span class="ReQSimbol"></span>
+                                    @Html.TextBoxFor(m => m.Forwarder, new { @placeholder = "Search Forwarder", @readonly = "readonly" })
+                                    <span class="input_icon"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="LoadMoreFRD();" data-target="#ForwarderModal"></i></span>
+                                    @Html.HiddenFor(m => m.ForwarderId)
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Remarks, new { @class = "InputLabel" })<span class="LabelColon">:</span>
+                                </div>
+                                @Html.TextBoxFor(m => m.Remarks, new { @placeholder = "Enter Remarks", @maxlength = "500", @style = "", })
+                                @Html.ValidationMessageFor(m => m.Remarks, "", new { @class = "ErrorMsg" })
+                            </div>
+                        </div>
+
+                        <div class="row Form_Space_top">
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Stuffing Type:</label>
+                                </div>
+                            </div>
+                            <div class="col-md-10">
+                                <div class="form-group">
+                                    <label class="Radiocontainer">
+                                        FCL
+                                        @Html.RadioButtonFor(m => m.StuffingType, "FCL", new { @class = "", @id = "FCL", @checked = true })
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <label class="Radiocontainer">
+                                        LCL
+                                        @Html.RadioButtonFor(m => m.StuffingType, "LCL", new { @class = "", @id = "LCL" })
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="Head_h5">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h5>Stuffing Details</h5>
+                                </div>
+                            </div>
+                            <div>
+                                <div id="DivCartingDetails">
+                                    @Html.Hidden("CartingRegisterDtlId")
+                                    @Html.Hidden("StuffingReqDtlId")
+                                    <div class="row">
+                                        <div class="col-md-12" style="padding-top: 4px;">
+                                            <table id="TblCartingDet" class="table table-striped table-bordered dataTable" style="width:100%;">
+                                                <thead>
+                                                    <tr>
+                                                        <th style="width:5px;">#</th>
+                                                        <th style="width:120px;">Carting No</th>
+                                                        <th style="width:50px;">SB No</th>
+                                                        <th style="width:50px;">SB Dt</th>
+                                                        <th style="width:80px;">Exporter</th>
+                                                        <th style="width:80px;">CHA</th>
+                                                        <th style="width:100px;">Cargo Desc</th>
+                                                        <th style="width:50px;">Cargo Type</th>
+                                                        <th style="width:50px;">No Of Units</th>
+                                                        <th style="width:50px;">Gross Wt</th>
+                                                        <th style="width:50px;">FOB</th>
+                                                        <th style="width:50px;">Rem Units</th>
+                                                        <th style="width:50px;">Rem Wt</th>
+                                                        <th class="text-center">Pack UQC</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @*@{int serial = 1;
+                                                foreach (var item in Model.LstStuffing)
+                                                {
+                                                    <tr>
+                                                        <td>@serial</td>
+                                                        <td class="postn_rel"><input class="modal_pad" type="text" readonly value="@item.CartingRegisterNo" /></td>
+                                                        <td><input type="text" onblur="CartingDetChange(' + i + ')" id="ShippingBillNo' + i + '" value="@item.ShippingBillNo" /></td>
+                                                        <td><input type="text" onblur="CartingDetChange(' + i + ')" id="ShippingBillDt' + i + '" value="@item.ShippingDate" /></td>
+                                                        <td class="postn_rel">@item.Exporter</td>
+                                                        <td class="postn_rel">@item.CHA</td>
+                                                        <td><input type="text" onblur="CartingDetChange(' + i + ')" id="CargoDescription' + i + '" value="@item.CargoDescription" /></td>
+                                                        @if (item.CargoType == 1)
+                                                        {
+                                                            <td>HAZ</td>
+                                                        }
+                                                        else
+                                                        {
+                                                            <td>NON HAZ</td>
+                                                        }
+                                                        <td><input type="text" value="@item.NoOfUnits" readonly /></td>
+                                                        <td><input type="text" value="@item.GrossWeight" readonly /></td>
+                                                        <td><input type="text" value="@item.Fob" readonly /></td>
+                                                    </tr>
+                                                    serial++;
+                                                }
+                                            }*@
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                                    </div>
+                                </div>
+                                <div id="DivContainerDet">
+                                    @Html.Hidden("StuffingReqContrId","0")
+
+                                    <div class="row Form_Space_top">
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>Container / CBT No:</label>
+                                            </div>
+                                            <div class="position-relative">
+                                                @Html.TextBox("ContainerNo", "", new { @readonly = true })
+                                                <span class="input_icon"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#ContainerModal"></i></span>
+                                                @Html.ValidationMessage("ContainerNo", "", new { @class = "Error_Msg" })
+                                            </div>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <div class="form-group">
+                                                <label>Shipping Bill:</label>
+                                            </div>
+
+                                            @Html.DropDownList("CommodityName", Enumerable.Empty<SelectListItem>(), "---Select---", new { @onchange = "OnCommodityChange()" })
+                                            @Html.ValidationMessage("CommodityName", new { @class = "Error_Msg" })
+                                        </div>
+                                        <div class="col-md-3 col-md-offset-1">
+                                            <div class="form-group">
+                                                <label>Size:</label>
+                                            </div>
+                                            @Html.TextBox("Size", "", new { @readonly = true })
+                                            @Html.ValidationMessage("Size", new { @class = "Error_Msg" })
+                                        </div>
+                                    </div>
+
+                                    <div class="row Form_Space_top">
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <label class="InputLabel">Shipping Line</label><span class="LabelColon">:</span>
+                                            </div>
+                                            <div class="position-relative">
+                                                @Html.TextBox("ShippingLine", "", new { @placeholder = "Search Shipping Line", @readonly = true })
+                                                <span class="input_icon"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="LoadMoreSHP()" data-target="#ShippingLineModal"></i></span>
+                                                @Html.Hidden("ShippingLineId")
+                                                @Html.ValidationMessage("ShippingLine", new { @class = "Error_Msg" })
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row Form_Space_top">
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>Stuffing Qty:</label>
+                                            </div>
+                                            @Html.TextBox("StuffQuantity", "", new { @placeholder = "Enter Stuffing Qty", @onblur = "ClearErrMsg(this)", onkeypress = "return AllowOnlyInteger(event)", maxlength = "11" })
+                                            @Html.ValidationMessage("StuffQuantity", new { @class = "Error_Msg" })
+                                        </div>
+                                        <div class="col-md-3 col-md-offset-6">
+                                            <div class="form-group">
+                                                <label>Stuffing Weight (Kg):</label>
+                                            </div>
+                                            @Html.TextBox("StuffWeight", "", new { @placeholder = "Enter Stuffing Weight(Kg)" })
+                                            @Html.ValidationMessage("StuffWeight", new { @class = "Error_Msg", @onblur = "ClearErrMsg(this)", onkeypress = "return AllowOnlyDecimal(event)", maxlength = "11" })
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div class="row Form_Space_bottom">
+                                    <div class="col-md-offset-5 col-md-2" style="text-align:center">
+                                        <input type="button" value="Add" class="btn btn-primary mr-1 btn-100px" onclick="AddContainerDtl()" id="BtnAddContainer" />
+                                    </div>
+                                </div>
+
+                                <div class="logErrMsg" id="DivTblContrErrMsg" style="background-color:transparent"></div>
+                                @*<div class="logSuccMsg Form_Space_bottom" id="DivSuccMsg" style="color:transparent"></div>*@
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <table id="TblStuffingContr" class="table table-striped table-bordered dataTable nowrap" style="width:100%">
+                                            <thead>
+                                                <tr>
+                                                    <th class="text-center" style="width:10%;">Edit</th>
+                                                    <th class="text-center" style="width:10%;">View</th>
+                                                    <th class="text-center" style="width:8%;">Sl No</th>
+                                                    <th>Container / CBT No</th>
+                                                    <th>Size</th>
+                                                    <th>Commodity</th>
+                                                    <th>Stuffing Qty</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                @*</div>*@
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="stoke SignUp_space_bottom SignUp_space_top"></div>
+                        </div>
+                        <div class="d-flex justify-content-left">
+                            <input type="submit" id="btnSubmit" class="btn btn-primary mr-1 btn-100px" value="Save">
+                            <input type="button" class="btn btn-primary mr-1 btn-100px" value="Back" onclick="loadstuffingpage()">
+                        </div>
+
+                        <div class="logSuccMsg Form_Space_top" id="DivStuffingMsg" style="background-color:transparent"></div>
+                        <div class="logErrMsg" id="DivStuffingErrMsg" style="background-color:transparent"></div>
+                    }
+                    <div id="DivStuffingErrMsg" class="logErrMsg SignUp_space_bottom2 Form_Space_top" style="color:transparent;"></div>
+                </div> 
+                </div>
+
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Carting No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="box" type="text" />
+                <ul class="navList" id="CartingRegList">
+                    @{
+                        if (ViewBag.CartingRegNoList != null)
+                        {
+                            foreach (var item in ViewBag.CartingRegNoList)
+                            {
+                                <li id="@item.Value">@item.Text</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ContainerModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Container / CBT No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="ContainerBox" type="text" />
+                <ul class="navList" id="ContainerList">
+                    @{
+                        if (ViewBag.ContainerList != null)
+                        {
+                            foreach (var item in ViewBag.ContainerList)
+                            {
+                                if (item.Text != "")
+                                {
+                                    <li onclick="SelectContainer('@item.Text')" id="@item.Value">@item.Text</li>
+                                }
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ShippingModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List Of Shipping Bill No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="SearchShippingNo" type="text" />
+                <ul class="navList" id="ListOfShippingNo">
+                    @{
+                        if (ViewBag.ListOfShippingNo != null)
+                        {
+                            foreach (var data in ViewBag.ListOfShippingNo)
+                            {
+                                <li id="@data.Value">@data.Text</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="CHAHdrModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List Of Shipping Bill No</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="SearchCHAHdr" type="text" />
+                <ul class="navList" id="ListOfCHA">
+                    @{
+                        if (ViewBag.ListOfCHA != null)
+                        {
+                            foreach (var data in ViewBag.ListOfCHA)
+                            {
+                                <li id="@data.Value">@data.Text</li>
+                            }
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="CHAModal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseCHA()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of CHA Name</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Party Code" id="CHACode" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchCHA()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">CHA Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scrollCHA">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tblCHA">
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreCHA(chaindex)" class="btn log_Btn_sm" id="btnCHA">Load More Data</button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseCHA()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ExporterModal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseEXP()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Exporter Name</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Party Code" id="EXPCode" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchEXP()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Exporter Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scrollEXP">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tblEXP">
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreEXP(expindex)" class="btn log_Btn_sm" id="btnEXP">Load More Data</button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseEXP()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ShippingLineModal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseSHP()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Shipping Line Name</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Party Code" id="SHPCode" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchSHP()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Shipping Line Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scrollSHP">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tblSHP">
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreSHP()" class="btn log_Btn_sm" id="btnSHP">Load More Data</button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseSHP()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ForwarderModal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseFRD()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Forwarder Name</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Party Code" id="FRDCode" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchFRD()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Forwarder Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scrollFRD">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tblFRD">
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreFRD()" class="btn log_Btn_sm" id="btnFRD">Load More Data</button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseFRD()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ShippingLineHdrModal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="CloseSHPH()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Shipping Line Name</h4>
+            </div>
+            <div class="modal-body popup_body" style="position:relative;">
+                <input placeholder="Search By Party Code" id="SHPCodeH" type="text" />
+                <span class="search" style="top: 18px;"><i class="fa fa-search" aria-hidden="true" onclick="SearchSHPH()"></i></span>
+                <table class="table table-striped table-bordered dataTable tblhd" style="width:100%; margin:0 !important; border-bottom:0; padding:0;">
+                    <thead>
+                        <tr>
+                            <th colspan="8" width="80%">Shipping Line Name</th>
+                            <th colspan="4" width="20%">Party Code</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div id="slim_scrollSHPH">
+                    <table class="table dataTable table-bordered table-striped slim_tble" id="tblSHPH">
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="button" style="width:100%; margin-left:0;" onclick="LoadMoreSHPH()" class="btn log_Btn_sm" id="btnSHPH">Load More Data</button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="CloseSHPH()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade mTabindex" id="PackUQCModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" onclick="PackUQCModalClose()"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Pack UQC</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="PackUQCbox" type="text" tabindex="401" />
+                <ul class="navList" id="PackUQCList">
+
+                    @{
+                        if (ViewBag.PackUQCList != null)
+                        {
+                            var tabvalue = 401;
+                            var u = '_';
+                            var i = 0;
+                            foreach (var item in ViewBag.PackUQCList)
+                            {
+                                <li tabindex="@tabvalue@u@i" onkeypress="SelectPackUQC(@item.Value,'@item.Text')" onclick="SelectPackUQC(@item.Value,'@item.Text')" id="@item.Value">@item.Text</li>
+                                i++;
+                            }
+                        }
+                    }
+
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" onclick="PackUQCModalClose()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+    var RequestDet = [];
+    var CheckDet=[];
+    var ContainerDet = [];
+    var NoOfUnits = 0, GrossWt = 0;
+    var RQty=0;
+    var RWt=0;
+    var cartregid=0;
+    var cartregidcon=0;
+    var Requestcop=[];
+    var sbn="";
+    var contno="";
+    var CommodityJson=[];
+    $(function () {
+        debugger;
+        $('#CommodityName').html('');
+        $('#CommodityName').append($('<option></option>').val('').html('---Select---'));
+        RequestDet=@Html.Raw(Json.Encode(Model.LstStuffing));
+        ContainerDet=@Html.Raw(Json.Encode(Model.LstStuffingContainer));
+        CheckDet=@Html.Raw(Json.Encode(Model.LstStuffing));
+
+        if(ContainerDet.length>0)
+        {
+            var $ContList=$('#ContainerList');
+            var $html='';
+            var distinctCont=[];
+            $.each(ContainerDet,function(i,elem)
+            {
+                if(distinctCont.indexOf(elem.CFSCode)==-1)
+                {
+                    $html='<li onclick="SelectContainer(&quot;'+elem.ContainerNo+'-'+elem.CFSCode+'&quot;)" id="'+elem.CFSCode+'">'+elem.ContainerNo+'-'+elem.CFSCode+'</li>';
+                    $ContList.append($html);
+                    distinctCont.push(elem.CFSCode);
+                }
+            });
+            //$ContList.prepend(html);
+        }
+        //$.each(RequestDet, function (i, item)
+        //{
+        //    $('#CartingRegisterId').val(item.CartingRegisterId);
+
+        //});
+        $.each(RequestDet, function (i, item)
+        {
+            //$('#CommodityName').append($('<option></option>').val(item.CartingRegisterDtlId).html(item.CommodityName));
+            CommodityJson.push(item);
+        });
+        GenerateTable();
+        GenerateContrTable();
+        CommodityBind();
+        if ('@ViewData["IsExporter"]' == 'True') {
+            $('#ExporterName').val('@ViewData["ExporterName"]');
+            $('#ExporterId').val('@ViewData["EximTraderId"]');
+            var EximTraderId= '@ViewData["EximTraderId"]';
+            var ExporterName = '@ViewData["ExporterName"]';
+            $('#LstExporter').html('<li id=' + @ViewData["EximTraderId"] +' onclick="FillExporterDet(\'' + EximTraderId + '\',\'' + ExporterName + '\')">@ViewData["ExporterName"]</li>');
+        }
+        if ('@ViewData["IsCHA"]' == 'True') {
+            $('#CHANameId').val('@ViewData["CHAId"]');
+            $('#CHAName').val('@ViewData["CHA"]');
+            $('#CHAId').val('@ViewData["CHAId"]');
+            $('#CHA').val('@ViewData["CHA"]');
+            var CHAId='@ViewData["CHAId"]';
+            var CHA='@ViewData["CHA"]';
+            $('#LstCHA').html('<li id=' + @Model.CHAId +' onclick="FillCHADet(\'' + CHAId + '\',\'' + CHA + '\')">@Model.CHA</li>');
+            $('#ListOfCHAHdr').html('<li id=' + @Model.CHAId +' onclick="FillCHAHdrDet(\'' + CHAId + '\',\'' + CHA + '\')">@Model.CHA</li>');
+        }
+    });
+    function FillExporterDet(EximTraderId, ExporterName) {
+        debugger;
+        $('#ExporterName').val(ExporterName);
+        $('#ExporterId').val(EximTraderId);
+        $("#ExporterModal").modal("hide");
+    }
+    function FillCHAHdrDet(CHAId, CHA) {
+        debugger;
+        $('#CHAId').val(CHAId);
+        $('#CHA').val(CHA);
+        $("#CHAHdrModal").modal("hide");
+    }
+    function FillCHADet(CHAId, CHA) {
+        debugger;
+        $('#CHANameId').val(CHAId);
+        $('#CHAName').val(CHA);
+        $("#CHAModal").modal("hide");
+    }
+
+    $('#PackUQCSearch').on("click", function () {
+        debugger;
+        $.ajax({
+            url: '/Export/Ppg_CWCExport/GetPackUQCForStuffingReq',
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                if (data != '') {
+                    var EcJson = JSON.parse(data);
+                    var html = '';
+                    var tab = 401;
+
+                    debugger;
+                    $.each(EcJson, function (i, item) {
+                        debugger;
+                        // html += '<li tabindex=' + tab + '_' + i + ' onkeypress="CartingRegListClick(' + item.CartingRegisterId + ',&quot;' + item.CartingRegisterNo + '-' + item.ShippingBillNo + '&quot;)" onclick="CartingRegListClick(' + item.CartingRegisterId + ',&quot;' + item.CartingRegisterNo + '-' + item.ShippingBillNo + '&quot;)" id=' + item.CartingRegisterId + '>' + item.CartingRegisterNo + '-' + item.ShippingBillNo + '</li>';
+                        html += '<tr tabindex=' + tabvalue + ' onclick="SelectPackUQC(' + elem.PackUQCCode + '&quot,&quot;' + elem.PackUQCDescription + '&quot;)" onkeypress="SelectPackUQC(' + elem.PackUQCCode + '&quot,&quot;' + elem.PackUQCDescription + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PackUQCDescription + '</td></tr>';
+
+
+                    });
+                    $('#PackUQCList').html(html);
+
+                    //}
+                }
+
+
+
+
+
+                //if (data.Status == 1) {
+                //    debugger;
+                //    var html = '';
+                //    var tabvalue = 202;
+                //    $.each(data.Data.lstPackUQC, function (item, elem) {
+                //        html += '<tr tabindex=' + tabvalue + ' onclick="SelectPackUQC(' + elem.PackUQCDescription + '&quot,&quot;' + elem.PackUQCCode + '&quot;)" onkeypress="SelectPackUQC(' + elem.PackUQCDescription + '&quot,&quot;' + elem.PackUQCCode + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.PackUQCDescription + '</td></tr>';
+                //        tabvalue++;
+                //    });                  
+
+                //    $('#PackUQCList').html(html);
+                //}
+            }
+        });
+    });
+    function PackUQCModalClose() {
+        $('#PackUQCModal').modal("hide");
+        $('#PackUQCbox').val('');
+        $('#PackUQCModal .navList > li').show();
+        $('#modalpadId1').focus();
+    }
+    function ClickPackUQCsearch(id)
+    {
+        debugger;
+        $('#PackUQCId').val(id);
+       
+    }
+    function SelectPackUQC(PackUQCCode, PackUQCDescription) {
+        debugger;
+        var idd = $('#PackUQCId').val();
+        $('#modalpadId' + idd).val(PackUQCDescription);
+        // $('#PackUQCCode').val(PackUQCCode.id);
+
+        RequestDet[idd].PackUQCCode = PackUQCCode.id;
+        RequestDet[idd].PackUQCDescription = PackUQCDescription;
+
+        //$('#PackUQCId').val(PackUQCId);
+        $("#PackUQCModal").modal("hide");
+        $('#PackUQCbox').val('');
+        $('[data-valmsg-for="PackUQCDescription"]').html('');
+        $('#PackUQCId').val('');
+        //LoadPackUQC();
+        //$('#Package').focus();
+    }
+    function PackUQCClick(PackUQCDescription, PackUQCCode) {
+        debugger;
+        $('#PackUQCCode').val(PackUQCCode);
+        $('#PackUQCDescription').val(PackUQCDescription);
+        $("#PackUQCModal").modal("hide");
+        // removed  $('#DivTblStuffingErrMsg').html('');
+        //GetStuffingDetails(ShortCargoDtlId);
+        $('#modalpadId1').focus();
+    }
+
+    $('#PackUQCModal').on('shown.bs.modal', function () {
+        $('#PackUQCbox').focus();
+    });
+
+
+    function PopupActivate(Id) {
+        //debugger;
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+
+        if (CharCode == 32) {
+
+            $('#' + Id).modal('show');
+
+           
+
+
+            if (Id == "PackUQCModal") {
+                //debugger;
+                $('#PackUQCModal .navList > li').show();
+                $('#PackUQCbox').focus();
+            }
+
+          
+        }
+
+    }
+
+
+
+    function AddRequestDtl()
+    {
+        idx = -1;
+        debugger;
+        NoOfUnits = (CheckDet.filter(function (item) { return item.CartingRegisterDtlId == $('#CartingRegisterDtlId').val(); })[0]).NoOfUnits;
+        GrossWt = Number((CheckDet.filter(function (item) { return item.CartingRegisterDtlId == $('#CartingRegisterDtlId').val(); })[0]).GrossWeight);
+        RQty= (CheckDet.filter(function (item) { return item.CartingRegisterDtlId == $('#CartingRegisterDtlId').val(); })[0]).RQty;
+        RWt = Number((CheckDet.filter(function (item) { return item.CartingRegisterDtlId == $('#CartingRegisterDtlId').val(); })[0]).RWt);
+
+        $('#DivTblStuffingErrMsg').html('');
+        if ($('#CargoType').val() == '') {
+            $('[data-valmsg-for="CargoType"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        else if(Number(NoOfUnits + RQty) < Number($('#NoOfUnits').val()))
+        {
+            $('[data-valmsg-for="NoOfUnits"]').html('<span>No of Units cannot be more than remaining Carting Units</span>');
+            return false;
+        }
+        else if (Number(Number(GrossWt + RWt).toFixed(2)) < Number(Number($('#GrossWeight').val()).toFixed(2))) {
+            $('[data-valmsg-for="GrossWeight"]').html('<span>Gross Weight cannot be more than remaining Carting Weight</span>');
+            return false;
+        }
+        //if(ValidateFunction())
+
+        //if (parseInt($('#StuffQuantity').val()) > parseInt($('#NoOfUnits').val()))
+        // {
+        //     $('[data-valmsg-for="StuffQuantity"]').html('<span>Stuff Quantity Cannot Be More Than No Of Units.</span>');
+        // }
+        // else if(parseFloat($('#StuffWeight').val()) > parseFloat($('#GrossWeight').val()))
+        // {
+        //     $('[data-valmsg-for="StuffQuantity"]').html('<span>Stuff Weight Cannot Be More Than Gross Weight.</span>');
+        // }
+        // else if ($('#ContainerNo').val() == '') {
+        //     $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+        //     return false;
+        // }
+        //else if($('#Size').val()==''){
+        //    $('[data-valmsg-for="Size"]').html('<span>Fill Out This Field</span>');
+        //    return false;
+        //}
+        //else if($('#ShippingLine').val()==''){
+        //    $('[data-valmsg-for="ShippingLine"]').html('<span>Fill Out This Field</span>');
+        //    return false;
+        //}
+        //else
+        // {
+        var Data = {
+            CartingRegisterNo:$('#CartingRegisterNo').val(),
+            CartingRegisterId:$('#CartingRegisterId').val(),
+            StuffingReqDtlId: $('#StuffingReqDtlId').val(),
+            StuffingReqId: $('#StuffingReqId').val(),
+            CartingRegisterDtlId: $('#CartingRegisterDtlId').val(),
+            ShippingBillNo: $('#ShippingBillNo').val(),
+            ShippingDate: $('#ShippingDate').val(),
+            ExporterId: $('#ExporterId').val(),
+            Exporter: $('#ExporterName').val(),
+            CHAId: $('#CHANameId').val(),
+            CHA: $('#CHAName').val(),
+            CargoDescription:$('#CargoDescription').val(),
+            CargoType: $('#CargoType').val(),
+            NoOfUnits: $('#NoOfUnits').val(),
+            GrossWeight: $('#GrossWeight').val(),
+            Fob: $('#Fob').val(),
+            RQty: RQty,
+            RWt: RWt,
+            CommInvNo: $('#cominv').val(),
+        };
+        RequestDet.push(Data);
+        //GenerateTable();
+        $('#DivCartingDetails').find('input:text,select,textarea').val('');
+        $('#DivCartingDetails').find('input:hidden').val('');
+        $('#BtnAddStuffingDtl').prop("disabled", true);
+        $('#CartingRegisterNo').val('');
+        // $('#DivCartingDetails input[type="text"]').prop("readonly", true);
+        // $('#DivCartingDetails select,#DivCartingDetails textarea').prop("disabled", true);
+        //}
+    }
+    function GenerateTable()
+    {
+        debugger;
+        if (RequestDet.length != 0) {
+            html = '';
+            var count = 0;
+            $.each(RequestDet, function (i, elem) {
+                count = i + 1;
+                html += '<tr><td>' + (count) + '</td><td class="postn_rel"><input type="text" readonly value="' + elem.CartingRegisterNo + '"/></td>';
+                html += '<td><input type="text" onblur="CartingDetChange(' + i + ')" id="ShippingBillNo' + i + '" value="' + elem.ShippingBillNo + '" /></td>';
+                html += '<td><input type="text" onblur="CartingDetChange(' + i + ')" id="ShippingBillDt' + i + '" value="' + elem.ShippingDate + '"/></td>';
+                html += '<td class="postn_rel"><input class="modal_pad" type="text" id="Exporter' + i + '" value="' + elem.Exporter + '" readonly /><span class="search tblSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="LoadMoreEXP(' + i + ')" data-target="#ExporterModal"></td>';
+                html += '<td class="postn_rel"><input class="modal_pad" type="text" id="CHA' + i + '" value="' + elem.CHA + '" readonly /><span class="search tblSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" onclick="LoadMoreCHA(' + i + ')" data-target="#CHAModal"></td>';
+                html += '<td><input type="text" onblur="CartingDetChange(' + i + ')" id="CargoDescription' + i + '" value="' + elem.CargoDescription + '" /></td>';
+                if (elem.CargoType == 1)
+                    html += '<td><select id="CargoType' + i + '" onblur="CartingDetChange(' + i + ')" class="ng-pristine ng-untouched ng-valid ng-not-empty ng-valid-required" style="font-weight: normal;font-size: 10px;"><option class="ng-binding ng-scope" style="font-weight: normal;" value="2">NON HAZ</option><option class="ng-binding ng-scope" style="font-weight: normal;" value="1" selected>HAZ</option></select></td>';
+                else
+                    html += '<td><select id="CargoType' + i + '" onblur="CartingDetChange(' + i + ')" class="ng-pristine ng-untouched ng-valid ng-not-empty ng-valid-required" style="font-weight: normal;font-size: 10px;"><option class="ng-binding ng-scope" style="font-weight: normal;" selected value="2">NON HAZ</option><option class="ng-binding ng-scope" style="font-weight: normal;" value="1">HAZ</option></select></td>';
+                html += '<td><input type="text" value="' + elem.NoOfUnits + '" readonly/></td>';
+                html += '<td><input type="text" value="' + elem.GrossWeight + '" readonly/></td>';
+                html += '<td><input type="text" value="' + elem.Fob + '" readonly/></td>';
+                html += '<td><input type="text" value="' + elem.RQty + '" readonly/></td>';
+                html += '<td><input type="text" value="' + elem.RWt + '" readonly/> </td>';
+                html += '<td class="postn_rel"><input id="modalpadId' + i + '" class="modal_pad" type="text" readonly value="' + elem.PackUQCDescription + '"/><span class="search tblSearch" onclick="ClickPackUQCsearch(' + i + ')" id="PackUQCsearch" style="top: 8px;right: 13px;"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PackUQCModal"></i></span></td>';
+                html += '</tr>';
+
+            });
+            count++;
+            html += '<tr><td>' + (count) + '</td><td class="postn_rel"><input class="modal_pad" readonly type="text" value="" /><span class="search tblSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#myModal"></i></span></td>';
+            html += '<td><input type="text" readonly/></td>';
+            html += '<td><input type="text" readonly/></td>';
+            html += '<td><input type="text" readonly/></td>';
+            html += '<td><input type="text" readonly/></td>';
+            html += '<td><input type="text" readonly/></td>';
+            html += '<td><select class="ng-pristine ng-untouched ng-valid ng-not-empty ng-valid-required" style="font-weight: normal;font-size: 10px;"><option class="ng-binding ng-scope" style="font-weight: normal;"></option></select></td>';
+            html += '<td><input type="text" readonly/></td>';
+            html += '<td><input type="text" readonly/></td>';
+            html += '<td><input type="text" readonly/></td>';
+            html += '<td><input type="text" readonly/></td>';
+            html += '<td><input type="text" readonly/></td>';
+            html += '</tr>';
+
+            $('#TblCartingDet > tbody').html(html);
+            // $('#TblStuffingReq').show();
+        }
+    }
+
+
+    function GenerateContrTable() {
+        debugger;
+        var html = '';
+        if (ContainerDet.length!=0)
+        {
+            $.each(ContainerDet, function (i, elem) {
+                html += '<tr><td class="text-center"><a href="#" onclick="EditContainerDet(' + i + ')"><i class="fa fa-pencil"></i></a></td><td class="text-center"><a href="#" onclick="ViewContainerDet(' + i + ')"><i class="fa fa-eye"></i></a></td><td class="text-center">' + (i + 1) + '</td><td>' + elem.ContainerNo + '</td><td>' + elem.Size + '</td><td>' + elem.CommodityName + '</td><td>' + elem.StuffQuantity +'</td></tr>';
+            });
+            $('#TblStuffingContr > tbody').html('');
+            $('#TblStuffingContr > tbody').html(html);
+            $('#TblStuffingContr').show();
+        }
+        else {
+            $('#TblStuffingContr').hide();
+        }
+
+    }
+    function loadstuffingpage()
+    {
+        $('#DivBody').load( '/Export/Ppg_CWCExportV2/CreateStuffingRequest');
+    }
+
+    function ViewContainerDet(idx) {
+        debugger;
+        if($('#BtnAddContainer').prop("disabled")==true){
+            $('#BtnAddContainer').prop("disabled", true);
+            $('#StuffingReqContrId').val(ContainerDet[idx].StuffingReqContrId);
+            $('#CommodityName').val(ContainerDet[idx].CartRegDtlId);
+            //    $('#CommodityName').val(ContainerDet[idx].CommodityName);
+            $('#ContainerNo').val(ContainerDet[idx].ContainerNo);
+            $('#Size').val(ContainerDet[idx].Size);
+            $('#ShippingLine').val(ContainerDet[idx].ShippingLine);
+            $('#StuffQuantity').val(ContainerDet[idx].StuffQuantity);
+            $('#StuffWeight').val(ContainerDet[idx].StuffWeight);
+            $('#CFSCode').val(ContainerDet[idx].CFSCode);
+        }
+        else{
+            $('#DivTblContrErrMsg').html('Please Add The Above Records');
+        }
+    }
+
+
+    $('#CommodityName').on("change", function () {
+        debugger;
+
+        cid = parseInt($('#CommodityName').val());
+    });
+    function EditContainerDet(idx)
+    {
+        debugger;
+        cartregidcon=ContainerDet[idx].StuffingReqContrId;
+        var com=ContainerDet[idx].CommodityName
+        var pos=com.indexOf("-");
+        var pos1=com.indexOf("-",pos);
+        var pos2=com.indexOf("-",pos1);
+        var xx=com.split('-');
+        /*
+        sbn=com.substring((pos+1),(pos+5));
+       contno=com.substring((pos+11),com.length);
+       */
+        sbn=xx[1];
+        contno=xx[2];
+        debugger;
+        if($('#BtnAddContainer').prop("disabled")==true){
+            $('#BtnAddContainer').prop("disabled", false);
+            $('#StuffingReqContrId').val(ContainerDet[idx].StuffingReqContrId);
+            $('#CommodityName').val(ContainerDet[idx].CartRegDtlId);
+            //   $('#CommodityName').val(ContainerDet[idx].CommodityName);
+            $('#ContainerNo').val(ContainerDet[idx].ContainerNo);
+            $('#Size').val(ContainerDet[idx].Size);
+            $('#ShippingLineId').val(ContainerDet[idx].ShippingLineId);
+            $('#ShippingLine').val(ContainerDet[idx].ShippingLine);
+            $('#StuffQuantity').val(ContainerDet[idx].StuffQuantity);
+            $('#StuffWeight').val(ContainerDet[idx].StuffWeight);
+            $('#CFSCode').val(ContainerDet[idx].CFSCode);
+            cid=parseInt(ContainerDet[idx].CartRegDtlId);
+
+            ContainerDet.splice(idx, 1);
+            editflag=1;
+            GenerateContrTable();
+        }
+        else{
+            $('#DivTblContrErrMsg').html('Please Add The Above Records');
+        }
+    }
+
+    function AddContainerDtl()
+    {
+        debugger;
+        $('#DivTblContrErrMsg').html('');
+        $('[data-valmsg-for]').html('<span></span>');
+        var Totstuffqty = 0;
+        var totalstuffwt = 0;
+        var FOB=0;
+        var RemFOB=0;
+        var uqcflag = 0;
+        var f = 0;
+        //Find Out Remaining Qty
+        $.each(RequestDet, function (i, elem) {
+            debugger;
+            if (cid == elem.CartingRegisterDtlId)
+            {
+                if(editflag==1)
+                {
+                    remsize = parseFloat(elem.NoOfUnits);
+                    remweight = parseFloat(elem.GrossWeight);
+                    FOB = parseFloat(elem.Fob);
+
+
+                }
+                else
+                {
+                    remsize = parseFloat(elem.RQty);
+                    FOB = parseFloat(elem.Fob);
+                    remweight = parseFloat(elem.RWt);
+                }
+                // alert(remsize);
+            }
+            if (elem.PackUQCDescription == '') {
+                  
+                uqcflag = 1
+                f = 1;
+            }
+
+
+        });
+
+        /*
+                if (editflag == 1)
+                {
+                    debugger;
+                    $.each(CheckDet, function (i, elem) {
+
+                        if (cid == elem.CartingRegisterDtlId) {
+                            remsize = parseFloat(elem.RQty);
+                            remweight = parseFloat(elem.RWt);
+                            // alert(remsize);
+                        }
+
+
+                    });
+                }
+                */
+        //Calculate Added Stuffing Quantity
+        $.each(ContainerDet, function (i, elem) {
+            debugger;
+            var comvalue = $('#CommodityName option:selected').text();
+
+
+            if (comvalue == elem.CommodityName) {
+                Totstuffqty = Totstuffqty + parseFloat(elem.StuffQuantity);
+
+                totalstuffwt = totalstuffwt + parseFloat(elem.StuffWeight);
+            }
+        });
+
+        //Store Current Stuffing Qty
+        var Curstuffqty= $('#StuffQuantity').val();
+        var CurstuffWt = $('#StuffWeight').val();
+        var RemFOB = (FOB / remsize) * Curstuffqty;
+        // Calculate Added Stuffing Quantity with Current Stuffing Quantity
+        Totstuffqty=Totstuffqty+parseFloat(Curstuffqty);
+        totalstuffwt = totalstuffwt +parseFloat(CurstuffWt);
+        //Store Remaining Units for particular Carting
+        //var remsize=$('#RNoOfUnits').val();
+
+        if ($('#ContainerNo').val() == '') {
+            $('[data-valmsg-for="ContainerNo"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+            //else if ($('#CommodityName').val() == '') {
+            //    $('[data-valmsg-for="CommodityName"]').html('<span>Fill Out This Field</span>');
+            //    return false;
+            //}
+        else if ($('#ShippingLine').val() == '') {
+            $('[data-valmsg-for="ShippingLine"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        else if ($('#StuffQuantity').val() == '' || $('#StuffQuantity').val()=='0') {
+            $('[data-valmsg-for="StuffQuantity"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        else if ($('#StuffWeight').val() == '' ||  $('#StuffWeight').val()=='0') {
+            $('[data-valmsg-for="StuffWeight"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        else if(Totstuffqty>remsize)
+        {
+            // validation for Container size in respect of remaining units
+            alert("Entered Stuffing Qty exceed remaining Units");
+            return false;
+        }
+
+        else if (totalstuffwt > remweight) {
+            // validation for Container Weight in respect of remaining Weights
+            alert("Entered Stuffing Weight exceed remaining Weights");
+            return false;
+        }
+            //else if (parseInt($('#StuffQuantity').val()) > parseInt($('#NoOfUnits').val())) {
+            //    $('[data-valmsg-for="StuffQuantity"]').html('<span>Stuff Quantity Cannot Be More Than No Of Units.</span>');
+            //    return false;
+            //}
+            //else if (parseFloat($('#StuffWeight').val()) > parseFloat($('#GrossWeight').val())) {
+            //    $('[data-valmsg-for="StuffWeight"]').html('<span>Stuff Weight Cannot Be More Than Gross Weight.</span>');
+            //    return false;
+            //}
+
+            //else if($('#Size').val()==''){
+            //    $('[data-valmsg-for="Size"]').html('<span>Fill Out This Field</span>');
+            //    return false;
+            //}
+
+        else {
+            
+            $.each(ContainerDet, function (i, elem) {
+                debugger;
+                var comvalue = $('#CommodityName option:selected').text();
+                var convalue = $('#ContainerNo').val();
+                if (comvalue == elem.CommodityName && convalue == elem.ContainerNo) {
+                    f = 1;
+                }
+            });
+            if (f == 0) {
+                var Data ="";
+                if(editflag==0)
+                {
+                    Data = {
+                        CartRegDtlId: $('#CommodityName').val(),
+                        CommodityName: $('#CommodityName option:selected').text(),
+                        ContainerNo: $('#ContainerNo').val(),
+                        Size: $('#Size').val(),
+                        ShippingLineId: $('#ShippingLineId').val(),
+                        ShippingLine: $('#ShippingLine').val(),
+                        StuffQuantity: $('#StuffQuantity').val(),
+                        StuffWeight: $('#StuffWeight').val(),
+                        CFSCode: $('#CFSCode').val(),
+                        FOB: RemFOB
+                    };
+
+                }
+
+                else
+                {
+                    Data = {
+                        CartRegDtlId:cid ,
+                        CommodityName:$('#CommodityName').val(),
+                        ContainerNo: $('#ContainerNo').val(),
+                        Size: $('#Size').val(),
+                        ShippingLineId: $('#ShippingLineId').val(),
+                        ShippingLine: $('#ShippingLine').val(),
+                        StuffQuantity: $('#StuffQuantity').val(),
+                        StuffWeight: $('#StuffWeight').val(),
+                        CFSCode: $('#CFSCode').val(),
+                        FOB: RemFOB,
+                        StuffingReqContrId: $('#StuffingReqContrId').val()
+                    };
+
+                }
+
+                ContainerDet.push(Data);
+                // $("#ContainerModal ul li:contains(" + $('#ContainerNo').val() + ")").remove();
+                GenerateContrTable();
+                $('#DivContainerDet').find('input:text,select,textarea').val('');
+                $('#DivContainerDet').find('input:hidden').val('');
+                $('#BtnAddContainer').prop("disabled", true);
+                $('#StuffingReqContrId').val('0')
+                // $('#DivContainerDet input[type="text"]').prop("readonly", true);
+                // $('#DivCartingDetails select,#DivCartingDetails textarea').prop("disabled", true);
+            }
+            else if (uqcflag == 1){
+                
+                alert('Plase select Pack UQC');
+                return false;
+            }
+            else {
+                alert("Same Container With Same Commodity Already Exist");
+            }
+        }
+    }
+    function AllowOnlyDecimal(evt)
+    {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || (CharCode == 46) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+    function AllowOnlyInteger(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if ((CharCode > 47 & CharCode < 58) || CharCode == 8) {
+            return true;
+        }
+        else {
+            evt.preventDefault;
+            return false;
+        }
+    }
+    function ValidateData(evt) {
+        var CharCode;
+        if (window.event) {
+            CharCode = window.event.keyCode;
+        }
+        else {
+            CharCode = evt.which;
+        }
+        if (CharCode == 32) {
+            return true;
+        }
+        if ((CharCode > 31 & CharCode < 48) || (CharCode > 57 & CharCode < 65) || (CharCode > 90 & CharCode < 97) || (CharCode > 122)) {
+            evt.preventDefault();
+            return false;
+        }
+        return true;
+    }
+    function OnCommodityChange() {
+        $('#StuffWeight').val('');
+        $('#StuffQuantity').val('');
+
+    }
+    var Wtperunit = 0;
+    function ClearErrMsg(elem) {
+        debugger;
+        if ($('#StuffQuantity').val() != "") {
+            var CommodityName = $("#CommodityName option:selected").text();
+            CommodityName = CommodityName.split("-");
+            $.each(RequestDet, function (i, item1) {
+                debugger;
+                if (item1.ShippingBillNo.includes(CommodityName[1])) {
+                    Wtperunit = RequestDet[i].GrossWeight / RequestDet[i].NoOfUnits
+                    $('#StuffWeight').val((Wtperunit * $('#StuffQuantity').val()).toFixed(2));
+                }
+            });
+        }
+        else
+        {
+            $('#StuffWeight').val('');
+        }
+        $('[data-valmsg-for=" ' + elem.id + ' "]').html('<span></span>');
+    }
+    function ResetStuffingReq() {
+        editflag=0;
+    }
+
+
+    function GetContainerDet(CFSCode) {
+        $.ajax({
+            url: '/Export/Ppg_CWCExportV2/GetContainerDet',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { CFSCode: CFSCode },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+
+
+                    $('#Size').val(data.Data.Size);
+                    $('#ShippingLineId').val(data.Data.ShippingLineId);
+                    // $('#GrossWeight').val(data.Data.GrossWeight);
+                    $('#ShippingLine').val(data.Data.ShippingLine);
+                    $('#CFSCode').val(data.Data.CFSCode);
+                }
+            }
+        });
+
+        $.ajax({
+            url: '/Export/Ppg_CWCExportV2/ShippinglineDtlAfterEmptyCont',
+            type: 'GET',
+            dataType: 'JSON',
+            //async: false,
+            data: { CFSCode: CFSCode },
+            success: function (data1) {
+                debugger;
+                if (data1.Status == 1) {
+                    $('#ShippingLineId').val(data1.Data.ShippingLineId);
+                    $('#ShippingLine').val(data1.Data.ShippingLine);
+                    $('#Size').val(data1.Data.Size);
+                }
+
+            }
+        });
+
+    }
+    function CalculateFOBnGW(elem)
+    {
+        if (CheckDet != [] && $('#CartingRegisterDtlId').val()!='')
+        {
+            var unit = 0;
+            var Units = GW = Fob= 0;
+            Units = (CheckDet.filter(function (item) { return item.CartingRegisterDtlId == $('#CartingRegisterDtlId').val() })[0]).NoOfUnits;
+            GW = (CheckDet.filter(function (item) { return item.CartingRegisterDtlId == $('#CartingRegisterDtlId').val() })[0]).GrossWeight;
+            Fob = (CheckDet.filter(function (item) { return item.CartingRegisterDtlId == $('#CartingRegisterDtlId').val() })[0]).Fob;
+            if (Units > 0)
+            {
+                $('#GrossWeight').val(Number(($('#NoOfUnits').val() * (GW / Units)).toFixed(2)));
+                $('#Fob').val(Number(($('#NoOfUnits').val() * (Fob / Units)).toFixed(2)));
+                $('[data-valmsg-for=" ' + elem.id + ' "]').html('<span></span>');
+            }
+        }
+    }
+
+    //Carting no Search option in edit
+
+    var searchclick=0;
+
+    var newcartregno="0";
+    $('#CartingRegList > li').on("click", function ()
+    {
+        debugger;
+        //$('#CartingRegisterNo').val($(this).text().split('-')[0]);
+
+        //newcartregno=$(this).text().split('-')[0];
+        $('#CartingRegisterId').val($(this).attr('id'));
+        var CartingRegisterId=$('#CartingRegisterId').val();
+        $("#myModal").modal("hide");
+        searchclick++;
+        GetStuffingDetails($(this).attr('id'));
+    });
+
+    var CommodityJsonCarting=[];
+    function GetStuffingDetails(CartingRegisterId) {
+        debugger;
+        //    CheckDet = [];
+        $.ajax({
+            url: '/Export/Ppg_CWCExportV2/GetCartRegDetForStuffingReq',
+            type: 'GET',
+            dataType: 'JSON',
+            data: { CartingRegisterId: CartingRegisterId },
+            success: function (data) {
+                debugger;
+                if (data.Status == 1) {
+                    //$('#ShippingHdrLine').val(data.Data.ContainerDetails[0].ShippingLine);
+                    //$('#ShippingHdrLine').val(data.Data.ContainerDetails[0].ShippingLine);
+                    //removed  $('#CommodityName').html('');
+                    //removed  $('#CommodityName').append($('<option></option>').val('').html('---Select---'));
+                    
+                    //  RequestDet = [];
+                    
+                    $.each(data.Data.LstStuffing, function (i, item)
+                    {
+                        debugger;
+                        var flag = 0;
+                        $.each(RequestDet, function (i, item1) {
+                            debugger;
+                            if(item.CartingRegisterId == item1.CartingRegisterId &&
+                                item1.ShippingBillNo == item.ShippingBillNo)
+                            {
+                                flag = 1;
+                                alert("Data already added with this Carting No.");
+                            }
+
+                        });
+
+                        if(flag==0)
+                        {
+                            RequestDet.push(item);
+                            //CheckDet.push(item);
+                            CheckDet.push(item);
+                        }
+
+                    });
+                    $.each(data.Data.ContainerDetails, function (i, item) 
+                    {
+                        if((CommodityJson.filter(x=>x.CartingRegisterDtlId==item.CartRegDtlId).length==0) &&
+                            (CommodityJsonCarting.filter(x=>x.CartRegDtlId==item.CartRegDtlId).length==0))
+                        {
+                            CommodityJsonCarting.push(item);
+                        }
+                    });
+                    $('#CartingRegList #' + $('#CartingRegisterId').val()).remove();
+                    //ContainerDet=data.Data.ContainerDetails;
+                    GenerateTable();
+                    CommodityBindForNewCarting();
+                }
+            }
+        });
+    }
+    function CommodityBind()
+    {
+        var html = '';
+        html += '<option value="">---Select---</option>';
+        $.each(CommodityJson, function (i, elem)
+        {
+            html += '<option value="' + elem.CartingRegisterDtlId + '">' + elem.CommodityName + '</option>';
+        });
+        $('#CommodityName').html(html);
+    }
+    function CommodityBindForNewCarting()
+    {
+        CommodityBind();
+        var html = '';
+        //html += '<option value="">---Select---</option>';
+        $.each(CommodityJsonCarting, function (i, elem)
+        {
+            html += '<option value="' + elem.CartRegDtlId + '">' + elem.CommodityName + '</option>';
+        });
+        $('#CommodityName').append(html);
+    }
+</script>
+<script>
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+    var CHAPage = -1;
+    var chaindex = -1;
+    function CloseCHA() {
+        CHAPage = -1;
+        chaindex = -1;
+        $('#tblCHA tbody').html('');
+        $('#CHACode').val('');
+        $("#CHAModal").modal("hide");
+    }
+    function LoadMoreCHA(i) {
+        CHAPage++;
+        chaindex = i;
+        $.ajax({
+            url: '/Export/Ppg_CWCExportV2/Eximtraderlist',
+            type: 'GET',
+            data: { PartyCode: "", Page: CHAPage, CHA: 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.LstParty, function (item, elem) {
+                        html += '<tr onclick="selectCha(' + elem.EximTraderId + ',&quot;' + elem.EximTraderName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.EximTraderName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.EximTraderAlias + '</td></tr>';
+                    });
+                    if ($('#tblCHA tbody tr').length > 0)
+                        $('#tblCHA tbody').append(html);
+                    else $('#tblCHA tbody').html(html);
+                    if (data.Data.State == true)
+                        $('#btnCHA').prop('disabled', false);
+                    else $('#btnCHA').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SearchCHA() {
+        CHAPage = -1;
+        var PayeeCode = $('#CHACode').val();
+        $.ajax({
+            url: '/Export/Ppg_CWCExportV2/Eximtraderlist',
+            type: 'GET',
+            data: { PartyCode: PayeeCode, Page: 0, CHA: 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.LstParty, function (item, elem) {
+                        html += '<tr onclick="selectCha(' + elem.EximTraderId + ',&quot;' + elem.EximTraderName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.EximTraderName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.EximTraderAlias + '</td></tr>';
+                    });
+
+                    $('#tblCHA tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnCHA').prop('disabled', false);
+                    else $('#btnCHA').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function selectCha(id, name) 
+    {
+        RequestDet[chaindex].CHA = name;
+        RequestDet[chaindex].CHAId = id;
+        $('#CHA' + chaindex).val(name);
+        CloseCHA();
+    }
+
+    var EXPPage = -1;
+    var expindex = -1;
+    function CloseEXP() {
+        EXPPage = -1;
+        expindex = -1;
+        $('#tblEXP tbody').html('');
+        $('#EXPCode').val('');
+        $("#ExporterModal").modal("hide");
+    }
+    function LoadMoreEXP(i) {
+        EXPPage++;
+        expindex = i;
+        $.ajax({
+            url: '/Export/Ppg_CWCExportV2/Eximtraderlist',
+            type: 'GET',
+            data: { PartyCode: "", Page: EXPPage, Exporter: 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.LstParty, function (item, elem) {
+                        html += '<tr onclick="selectEXP(' + elem.EximTraderId + ',&quot;' + elem.EximTraderName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.EximTraderName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.EximTraderAlias + '</td></tr>';
+                    });
+                    if ($('#tblEXP tbody tr').length > 0)
+                        $('#tblEXP tbody').append(html);
+                    else $('#tblEXP tbody').html(html);
+                    if (data.Data.State == true)
+                        $('#btnEXP').prop('disabled', false);
+                    else $('#btnEXP').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SearchEXP() {
+        EXPPage = -1;
+        var PayeeCode = $('#EXPCode').val();
+        $.ajax({
+            url: '/Export/Ppg_CWCExportV2/Eximtraderlist',
+            type: 'GET',
+            data: { PartyCode: PayeeCode, Page: 0, Exporter: 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.LstParty, function (item, elem) {
+                        html += '<tr onclick="selectEXP(' + elem.EximTraderId + ',&quot;' + elem.EximTraderName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.EximTraderName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.EximTraderAlias + '</td></tr>';
+                    });
+
+                    $('#tblEXP tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnEXP').prop('disabled', false);
+                    else $('#btnEXP').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function selectEXP(EximTraderId, EximTraderName) {
+
+        RequestDet[expindex].Exporter = EximTraderName;
+        RequestDet[expindex].ExporterId = EximTraderId;
+        $('#Exporter' + expindex).val(EximTraderName);
+        CloseEXP();
+    }
+
+    document.getElementById('EXPCode').addEventListener('keyup', debounce(function () {
+        if (document.getElementById('EXPCode').value != "")
+            SearchEXP();
+        else {
+            $('#tblEXP tbody').html('');
+            LoadMoreEXP(expindex);
+        }
+    }, 800));
+    document.getElementById('CHACode').addEventListener('keyup', debounce(function () {
+        if (document.getElementById('CHACode').value != "")
+            SearchCHA();
+        else {
+            $('#tblCHA tbody').html('');
+            LoadMoreCHA(chaindex);
+        }
+    }, 800));
+    var SHPPage = -1;
+    function CloseSHP() {
+        SHPPage = -1;
+        $('#tblSHP tbody').html('');
+        $('#SHPCode').val('');
+        $("#ShippingLineModal").modal("hide");
+    }
+    function LoadMoreSHP() {
+        SHPPage++;
+        $.ajax({
+            url: '/Export/Ppg_CWCExportV2/Eximtraderlist',
+            type: 'GET',
+            data: { PartyCode: "", Page: SHPPage, ShippingLine: 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.LstParty, function (item, elem) {
+                        html += '<tr onclick="selectShippingLine(' + elem.EximTraderId + ',&quot;' + elem.EximTraderName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.EximTraderName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.EximTraderAlias + '</td></tr>';
+                    });
+                    if ($('#tblSHP tbody tr').length > 0)
+                        $('#tblSHP tbody').append(html);
+                    else $('#tblSHP tbody').html(html);
+                    if (data.Data.State == true)
+                        $('#btnSHP').prop('disabled', false);
+                    else $('#btnSHP').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SearchSHP() {
+        SHPPage = -1;
+        var PayeeCode = $('#SHPCode').val();
+        $.ajax({
+            url: '/Export/Ppg_CWCExportV2/Eximtraderlist',
+            type: 'GET',
+            data: { PartyCode: PayeeCode, Page: 0, ShippingLine: 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.LstParty, function (item, elem) {
+                        html += '<tr onclick="selectShippingLine(' + elem.EximTraderId + ',&quot;' + elem.EximTraderName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.EximTraderName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.EximTraderAlias + '</td></tr>';
+                    });
+
+                    $('#tblSHP tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnSHP').prop('disabled', false);
+                    else $('#btnSHP').prop('disabled', true);
+                }
+            }
+        });
+    }
+    document.getElementById('SHPCode').addEventListener('keyup', debounce(function () {
+        if (document.getElementById('SHPCode').value != "")
+            SearchSHP();
+        else {
+            $('#tblSHP tbody').html('');
+            LoadMoreSHP();
+        }
+    }, 800));
+    function selectShippingLine(id, name) {
+        $('#ShippingLine').val(name);
+        $('#ShippingLineId').val(id);
+        //$("#ShippingLineModal").modal("hide");
+        $('[data-valmsg-for="ShippingLine"]').html('');
+        CloseSHP();
+    }
+
+    var FRDPage = -1;
+    function CloseFRD() {
+        FRDPage = -1;
+        $('#tblFRD tbody').html('');
+        $('#FRDCode').val('');
+        $("#ForwarderModal").modal("hide");
+    }
+    function LoadMoreFRD() {
+        FRDPage++;
+        $.ajax({
+            url: '/Export/Ppg_CWCExportV2/Eximtraderlist',
+            type: 'GET',
+            data: { PartyCode: "", Page: FRDPage, Forwarder: 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.LstParty, function (item, elem) {
+                        html += '<tr onclick="SelectForwarder(' + elem.EximTraderId + ',&quot;' + elem.EximTraderName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.EximTraderName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.EximTraderAlias + '</td></tr>';
+                    });
+                    if ($('#tblFRD tbody tr').length > 0)
+                        $('#tblFRD tbody').append(html);
+                    else $('#tblFRD tbody').html(html);
+                    if (data.Data.State == true)
+                        $('#btnFRD').prop('disabled', false);
+                    else $('#btnFRD').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SearchFRD() {
+        FRDPage = -1;
+        var PayeeCode = $('#FRDCode').val();
+        $.ajax({
+            url: '/Export/Ppg_CWCExportV2/Eximtraderlist',
+            type: 'GET',
+            data: { PartyCode: PayeeCode, Page: 0, Forwarder: 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.LstParty, function (item, elem) {
+                        html += '<tr onclick="SelectForwarder(' + elem.EximTraderId + ',&quot;' + elem.EximTraderName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.EximTraderName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.EximTraderAlias + '</td></tr>';
+                    });
+
+                    $('#tblFRD tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnFRD').prop('disabled', false);
+                    else $('#btnFRD').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SelectForwarder(EximTraderId, EximTraderName)
+    {
+        $('#Forwarder').val(EximTraderName);
+        $('#ForwarderId').val(EximTraderId);
+        //$("#ForwarderModal").modal("hide");
+        CloseFRD();
+    }
+    document.getElementById('FRDCode').addEventListener('keyup', debounce(function () {
+        if (document.getElementById('FRDCode').value != "")
+            SearchFRD();
+        else {
+            $('#tblFRD tbody').html('');
+            LoadMoreFRD();
+        }
+    }, 800));
+
+
+    var SHPPageH = -1;
+    function CloseSHPH() {
+        SHPPageH = -1;
+        $('#tblSHPH tbody').html('');
+        $('#SHPCodeH').val('');
+        $("#ShippingLineHdrModal").modal("hide");
+    }
+    function LoadMoreSHPH() {
+        SHPPageH++;
+        $.ajax({
+            url: '/Export/Ppg_CWCExportV2/Eximtraderlist',
+            type: 'GET',
+            data: { PartyCode: "", Page: SHPPageH, ShippingLine: 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.LstParty, function (item, elem) {
+                        html += '<tr onclick="ShippingLinehdr(' + elem.EximTraderId + ',&quot;' + elem.EximTraderName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.EximTraderName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.EximTraderAlias + '</td></tr>';
+                    });
+                    if ($('#tblSHPH tbody tr').length > 0)
+                        $('#tblSHPH tbody').append(html);
+                    else $('#tblSHPH tbody').html(html);
+                    if (data.Data.State == true)
+                        $('#btnSHPH').prop('disabled', false);
+                    else $('#btnSHPH').prop('disabled', true);
+                }
+            }
+        });
+    }
+    function SearchSHPH() {
+        SHPPageH = -1;
+        var PayeeCode = $('#SHPCodeH').val();
+        $.ajax({
+            url: '/Export/Ppg_CWCExportV2/Eximtraderlist',
+            type: 'GET',
+            data: { PartyCode: PayeeCode, Page: 0, ShippingLine: 1 },
+            success: function (data) {
+                if (data.Status == 1) {
+                    var html = '';
+                    $.each(data.Data.LstParty, function (item, elem) {
+                        html += '<tr onclick="ShippingLinehdr(' + elem.EximTraderId + ',&quot;' + elem.EximTraderName + '&quot;)"><td colspan="8" width="80%" class="txt_wrp">' + elem.EximTraderName + '</td><td colspan="4" width="20%" class="txt_wrp">' + elem.EximTraderAlias + '</td></tr>';
+                    });
+
+                    $('#tblSHPH tbody').html(html);
+
+                    if (data.Data.State == true)
+                        $('#btnSHPH').prop('disabled', false);
+                    else $('#btnSHPH').prop('disabled', true);
+                }
+            }
+        });
+    }
+    document.getElementById('SHPCodeH').addEventListener('keyup', debounce(function () {
+        if (document.getElementById('SHPCodeH').value != "")
+            SearchSHPH();
+        else {
+            $('#tblSHPH tbody').html('');
+            LoadMoreSHPH();
+        }
+    }, 800));
+    function ShippingLinehdr(id,name)
+    {
+        $('#ShippingHdrLine').val(name);
+        $('#ShippingHdrLineId').val(id);
+        //$("#ShippingLineModal").modal("hide");
+        $('[data-valmsg-for="ShippingLine"]').html('');
+        CloseSHPH();
+    }
+</script>
+<script>
+    function CartingDetChange(i)
+    {
+        debugger;
+        //Date validation
+        var check = 0;
+        var splitdate = $('#ShippingBillDt' + i).val().split('/');
+        if (splitdate.length > 0)
+        {
+            splitdate[0] = parseInt(splitdate[0]);
+            splitdate[1] = parseInt(splitdate[1]);
+            splitdate[2] = parseInt(splitdate[2]);
+            var dateregex = /^(0?[1-9]|[12][0-9]|3[01])[\/](0?[1-9]|1[012])[\/]\d{2}$/;
+            if ((splitdate[1]) >= 1 && (splitdate[1]) <= 12)
+            {
+                var Days30 = [4, 6, 9, 11];
+                var Days31 = [1, 3, 5, 7, 8, 10, 12];
+                if ($('#ShippingBillDt' + i).val().match(dateregex) == null)
+                {
+                    alert("Please enter a correct Shipping date in dd/mm/yy format");
+                    $('#ShippingBillDt' + i).val(RequestDet[i].ShippingDate);
+                    return false;
+                }
+                else if (Days31.indexOf(splitdate[1]) > -1 && splitdate[0] >= 1 && splitdate[0] <= 31) {
+                    check = 1;
+                }
+                else if (Days30.indexOf(splitdate[1]) > -1 && splitdate[0] >= 1 && splitdate[0] <= 30) {
+                    check = 1;
+                }
+                else if (splitdate[1] == 2) {
+                    var year = ('20' + splitdate[2]);
+                    if (year % 4 == 0 && splitdate[0] >= 1 && splitdate[0] <= 29) {
+                        check = 1;
+                    }
+                    else if (year % 4 != 0 && splitdate[0] >= 1 && splitdate[0] <= 28) {
+                        check = 1;
+                    }
+                }
+                if (check == 0) {
+                    alert('Please enter a valid Shipping date');
+                    $('#ShippingBillDt' + i).val(RequestDet[i].ShippingDate);
+                }
+            }
+            else
+            {
+                alert("Please enter a valid Shipping date");
+                $('#ShippingBillDt' + i).val(RequestDet[i].ShippingDate);
+            }
+        }
+        else {
+            alert("Please enter a valid Shipping date");
+            $('#ShippingBillDt' + i).val(RequestDet[i].ShippingDate);
+        }
+        RequestDet[i].ShippingBillNo = $('#ShippingBillNo' + i).val();
+        RequestDet[i].ShippingDate = $('#ShippingBillDt' + i).val();
+        RequestDet[i].CargoDescription = $('#CargoDescription' + i).val();
+        RequestDet[i].CargoType = $('#CargoType' + i).val();
+    }
+</script>

@@ -1,0 +1,234 @@
+﻿@model CwcExim.Areas.Report.Models.WFLDOAStatement
+@{
+    AjaxOptions options = new AjaxOptions();
+    options.HttpMethod = "POST";
+    options.OnFailure = "PDAOnFailure";
+    options.OnSuccess = "PDAOnSuccess";
+    options.InsertionMode = InsertionMode.InsertAfter;
+}
+<script>
+    $(function () {
+        $("#PeriodFrom").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+        $("#PeriodTo").datepicker({
+            dateFormat: "dd/mm/yy",
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            buttonText: "Select date",
+            changeMonth: true,
+            changeYear: true,
+            showAnima: "fadein",
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+            }
+        });
+    });
+
+    
+</script>
+@using (Ajax.BeginForm("GetOnAccountStatement", "WFLD_ReportCWC", options))
+{
+    @Html.AntiForgeryToken()
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-11 col-md-offset-0-5">
+                <div class="container-fluid">
+                    <div class="Head_h4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>On Account Statement</h4>
+                            </div>
+                        </div>
+                        <div class="Form_Space_top" style="padding:5px;">
+                            <div class="row">
+                                <div class="form-group Form_Input">
+                                    <div class="col-md-1-5 col_cus_2 padding_rt">
+                                        <label>Period From:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.FromDate, new { @class = "form-control", @id = "PeriodFrom", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.FromDate, "", new { @class = "Error_Msg" })
+                                    </div>
+                                    <div class="col-md-1-5 col_cus_2 col_cus_offset_3 col-md-offset-4 padding_rt">
+                                        <label for="FromDate" class="InputLabel">Period To:</label>
+                                    </div>
+                                    <div class="col-md-2 col_cus_2_5 Date_Img">
+                                        @Html.TextBoxFor(m => m.ToDate, new { @class = "form-control", @id = "PeriodTo", placeholder = "dd/mm/yyyy", @readonly = true })
+                                        @Html.ValidationMessageFor(m => m.ToDate, "", new { @class = "Error_Msg" })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        <div class="row SignUp_space_top SignUp_space_bottom">
+                            <div class="stoke"></div>
+                        </div>
+                        <div class="row SignUp_space_bottom">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="Print" name="Command" class="btn log_Btn_sm" id="btnPWOAPrint" />
+                            </div>
+                        </div>
+                        <div class="logErrMsg Form_Space_bottom" id="DivONErrMsg" style="background-color:transparent;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+@Scripts.Render("~/bundles/jqueryval")
+<script>
+
+    //$(function () {
+    //    debugger;
+    //    var Year = $('#Year').val(new Date().getFullYear());
+    //    $('#DDLOAYear').dynamicYear({ onChangeCallback: GetOAYear });
+
+    //});
+
+    //function GetOAYear(element) {
+    //    debugger;
+    //    $('#Year').val($(element).val());
+    //}
+
+    //function GetOAMonth() {
+    //    debugger;
+    //    var Month = $('#OAMonth').val();
+    //    if (Month != "") {
+    //        $('#Month').val(Month);
+    //        $("[data-valmsg-for='Month']").html('');
+    //    }
+    //    else {
+    //        $('#Month').val(0);
+    //        $("[data-valmsg-for='Month']").html("<span>Fill Out This Field</span>");
+    //    }
+    //}
+
+    function PDAOnFailure() { }
+
+    function PDAOnSuccess(data) {
+        $('#DivONErrMsg').html('')
+        debugger;
+        if (data.Status == 1) {
+           
+            SaveReportPdf(data);
+        }
+        else {
+            $('#DivONErrMsg').html(data.Message);
+        }
+    }
+
+    //$('#BtnPDAPreview').on("click", function () {
+    //    $('#DivONErrMsg').html("");
+    //    var Month = $('#Month').val();
+    //    if (Month == 0) {
+    //        $("[data-valmsg-for='Month']").html("<span>Fill Out This Field</span>");
+    //        return false;
+    //    }
+    //    return true;
+    //});
+
+    $('#btnPWOAPrint').on("click", function () {
+        debugger;
+        var Status = true;
+        if ($('#PeriodFrom').val() == "") {
+            $('[data-valmsg-for="FromDate"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+
+        if ($('#PeriodTo').val() == "") {
+            $('[data-valmsg-for="ToDate"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        if ($('#Party').val() == "") {
+            $('[data-valmsg-for="Party"]').html('<span>Fill Out This Field</span>');
+            return false;
+        }
+        $('#DivONErrMsg').html('');
+        var From = $('#PeriodFrom').val();
+        var To = $('#PeriodTo').val();
+        var SF = From.split('/');
+        var ST = To.split('/');
+        var FromDate = new Date(SF[2], (Number(SF[1]) - 1), SF[0]);
+        var ToDate = new Date(ST[2], (Number(ST[1]) - 1), ST[0]);
+        if (FromDate > ToDate) {
+            $('#DivONErrMsg').removeClass('logSuccMsg').addClass('logErrMsg').html('Period To must be greater than Period From');
+            return false;
+        }
+        return true;
+    });
+
+    function SaveReportPdf(data)
+    {
+        debugger;
+        var OAFromDate = $('#PeriodFrom').val();
+        var OAToDate = $('#PeriodTo').val();
+        var PostData = new FormData();
+    
+        var Html = "<table style='width:100%;font-size:7pt;font-family:Verdana,Arial,San-serif;border-collapse:collapse;'><thead><tr><th colspan='10' style='text-align:center;'>  (A GOVT. OF INDIA UNDERTAKING)<br/> ON A/C STATEMENT FOR THE DAYS OF <span>" + OAFromDate + "</span> to <span>" + OAToDate + "</span></th></tr>"+ 
+            "<tr><th style='font-weight:600;text-align:center;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:5%;'>SL No.</th>"+
+                        "<th style='font-weight:600;text-align:left;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:35%'>Name of Payee</th>" +
+            "<th style='font-weight:600;text-align:right;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:15%;'>Opening Amount(Rs)</th>" +
+            "<th style='font-weight:600;text-align:right;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:15%;'>Received Amount(Rs)</th>" +
+            "<th style='font-weight:600;text-align:right;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:15%;'>Adjusted Amount(Rs)</th>" +
+            "<th style='font-weight:600;text-align:right;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px;width:15%;'>Closing Balance(Rs)</th>" +
+            
+            "</tr></thead><tbody>";
+
+        
+        $.each(data.Data.LstOnAccount, function (i, item) {
+            debugger;
+
+            Html += "<tr><td style='text-align:center;padding:4px;'>" + ++i +
+                "</td><td style='text-align:left;padding:4px;'>" + item.PartyName +
+                "</td><td style='text-align:right;padding:4px;'>" + item.OpeningAmount.toFixed(2) +
+                "</td><td style='text-align:right;padding:4px;'>" + item.ReceiptAmount.toFixed(2) +
+                "</td><td style='text-align:right;padding:4px;'>" + item.AdjustAmount.toFixed(2) +
+                "</td><td style='text-align:right;padding:4px;'>" + item.BalanceAmount.toFixed(2) +
+                 "</td></tr>";
+
+        });
+        Html += "</tbody></table>";
+       
+        PostData.append("Page", Html);
+        var Token = $('input[name="__RequestVerificationToken"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("GeneratePDFForOAStatement", "WFLD_ReportCWC", new { area = "Report" })',
+            headers: { '__RequestVerificationToken': Token },
+            data: PostData,
+            async:false,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                if (data.Status == 1) {
+                    debugger;
+                    window.open(data.Message + "?_t=" + (new Date().getTime()), '_blank', 'fullscreen=yes,modal=yes')
+                }
+            }
+        });
+    }
+
+</script>
+
+
+
+
+
+
+

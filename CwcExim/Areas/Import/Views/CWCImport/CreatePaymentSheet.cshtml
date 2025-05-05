@@ -1,0 +1,790 @@
+﻿@model CwcExim.Areas.Import.Models.PaymentSheet
+
+@if (ViewBag.StuffingReqList != null)
+{
+    <input type="hidden" id="hdnStuffingReq" value="@ViewBag.StuffingReqList" />
+}
+else
+{
+    <input type="hidden" id="hdnStuffingReq" value="" />
+}
+@if (ViewBag.PaymentParty != null)
+{
+    <input type="hidden" id="hdnPartyPayee" value="@ViewBag.PaymentParty" />
+}
+else
+{
+    <input type="hidden" id="hdnPartyPayee" value="" />
+}
+
+@using (Ajax.BeginForm("AddEditPaymentSheet", "CWCImport", new AjaxOptions { HttpMethod = "POST", OnSuccess = "PaymentOnSuccess", OnFailure = "PaymentOnFailure" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.Hidden("ChargesJson")
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-offset-0-5 col-md-11">
+                <div class="Head_h4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Payment Sheet / Invoice</h4>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-2">
+                                <div class="boolean-container">
+                                    @Html.RadioButtonFor(m => m.InvoiceType, "Tax", new { id = "Tax", @checked = true, @onclick = "IVType('Tax')" })
+                                    <label for="Tax"><i class="circle"></i><span>Tax Invoice</span></label>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="boolean-container">
+                                    @Html.RadioButtonFor(m => m.InvoiceType, "Bill", new { id = "Bill", @onclick = "IVType('Bill')" })
+                                    <label for="Bill"><i class="circle"></i><span>Bill Of Supply</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5">
+                                <label>Invoice No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.TextBoxFor(m => m.InvoiceNo, new { @readonly = true })
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4">
+                                <label>Invoice Date:</label>
+                            </div>
+                            <div class="col-md-2 Date_Img">
+                                @Html.TextBoxFor(m => m.InvoiceDate, new { @readonly = true, Value = DateTime.Today.ToString("dd/MM/yyyy") })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5">
+                                <label>De-Stuffing No:</label>
+                            </div>
+                            <div class="col-md-2-5">
+                                @Html.HiddenFor(m => m.StuffingReqId)
+                                @Html.TextBoxFor(m => m.StuffingReqNo, new { @readonly = true })
+                                <span class="search" id="stuffingsearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#stuffingModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.StuffingReqNo)
+                            </div>
+                            <div class="col-md-1-5 col-md-offset-4">
+                                <label>Date:</label>
+                            </div>
+                            <div class="col-md-2">
+                                @Html.TextBoxFor(m => m.StuffingReqDate, new { @readonly = true })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5">
+                                <label>Party Name:</label>
+                            </div>
+                            <div class="col-md-10-5">
+                                @Html.HiddenFor(m => m.PartyId)
+                                @Html.Hidden("hdnAddress")
+                                @Html.Hidden("hdnState")
+                                @Html.Hidden("hdnStateCode")
+                                @Html.TextBoxFor(m => m.PartyName, new { @readonly = true })
+                                <span class="search" id="PartySearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PartyModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.PartyName)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5">
+                                <label>Payee Name:</label>
+                            </div>
+                            <div class="col-md-10-5">
+                                @Html.HiddenFor(m => m.PayeeId)
+                                @Html.TextBoxFor(m => m.PayeeName, new { @readonly = true })
+                                <span class="search" id="PayeeSearch"><i class="fa fa-search" aria-hidden="true" data-toggle="modal" data-target="#PayeeModal"></i></span>
+                                @Html.ValidationMessageFor(m => m.PayeeName)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5">
+                                <label> GST No:</label>
+                            </div>
+                            <div class="col-md-4">
+                                @Html.TextBoxFor(m => m.GSTNo, new { @readonly = true })
+                            </div>
+                            <div class="col-md-3">
+                                <input class="btn log_Btn_sm" aria-hidden="true" data-toggle="modal" data-target="#Containerdtl" type="button" value="Container Details" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+
+                            <div class="col-md-1-5 col_cus_2">
+                                <label>SEZ</label>
+                            </div>
+                            <div class="col-md-4 col_cus_3">
+                                @Html.DropDownList("SEZ", new List<SelectListItem>
+                               {
+                                new SelectListItem { Text="SEZWP",Value="SEZWP"},
+                                        new SelectListItem {Text="SEZWOP",Value="SEZWOP" }
+                                }, "----Select----", new { @class = "form-control input-sm" })
+                            </div>
+
+
+                            <div class="col-md-3 col_cus_4">
+                                <input class="btn log_Btn_sm" aria-hidden="true" data-toggle="modal" data-target="#Containerdtl" type="button" value="Container Details" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top Form_Space_bottom">
+                        <div class="col-md-12">
+                            <table id="tblContainer" class="table table-bordered table-striped dataTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width:8%;">Sl No</th>
+                                        <th>CFS No</th>
+                                        <th>Container No</th>
+                                        <th>Size</th>
+                                        <th>Reffer</th>
+                                        <th>Insured</th>
+                                        <th>DO Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="Head_h5">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h5>CWC Charges</h5>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="col-md-12">
+                                <table id="tblCWCCharges" class="table table-bordered table-striped dataTable">
+                                    <thead>
+                                        <tr>
+                                            <th rowspan="2">Charges</th>
+                                            <th rowspan="2">Value</th>
+                                            <th colspan="2" class="text-center">IGST</th>
+                                            <th colspan="2" class="text-center">CGST</th>
+                                            <th colspan="2" class="text-center">SGST</th>
+                                            <th rowspan="2">Total</th>
+                                        </tr>
+                                        <tr>
+                                            <th>%</th>
+                                            <th>Amt</th>
+                                            <th>%</th>
+                                            <th>Amt</th>
+                                            <th>%</th>
+                                            <th style="border-right:1px solid #ddd;">Amt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="8" style="text-align:right;">Total:</td>
+                                            <td><input type="text" id="TOTCWCChrg" value="0"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="col-md-12">
+                                <h5>H & T Charges</h5>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="col-md-12">
+                                <table id="tblHTCharges" class="table table-bordered table-striped dataTable">
+                                    <thead>
+                                        <tr>
+                                            <th rowspan="2">Charges</th>
+                                            <th rowspan="2">Value</th>
+                                            <th colspan="2" class="text-center">IGST</th>
+                                            <th colspan="2" class="text-center">CGST</th>
+                                            <th colspan="2" class="text-center">SGST</th>
+                                            <th rowspan="2">Total</th>
+                                        </tr>
+                                        <tr>
+                                            <th>%</th>
+                                            <th>Amt</th>
+                                            <th>%</th>
+                                            <th>Amt</th>
+                                            <th>%</th>
+                                            <th style="border-right:1px solid #ddd;">Amt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="8" style="text-align:right;">Total:</td>
+                                            <td><input type="text" id="TOTHTChrg" value="0"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-offset-8 col-md-1-5">
+                                    <label>Total Value:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.AllTotal, new { @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-offset-8 col-md-1-5">
+                                    <label>Round Up:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.RoundUp, new { @onblur = "CalcInvoice()" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row Form_Space_top">
+                            <div class="form-group Form_Input">
+                                <div class="col-md-offset-8 col-md-1-5">
+                                    <label>Invoice Value:</label>
+                                </div>
+                                <div class="col-md-2-5">
+                                    @Html.TextBoxFor(m => m.InvoiceValue, new { @readonly = true })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row Form_Space_top">
+                        <div class="form-group Form_Input">
+                            <div class="col-md-1-5">
+                                <label>Remarks:</label>
+                            </div>
+                            <div class="col-md-10-5">
+                                @Html.TextAreaFor(m => m.Remarks,new { @style="height:75px;"})
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row SignUp_space_bottom SignUp_space_top">
+                        <div class="stoke"></div>
+                    </div>
+                    <div class="logSuccMsg Form_Space_bottom" id="DivPaySheetCargoMsg" style="background-color:transparent"></div>
+                    <div class="row SignUp_space_bottom2">
+                        <div class="col-md-offset-4 col-md-2">
+                            <input type="submit" value="Save" onclick="BindJson()" class="btn log_Btn_sm" />
+                        </div>
+                        <div class="col-md-2">
+                            <input type="button" value="Reset" class="btn log_Btn_sm" onclick="ResetField()" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+@Scripts.Render("~/bundles/jqueryval")
+<div id="stuffingModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Stuffing Request</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="stuffingbox" type="text" />
+                <ul class="navList" id="lststuffing">
+                    @*@{
+                        foreach (var item in Model.lstGodownList)
+                        {
+                        <li id="@item.GodownId">@item.GodownName</li>
+                        }
+                        }*@
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="PartyModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Party</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Partybox" type="text" />
+                <ul class="navList" id="lstParty">
+                    @*@{
+                        foreach (var item in Model.lstGodownList)
+                        {
+                        <li id="@item.GodownId">@item.GodownName</li>
+                        }
+                        }*@
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="PayeeModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Payee</h4>
+            </div>
+            <div class="modal-body popup_body">
+                <input placeholder="Search Me" id="Payeebox" type="text" />
+                <ul class="navList" id="lstPayee">
+                    @*@{
+                        foreach (var item in Model.lstGodownList)
+                        {
+                        <li id="@item.GodownId">@item.GodownName</li>
+                        }
+                        }*@
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="Containerdtl" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content popup_modal">
+            <div class="modal-header popup_header">
+                <button type="button" class="close" data-dismiss="modal" onclick="ContainerSelect();"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <h4 class="modal-title">List of Container</h4>
+            </div>
+            <div class="modal-body popup_body">
+                @*<input placeholder="Search Me" id="cfscode" type="text" />
+                    <ul class="navList" id="lstcfscode">
+
+                        @{
+                        foreach (var item in Model.lstGodownList)
+                        {
+                        <li id="@item.GodownId">@item.GodownName</li>
+                        }
+                        }
+                    </ul>*@
+                <table id="lstcfsCode" class="table table-bordered">
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-md-offset-6 col-md-6">
+                        <button type="button" class="btn log_Btn_sm" data-dismiss="modal" onclick="ContainerSelect();">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var TimeInSeconds;
+    $(document).ready(function () {
+        TimeInSeconds = 5000;
+        //$("#InvoiceDate").datepicker({
+        //    dateFormat: "dd/mm/yy",
+        //    showOn: "button",
+        //    buttonImage: "/Content/images/calendar.png",
+        //    buttonImageOnly: true,
+        //    buttonText: "Select date",
+        //    changeMonth: true,
+        //    changeYear: true,
+        //    showAnima: "fadein",
+        //    onClose: function () {
+        //        $(".Date_Img .Error_Msg").text("");
+        //        $('[data-valmsg-for="Data"]').html('<span></span>');
+        //    }
+        //});
+        $('#InvoiceDate').datetimepicker({
+            showOn: "button",
+            buttonImage: "/Content/images/calendar.png",
+            buttonImageOnly: true,
+            dateFormat: "dd/mm/yy",
+            altField: "#slider_example_4andHalf_alt",
+            altFieldTimeOnly: false,
+            onClose: function () {
+                $(".Date_Img .Error_Msg").text("");
+                $('[data-valmsg-for="Data"]').html('<span></span>');
+            }
+        });
+
+        StuffingReqBinding();
+        PartyBinding();
+        PayeeBinding();
+    });
+
+    function StuffingReqBinding() {
+        if ($('#hdnStuffingReq').val() != '') {
+            var StuffingJson = JSON.parse($('#hdnStuffingReq').val());
+            var html = '';
+            $.each(StuffingJson, function (i, item) {
+                html += '<li id="' + item.StuffingReqId + '" onclick="selectStuffing(' + item.StuffingReqId + ');">' + item.StuffingReqNo + '</li>';
+            });
+            $('#lststuffing').html(html);
+        }
+    }
+    $('#stuffingbox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lststuffing > li').show();
+        else {
+            $('#lststuffing > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    function selectStuffing(id) {
+        var StuffingJson = JSON.parse($('#hdnStuffingReq').val());
+        var StuffingRequest = $.grep(StuffingJson, function (item) { return item.StuffingReqId == id; })[0];
+        $('#StuffingReqId').val(StuffingRequest.StuffingReqId);
+        $('#StuffingReqNo').val(StuffingRequest.StuffingReqNo);
+        $('#StuffingReqDate').val(StuffingRequest.StuffingReqDate);
+        $('#PartyId').val(StuffingRequest.CHAId);
+        $('#PartyName').val(StuffingRequest.CHAName);
+        $('#hdnAddress').val(StuffingRequest.Address);
+        $('#hdnState').val(StuffingRequest.State);
+        $('#hdnStateCode').val(StuffingRequest.StateCode);
+        $('#PayeeId').val(StuffingRequest.CHAId);
+        $('#PayeeName').val(StuffingRequest.CHAName);
+        $('#GSTNo').val(StuffingRequest.CHAGSTNo);
+        $("#stuffingModal").modal("hide");
+        ContainerBinding(id);
+    }
+    function ContainerBinding(id) {
+        $.ajax({
+            url: '/Import/CWCImport/GetPaymentSheetContainer',
+            type: 'GET',
+            data: { StuffingReqId: id },
+            dataType: 'JSON',
+            success: function (data) {
+                debugger;
+                ContainerJson = JSON.parse(data);
+                var html = '';
+                $.each(ContainerJson, function (i, item) {
+                    if (item.Selected)
+                        html += '<tr><td><div class="boolean-container"><input type="checkbox" checked id="' + item.CFSCode + '"/><label for="' + item.CFSCode + '"><i class="square" style="margin-left:10px;"></i></label></div></td><td>' + item.CFSCode + '</td><td>' + item.ContainerNo + '</td></tr>';
+                    else
+                        html += '<tr><td><div class="boolean-container"><input type="checkbox" id="' + item.CFSCode + '"/><label for="' + item.CFSCode + '"><i class="square" style="margin-left:10px;"></i></label></div></td><td>' + item.CFSCode + '</td><td>' + item.ContainerNo + '</td></tr>';
+                });
+                $('#lstcfsCode tbody').html(html);
+            }
+        });
+    }
+
+    function PartyBinding() {
+        var PartyJson = JSON.parse($('#hdnPartyPayee').val());
+        var html = '';
+        $.each(PartyJson, function (i, item) {
+            html += '<li id="' + item.PartyId + '" onclick="selectParty(' + item.PartyId + ');">' + item.PartyName + '</li>';
+        });
+        $('#lstParty').html(html);
+    }
+    $('#Partybox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstParty > li').show();
+        else {
+            $('#lstParty > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    function selectParty(id) {
+        debugger;
+        var PartyJson = JSON.parse($('#hdnPartyPayee').val());
+        var Party = $.grep(PartyJson, function (item) { return item.PartyId == id; })[0];
+        $('#PartyId').val(Party.PartyId);
+        $('#PartyName').val(Party.PartyName);
+        $('#hdnAddress').val(Party.Address);
+        $('#hdnState').val(Party.State);
+        $('#hdnStateCode').val(Party.StateCode);
+        $("#PartyModal").modal("hide");
+    }
+
+    function PayeeBinding() {
+        var PartyJson = JSON.parse($('#hdnPartyPayee').val());
+        var html = '';
+        $.each(PartyJson, function (i, item) {
+            html += '<li id="' + item.PartyId + '" onclick="selectPayee(' + item.PartyId + ');">' + item.PartyName + '</li>';
+        });
+        $('#lstPayee').html(html);
+    }
+    $('#Payeebox').keyup(function () {
+        var val = $(this).val().toLowerCase();
+        if (val == "")
+            $('#lstPayee > li').show();
+        else {
+            $('#lstPayee > li').each(function () {
+                var text = $(this).text().toLowerCase();
+                (text.indexOf(val) >= 0 ? $(this).show() : $(this).hide());
+            });
+        }
+    });
+    function selectPayee(id) {
+        var PartyJson = JSON.parse($('#hdnPartyPayee').val());
+        var Party = $.grep(PartyJson, function (item) { return item.PartyId == id; })[0];
+        $('#PayeeId').val(Party.PartyId);
+        $('#PayeeName').val(Party.PartyName);
+        $('#GSTNo').val(Party.GSTNo);
+        $("#PayeeModal").modal("hide");
+    }
+</script>
+<script>
+
+    function ContainerSelect() {
+        ArrayContainer = [];
+        $('#lstcfsCode tbody tr').each(function () {
+            debugger;
+            var Chk = $(this).find('input[type="checkbox"]');
+            if ($(Chk).is(':checked')) {
+                var Container = {
+                    "CFSCode": $(Chk).attr('id')
+                }
+                ArrayContainer.push(Container);
+            }
+        });
+        if (ArrayContainer.length > 0 && $('#InvoiceDate').val() != "") {
+            $.ajax({
+                url: '/Import/CWCImport/GetPaymentSheet',
+                type: 'POST',
+                data: {
+                    InvoiceDate: $('#InvoiceDate').val(),
+                    InvoiceType: TaxType,
+                    AppraisementId: parseInt($('#StuffingReqId').val()),
+                    AppraisementNo: $('#StuffingReqNo').val(),
+                    AppraisementDate: $('#StuffingReqDate').val(),
+                    PartyId: $('#PartyId').val(),
+                    PartyName: $('#PartyName').val(),
+                    PartyAddress: $('#hdnAddress').val(),
+                    PartyState: $('#hdnState').val(),
+                    PartyStateCode: $('#hdnStateCode').val(),
+                    PartyGST: $('#GSTNo').val(),
+                    PayeeId: $('#PayeeId').val(),
+                    PayeeName: $('#PayeeName').val(),
+                    lstPaySheetContainer: ArrayContainer
+                },
+                dataType: 'JSON',
+                success: function (data) {
+                    debugger;
+                    $('#ChargesJson').val(JSON.stringify(data));
+                    console.log(data);
+                    //Container Binding
+                    var html = '';
+                    $.each(data.lstPSContainer, function (i, item) {
+                        html += '<tr><td>' + (i + 1) + '</td><td>' + item.CFSCode + '</td><td>' + item.ContainerNo + '</td><td>' + item.Size + '</td><td>';//
+                        if (item.IsReefer) {
+                            html += '<input type="checkbox" checked disabled id="chk' + i + '" /><label for="chk' + i + '"><i class="square" style="margin-left:10px;"></i></label></td><td>' + item.Insured + '</td><td></td></tr>';
+                        }
+                        else {
+                            html += '<input type="checkbox" disabled id="chk' + i + '" /><label for="chk' + i + '"><i class="square" style="margin-left:10px;"></i></label></td><td>' + item.Insured + '</td><td></td></tr>';
+                        }
+                    });
+                    $('#tblContainer tbody').html(html);
+
+                    //CWC Charge Binding
+                    debugger;
+                    var CWCCharge = $.grep(data.lstChargesType, function (item) { return item.ChargeType == "CWC"; });
+                    html = '';
+                    $.each(CWCCharge, function (i, item) {
+                        html += '<tr><td>' + item.ChargeName + '</td>'
+                                + '<td><input id="' + item.ChargeId + '" type="text" value="' + item.Amount + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;,)"/></td>'
+                                + '<td><input id="IGSTP' + item.ChargeId + '" type="text" value="' + item.IGSTPer + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;,)" /></td>'
+                                + '<td><input id="IGSTA' + item.ChargeId + '" type="text" value="' + item.IGSTAmt + '" readonly /></td>'
+                                + '<td><input id="CGSTP' + item.ChargeId + '" type="text" value="' + item.CGSTPer + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)" /></td>'
+                                + '<td><input id="CGSTA' + item.ChargeId + '" type="text" value="' + item.CGSTAmt + '" readonly /></td>'
+                                + '<td><input id="SGSTP' + item.ChargeId + '" type="text" value="' + item.SGSTPer + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)" /></td>'
+                                + '<td><input id="SGSTA' + item.ChargeId + '" type="text" value="' + item.SGSTAmt + '" readonly /></td>'
+                                + '<td><input id="TOT' + item.ChargeId + '" type="text" value="' + item.Total + '" readonly /></td></tr>'
+                    });
+                    $('#tblCWCCharges tbody').html(html);
+                    debugger;
+                    //HT Charge Binding*/
+                    var HTCharge = $.grep(data.lstChargesType, function (item) { return item.ChargeType == "HT"; });
+                    html = '';
+                    $.each(HTCharge, function (i, item) {
+                        html += '<tr><td>' + item.ChargeName + '</td>'
+                                + '<td><input id="' + item.ChargeId + '" type="text" value="' + item.Amount + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;,)" /></td>'
+                                + '<td><input id="IGSTP' + item.ChargeId + '" type="text" value="' + item.IGSTPer + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;,)" /></td>'
+                                + '<td><input id="IGSTA' + item.ChargeId + '" type="text" value="' + item.IGSTAmt + '" readonly /></td>'
+                                + '<td><input id="CGSTP' + item.ChargeId + '" type="text" value="' + item.CGSTPer + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)" /></td>'
+                                + '<td><input id="CGSTA' + item.ChargeId + '" type="text" value="' + item.CGSTAmt + '" readonly /></td>'
+                                + '<td><input id="SGSTP' + item.ChargeId + '" type="text" value="' + item.SGSTPer + '" onblur="CalcTax(&quot;' + item.ChargeId + '&quot;)" /></td>'
+                                + '<td><input id="SGSTA' + item.ChargeId + '" type="text" value="' + item.SGSTAmt + '" readonly /></td>'
+                                + '<td><input id="TOT' + item.ChargeId + '" type="text" value="' + item.Total + '" readonly /></td></tr>'
+                    });
+                    $('#tblHTCharges tbody').html(html);
+
+                    //Total Charge Calculation
+
+                    var rawJson = JSON.parse($('#ChargesJson').val());
+                    var TotalCWC = 0;
+                    var CWCCharge = $.grep(rawJson.lstChargesType, function (item) { return item.ChargeType == "CWC"; });
+
+                    $.each(CWCCharge, function (i, item) {
+                        TotalCWC += item.Total;
+                    });
+                    $('#TOTCWCChrg').val((TotalCWC).toFixed(2));
+
+                    var TotalHT = 0;
+                    var HTCharge = $.grep(rawJson.lstChargesType, function (item) { return item.ChargeType == "HT"; });
+
+                    $.each(HTCharge, function (i, item) {
+                        TotalHT += item.Total;
+                    });
+                    $('#TOTHTChrg').val((TotalHT).toFixed(2));
+                    $('#AllTotal').val((TotalCWC + TotalHT).toFixed(2));
+                    $('#RoundUp').val(0);
+
+                    CalcInvoice();
+
+                }
+            });
+        }
+    }
+
+    function CalcTax(elem) {
+        var MAmt = Number($('#' + elem).val());
+        var IP = Number($('#IGSTP' + elem).val());
+        var CP = Number($('#CGSTP' + elem).val());
+        var SP = Number($('#SGSTP' + elem).val());
+        $('#IGSTA' + elem).val((MAmt * (IP / 100)).toFixed(2));
+        $('#CGSTA' + elem).val((MAmt * (CP / 100)).toFixed(2));
+        $('#SGSTA' + elem).val((MAmt * (SP / 100)).toFixed(2));
+        $('#TOT' + elem).val((MAmt + (MAmt * (IP / 100)) + (MAmt * (CP / 100)) + (MAmt * (SP / 100))).toFixed(2));
+        var rawJson = JSON.parse($('#ChargesJson').val());
+        var selectedItem = $.grep(rawJson.lstChargesType, function (item) { return item.ChargeId == elem; })[0];
+        selectedItem.IGSTPer = IP;
+        selectedItem.IGSTAmt = MAmt * (IP / 100);
+        selectedItem.CGSTPer = CP;
+        selectedItem.CGSTAmt = MAmt * (CP / 100);
+        selectedItem.SGSTPer = SP;
+        selectedItem.SGSTAmt = MAmt * (SP / 100);
+        selectedItem.Total = (MAmt + (MAmt * (IP / 100)) + (MAmt * (CP / 100)) + (MAmt * (SP / 100)));
+
+        var TotalCWC = 0;
+        var CWCCharge = $.grep(rawJson.lstChargesType, function (item) { return item.ChargeType == "CWC"; });
+
+        $.each(CWCCharge, function (i, item) {
+            TotalCWC += item.Total;
+        });
+        $('#TOTCWCChrg').val((TotalCWC).toFixed(2));
+
+        var TotalHT = 0;
+        var HTCharge = $.grep(rawJson.lstChargesType, function (item) { return item.ChargeType == "HT"; });
+
+        $.each(HTCharge, function (i, item) {
+            TotalHT += item.Total;
+        });
+        $('#TOTHTChrg').val((TotalHT).toFixed(2));
+
+        $('#AllTotal').val((TotalCWC + TotalHT).toFixed(2));
+        $('#ChargesJson').val(JSON.stringify(rawJson));
+        CalcInvoice();
+    }
+
+    function CalcInvoice() {
+        var Total = Number($('#AllTotal').val());
+        var RoundUp = Number($('#RoundUp').val());
+        $('#InvoiceValue').val((Total - RoundUp).toFixed(2));
+        var rawJson = JSON.parse($('#ChargesJson').val());
+        rawJson.AllTotal = Total;
+        rawJson.RoundUp = RoundUp;
+        rawJson.Invoice = rawJson.AllTotal - rawJson.RoundUp;
+        $('#ChargesJson').val(JSON.stringify(rawJson));
+    }
+
+    function BindJson() {
+        var rawJson = JSON.parse($('#ChargesJson').val());
+        rawJson.InvoiceId = 0;
+        rawJson.InvoiceType = TaxType;
+        rawJson.InvoiceDate = $('#InvoiceDate').val();
+        rawJson.StuffingReqId = $('#StuffingReqId').val();
+        rawJson.StuffingReqNo = $('#StuffingReqNo').val();
+        rawJson.StuffingDate = $('#StuffingReqDate').val();
+        rawJson.PartyId = $('#PartyId').val();
+        rawJson.PartyName = $('#PartyName').val();
+        rawJson.PayeeId = $('#PayeeId').val();
+        rawJson.PayeeName = $('#PayeeName').val();
+        rawJson.GSTNo = $('#GSTNo').val();
+        rawJson.Remarks = $('#Remarks').val();
+        $('#ChargesJson').val(JSON.stringify(rawJson));
+    }
+
+    var TaxType = '@ViewData["InvType"].ToString()';
+    function IVType(Type) {
+        debugger;
+        TaxType = Type;
+        alert(TaxType);
+        $('#DivBody').load('/Import/CWCImport/CreateContPaymentSheet?type=' + Type);
+    }
+    if (TaxType == 'Tax')
+        $('#Tax').prop('checked', true);
+    else
+        $('#Bill').prop('checked', true);
+
+
+</script>
+<script>
+    function PaymentOnSuccess(data) {
+        debugger;
+        if (data.Status == 1 || data.Status == 2) {
+            if ($('#DivPaySheetCargoMsg').hasClass('logErrMsg'))
+                $('#DivPaySheetCargoMsg').removeClass('logErrMsg').addClass('logSuccMsg');
+            $('#DivPaySheetCargoMsg').html(data.Message);
+            setTimeout(ResetField, TimeInSeconds);
+        }
+        else {
+            if ($('#DivPaySheetCargoMsg').hasClass('logSuccMsg'))
+                $('#DivPaySheetCargoMsg').removeClass('logSuccMsg').addClass('logErrMsg');
+            $('#DivPaySheetCargoMsg').html(data.Message);
+        }
+    }
+    function PaymentOnFailure() {
+        alert("Error");
+    }
+    function ResetField() {
+        debugger;
+        $('#DivBody').load('/Import/CWCImport/CreateContPaymentSheet');
+    }
+</script>
